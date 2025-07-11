@@ -23,7 +23,7 @@ This repository contains the backend for DeskMint. The backend is responsible fo
 - **Authentication**: Secure token-based login and user access control
 - **Recurring Tasks**: Schedule and auto-generate repeatable items
 - **Smart Document Handling**: File upload, tagging, and structured storage
-- **Custom Branding Support**: White-label ready
+- **Custom Branding Support**: White-label (planned)
 
 ## Installation
 
@@ -48,7 +48,7 @@ php artisan key:generate
 Edit the `.env` file with your database and environment configuration, then run:
 
 ```bash
-php artisan migrate --seed
+php artisan migrate
 php artisan serve
 ```
 
