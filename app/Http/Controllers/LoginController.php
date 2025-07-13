@@ -12,11 +12,11 @@ class LoginController extends Controller
     
 	public function handshake(Request $request){
 
-		return [
+		return response()->json([
 			'app_name' => 'deskmint',
 			'build' => '1.0',
-			'required_client_version' => '1.0'
-		];
+			'required_client_version' => 'v1.0'
+		]);
 
 	}
 
