@@ -10,6 +10,16 @@ use Illuminate\Support\Facades\Hash;
 class LoginController extends Controller
 {
     
+	public function handshake(Request $request){
+
+		return [
+			'app_name' => 'deskmint',
+			'build' => '1.0',
+			'required_client_version' => '1.0'
+		];
+
+	}
+
 	public function login(Request $request){
 
 		echo Hash::make('pass123');
