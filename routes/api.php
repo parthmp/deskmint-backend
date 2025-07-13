@@ -14,6 +14,9 @@ Route::post('/some/thing', function(\Illuminate\Http\Request $request){
 	]);
 });
 
+Route::post('/handshake', [LoginController::class, 'handshake']);
+
+/*
 Route::post('/debug-csrf', function (\Illuminate\Http\Request $request) {
     return response()->json([
         'session_started' => session()->has('_token'),
@@ -24,4 +27,4 @@ Route::post('/debug-csrf', function (\Illuminate\Http\Request $request) {
         'all_headers' => request()->headers->all(),
         'session_id' => session()->getId(),
     ]);
-});
+});*/
