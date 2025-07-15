@@ -8,13 +8,21 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class LoginController extends Controller
-{
+{	
+
+	private function CheckLoginAuth($email, $password){
+
+		$user = User::where('email', '=', $email)->first();
+
+		
+
+	}
 
 	public function login(Request $request){
-
-		return [
-			'test' => 132
-		];
+		
+		return response([
+			'message' => 'that'
+		], 422);
 
 	}
 
