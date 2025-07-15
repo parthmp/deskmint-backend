@@ -12,18 +12,9 @@ class LoginController extends Controller
 
 	public function login(Request $request){
 
-		echo Hash::make('pass123');
-		die();
-
-		$user = User::where('id', '=', 1)->first();
-		
-		/*
-		if(Auth::check($user)){
-			
-		}*/
-
-		$token = $user->createToken('admin_token');
-		dd($token);
+		return [
+			'test' => 132
+		];
 
 	}
 
