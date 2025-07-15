@@ -4,17 +4,12 @@ use App\Http\Controllers\LoginController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+/*
 Route::get('/user', function (Request $request) {
     return $request->user();
-})->middleware('auth:sanctum');
+})->middleware('auth:sanctum');*/
 
-Route::post('/some/thing', function(\Illuminate\Http\Request $request){
-	return response()->json([
-		'bla' => 123
-	]);
-});
-
-Route::post('/handshake', [LoginController::class, 'handshake']);
+Route::post('/login', [LoginController::class, 'login']);
 
 /*
 Route::post('/debug-csrf', function (\Illuminate\Http\Request $request) {
