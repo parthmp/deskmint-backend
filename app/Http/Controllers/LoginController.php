@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\LoginAttempts;
+use App\Helpers\LoginHelper;
 use App\Models\User;
 use App\Models\Setting;
 use Illuminate\Http\Request;
@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Helpers\Sanitize;
 use App\Helpers\Turnstile;
 use App\Models\LoginAttempt;
+use App\Models\TwoFactorAuthToken;
 use Illuminate\Support\Facades\Validator;
 
 class LoginController extends Controller
@@ -33,6 +34,22 @@ class LoginController extends Controller
 		}
 
 		return false;
+
+	}
+
+	private function generateOtpAndToken($user, $device){
+
+		$otp = rand(99999, 999999);
+		$token = hash('sha512', uniqid($device));
+
+		$tfa = new TwoFactorAuthToken();
+		$tfa->user_id = $user->id;
+		$tfa->token = $token;
+		$tfa->otp = $otp;
+		$tfa->device = $device;
+		$tfa->save();
+
+		return ['token' => $token];
 
 	}
 
@@ -67,8 +84,8 @@ class LoginController extends Controller
 
 				}else{
 
-					LoginAttempts::reset($user, $setting);
-					if(LoginAttempts::ifUserIsLockedOut($user, $setting)){
+					LoginHelper::reset($user, $setting);
+					if(LoginHelper::ifUserIsLockedOut($user, $setting)){
 						return response([
 							'message' => 'Locked out: Try again after '.$setting->login_limits_minutes.' minute(s) from your last login'
 						], env("ERROR_CODE"));
@@ -78,8 +95,12 @@ class LoginController extends Controller
 
 							if($setting->two_factor_auth_flag == 1){
 								/* proceed for 2fa */
+								$tfa = $this->generateOtpAndToken($user, $device);
+								/* send otp email here */
 								return response([
-									'message' => 'proceecing to 2fa'
+									'tfa' => true,
+									'token'	=>	$tfa['token'],
+									'message' => 'OTP has been sent to the email'
 								], 200);
 							}else{
 								/* issue tokens here */
@@ -92,9 +113,14 @@ class LoginController extends Controller
 
 							if($setting->login_limits_flag == 1){
 								
-								$left_attempts = LoginAttempts::addNew($user);
+								$left_attempts = LoginHelper::addNew($user);
+								$left_attempts = ($setting->login_limits_attempts-$left_attempts);
+								$res_message = 'You have '.$left_attempts.' attempt(s) left';
+								if($left_attempts == 0){
+									$res_message = 'You have been locked out for '.($setting->login_limits_minutes).' minute(s)';
+								}
 								return response([
-									'message' => 'You have '.($setting->login_limits_attempts-$left_attempts).' attempt(s) left'
+									'message' => $res_message
 								], env("ERROR_CODE"));
 							}else{
 

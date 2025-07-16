@@ -6,7 +6,7 @@
 	use App\Models\User;
 	use App\Models\Setting;
 
-	class LoginAttempts{
+	class LoginHelper{
 
 		public static function ifUserIsLockedOut(User $user, Setting $setting){
 
