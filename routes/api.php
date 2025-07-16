@@ -11,6 +11,13 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');*/
 
 Route::post('/login', [LoginController::class, 'login']);
+Route::post('/resend-otp', [LoginController::class, 'resendOTP']);
+Route::post('/validate-otp', [LoginController::class, 'validateOTP']);
+Route::get('/temp', 
+	function(){
+		return view('emails.send_otp');
+	}
+);
 
 /*
 Route::post('/debug-csrf', function (\Illuminate\Http\Request $request) {
