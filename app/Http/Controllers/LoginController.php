@@ -10,8 +10,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Helpers\Sanitize;
 use App\Helpers\Turnstile;
+use App\Mail\SendOTP;
 use App\Models\LoginAttempt;
 use App\Models\TwoFactorAuthToken;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class LoginController extends Controller
@@ -49,8 +51,14 @@ class LoginController extends Controller
 		$tfa->device = $device;
 		$tfa->save();
 
+		$this->sendOTPEmail($user, $otp);
+
 		return ['token' => $token];
 
+	}
+
+	private function sendOTPEmail($user, $otp){
+		Mail::to($user->email)->queue(new SendOTP($user, $otp));
 	}
 
 	public function login(Request $request){
@@ -94,14 +102,16 @@ class LoginController extends Controller
 						if($this->CheckLoginAuth($email, $password)){
 
 							if($setting->two_factor_auth_flag == 1){
+								
 								/* proceed for 2fa */
 								$tfa = $this->generateOtpAndToken($user, $device);
-								/* send otp email here */
+								
 								return response([
 									'tfa' => true,
 									'token'	=>	$tfa['token'],
 									'message' => 'OTP has been sent to the email'
 								], 200);
+
 							}else{
 								/* issue tokens here */
 								return response([
@@ -146,6 +156,122 @@ class LoginController extends Controller
 		}
 
 		
+
+	}
+
+	private function isTokenValid($found_token, $device) {
+		
+		if(!$found_token){
+			return false;
+		}
+
+		$diff = (now())->diffInSeconds($found_token->created_at, true);
+		if($diff < env("OTP_EXPIRY_IN_SECONDS")){
+			return true;
+		}
+
+		return false;
+
+	}
+
+	public function resendOTP(Request $request){
+
+		$v = Validator::make($request->all(), [
+			'token'		=>	'required',
+			'device'	=> 	'required'
+		]);
+
+		if($v->fails()){
+			return response([
+				'message' => 'Invalid request'
+			], env("ERROR_CODE"));
+		}else{
+
+			$token = Sanitize::input($request->input('token'));
+			$device = Sanitize::input($request->input('device'));
+			
+			$found_token = TwoFactorAuthToken::where([['token', '=', $token], ['device', '=', $device], ['used', '=', 0]])->orderBy('id', 'desc')->first();
+
+			if($this->isTokenValid($found_token, $device)){
+
+				$diff = (now())->diffInSeconds($found_token->created_at, true);
+				if($diff < 60){
+					
+					return response([
+						'message' => 'Please wait for one minute before requesting new OTP'
+					], 401);
+
+				}else{
+
+					/* send */
+					$user = $found_token->user;
+
+					$found_token->delete();
+					$tfa = $this->generateOtpAndToken($user, $device);
+								
+					return response([
+						'tfa' => true,
+						'token'	=>	$tfa['token'],
+						'message' => 'OTP has been sent to the email'
+					], 200);
+
+				}
+
+
+			}else{
+
+				return response([
+					'message' => 'Please login again'
+				], 500);
+
+			}
+
+		}
+
+	}
+
+	public function validateOTP(Request $request){
+
+		$v = Validator::make($request->all(), [
+			'token'		=>	'required',
+			'otp'		=>	'required',
+			'device'	=> 	'required'
+		]);
+
+		if($v->fails()){
+
+			return response([
+				'message' => 'Invalid request'
+			], 401);
+
+		}else{
+
+			$token = Sanitize::input($request->input('token'));
+			$device = Sanitize::input($request->input('device'));
+			$otp = Sanitize::input($request->input('otp'));
+
+			$found_token = TwoFactorAuthToken::where([['token', '=', $token], ['device', '=', $device], ['used', '=', 0], ['otp', '=', $otp]])->orderBy('id', 'desc')->first();
+
+			if(!$found_token){
+				return response([
+					'message' => 'Invalid OTP entered'
+				], 401);
+			}else{
+
+				if($this->isTokenValid($found_token, $device)){
+					/* log user in */
+					return response([
+						'message' => 'All good!'
+					], 200);
+				}else{
+					return response([
+						'message' => 'OTP expired, please login again'
+					], 500);
+				}
+
+			}
+
+		}
 
 	}
 
