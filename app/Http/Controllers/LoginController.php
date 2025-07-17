@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\Hash;
 use App\Helpers\Sanitize;
 use App\Helpers\Turnstile;
 use App\Mail\SendOTP;
+use App\Models\AccessTokenData;
 use App\Models\LoginAttempt;
+use App\Models\RefreshToken;
 use App\Models\TwoFactorAuthToken;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
@@ -113,10 +115,11 @@ class LoginController extends Controller
 								], 200);
 
 							}else{
-								/* issue tokens here */
-								return response([
-									'message' => 'login successful'
-								], 200);
+								
+								$this->invalidatePastTokens($user, $device);
+								$tokens = $this->issueTokens($user, $device, $request);
+
+								return response($tokens, 200);
 							}
 
 						}else{
@@ -259,16 +262,22 @@ class LoginController extends Controller
 			}else{
 
 				if($this->isTokenValid($found_token, $device)){
+
 					/* log user in */
 					$found_token->used = 1;
 					$found_token->update();
-					return response([
-						'message' => 'All good!'
-					], 200);
+
+					$this->invalidatePastTokens($found_token->user, $device);
+					$tokens = $this->issueTokens($found_token->user, $device, $request);
+					
+					return response($tokens, 200);
+
 				}else{
+
 					return response([
 						'message' => 'OTP expired, please login again'
 					], 500);
+
 				}
 
 			}
@@ -277,7 +286,38 @@ class LoginController extends Controller
 
 	}
 
-	public function issueTokens($user){
+	private function invalidatePastTokens($user, $device){
+
+		AccessTokenData::where([['user_id', '=', $user->id], ['device', '=', $device]])->delete();
+		RefreshToken::where([['user_id', '=', $user->id], ['device', '=', $device]])->delete();
+
+	}
+
+	private function issueTokens($user, $device, $request){
+
+		$access_token = $user->createToken(env("APP_NAME"));
+		$token_model = $access_token->accessToken;
+
+		$access_token_data = new AccessTokenData();
+		$access_token_data->token_id = $token_model->id;
+		$access_token_data->user_id = $user->id;
+		$access_token_data->device = $device;
+		$access_token_data->user_agent = $request->header('User-Agent');
+		$access_token_data->ip_address = $request->ip();
+		$access_token_data->save();
+
+		$refresh_token_plain_text = (uniqid().rand().$device);
+		$refresh_token_hash = hash('sha512', $refresh_token_plain_text);
+		$refresh_token = new RefreshToken();
+		$refresh_token->user_id = $user->id;
+		$refresh_token->refresh_token = $refresh_token_hash;
+		$refresh_token->device = $device;
+		$refresh_token->save();
+
+		return [
+			'token'			=>	$access_token->plainTextToken,
+			'refresh_token'	=>	$refresh_token_hash
+		];
 
 	}
 
