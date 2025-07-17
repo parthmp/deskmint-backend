@@ -260,6 +260,8 @@ class LoginController extends Controller
 
 				if($this->isTokenValid($found_token, $device)){
 					/* log user in */
+					$found_token->used = 1;
+					$found_token->update();
 					return response([
 						'message' => 'All good!'
 					], 200);
@@ -272,6 +274,10 @@ class LoginController extends Controller
 			}
 
 		}
+
+	}
+
+	public function issueTokens($user){
 
 	}
 
