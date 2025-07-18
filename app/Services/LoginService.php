@@ -49,7 +49,7 @@ class LoginService{
 		$tfa->device = $device;
 		$tfa->save();
 
-		self::sendOTPEmail($user, $otp);
+		$this->sendOTPEmail($user, $otp);
 
 		return ['token' => $token];
 

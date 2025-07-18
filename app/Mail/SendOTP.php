@@ -27,6 +27,10 @@ class SendOTP extends Mailable
 		$this->otp = $otp;
     }
 
+	public function getOTP(){
+		return $this->otp;
+	}
+
     /**
      * Get the message envelope.
      */
