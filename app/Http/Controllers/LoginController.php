@@ -6,62 +6,13 @@ use App\Helpers\LoginHelper;
 use App\Models\User;
 use App\Models\Setting;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use App\Helpers\Sanitize;
 use App\Helpers\Turnstile;
-use App\Mail\SendOTP;
-use App\Models\AccessTokenData;
-use App\Models\LoginAttempt;
-use App\Models\RefreshToken;
 use App\Models\TwoFactorAuthToken;
-use Illuminate\Support\Facades\Mail;
+use App\Services\LoginService;
 use Illuminate\Support\Facades\Validator;
 
-class LoginController extends Controller
-{	
-
-	private function CheckLoginAuth($email, $password){
-		
-		$email = Sanitize::input($email);
-		
-		$user = User::where('email', '=', $email)->first();
-
-		if($user){
-
-			$db_password = $user->password;
-
-			if(Hash::check($password, $db_password)){
-				return true;
-			}
-
-		}
-
-		return false;
-
-	}
-
-	private function generateOtpAndToken($user, $device){
-
-		$otp = rand(99999, 999999);
-		$token = hash('sha512', uniqid($device));
-
-		$tfa = new TwoFactorAuthToken();
-		$tfa->user_id = $user->id;
-		$tfa->token = $token;
-		$tfa->otp = $otp;
-		$tfa->device = $device;
-		$tfa->save();
-
-		$this->sendOTPEmail($user, $otp);
-
-		return ['token' => $token];
-
-	}
-
-	private function sendOTPEmail($user, $otp){
-		Mail::to($user->email)->queue(new SendOTP($user, $otp));
-	}
+class LoginController extends Controller{
 
 	public function login(Request $request){
 		
@@ -75,7 +26,7 @@ class LoginController extends Controller
 		if($v->fails()){
 			return response([
 				'message' => 'Please enter email and password.'
-			], env("ERROR_CODE"));
+			], config('global.error_code'));
 		}else{
 			
 			if(Turnstile::validate($request->input('turnstile_token'))){
@@ -90,7 +41,7 @@ class LoginController extends Controller
 
 					return response([
 						'message' => 'Invalid email or password entered'
-					], env("ERROR_CODE"));
+					], config('global.error_code'));
 
 				}else{
 
@@ -98,15 +49,15 @@ class LoginController extends Controller
 					if(LoginHelper::ifUserIsLockedOut($user, $setting)){
 						return response([
 							'message' => 'Locked out: Try again after '.$setting->login_limits_minutes.' minute(s) from your last login'
-						], env("ERROR_CODE"));
+						], config('global.error_code'));
 					}else{
 
-						if($this->CheckLoginAuth($email, $password)){
+						if(app(LoginService::class)->CheckLoginAuth($email, $password)){
 
 							if($setting->two_factor_auth_flag == 1){
 								
 								/* proceed for 2fa */
-								$tfa = $this->generateOtpAndToken($user, $device);
+								$tfa = app(LoginService::class)->generateOtpAndToken($user, $device);
 								
 								return response([
 									'tfa' => true,
@@ -116,8 +67,8 @@ class LoginController extends Controller
 
 							}else{
 								
-								$this->invalidatePastTokens($user, $device);
-								$tokens = $this->issueTokens($user, $device, $request);
+								app(LoginService::class)->invalidatePastTokens($user, $device);
+								$tokens = app(LoginService::class)->issueTokens($user, $device, $request);
 
 								return response($tokens, 200);
 							}
@@ -134,12 +85,12 @@ class LoginController extends Controller
 								}
 								return response([
 									'message' => $res_message
-								], env("ERROR_CODE"));
+								], config('global.error_code'));
 							}else{
 
 								return response([
 									'message' => 'Invalid email or password entered'
-								], env("ERROR_CODE"));
+								], config('global.error_code'));
 
 							}
 
@@ -153,29 +104,13 @@ class LoginController extends Controller
 			}else{
 				return response([
 					'message' => 'Invalid request'
-				], env("ERROR_CODE"));
+				], config('global.error_code'));
 			}
 
-		}
-
-		
+		}	
 
 	}
-
-	private function isTokenValid($found_token, $device) {
-		
-		if(!$found_token){
-			return false;
-		}
-
-		$diff = (now())->diffInSeconds($found_token->created_at, true);
-		if($diff < env("OTP_EXPIRY_IN_SECONDS")){
-			return true;
-		}
-
-		return false;
-
-	}
+	
 
 	public function resendOTP(Request $request){
 
@@ -187,7 +122,7 @@ class LoginController extends Controller
 		if($v->fails()){
 			return response([
 				'message' => 'Invalid request'
-			], env("ERROR_CODE"));
+			], config('global.error_code'));
 		}else{
 
 			$token = Sanitize::input($request->input('token'));
@@ -195,7 +130,7 @@ class LoginController extends Controller
 			
 			$found_token = TwoFactorAuthToken::where([['token', '=', $token], ['device', '=', $device], ['used', '=', 0]])->orderBy('id', 'desc')->first();
 
-			if($this->isTokenValid($found_token, $device)){
+			if(app(LoginService::class)->isTokenValid($found_token, $device)){
 
 				$diff = (now())->diffInSeconds($found_token->created_at, true);
 				if($diff < 60){
@@ -210,7 +145,7 @@ class LoginController extends Controller
 					$user = $found_token->user;
 
 					$found_token->delete();
-					$tfa = $this->generateOtpAndToken($user, $device);
+					$tfa = app(LoginService::class)->generateOtpAndToken($user, $device);
 								
 					return response([
 						'tfa' => true,
@@ -261,14 +196,14 @@ class LoginController extends Controller
 				], 401);
 			}else{
 
-				if($this->isTokenValid($found_token, $device)){
+				if(app(LoginService::class)->isTokenValid($found_token, $device)){
 
 					/* log user in */
 					$found_token->used = 1;
 					$found_token->update();
 
-					$this->invalidatePastTokens($found_token->user, $device);
-					$tokens = $this->issueTokens($found_token->user, $device, $request);
+					app(LoginService::class)->invalidatePastTokens($found_token->user, $device);
+					$tokens = app(LoginService::class)->issueTokens($found_token->user, $device, $request);
 					
 					return response($tokens, 200);
 
@@ -283,41 +218,6 @@ class LoginController extends Controller
 			}
 
 		}
-
-	}
-
-	private function invalidatePastTokens($user, $device){
-
-		AccessTokenData::where([['user_id', '=', $user->id], ['device', '=', $device]])->delete();
-		RefreshToken::where([['user_id', '=', $user->id], ['device', '=', $device]])->delete();
-
-	}
-
-	private function issueTokens($user, $device, $request){
-
-		$access_token = $user->createToken(env("APP_NAME"));
-		$token_model = $access_token->accessToken;
-
-		$access_token_data = new AccessTokenData();
-		$access_token_data->token_id = $token_model->id;
-		$access_token_data->user_id = $user->id;
-		$access_token_data->device = $device;
-		$access_token_data->user_agent = $request->header('User-Agent');
-		$access_token_data->ip_address = $request->ip();
-		$access_token_data->save();
-
-		$refresh_token_plain_text = (uniqid().rand().$device);
-		$refresh_token_hash = hash('sha512', $refresh_token_plain_text);
-		$refresh_token = new RefreshToken();
-		$refresh_token->user_id = $user->id;
-		$refresh_token->refresh_token = $refresh_token_hash;
-		$refresh_token->device = $device;
-		$refresh_token->save();
-
-		return [
-			'token'			=>	$access_token->plainTextToken,
-			'refresh_token'	=>	$refresh_token_hash
-		];
 
 	}
 

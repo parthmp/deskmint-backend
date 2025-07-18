@@ -241,7 +241,7 @@ class LoginHelperTest extends TestCase
 
 		$attempt = LoginAttempt::where('user_id', '=', $user->id)->first();
 
-		$this->assertIsObject($attempt);
+		$this->assertInstanceOf(LoginAttempt::class, $attempt);
 
 
 	}
