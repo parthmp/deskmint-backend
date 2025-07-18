@@ -8,12 +8,19 @@
 
 	class Turnstile{
 
-		public static function validate($token){
+		public static function validate($token, $ip = ''){
+
+			if($ip != ''){
+				$use_ip = $ip;
+			}else{
+				$use_ip = Request::ip();
+			}
+			
 
 			$response = Http::asForm()->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
 				'secret'   	=> env("TURNSTILE_SECRET"),
 				'response' 	=> $token,
-				'remoteip'	=> Request::ip()
+				'remoteip'	=> $use_ip
 			]);
 
 			$data = $response->json();

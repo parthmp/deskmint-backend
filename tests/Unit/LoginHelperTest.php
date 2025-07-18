@@ -52,6 +52,7 @@ class LoginHelperTest extends TestCase
 	}
 
 	public function test_if_user_locked_out_zero_attempts_limit(): void{
+		
 		$user = User::factory()->create();
 		
 		LoginAttempt::factory()->create([
@@ -69,6 +70,7 @@ class LoginHelperTest extends TestCase
 	}
 
 	public function test_if_user_locked_out_zero_minutes_limit(): void{
+		
 		$user = User::factory()->create();
 		
 		LoginAttempt::factory()->create([
@@ -85,8 +87,8 @@ class LoginHelperTest extends TestCase
 		$this->assertFalse(LoginHelper::ifUserIsLockedOut($user, $setting));
 	}
 
-    public function test_if_user_locked_out_with_no_login_limits_flag(): void
-    {
+    public function test_if_user_locked_out_with_no_login_limits_flag(): void{
+
         $user = User::factory()->create();
 		$setting = Setting::factory()->create([
 			'login_limits_flag'	=>	0
@@ -96,8 +98,8 @@ class LoginHelperTest extends TestCase
 
     }
 
-	public function test_if_user_locked_out_with_login_limits_flag(): void
-    {
+	public function test_if_user_locked_out_with_login_limits_flag(): void{
+
         $user = User::factory()->create();
 		$setting = Setting::factory()->create([
 			'login_limits_flag'	=>	1
@@ -107,8 +109,8 @@ class LoginHelperTest extends TestCase
 
     }
 
-	public function test_if_user_locked_out_with_equal_allowed_attempts(): void
-    {
+	public function test_if_user_locked_out_with_equal_allowed_attempts(): void{
+
         $user = User::factory()->create();
 		
 		LoginAttempt::factory()->create([
@@ -126,8 +128,7 @@ class LoginHelperTest extends TestCase
 
     }
 
-	public function test_if_user_locked_out_with_lower_attempts(): void
-    {
+	public function test_if_user_locked_out_with_lower_attempts(): void{
         $user = User::factory()->create();
 		
 		LoginAttempt::factory()->create([
@@ -145,8 +146,7 @@ class LoginHelperTest extends TestCase
 
     }
 
-	public function test_if_user_locked_out_with_lower_login_limit_time_limit(): void
-    {
+	public function test_if_user_locked_out_with_lower_login_limit_time_limit(): void{
         $user = User::factory()->create();
 		
 		LoginAttempt::factory()->create([

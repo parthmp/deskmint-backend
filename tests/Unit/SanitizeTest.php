@@ -1,17 +1,13 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Unit;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
+
 use Tests\TestCase;
 use App\Helpers\Sanitize;
 
 class SanitizeTest extends TestCase
 {
-    /**
-     * A basic feature test example.
-     */
     public function test_sanitize_input_function_trim(): void
     {
         $temp = Sanitize::input('test123 ');
