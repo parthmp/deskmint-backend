@@ -9,3 +9,4 @@ Route::post('/login', [LoginController::class, 'login']);
 Route::post('/resend-otp', [LoginController::class, 'resendOTP']);
 Route::post('/validate-otp', [LoginController::class, 'validateOTP']);
 Route::post('/send-reset-password-code', [ForgotPasswordController::class, 'sendResetPasswordCode']);
+Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);

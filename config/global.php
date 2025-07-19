@@ -1,6 +1,7 @@
 <?php
 
 	return [
-		'otp_expiry' 	=> 	env('OTP_EXPIRY_IN_SECONDS', 600),
-		'error_code'	=>	env("ERROR_CODE", 422)
+		'otp_expiry' 			=> 	env('OTP_EXPIRY_IN_SECONDS', 600),
+		'reset_code_expiry' 	=> 	env('RESET_CODE_EXPIRY_IN_SECONDS', 60),
+		'error_code'			=>	env("ERROR_CODE", 422)
 	];
