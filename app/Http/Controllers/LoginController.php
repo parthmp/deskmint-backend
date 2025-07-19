@@ -128,7 +128,8 @@ class LoginController extends Controller{
 
 		if($v->fails()){
 			return response([
-				'message' => 'Invalid request'
+				'message' 	=> 'Invalid request',
+				'validity'	=>	'invalid_data'
 			], config('global.error_code'));
 		}else{
 
@@ -155,9 +156,10 @@ class LoginController extends Controller{
 					$tfa = app(LoginService::class)->generateOtpAndToken($user, $device);
 								
 					return response([
-						'tfa' => true,
-						'token'	=>	$tfa['token'],
-						'message' => 'OTP has been sent to the email'
+						'tfa' 		=> true,
+						'token'		=>	$tfa['token'],
+						'message' 	=> 'OTP has been sent to the email',
+						'validity'	=>	'otp_resent'
 					], 200);
 
 				}
@@ -166,7 +168,8 @@ class LoginController extends Controller{
 			}else{
 
 				return response([
-					'message' => 'Please login again'
+					'message' 	=> 	'Please login again',
+					'validity'	=>	'login_again'
 				], 500);
 
 			}

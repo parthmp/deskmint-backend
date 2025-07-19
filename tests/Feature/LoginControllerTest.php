@@ -5,9 +5,11 @@ namespace Tests\Feature;
 use App\Helpers\Turnstile;
 use App\Models\LoginAttempt;
 use App\Models\Setting;
+use App\Models\TwoFactorAuthToken;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -337,6 +339,107 @@ class LoginControllerTest extends TestCase
 		$this->assertTrue(strlen($response['token']) === 128);
 
     }
+
+	public function test_resend_otp_invalid_request_1(): void{
+
+		$response = $this->post('/api/resend-otp', [
+			'token' 			=> '',
+			'device' 			=> ''
+		]);
+
+		$expected = (int)config('global.error_code');
+		$response->assertStatus($expected);
+		
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_data', $response['validity']);
+
+	}
+
+	public function test_resend_otp_invalid_request_2(): void{
+
+		$response = $this->post('/api/resend-otp', [
+			'token' 			=> '123456789',
+			'device' 			=> ''
+		]);
+
+		$expected = (int)config('global.error_code');
+		$response->assertStatus($expected);
+		
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_data', $response['validity']);
+
+	}
+
+	public function test_resend_otp_invalid_request_3(): void{
+
+		$response = $this->post('/api/resend-otp', [
+			'token' 			=> '',
+			'device' 			=> 'device 123'
+		]);
+
+		$expected = (int)config('global.error_code');
+		$response->assertStatus($expected);
+		
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_data', $response['validity']);
+
+	}
+
+	public function test_resend_otp_user_needs_to_login_again(): void{
+
+		$token = hash('sha512', uniqid());
+		$device = 'device 123';
+
+		Config::set('global.otp_expiry', 300);
+
+		TwoFactorAuthToken::truncate();
+
+		TwoFactorAuthToken::factory()->create([
+			'token'			=>		$token,
+			'device'		=>		$device,
+			'used'			=>		0,
+			'created_at'	=>		now()->subMinutes(15)
+		]);
+
+		$response = $this->post('/api/resend-otp', [
+			'token' 			=> $token,
+			'device' 			=> $device
+		]);
+
+		$response->assertStatus(500);
+		
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('login_again', $response['validity']);
+
+	}
+
+	public function test_resend_otp_sucess(): void{
+
+		$token = hash('sha512', uniqid());
+		$device = 'device 123';
+
+		Config::set('global.otp_expiry', 300);
+
+		TwoFactorAuthToken::truncate();
+
+		TwoFactorAuthToken::factory()->create([
+			'token'			=>		$token,
+			'device'		=>		$device,
+			'used'			=>		0,
+			'created_at'	=>		now()->subMinutes(2)
+		]);
+
+		$response = $this->post('/api/resend-otp', [
+			'token' 			=> $token,
+			'device' 			=> $device
+		]);
+
+		$response->assertStatus(200);
+		
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('otp_resent', $response['validity']);
+
+	}
 
 	
 
