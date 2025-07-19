@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Helpers\Turnstile;
+use App\Models\AccessTokenData;
 use App\Models\LoginAttempt;
+use App\Models\RefreshToken;
 use App\Models\Setting;
 use App\Models\TwoFactorAuthToken;
 use App\Models\User;
@@ -12,6 +14,7 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\PersonalAccessToken;
 use Tests\TestCase;
 
 class LoginControllerTest extends TestCase
@@ -438,6 +441,142 @@ class LoginControllerTest extends TestCase
 		
 		$this->assertArrayHasKey('validity', $response);
 		$this->assertEquals('otp_resent', $response['validity']);
+
+	}
+
+	public function test_if_otp_is_valid_invalid_data_1(): void{
+
+		
+
+		$response = $this->post('/api/validate-otp', [
+			'token' 			=> 	'',
+			'otp'				=>	'',
+			'device' 			=> 	''
+		]);
+
+		$response->assertStatus(401);
+		
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_data', $response['validity']);
+
+	}
+
+	public function test_if_otp_is_valid_invalid_data_2(): void{
+
+		
+		$response = $this->post('/api/validate-otp', [
+			'token' 			=> 	'',
+			'otp'				=>	'123456',
+			'device' 			=> 	''
+		]);
+
+		$response->assertStatus(401);
+		
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_data', $response['validity']);
+
+	}
+
+	public function test_if_otp_is_valid_invalid_data_3(): void{
+
+		$response = $this->post('/api/validate-otp', [
+			'token' 			=> 	'21123',
+			'otp'				=>	'123456',
+			'device' 			=> 	''
+		]);
+
+		$response->assertStatus(401);
+		
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_data', $response['validity']);
+
+	}
+
+
+	public function test_if_otp_is_valid_expired_otp(): void{
+
+		$token = hash('sha512', uniqid());
+		$device = 'device 123';
+		$otp = 123456;
+
+		Config::set('global.otp_expiry', 600);
+
+		TwoFactorAuthToken::truncate();
+
+		TwoFactorAuthToken::factory()->create([
+			'token'			=>		$token,
+			'device'		=>		$device,
+			'otp'			=>		$otp,
+			'used'			=>		0,
+			'created_at'	=>		now()->subMinutes(15)
+		]);
+
+		$response = $this->post('/api/validate-otp', [
+			'token' 			=> 	$token,
+			'otp'				=>	$otp,
+			'device' 			=> 	$device
+		]);
+
+		$response->assertStatus(500);
+		
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('token_expired', $response['validity']);
+
+	}
+
+
+	public function test_if_otp_is_valid_with_valid_tokens_and_past_tokens_are_invalidated(): void{
+
+		$token = hash('sha512', uniqid());
+		$device = 'device 123';
+		$otp = 123456;
+
+		Config::set('global.otp_expiry', 600);
+
+		TwoFactorAuthToken::truncate();
+
+		$past_token = TwoFactorAuthToken::factory()->create([
+			'token'			=>		$token,
+			'device'		=>		$device,
+			'otp'			=>		$otp,
+			'used'			=>		0,
+			'created_at'	=>		now()->subMinutes(2)
+		]);
+
+		$current_token = TwoFactorAuthToken::factory()->create([
+			'token'			=>		$token,
+			'device'		=>		$device,
+			'otp'			=>		$otp,
+			'used'			=>		0,
+			'created_at'	=>		now()->subMinutes(1)
+		]);
+
+		$response = $this->post('/api/validate-otp', [
+			'token' 			=> 	$token,
+			'otp'				=>	$otp,
+			'device' 			=> 	$device
+		]);
+
+		$response->assertStatus(200);
+		
+		$this->assertArrayHasKey('token', $response);
+		$this->assertArrayHasKey('refresh_token', $response);
+		
+		$this->assertTrue(strlen($response['refresh_token']) === 128);
+
+		$current_token_temp = TwoFactorAuthToken::where('id', '=', $current_token->id)->first();
+
+		$this->assertEquals(1, $current_token_temp->used);
+
+		$past_refresh_tokens = RefreshToken::where([['user_id', '=', $current_token_temp->user->id], ['device', '=', $device], ['refresh_token', '!=', $response['refresh_token']]])->get();
+		$this->isEmpty($past_refresh_tokens);
+
+		$token = PersonalAccessToken::findToken($response['token']);
+
+		$past_access_token_data = AccessTokenData::where([['user_id', '=', $current_token_temp->user->id], ['device', '=', $device], ['token_id', '!=', $token->id]])->get();
+		$this->isEmpty($past_access_token_data);
+
+
 
 	}
 

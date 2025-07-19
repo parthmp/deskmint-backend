@@ -189,7 +189,8 @@ class LoginController extends Controller{
 		if($v->fails()){
 
 			return response([
-				'message' => 'Invalid request'
+				'message' 	=> 'Invalid request',
+				'validity'	=>	'invalid_data'
 			], 401);
 
 		}else{
@@ -202,7 +203,8 @@ class LoginController extends Controller{
 
 			if(!$found_token){
 				return response([
-					'message' => 'Invalid OTP entered'
+					'message' 	=> 'Invalid OTP entered',
+					'validity'	=>	'invalid_otp'
 				], 401);
 			}else{
 
@@ -211,7 +213,7 @@ class LoginController extends Controller{
 					/* log user in */
 					$found_token->used = 1;
 					$found_token->update();
-
+					
 					app(LoginService::class)->invalidatePastTokens($found_token->user, $device);
 					$tokens = app(LoginService::class)->issueTokens($found_token->user, $device, $request);
 					
@@ -220,7 +222,8 @@ class LoginController extends Controller{
 				}else{
 
 					return response([
-						'message' => 'OTP expired, please login again'
+						'message' 	=> 'OTP expired, please login again',
+						'validity'	=>	'token_expired'
 					], 500);
 
 				}
