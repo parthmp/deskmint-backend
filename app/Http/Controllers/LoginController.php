@@ -25,7 +25,8 @@ class LoginController extends Controller{
 
 		if($v->fails()){
 			return response([
-				'message' => 'Please enter email and password.'
+				'message' 	=> 'Please enter email and password.',
+				'validity'	=>	'invalid_fields'
 			], config('global.error_code'));
 		}else{
 			
@@ -40,7 +41,8 @@ class LoginController extends Controller{
 				if(!$user){
 
 					return response([
-						'message' => 'Invalid email or password entered'
+						'message'	=> 'Invalid email or password entered',
+						'validity'	=>	'invalid_email_and_password'
 					], config('global.error_code'));
 
 				}else{
@@ -48,7 +50,8 @@ class LoginController extends Controller{
 					LoginHelper::reset($user, $setting);
 					if(LoginHelper::ifUserIsLockedOut($user, $setting)){
 						return response([
-							'message' => 'Locked out: Try again after '.$setting->login_limits_minutes.' minute(s) from your last login'
+							'message' 	=> 	'Locked out: Try again after '.$setting->login_limits_minutes.' minute(s) from your last login',
+							'validity'	=>	'locked_out'
 						], config('global.error_code'));
 					}else{
 
@@ -60,9 +63,10 @@ class LoginController extends Controller{
 								$tfa = app(LoginService::class)->generateOtpAndToken($user, $device);
 								
 								return response([
-									'tfa' => true,
-									'token'	=>	$tfa['token'],
-									'message' => 'OTP has been sent to the email'
+									'tfa' 		=> true,
+									'token'		=>	$tfa['token'],
+									'validity'	=>	'otp_sent',
+									'message' 	=> 	'OTP has been sent to the email'
 								], 200);
 
 							}else{
@@ -84,12 +88,14 @@ class LoginController extends Controller{
 									$res_message = 'You have been locked out for '.($setting->login_limits_minutes).' minute(s)';
 								}
 								return response([
-									'message' => $res_message
+									'message' 	=> 	$res_message,
+									'validity'	=>	'locked_out_for_time'
 								], config('global.error_code'));
 							}else{
 
 								return response([
-									'message' => 'Invalid email or password entered'
+									'message' 	=> 'Invalid email or password entered',
+									'validity'	=>	'invalid_email_password'
 								], config('global.error_code'));
 
 							}
@@ -103,7 +109,8 @@ class LoginController extends Controller{
 
 			}else{
 				return response([
-					'message' => 'Invalid request'
+					'message' 	=> 'Invalid request',
+					'validity'	=> 'invalid_turnstile'
 				], config('global.error_code'));
 			}
 
