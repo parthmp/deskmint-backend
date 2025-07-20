@@ -25,6 +25,10 @@ class SendResetPasswordEmail extends Mailable
         $this->reset_code_row = $reset_code_row;
     }
 
+	public function getResetCode(){
+		return $this->reset_code_row->reset_code;
+	}
+
     /**
      * Get the message envelope.
      */
