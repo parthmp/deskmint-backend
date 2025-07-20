@@ -26,7 +26,7 @@ class CustomPasswordResetFactory extends Factory
             
 			'user_id'		=>		User::factory(),
 			'reset_code'	=>		General::generateRandomString(15),
-			'device'		=>		$this->faker->string(10),
+			'device'		=>		$this->faker->text(10),
 			'used'			=>		$this->faker->boolean(),
 			'used_at'		=>		now()->subSeconds(30)
 
