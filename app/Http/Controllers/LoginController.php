@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\General;
 use App\Helpers\LoginHelper;
 use App\Models\User;
 use App\Models\Setting;
@@ -10,6 +11,8 @@ use App\Helpers\Sanitize;
 use App\Helpers\Turnstile;
 use App\Models\TwoFactorAuthToken;
 use App\Services\LoginService;
+use Exception;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class LoginController extends Controller{
@@ -18,7 +21,7 @@ class LoginController extends Controller{
 
 		$v = Validator::make($request->all(), [
 			'email_address' 		=> 'required|email',
-			'password' 				=> 'required',
+			'password' 				=> 'required|min:8',
 			'turnstile_token' 		=> 'required',
 			'device' 				=> 'required'
 		]);
@@ -31,7 +34,7 @@ class LoginController extends Controller{
 			return response(['message' 	=> 'Invalid request','validity'	=> 'invalid_turnstile'], config('global.error_code'));
 		}
 
-		$email = Sanitize::input($request->input('email_address'));
+		$email = strtolower(Sanitize::input($request->input('email_address')));
 		$device = Sanitize::input($request->input('device'));
 		$password = $request->input('password');
 		
@@ -108,13 +111,26 @@ class LoginController extends Controller{
 			return response(['message' => 'Please wait for one minute before requesting new OTP'], 401);
 		}
 
-			
-		$user = $found_token->user;
+		try{
 
-		$found_token->delete();
-		$tfa = app(LoginService::class)->generateOtpAndToken($user, $device);
-					
-		return response(['tfa' => true,'token' => $tfa['token'],'message' => 'OTP has been sent to the email', 'validity' => 'otp_resent'], 200);		
+			$user = $found_token->user;
+
+			$found_token->delete();
+			$tfa = app(LoginService::class)->generateOtpAndToken($user, $device);
+			
+			Log::info('Resend otp successful', ['user_id' => $user->id, 'device' => $device]);
+
+			return response(['tfa' => true,'token' => $tfa['token'],'message' => 'OTP has been sent to the email', 'validity' => 'otp_resent'], 200);		
+
+		}catch(Exception $e){
+
+			Log::info('Resend otp failed', ['user_id' => $user->id, 'device' => $device]);
+
+			return General::wentWrong();
+
+		}
+			
+		
 
 	}
 
@@ -145,13 +161,27 @@ class LoginController extends Controller{
 			return response(['message' 	=> 'OTP expired, please login again', 'validity'	=>	'token_expired'], 500);
 		}
 
-		$found_token->used = 1;
-		$found_token->update();
+		try{
+
+			$found_token->used = 1;
+			$found_token->update();
+			
+			app(LoginService::class)->invalidatePastTokens($found_token->user, $device);
+			$tokens = app(LoginService::class)->issueTokens($found_token->user, $device, $request);
+
+			Log::info('Validate otp successful', ['token' => $token, 'otp' => $otp,'device' => $device]);
+			
+			return response($tokens, 200);
+
+		}catch(Exception $e){
+
+			Log::info('Validate otp failed', ['token' => $token, 'otp' => $otp,'device' => $device]);
+
+			return General::wentWrong();
+
+		}
+
 		
-		app(LoginService::class)->invalidatePastTokens($found_token->user, $device);
-		$tokens = app(LoginService::class)->issueTokens($found_token->user, $device, $request);
-		
-		return response($tokens, 200);
 
 	}
 

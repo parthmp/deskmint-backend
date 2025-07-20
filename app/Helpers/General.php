@@ -2,6 +2,8 @@
 
 	namespace App\Helpers;
 
+	use Illuminate\Http\Response;
+
 	class General{
 
 		public static function generateRandomString(int $length = 15): string {
@@ -17,4 +19,9 @@
 			return $randomString;
 
 		}
+
+		public static function wentWrong() : Response{
+			return response(['message' 	=> 	'Something went wrong', 'validity'	=>	'something_went_wrong'], config('global.error_code'));
+		}
+
 	}

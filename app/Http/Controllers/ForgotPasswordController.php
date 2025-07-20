@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Helpers\Turnstile;
 use App\Models\CustomPasswordReset;
 use App\Models\User;
 use App\Services\ForgotPasswordService;
 use App\Services\LoginService;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class ForgotPasswordController extends Controller{
@@ -29,14 +32,26 @@ class ForgotPasswordController extends Controller{
 			return response(['message' 	=> 	'Invalid request', 'validity'	=>	'invalid_turnstile'], config('global.error_code'));
 		}
 			
-		$email_address = Sanitize::input($request->input('email_address'));
+		$email_address = strtolower(Sanitize::input($request->input('email_address')));
 		$device = Sanitize::input($request->input('device'));
 
 		$user = User::where('email', '=', $email_address)->first();
 
 		if($user){
-			$reset_code_row = (new ForgotPasswordService)->createResetCode($user, $device);
-			(new ForgotPasswordService)->sendResetPasswordEmail($reset_code_row);
+			try{
+				
+				$reset_code_row = (new ForgotPasswordService)->createResetCode($user, $device);
+				(new ForgotPasswordService)->sendResetPasswordEmail($reset_code_row);
+
+				Log::info('Send reset code successful', ['user_id' => $user->id, 'device' => $device]);
+
+			}catch(Exception $e){
+				
+				Log::info('Send reset code failed', ['user_id' => $user->id, 'device' => $device]);
+				
+				return General::wentWrong();
+
+			}
 		}
 
 		return response(['message' 	=> 	'Password reset email has been sent', 'validity' =>	'sent_reset_code'], 200);
@@ -47,8 +62,8 @@ class ForgotPasswordController extends Controller{
 
 		$v = Validator::make($request->all(), [
 			'reset_code'		=>		'required',
-			'password'			=>		'required',
-			'retype_password'	=>		'required',
+			'password'			=>		'required|min:8',
+			'retype_password'	=>		'required|min:8',
 			'device'			=>		'required'
 		]);
 
@@ -75,11 +90,25 @@ class ForgotPasswordController extends Controller{
 			return response(['message' 	=> 	'Reset code expired', 'validity'	=>	'reset_code_expired'], config('global.error_code'));
 		}
 
-		(new ForgotPasswordService)->updatePassword($reset_code_row, $password);
-		(new ForgotPasswordService)->invalidateAllResetCodes($reset_code_row->user, $device);
-		(new LoginService)->invalidatePastTokens($reset_code_row->user, $device);
+		try{
 
-		return response(['message' 	=> 	'Password changed successfully', 'validity'	=>	'password_changed'], 200);
+			(new ForgotPasswordService)->updatePassword($reset_code_row, $password);
+			(new ForgotPasswordService)->invalidateAllResetCodes($reset_code_row->user, $device);
+			(new LoginService)->invalidatePastTokens($reset_code_row->user, $device);
+
+			Log::info('Password reset successful', ['user_id' => $reset_code_row->user_id, 'device' => $device]);
+
+			return response(['message' 	=> 	'Password changed successfully', 'validity'	=>	'password_changed'], 200);
+
+		}catch(Exception $e){
+
+			Log::error('Password reset process failed', ['user_id' => $reset_code_row->user_id, 'error' => $e->getMessage()]);
+			
+			return General::wentWrong();
+
+		}
+
+		
 
 	}
 
