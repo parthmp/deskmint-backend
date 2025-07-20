@@ -404,7 +404,33 @@ class ForgotPasswordControllerTest extends TestCase{
 
     }
 
+	public function test_reset_code_throttle_limits_requests_per_ip(){
+        
+        for ($i = 0; $i < 10; $i++) {
+            $response = $this->post('/api/reset-password', [
+				'reset_code' 			=> 	'RESETCODE123',
+				'password'				=>	'123456pass',
+				'retype_password'		=>	'123456pass',
+				'device'				=>	'device 123'
+			]);
 
+            $expected = (int)config('global.error_code');
+			$response->assertStatus($expected);
+
+			$this->assertArrayHasKey('validity', $response);
+			$this->assertEquals('invalid_reset_code', $response['validity']);
+        }
+
+         $response = $this->post('/api/reset-password', [
+			'reset_code' 			=> 	'RESETCODE123',
+			'password'				=>	'123456pass',
+			'retype_password'		=>	'123456pass',
+			'device'				=>	'device 123'
+		]);
+
+		
+		$response->assertStatus(429);
+    }
 
 
 }

@@ -579,8 +579,5 @@ class LoginControllerTest extends TestCase
 
 
 	}
-
-	
-
 	
 }
