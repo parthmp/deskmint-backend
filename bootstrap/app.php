@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\CustomThrottleResponse;
+use App\Http\Middleware\ValidateDeviceAndTokens;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,7 +18,6 @@ return Application::configure(basePath: dirname(__DIR__))
 		$middleware->validateCsrfTokens(except: [
 			'api/*'
 		]);
-		/*$middleware->append(CustomThrottleResponse::class);*/
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
