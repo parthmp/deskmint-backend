@@ -19,5 +19,6 @@ Route::middleware(['throttle:10,1'])->group(function (){
 
 Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::class])->group(function (){
 	Route::post('/check-company-exists', [CompanyController::class, 'checkCompanyExists']);
+	Route::post('/set-default-company', [CompanyController::class, 'setDefaultCompany']);
 });
 

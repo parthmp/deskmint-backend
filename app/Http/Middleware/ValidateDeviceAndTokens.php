@@ -55,6 +55,10 @@ class ValidateDeviceAndTokens
 			return response(['message' => 'Unauthorized'], 401);
 		}
 
+		if(!$this->isRefreshTokenValid($refresh_token_data)){
+			return response(['message' => 'Unauthorized'], 401);
+		}
+
 		if(!$this->isAccessTokenValid($access_token_data) && !$this->isRefreshTokenValid($refresh_token_data)){
 			return response(['message' => 'Unauthorized'], 401);
 		}
