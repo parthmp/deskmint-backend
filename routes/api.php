@@ -3,8 +3,10 @@
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\LoginController;
+use App\Http\Middleware\DefaultCompany;
 use App\Http\Middleware\ValidateDeviceAndTokens;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 Route::middleware(['throttle:60,1'])->group(function (){
 	Route::post('/login', [LoginController::class, 'login']);
@@ -20,5 +22,9 @@ Route::middleware(['throttle:10,1'])->group(function (){
 Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::class])->group(function (){
 	Route::post('/check-company-exists', [CompanyController::class, 'checkCompanyExists']);
 	Route::post('/set-default-company', [CompanyController::class, 'setDefaultCompany']);
+});
+
+Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::class, DefaultCompany::class])->group(function (){
+	
 });
 
