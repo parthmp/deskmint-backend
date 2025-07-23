@@ -36,12 +36,12 @@ class CompanyController extends Controller{
 		]);
 
 		if($v->fails()){
-			return response(['message' => 'Invalid request'], config('global.error_code'));
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}
 
 		try{
 			$company_id = (new CompanyService())->addNewCompany($request->input('company_name'), true);
-			return response(['message' => 'Company added successfully', 'company_id' => $company_id], 200);
+			return response(['message' => 'Company added successfully', 'company_id' => $company_id, 'validity' => 'success'], 200);
 		}catch(Exception $e){
 			return response(['message' => 'Unknown error'], 500);
 		}
