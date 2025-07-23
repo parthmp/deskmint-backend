@@ -27,7 +27,7 @@ class ValidateDeviceAndTokens
 		
 		$user = Auth::user();
 		if(!$user){
-            return response(['message' => 'Unauthorized'], 401);
+            return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
         }
 
 		$v = Validator::make($request->all(), [
@@ -36,7 +36,7 @@ class ValidateDeviceAndTokens
 		]);
 
 		if($v->fails()){
-			return response(['message' => 'Unauthorized'], 401);
+			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
 		}
 
 		$device_id = Sanitize::input($request->input('device_id'));
@@ -47,20 +47,20 @@ class ValidateDeviceAndTokens
 		$access_token_data = $this->checkAccessTokenWithDevice($access_token_id, $device_id);
 
 		if(!$access_token_data){
-			return response(['message' => 'Unauthorized'], 401);
+			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
 		}
 
 		$refresh_token_data = $this->checkRefreshTokenWithDevice($refresh_token, $device_id, $user->id);
 		if(!$refresh_token_data){
-			return response(['message' => 'Unauthorized'], 401);
+			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
 		}
 
 		if(!$this->isRefreshTokenValid($refresh_token_data)){
-			return response(['message' => 'Unauthorized'], 401);
+			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
 		}
 
 		if(!$this->isAccessTokenValid($access_token_data) && !$this->isRefreshTokenValid($refresh_token_data)){
-			return response(['message' => 'Unauthorized'], 401);
+			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
 		}
 
 		/* 1) if access token and refresh token are valid but refresh token is near expiry (13 days passed), issue both tokens */

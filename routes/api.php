@@ -25,6 +25,8 @@ Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::cla
 });
 
 Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::class, DefaultCompany::class])->group(function (){
-	
+	Route::post('/test-endpoint', function(Request $request){
+		return response(['message' => 'test here'], 200);
+	});
 });
 
