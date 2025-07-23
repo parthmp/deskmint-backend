@@ -10,6 +10,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
 
 class ValidateDeviceAndTokens
@@ -45,7 +46,7 @@ class ValidateDeviceAndTokens
 		$access_token_id = $this->getAccessTokenId($user);
 
 		$access_token_data = $this->checkAccessTokenWithDevice($access_token_id, $device_id);
-
+		
 		if(!$access_token_data){
 			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
 		}
@@ -55,6 +56,7 @@ class ValidateDeviceAndTokens
 			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
 		}
 
+		
 		if(!$this->isRefreshTokenValid($refresh_token_data)){
 			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
 		}
