@@ -42,7 +42,7 @@ class DefaultCompany
 
 			if(is_array($original)){
 				$original['company_id'] = $company_id;
-				$response->setData($original);
+				/*$response->setData($original);*/
 			}
 		}
 
