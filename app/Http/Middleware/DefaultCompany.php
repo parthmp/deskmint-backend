@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Helpers\Sanitize;
+use App\Models\Company;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,10 +26,14 @@ class DefaultCompany
 		if($v->fails()){
 			return response(['message' => 'Invalid request'], config('global.error_code'));
 		}
-
 		
-
 		$company_id = Sanitize::input($request->input('company_id'));
+
+		$company = Company::where('id', '=', $company_id)->first();
+		if(!$company){
+			return response(['message' => 'Invalid request'], config('global.error_code'));
+		}
+
 
 		$response = $next($request);
 		

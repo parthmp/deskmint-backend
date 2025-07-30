@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\LoginController;
 use App\Http\Middleware\DefaultCompany;
+use App\Http\Middleware\IfUserHasAccessToFeature;
 use App\Http\Middleware\ValidateDeviceAndTokens;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -24,9 +26,7 @@ Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::cla
 	Route::post('/set-default-company', [CompanyController::class, 'setDefaultCompany']);
 });
 
-Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::class, DefaultCompany::class])->group(function (){
-	Route::post('/test-endpoint', function(Request $request){
-		return response(['message' => 'test here'], 200);
-	});
+Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::class, IfUserHasAccessToFeature::class, DefaultCompany::class])->group(function (){
+	Route::resource('/manage-admins', AdminController::class)->except(config('global.skip_routes'));
 });
 
