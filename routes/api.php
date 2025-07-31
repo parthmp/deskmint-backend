@@ -27,6 +27,7 @@ Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::cla
 });
 
 Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::class, IfUserHasAccessToFeature::class, DefaultCompany::class])->group(function (){
-	Route::resource('/manage-admins', AdminController::class)->except(config('global.skip_routes'));
+	Route::resource('/manage-admins', AdminController::class)->except(config('global.skip_routes'))->except(['destroy']);
+	Route::delete('manage-admins', [AdminController::class, 'destroy']);
 });
 
