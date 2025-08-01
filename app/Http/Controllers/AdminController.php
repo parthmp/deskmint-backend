@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\Sanitize;
 use App\Models\User;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -65,14 +66,20 @@ class AdminController extends Controller{
 			return response(['message' => 'Email address already exists', 'validity' => 'email_exists'], config('global.error_code'));
 		}
 
-		$user = new User();
-		$user->name = $name;
-		$user->email = $email;
-		$user->password = Hash::make($password);
-		$user->user_type = config('global.user_types.admin');
-		$user->save();
+		try{
 
-		return response(['message' => 'Admin created successfully', 'validity' => 'admin_created'], 200);
+			$user = new User();
+			$user->name = $name;
+			$user->email = $email;
+			$user->password = Hash::make($password);
+			$user->user_type = config('global.user_types.admin');
+			$user->save();
+
+			return response(['message' => 'Admin created successfully', 'validity' => 'admin_created'], 200);
+
+		}catch(Exception $e){
+			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], 500);
+		}
 
 	}
 
@@ -141,18 +148,24 @@ class AdminController extends Controller{
 			return response(['message' => 'Email address already exists', 'validity' => 'email_exists'], config('global.error_code'));
 		}
 
-		
-		$admin->name = $name;
-		$admin->email = $email;
-		if($update_password){
-			$admin->password = Hash::make($password);
-		}
-		
-		if(!$admin->save()){
-			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], config('global.error_code'));
+		try{
+
+			$admin->name = $name;
+			$admin->email = $email;
+			if($update_password){
+				$admin->password = Hash::make($password);
+			}
+			
+			if(!$admin->save()){
+				return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], config('global.error_code'));
+			}
+
+			return response(['message' => 'Admin updated successfully', 'validity' => 'admin_updated'], 200);
+
+		}catch(Exception $e){
+			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], 500);
 		}
 
-		return response(['message' => 'Admin updated successfully', 'validity' => 'admin_updated'], 200);
 
 	}
 
@@ -170,9 +183,15 @@ class AdminController extends Controller{
 			}
 		}
 
-		User::whereIn('id', $ids)->delete();
+		try{
+			
+			User::whereIn('id', $ids)->delete();
 
-		return response(['message' => 'Admin(s) deleted successfully'], 200);
+			return response(['message' => 'Admin(s) deleted successfully'], 200);
+
+		}catch(Exception $e){
+			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], 500);
+		}
 
 	}
 
