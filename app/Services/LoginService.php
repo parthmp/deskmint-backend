@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Helpers\Sanitize;
+use App\Mail\SendLoginEmail;
 use App\Mail\SendOTP;
 use App\Models\AccessTokenData;
 use App\Models\RefreshToken;
@@ -35,6 +36,10 @@ class LoginService{
 
 	public function sendOTPEmail($user, $otp){
 		Mail::to($user->email)->queue(new SendOTP($user, $otp));
+	}
+	
+	public function sendLoginEmail(User $user) : void{
+		Mail::to($user->email)->queue(new SendLoginEmail($user));
 	}
 
 	public function generateOtpAndToken($user, $device){

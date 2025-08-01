@@ -61,6 +61,11 @@ class LoginController extends Controller{
 				
 				app(LoginService::class)->invalidatePastTokens($user, $device);
 				$tokens = app(LoginService::class)->issueTokens($user, $device, $request);
+
+				if((int)$setting->login_email_flag === 1){
+					(new LoginService())->sendLoginEmail($user);
+				}
+
 				return response($tokens, 200);
 				
 			}
@@ -171,6 +176,11 @@ class LoginController extends Controller{
 
 			Log::info('Validate otp successful', ['token' => $token, 'otp' => $otp,'device' => $device]);
 			
+			$setting = Setting::first();
+			if((int)$setting->login_email_flag === 1){
+				(new LoginService())->sendLoginEmail($found_token->user);
+			}
+
 			return response($tokens, 200);
 
 		}catch(Exception $e){
