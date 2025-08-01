@@ -24,14 +24,14 @@ class DefaultCompany
 		]);
 
 		if($v->fails()){
-			return response(['message' => 'Invalid request'], config('global.error_code'));
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request_company'], config('global.error_code'));
 		}
 		
 		$company_id = Sanitize::input($request->input('company_id'));
 
 		$company = Company::where('id', '=', $company_id)->first();
 		if(!$company){
-			return response(['message' => 'Invalid request'], config('global.error_code'));
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request_company'], config('global.error_code'));
 		}
 
 

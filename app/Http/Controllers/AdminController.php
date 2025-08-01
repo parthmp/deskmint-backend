@@ -99,8 +99,12 @@ class AdminController extends Controller{
 	}
 
 	public function	update(Request $request){
-
+		
 		$admin = $this->findUser($request);
+
+		if($admin instanceof \Illuminate\Http\Response){
+        	return $admin;
+    	}
 
 		$required_array = [
 			'name'		=>		'required',
@@ -125,13 +129,12 @@ class AdminController extends Controller{
 
 
 		if($v->fails()){
-			return response(['message' => 'PASS: =='.$password.'==', 'validity' => 'invalid_request'], config('global.error_code'));
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}
 
 		if($update_password && $password !== $confirm_password){
 			return response(['message' => 'Password and confirm password do not match', 'validity' => 'passwords_not_matched'], config('global.error_code'));
 		}
-		
 
 		$exists = User::where([['email', '=', $email], ['id', '<>', $admin->id]])->first();
 		if($exists){

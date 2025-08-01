@@ -11,23 +11,23 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
 Route::middleware(['throttle:60,1'])->group(function (){
-	Route::post('/login', [LoginController::class, 'login']);
-	Route::post('/send-reset-password-code', [ForgotPasswordController::class, 'sendResetPasswordCode']);
+	Route::post('login', [LoginController::class, 'login'])->name('login');
+	Route::post('send-reset-password-code', [ForgotPasswordController::class, 'sendResetPasswordCode']);
 });
 
 Route::middleware(['throttle:10,1'])->group(function (){
-	Route::post('/resend-otp', [LoginController::class, 'resendOTP']);
-	Route::post('/validate-otp', [LoginController::class, 'validateOTP']);
-	Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
+	Route::post('resend-otp', [LoginController::class, 'resendOTP']);
+	Route::post('validate-otp', [LoginController::class, 'validateOTP']);
+	Route::post('reset-password', [ForgotPasswordController::class, 'resetPassword']);
 });
 
 Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::class])->group(function (){
-	Route::post('/check-company-exists', [CompanyController::class, 'checkCompanyExists']);
-	Route::post('/set-default-company', [CompanyController::class, 'setDefaultCompany']);
+	Route::post('check-company-exists', [CompanyController::class, 'checkCompanyExists']);
+	Route::post('set-default-company', [CompanyController::class, 'setDefaultCompany']);
 });
 
 Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::class, IfUserHasAccessToFeature::class, DefaultCompany::class])->group(function (){
-	Route::resource('/manage-admins', AdminController::class)->except(config('global.skip_routes'))->except(['destroy']);
+	Route::resource('manage-admins', AdminController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	Route::delete('manage-admins', [AdminController::class, 'destroy']);
 });
 
