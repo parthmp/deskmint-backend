@@ -343,9 +343,22 @@ class ForgotPasswordControllerTest extends TestCase{
 			'device'		=>		'device 123'
 		]);
 
+		
+		AccessTokenData::factory()->create([
+			'token_id'		=>		$token_model->id,
+			'user_id'		=>		$user->id,
+			'device'		=>		'device 1234'
+		]);
+
 		RefreshToken::factory()->create([
 			'user_id'		=>		$user->id,
 			'device'		=>		'device 123'
+		]);
+
+		
+		RefreshToken::factory()->create([
+			'user_id'		=>		$user->id,
+			'device'		=>		'device 1234'
 		]);
 
 		CustomPasswordReset::factory()->create([
@@ -396,10 +409,15 @@ class ForgotPasswordControllerTest extends TestCase{
 		$this->assertNotNull($pass_reset->used_at);
 
 		$pass_resets = CustomPasswordReset::where('id', '=', $pass_reset_past->id)->get();
-		$this->isEmpty($pass_resets);
+		$this->assertEmpty($pass_resets);
 
-		$this->isEmpty(AccessTokenData::where([['user_id', '=', $user->id], ['device', '=', 'device 123']])->get());
-		$this->isEmpty(RefreshToken::where([['user_id', '=', $user->id], ['device', '=', 'device 123']])->get());
+		$should_be_empty1 = AccessTokenData::where('user_id', '=', $user->id)->get();
+		
+		$this->assertEmpty($should_be_empty1);
+		$this->assertEmpty(RefreshToken::where('user_id', '=', $user->id)->get());
+
+		$this->assertEmpty(AccessTokenData::where([['user_id', '=', $user->id], ['device', '=', 'device 1234']])->get());
+		$this->assertEmpty(RefreshToken::where([['user_id', '=', $user->id], ['device', '=', 'device 1234']])->get());
 
 
     }

@@ -12,6 +12,7 @@ use App\Helpers\Turnstile;
 use App\Models\TwoFactorAuthToken;
 use App\Services\LoginService;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
@@ -141,7 +142,7 @@ class LoginController extends Controller{
 
 	public function validateOTP(Request $request){
 
-
+		
 		$v = Validator::make($request->all(), [
 			'token'		=>	'required',
 			'otp'		=>	'required',
@@ -165,7 +166,7 @@ class LoginController extends Controller{
 		if(!app(LoginService::class)->isTokenValid($found_token, $device)){
 			return response(['message' 	=> 'OTP expired, please login again', 'validity'	=>	'token_expired'], 500);
 		}
-
+		
 		try{
 
 			$found_token->used = 1;
@@ -177,14 +178,15 @@ class LoginController extends Controller{
 			Log::info('Validate otp successful', ['token' => $token, 'otp' => $otp,'device' => $device]);
 			
 			$setting = Setting::first();
-			if((int)$setting->login_email_flag === 1){
+			
+			if($setting->login_email_flag == 1){
 				(new LoginService())->sendLoginEmail($found_token->user);
 			}
 
 			return response($tokens, 200);
 
 		}catch(Exception $e){
-
+			
 			Log::info('Validate otp failed', ['token' => $token, 'otp' => $otp,'device' => $device]);
 
 			return General::wentWrong();

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Helpers\Turnstile;
+use App\Mail\SendLoginEmail;
 use App\Models\AccessTokenData;
 use App\Models\LoginAttempt;
 use App\Models\RefreshToken;
@@ -14,6 +15,7 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\PersonalAccessToken;
 use Tests\TestCase;
 
@@ -551,6 +553,13 @@ class LoginControllerTest extends TestCase
 			'created_at'	=>		now()->subMinutes(1)
 		]);
 
+		Setting::factory()->create([
+			'login_limits_flag'     => 1,
+			'login_limits_minutes'  => 15,
+			'login_limits_attempts' => 3,
+			'login_email_flag'		=>	0
+		]);
+
 		$response = $this->post('/api/validate-otp', [
 			'token' 			=> 	$token,
 			'otp'				=>	$otp,
@@ -569,14 +578,246 @@ class LoginControllerTest extends TestCase
 		$this->assertEquals(1, $current_token_temp->used);
 
 		$past_refresh_tokens = RefreshToken::where([['user_id', '=', $current_token_temp->user->id], ['device', '=', $device], ['refresh_token', '!=', $response['refresh_token']]])->get();
-		$this->isEmpty($past_refresh_tokens);
+		$this->assertEmpty($past_refresh_tokens);
 
 		$token = PersonalAccessToken::findToken($response['token']);
 
 		$past_access_token_data = AccessTokenData::where([['user_id', '=', $current_token_temp->user->id], ['device', '=', $device], ['token_id', '!=', $token->id]])->get();
-		$this->isEmpty($past_access_token_data);
+		$this->assertEmpty($past_access_token_data);
 
+	}
 
+	public function test_if_it_does_not_send_login_email_with_setting_off_2fa(): void{
+
+		Mail::fake();
+
+		$token = hash('sha512', uniqid());
+		$device = 'device 123';
+		$otp = 123456;
+
+		Config::set('global.otp_expiry', 600);
+
+		TwoFactorAuthToken::truncate();
+
+		$past_token = TwoFactorAuthToken::factory()->create([
+			'token'			=>		$token,
+			'device'		=>		$device,
+			'otp'			=>		$otp,
+			'used'			=>		0,
+			'created_at'	=>		now()->subMinutes(2)
+		]);
+
+		$current_token = TwoFactorAuthToken::factory()->create([
+			'token'			=>		$token,
+			'device'		=>		$device,
+			'otp'			=>		$otp,
+			'used'			=>		0,
+			'created_at'	=>		now()->subMinutes(1)
+		]);
+
+		Setting::factory()->create([
+			'login_limits_flag'     => 1,
+			'login_limits_minutes'  => 15,
+			'login_limits_attempts' => 3,
+			'two_factor_auth_flag'	=>	1,
+			'login_email_flag'		=>	0
+		]);
+
+		$response = $this->post('/api/validate-otp', [
+			'token' 			=> 	$token,
+			'otp'				=>	$otp,
+			'device' 			=> 	$device
+		]);
+
+		$response->assertStatus(200);
+		
+		$this->assertArrayHasKey('token', $response);
+		$this->assertArrayHasKey('refresh_token', $response);
+		
+		$this->assertTrue(strlen($response['refresh_token']) === 128);
+
+		$current_token_temp = TwoFactorAuthToken::where('id', '=', $current_token->id)->first();
+
+		$this->assertEquals(1, $current_token_temp->used);
+
+		$past_refresh_tokens = RefreshToken::where([['user_id', '=', $current_token_temp->user->id], ['device', '=', $device], ['refresh_token', '!=', $response['refresh_token']]])->get();
+		$this->assertEmpty($past_refresh_tokens);
+
+		$token = PersonalAccessToken::findToken($response['token']);
+
+		$past_access_token_data = AccessTokenData::where([['user_id', '=', $current_token_temp->user->id], ['device', '=', $device], ['token_id', '!=', $token->id]])->get();
+		$this->assertEmpty($past_access_token_data);
+
+		/* now test if it did not send an email */
+		Mail::assertNotQueued(SendLoginEmail::class, function ($mail) use ($current_token_temp) {
+			return $mail->hasTo($current_token_temp->user->email);
+		});
+
+	}
+
+	public function test_if_it_sends_login_email_with_setting_on_2fa(): void{
+
+		Mail::fake();
+
+		$token = hash('sha512', uniqid());
+		$device = 'device 123';
+		$otp = 123456;
+
+		Config::set('global.otp_expiry', 600);
+
+		TwoFactorAuthToken::truncate();
+
+		$past_token = TwoFactorAuthToken::factory()->create([
+			'token'			=>		$token,
+			'device'		=>		$device,
+			'otp'			=>		$otp,
+			'used'			=>		0,
+			'created_at'	=>		now()->subMinutes(2)
+		]);
+
+		$current_token = TwoFactorAuthToken::factory()->create([
+			'token'			=>		$token,
+			'device'		=>		$device,
+			'otp'			=>		$otp,
+			'used'			=>		0,
+			'created_at'	=>		now()->subMinutes(1)
+		]);
+
+		Setting::factory()->create([
+			'login_limits_flag'     => 1,
+			'login_limits_minutes'  => 15,
+			'login_limits_attempts' => 3,
+			'two_factor_auth_flag'	=>	1,
+			'login_email_flag'		=>	1
+		]);
+
+		$response = $this->post('/api/validate-otp', [
+			'token' 			=> 	$token,
+			'otp'				=>	$otp,
+			'device' 			=> 	$device
+		]);
+
+		$response->assertStatus(200);
+		
+		$this->assertArrayHasKey('token', $response);
+		$this->assertArrayHasKey('refresh_token', $response);
+		
+		$this->assertTrue(strlen($response['refresh_token']) === 128);
+
+		$current_token_temp = TwoFactorAuthToken::where('id', '=', $current_token->id)->first();
+
+		$this->assertEquals(1, $current_token_temp->used);
+
+		$past_refresh_tokens = RefreshToken::where([['user_id', '=', $current_token_temp->user->id], ['device', '=', $device], ['refresh_token', '!=', $response['refresh_token']]])->get();
+		$this->assertEmpty($past_refresh_tokens);
+
+		$token = PersonalAccessToken::findToken($response['token']);
+
+		$past_access_token_data = AccessTokenData::where([['user_id', '=', $current_token_temp->user->id], ['device', '=', $device], ['token_id', '!=', $token->id]])->get();
+		$this->assertEmpty($past_access_token_data);
+
+		/* now test if it did send an email */
+		Mail::assertQueued(SendLoginEmail::class, function ($mail) use ($current_token_temp) {
+			return $mail->hasTo($current_token_temp->user->email);
+		});
+
+	}
+
+	public function test_if_it_does_not_send_login_email_with_setting_off_no_2fa(): void{
+
+		Mail::fake();
+
+		
+		$device = 'device 123';
+	
+		Config::set('global.otp_expiry', 600);
+
+		\Illuminate\Support\Facades\Http::fake([
+			'https://challenges.cloudflare.com/turnstile/v0/siteverify' => \Illuminate\Support\Facades\Http::response([
+				'success' => true
+			], 200)
+		]);
+
+		Setting::factory()->create([
+			'login_limits_flag'     => 	1,
+			'login_limits_minutes'  => 	15,
+			'login_limits_attempts' => 	3,
+			'two_factor_auth_flag'	=>	0,
+			'login_email_flag'		=>	0
+		]);
+
+		$user = User::factory()->create([
+			'email'		=>	'one@test.com',
+			'password'	=>	Hash::make('password123')
+		]);
+
+		$response = $this->post('/api/login', [
+			'email_address' 		=> 'one@test.com',
+			'password' 				=> 'password123',
+			'turnstile_token'		=> 'valid_turnstile_token',
+			'device' 				=> $device
+		]);
+
+		$response->assertStatus(200);
+		
+		$this->assertArrayHasKey('token', $response);
+		$this->assertArrayHasKey('refresh_token', $response);
+		
+		$this->assertTrue(strlen($response['refresh_token']) === 128);
+
+		/* now test if it did not send an email */
+		Mail::assertNotQueued(SendLoginEmail::class, function ($mail) use ($user) {
+			return $mail->hasTo($user->email);
+		});
+
+	}
+
+	public function test_if_it_did_send_email_with_setting_off_no_2fa(): void{
+
+		Mail::fake();
+
+		
+		$device = 'device 123';
+	
+		Config::set('global.otp_expiry', 600);
+
+		\Illuminate\Support\Facades\Http::fake([
+			'https://challenges.cloudflare.com/turnstile/v0/siteverify' => \Illuminate\Support\Facades\Http::response([
+				'success' => true
+			], 200)
+		]);
+
+		Setting::factory()->create([
+			'login_limits_flag'     => 	1,
+			'login_limits_minutes'  => 	15,
+			'login_limits_attempts' => 	3,
+			'two_factor_auth_flag'	=>	0,
+			'login_email_flag'		=>	1
+		]);
+
+		$user = User::factory()->create([
+			'email'		=>	'one@test.com',
+			'password'	=>	Hash::make('password123')
+		]);
+
+		$response = $this->post('/api/login', [
+			'email_address' 		=> 'one@test.com',
+			'password' 				=> 'password123',
+			'turnstile_token'		=> 'valid_turnstile_token',
+			'device' 				=> $device
+		]);
+
+		$response->assertStatus(200);
+		
+		$this->assertArrayHasKey('token', $response);
+		$this->assertArrayHasKey('refresh_token', $response);
+		
+		$this->assertTrue(strlen($response['refresh_token']) === 128);
+
+		/* now test if it did send an email */
+		Mail::assertQueued(SendLoginEmail::class, function ($mail) use ($user) {
+			return $mail->hasTo($user->email);
+		});
 
 	}
 	
