@@ -4,8 +4,10 @@
 
 	use App\Helpers\General;
 	use App\Mail\SendResetPasswordEmail;
-	use App\Models\CustomPasswordReset;
-	use App\Models\User;
+use App\Models\AccessTokenData;
+use App\Models\CustomPasswordReset;
+use App\Models\RefreshToken;
+use App\Models\User;
 	use Illuminate\Support\Facades\Hash;
 	use Illuminate\Support\Facades\Mail;
 
@@ -75,6 +77,13 @@
 		public function invalidateAllResetCodes($user, $device){
 
 			CustomPasswordReset::where([['user_id', '=', $user->id], ['device', '=', $device]])->delete();
+
+		}
+
+		public function invalidatePastTokensForAllDevices($user){
+
+			AccessTokenData::where('user_id', '=', $user->id)->delete();
+			RefreshToken::where('user_id', '=', $user->id)->delete();
 
 		}
 

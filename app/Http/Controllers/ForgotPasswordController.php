@@ -94,7 +94,7 @@ class ForgotPasswordController extends Controller{
 
 			(new ForgotPasswordService)->updatePassword($reset_code_row, $password);
 			(new ForgotPasswordService)->invalidateAllResetCodes($reset_code_row->user, $device);
-			(new LoginService)->invalidatePastTokens($reset_code_row->user, $device);
+			(new ForgotPasswordService)->invalidatePastTokensForAllDevices($reset_code_row->user);
 
 			Log::info('Password reset successful', ['user_id' => $reset_code_row->user_id, 'device' => $device]);
 
