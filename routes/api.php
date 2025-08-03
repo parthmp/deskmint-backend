@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\FieldTypesController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\LoginController;
 use App\Http\Middleware\DefaultCompany;
@@ -27,7 +28,14 @@ Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::cla
 });
 
 Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::class, IfUserHasAccessToFeature::class, DefaultCompany::class])->group(function (){
+
 	Route::resource('manage-admins', AdminController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	Route::delete('manage-admins', [AdminController::class, 'destroy']);
+
+	Route::get('manage-field-types/fetch-input-types', [FieldTypesController::class, 'getInputTypes']);
+	
+	Route::resource('manage-field-types', FieldTypesController::class)->except(array_merge(config('global.skip_routes'), ['index']));
+	Route::post('manage-field-types', [FieldTypesController::class, 'index']);
+
 });
 
