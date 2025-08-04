@@ -64,11 +64,11 @@ class AdminControllerTest extends TestCase{
 		$device = 'device 123';
 
 		$response = $this->post('/api/manage-admins', [
-			'device_id' 		=> 	$device,
-			'refresh_token'		=>	''
+			'device_id' 		=> 	$device
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '
+			'Authorization' => 'Bearer ',
+			'X-Refresh-Token' => ''
     	]);
 
 		$response->assertStatus(401);
@@ -881,6 +881,52 @@ class AdminControllerTest extends TestCase{
 
 		$find_admin2 = User::where('id', '=', $user3->id)->first();
 		$this->assertNull($find_admin2);
+
+	}
+
+	public function test_if_authorized_admin_fails_if_refresh_token_and_device_posted_in_para(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin'),
+			'email'			=>		'jack1@blackpearl.com',
+			'password'		=>		'password123'
+		]);
+
+		$user2 = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin'),
+			'email'			=>		'jack2@blackpearl.com'
+		]);
+
+		$user3 = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin'),
+			'email'			=>		'jack3@blackpearl.com'
+		]);
+
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		$response = $this->delete('/api/manage-admins', [
+			'ids'				=>	[$user2->id, $user3->id],
+			'company_id'		=>	$company_id,
+			'device_id' 		=> 	$device,
+			'refresh_token' 	=> 	$refresh_token
+		], [
+        	'Accept' 		=> 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+    	]);
+
+		$response->assertStatus((int)config('global.error_code'));
+		
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_request', $response['validity']);
 
 	}
 

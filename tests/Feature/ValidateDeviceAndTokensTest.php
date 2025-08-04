@@ -87,11 +87,12 @@ class ValidateDeviceAndTokensTest extends TestCase{
 		]);
 		
 		$response = $this->post('/api/check-company-exists', [
-			'device_id' 	=> '',
-			'refresh_token'	=>	''
+			
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$access_token->plainTextToken
+			'Authorization' => 'Bearer '.$access_token->plainTextToken,
+			'X-Refresh-Token' => '',
+			'X-Device-Id' => ''
     	]);
 		
 		$response->assertStatus(401);
@@ -113,11 +114,12 @@ class ValidateDeviceAndTokensTest extends TestCase{
 		]);
 		
 		$response = $this->post('/api/check-company-exists', [
-			'device_id' 	=> 'device 123',
-			'refresh_token'	=>	''
+
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$access_token->plainTextToken
+			'Authorization' => 'Bearer '.$access_token->plainTextToken,
+			'X-Refresh-Token' => '',
+			'X-Device-Id' => 'device 123'
     	]);
 		
 		$response->assertStatus(401);
@@ -139,11 +141,12 @@ class ValidateDeviceAndTokensTest extends TestCase{
 		]);
 		
 		$response = $this->post('/api/check-company-exists', [
-			'device_id' 	=> '',
-			'refresh_token'	=>	'refresh 123'
+			
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$access_token->plainTextToken
+			'Authorization' => 'Bearer '.$access_token->plainTextToken,
+			'X-Refresh-Token' => 'refresh 123',
+			'X-Device-Id' => ''
     	]);
 		
 		$response->assertStatus(401);
@@ -171,11 +174,12 @@ class ValidateDeviceAndTokensTest extends TestCase{
 		]);
 		
 		$response = $this->post('/api/check-company-exists', [
-			'device_id' 		=> 	'device 1234',
-			'refresh_token'		=>	'refresh 123'
+		
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$plain_text_token
+			'Authorization' => 'Bearer '.$plain_text_token,
+			'X-Refresh-Token' => 'refresh 123',
+			'X-Device-Id' => 'device 123'
     	]);
 		
 		$response->assertStatus(401);
@@ -203,11 +207,12 @@ class ValidateDeviceAndTokensTest extends TestCase{
 		]);
 		
 		$response = $this->post('/api/check-company-exists', [
-			'device_id' 		=> 	$device,
-			'refresh_token'		=>	'refresh 123'
+			
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$plain_text_token
+			'Authorization' => 'Bearer '.$plain_text_token,
+			'X-Refresh-Token' => 'refresh 123',
+			'X-Device-Id' => $device
     	]);
 		
 		$response->assertStatus(401);
@@ -246,11 +251,12 @@ class ValidateDeviceAndTokensTest extends TestCase{
 		]);
 		
 		$response = $this->post('/api/check-company-exists', [
-			'device_id' 		=> 	$device,
-			'refresh_token'		=>	$refresh_token_hash
+		
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$plain_text_token
+			'Authorization' => 'Bearer '.$plain_text_token,
+			'X-Refresh-Token' => $refresh_token_hash,
+			'X-Device-Id' => $device
     	]);
 		
 		$response->assertStatus(401);
@@ -289,11 +295,11 @@ class ValidateDeviceAndTokensTest extends TestCase{
 		]);
 		
 		$response = $this->post('/api/check-company-exists', [
-			'device_id' 		=> 	$device,
-			'refresh_token'		=>	$refresh_token_hash
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$plain_text_token
+			'Authorization' => 'Bearer '.$plain_text_token,
+			'X-Refresh-Token' => $refresh_token_hash,
+			'X-Device-Id' => $device
     	]);
 		
 		$response->assertStatus(401);
@@ -332,11 +338,12 @@ class ValidateDeviceAndTokensTest extends TestCase{
 		]);
 		
 		$response = $this->post('/api/check-company-exists', [
-			'device_id' 		=> 	$device,
-			'refresh_token'		=>	$refresh_token_hash
+		
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$plain_text_token
+			'Authorization' => 'Bearer '.$plain_text_token,
+			'X-Refresh-Token' => $refresh_token_hash,
+			'X-Device-Id' => $device
     	]);
 		
 		$response->assertStatus(401);
@@ -728,8 +735,7 @@ class ValidateDeviceAndTokensTest extends TestCase{
 		]);
 		
 		$response = $this->post('/api/check-company-exists', [
-			'device_id' 		=> 	$malicious_device,
-			'refresh_token'		=>	$malicious_refresh
+			
 		], [
 			'Accept' => 'application/json',
 			'Authorization' => 'Bearer '.$plain_text_token,
@@ -895,11 +901,11 @@ class ValidateDeviceAndTokensTest extends TestCase{
 		
 		// Try to use the older refresh token (should fail as it should be deleted)
 		$response2 = $this->post('/api/check-company-exists', [
-			'device_id' 		=> 	$device,
-			'refresh_token'		=>	$old_refresh_token_hash
+			'device_id' 		=> 	$device
 		], [
 			'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$plain_text_token
+			'Authorization' => 'Bearer '.$plain_text_token,
+			'X-Refresh-Token' => $old_refresh_token_hash,
 		]);
 		
 		$response2->assertStatus(401);

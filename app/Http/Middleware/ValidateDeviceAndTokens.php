@@ -39,6 +39,10 @@ class ValidateDeviceAndTokens
 			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
 		}
 
+		if($request->has('device_id') || $request->has('refresh_token')){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}
+
 		$refresh_token = Sanitize::input($request->header('X-Refresh-Token'));
         $device_id = Sanitize::input($request->header('X-Device-Id'));
 
