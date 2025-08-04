@@ -43,11 +43,12 @@ class CompanyControllerTest extends TestCase{
 		]);
 		
 		$response = $this->post('/api/check-company-exists', [
-			'device_id' 		=> 	$device,
-			'refresh_token'		=>	$refresh_token_hash
+			
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$plain_text_token
+			'Authorization' => 'Bearer '.$plain_text_token,
+			'X-Refresh-Token' => $refresh_token_hash,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus(200);
@@ -94,11 +95,12 @@ class CompanyControllerTest extends TestCase{
 		]);
 		
 		$response = $this->post('/api/check-company-exists', [
-			'device_id' 		=> 	$device,
-			'refresh_token'		=>	$refresh_token_hash
+			
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$plain_text_token
+			'Authorization' => 'Bearer '.$plain_text_token,
+			'X-Refresh-Token' => $refresh_token_hash,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus(200);
@@ -141,11 +143,12 @@ class CompanyControllerTest extends TestCase{
 		]);
 		
 		$response = $this->post('/api/set-default-company', [
-			'device_id' 		=> 	$device,
-			'refresh_token'		=>	$refresh_token_hash
+		
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$plain_text_token
+			'Authorization' => 'Bearer '.$plain_text_token,
+			'X-Refresh-Token' => $refresh_token_hash,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus((int)config('global.error_code'));
@@ -186,12 +189,12 @@ class CompanyControllerTest extends TestCase{
 		]);
 		
 		$response = $this->post('/api/set-default-company', [
-			'device_id' 		=> 	$device,
-			'refresh_token'		=>	$refresh_token_hash,
 			'company_name'		=>	''
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$plain_text_token
+			'Authorization' => 'Bearer '.$plain_text_token,
+			'X-Refresh-Token' => $refresh_token_hash,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus((int)config('global.error_code'));
@@ -232,12 +235,12 @@ class CompanyControllerTest extends TestCase{
 		]);
 		
 		$response = $this->post('/api/set-default-company', [
-			'device_id' 		=> 	$device,
-			'refresh_token'		=>	$refresh_token_hash,
 			'company_name'		=>	'Bla Company'
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$plain_text_token
+			'Authorization' => 'Bearer '.$plain_text_token,
+			'X-Refresh-Token' => $refresh_token_hash,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus(200);

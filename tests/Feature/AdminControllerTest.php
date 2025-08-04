@@ -91,14 +91,14 @@ class AdminControllerTest extends TestCase{
 		$company_id = $this->set_default_company();
 
 		$queryParams = http_build_query([
-			'device_id' 	=> $device,
-			'refresh_token' => $refresh_token,
-			'company_id'	=>	$company_id
+			'company_id' 	=> $company_id
 		]);
 
 		$response = $this->withHeaders([
 			'Accept' => 'application/json',
-			'Authorization' => 'Bearer ' . $token
+			'Authorization' => 'Bearer ' . $token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
 		])->get('/api/manage-admins?' . $queryParams);
 
 		$response->assertStatus(200);
@@ -130,12 +130,12 @@ class AdminControllerTest extends TestCase{
 			'email'				=>	'',
 			'password'			=>	'',
 			'confirm_password'	=>	'',
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus((int)config('global.error_code'));
@@ -164,12 +164,12 @@ class AdminControllerTest extends TestCase{
 			'email'				=>	'jack123',
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password123',
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus((int)config('global.error_code'));
@@ -198,12 +198,12 @@ class AdminControllerTest extends TestCase{
 			'email'				=>	'jack@blackpearl.com',
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password1234',
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus((int)config('global.error_code'));
@@ -233,12 +233,12 @@ class AdminControllerTest extends TestCase{
 			'email'				=>	'email@one.com',
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password123',
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus((int)config('global.error_code'));
@@ -267,12 +267,12 @@ class AdminControllerTest extends TestCase{
 			'email'				=>	'jack@blackpearl.com',
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password123',
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus(200);
@@ -297,14 +297,14 @@ class AdminControllerTest extends TestCase{
 		$company_id = $this->set_default_company();
 
 		$queryParams = http_build_query([
-			'device_id' 	=> $device,
-			'refresh_token' => $refresh_token,
 			'company_id'	=>	$company_id
 		]);
 
 		$response = $this->withHeaders([
 			'Accept' => 'application/json',
-			'Authorization' => 'Bearer ' . $token
+			'Authorization' => 'Bearer ' . $token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
 		])->get('/api/manage-admins/100?' . $queryParams);
 
 		$response->assertStatus((int)config('global.error_code'));
@@ -332,14 +332,14 @@ class AdminControllerTest extends TestCase{
 		$company_id = $this->set_default_company();
 
 		$queryParams = http_build_query([
-			'device_id' 	=> $device,
-			'refresh_token' => $refresh_token,
-			'company_id'	=>	$company_id
+			'company_id' 	=> $company_id
 		]);
 
 		$response = $this->withHeaders([
 			'Accept' => 'application/json',
-			'Authorization' => 'Bearer ' . $token
+			'Authorization' => 'Bearer ' . $token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
 		])->get('/api/manage-admins/'.$user->id.'?' . $queryParams);
 
 		$response->assertStatus(200);
@@ -374,12 +374,12 @@ class AdminControllerTest extends TestCase{
 			'email'				=>	'jack@blackpearl.com',
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password123',
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus((int)config('global.error_code'));
@@ -415,12 +415,12 @@ class AdminControllerTest extends TestCase{
 			'email'				=>	'jack@blackpearl.com',
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password123',
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus((int)config('global.error_code'));
@@ -455,12 +455,12 @@ class AdminControllerTest extends TestCase{
 			'email'				=>	'jack@blackpearl.com',
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password1234',
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus((int)config('global.error_code'));
@@ -495,12 +495,12 @@ class AdminControllerTest extends TestCase{
 			'email'				=>	'jack2@blackpearl.com',
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password123',
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus(200);
@@ -537,12 +537,12 @@ class AdminControllerTest extends TestCase{
 			'email'				=>	'jack20@blackpearl.com',
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password123',
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus(200);
@@ -582,12 +582,12 @@ class AdminControllerTest extends TestCase{
 		$response = $this->patch('/api/manage-admins/'.$user2->id.'', [
 			'name'				=>	'Jack Updated',
 			'email'				=>	'jack20@blackpearl.com',
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus(200);
@@ -630,12 +630,12 @@ class AdminControllerTest extends TestCase{
 			'email'				=>	'jack20@blackpearl.com',
 			'password'			=>	'password123DIFF',
 			'confirm_password'	=>	'password123DIFF',
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus(200);
@@ -676,12 +676,12 @@ class AdminControllerTest extends TestCase{
 			'email'				=>	'jack20@blackpearl.com',
 			'password'			=>	'123',
 			'confirm_password'	=>	'',
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus((int)config('global.error_code'));
@@ -718,12 +718,12 @@ class AdminControllerTest extends TestCase{
 			'email'				=>	'jack20@blackpearl.com',
 			'password'			=>	'',
 			'confirm_password'	=>	'123',
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus((int)config('global.error_code'));
@@ -751,12 +751,12 @@ class AdminControllerTest extends TestCase{
 
 		$response = $this->delete('/api/manage-admins', [
 			'ids'				=>	'',
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus((int)config('global.error_code'));
@@ -784,12 +784,12 @@ class AdminControllerTest extends TestCase{
 
 		$response = $this->delete('/api/manage-admins', [
 			'ids'				=>	['one'],
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus((int)config('global.error_code'));
@@ -822,12 +822,12 @@ class AdminControllerTest extends TestCase{
 
 		$response = $this->delete('/api/manage-admins', [
 			'ids'				=>	[$user2->id],
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus(200);
@@ -866,12 +866,12 @@ class AdminControllerTest extends TestCase{
 
 		$response = $this->delete('/api/manage-admins', [
 			'ids'				=>	[$user2->id, $user3->id],
-			'company_id'		=>	$company_id,
-			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token,
+			'company_id'		=>	$company_id
 		], [
         	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
     	]);
 
 		$response->assertStatus(200);
