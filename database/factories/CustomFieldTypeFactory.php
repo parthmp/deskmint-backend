@@ -16,8 +16,9 @@ class CustomFieldTypeFactory extends Factory
      */
     public function definition(): array
     {
+		$key = array_rand(config('global.field_types'));
         return [
-            'input_type'	=>	$this->faker->numberBetween(1, 10),
+            'input_type'	=>	config('global.field_types')[$key],
 			'input_name'	=>	$this->faker->text(10)
         ];
     }

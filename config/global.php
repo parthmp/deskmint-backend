@@ -10,15 +10,15 @@
 									],
 		'skip_routes'			=>	['create', 'edit'],
 		'field_types'			=>	[
-										'text'			=>		1,
-										'textarea'		=>		2,
-										'email'			=>		3,
-										'select'		=>		4,
-										'number'		=>		5,
-										'date'			=>		6,
-										'time'			=>		7,
-										'datetime'		=>		8,
-										'telephone'		=>		9,
-										'multiselect'	=>		10
+										'text',
+										'textarea',
+										'email',
+										'select',
+										'number',
+										'date',
+										'time',
+										'datetime',
+										'telephone',
+										'multiselect'
 									]
 	];

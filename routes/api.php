@@ -11,6 +11,19 @@ use App\Http\Middleware\ValidateDeviceAndTokens;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
+/**
+* Using explicit route definitions instead of Route::resource throughout this application
+* 
+* Reasons:
+* - Index routes require POST method for complex payloads (auth tokens, filtering, pagination)
+* - Flexibility: Avoids URL length limits and query string complexity
+* - Clarity: Explicit routes are easier to understand than resource()->except() patterns
+*/
+
+Route::post('manage-field-types', [FieldTypesController::class, 'index']);
+Route::post('manage-field-types/create', [FieldTypesController::class, 'store']);
+// ... rest of your routes
+
 Route::middleware(['throttle:60,1'])->group(function (){
 	Route::post('login', [LoginController::class, 'login'])->name('login');
 	Route::post('send-reset-password-code', [ForgotPasswordController::class, 'sendResetPasswordCode']);
@@ -32,10 +45,18 @@ Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::cla
 	Route::resource('manage-admins', AdminController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	Route::delete('manage-admins', [AdminController::class, 'destroy']);
 
-	Route::get('manage-field-types/fetch-input-types', [FieldTypesController::class, 'getInputTypes']);
 	
+	/*
 	Route::resource('manage-field-types', FieldTypesController::class)->except(array_merge(config('global.skip_routes'), ['index']));
 	Route::post('manage-field-types', [FieldTypesController::class, 'index']);
+	Route::post('manage-field-types/create', [FieldTypesController::class, 'store']);*/
+	
+	Route::get('manage-field-types/fetch-input-types', [FieldTypesController::class, 'getInputTypes']);
+	Route::post('manage-field-types', [FieldTypesController::class, 'index']);
+	Route::post('manage-field-types/create', [FieldTypesController::class, 'store']);
+	Route::get('manage-field-types/{id}', [FieldTypesController::class, 'show']);
+	Route::patch('manage-field-types/{id}', [FieldTypesController::class, 'update']);
+	Route::delete('manage-field-types/{id}', [FieldTypesController::class, 'destroy']);
 
 });
 

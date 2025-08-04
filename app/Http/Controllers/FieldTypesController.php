@@ -14,11 +14,11 @@ class FieldTypesController extends Controller{
 
 		$input_types = [];
 
-		foreach(config('global.field_types') as $key => $type){
+		foreach(config('global.field_types') as $custom_field){
 
 			$input_types[] = [
-				'value'	=>	$type,
-				'text'	=>	ucfirst($key)
+				'value'	=>	$custom_field,
+				'text'	=>	ucfirst($custom_field)
 			];
 
 		}
@@ -32,17 +32,17 @@ class FieldTypesController extends Controller{
 	}
 
 	public function store(Request $request){
-
+		
 		$v = Validator::make($request->all(), [
 			'input_type' 	=> 	'required',
 			'input_name'	=>	'required'
 		]);
-
+		
 		if($v->fails()){
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}
 
-		$input_type = Sanitize::input($request->input('input_type').'');
+		$input_type = Sanitize::input($request->input('input_type'));
 		$input_name = Sanitize::input($request->input('input_name'));
 
 		if(!in_array($input_type, config('global.field_types'))){
@@ -108,17 +108,7 @@ class FieldTypesController extends Controller{
 			if($searched_term !== ''){
 				
 				$fields = $fields->where('input_name', 'LIKE', '%'.$searched_term.'%');
-
-				$matching_type_ids = [];
-				foreach(config('global.field_types') as $type_name => $type_id){
-					if(stripos($type_name, $searched_term) !== false){
-						$matching_type_ids[] = $type_id;
-					}
-				}
-
-				if(!empty($matching_type_ids)){
-                	$fields->orWhereIn('input_type', $matching_type_ids);
-            	}
+				$fields->orwhere('input_type', 'LIKE', '%'.$searched_term.'%');
 				
 			}
 
@@ -139,8 +129,9 @@ class FieldTypesController extends Controller{
 			$fields = $fields->paginate($default_per_page, ['*'], 'page', $current_page);
 		}
 
-		$fields->each(function($ele) use ($mapped_array){
-			$ele->input_type = ucfirst($mapped_array[$ele->input_type]);
+		
+		$fields->each(function($ele){
+			$ele->input_type = ucfirst($ele->input_type);
 		});
 		
 
