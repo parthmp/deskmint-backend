@@ -116,7 +116,6 @@ class FieldTypesController extends Controller{
 				if(isset($sorted_column->label) && isset($sorted_column->sort_visibility)){
 					$fields->orderBy($sorted_column->label, $sorted_column->sort_visibility);
 				}
-				
 			}
 
 			if(isset($page_data->per_page)){
@@ -163,6 +162,12 @@ class FieldTypesController extends Controller{
 			'total_pages'	=>		$total_pages
 		];
 
+
+	}
+
+	public function show(Request $request){
+
+		
 
 	}
 

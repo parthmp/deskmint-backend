@@ -50,13 +50,13 @@ Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::cla
 	Route::resource('manage-field-types', FieldTypesController::class)->except(array_merge(config('global.skip_routes'), ['index']));
 	Route::post('manage-field-types', [FieldTypesController::class, 'index']);
 	Route::post('manage-field-types/create', [FieldTypesController::class, 'store']);*/
-	
+
 	Route::get('manage-field-types/fetch-input-types', [FieldTypesController::class, 'getInputTypes']);
 	Route::post('manage-field-types', [FieldTypesController::class, 'index']);
 	Route::post('manage-field-types/create', [FieldTypesController::class, 'store']);
 	Route::get('manage-field-types/{id}', [FieldTypesController::class, 'show']);
-	Route::patch('manage-field-types/{id}', [FieldTypesController::class, 'update']);
-	Route::delete('manage-field-types/{id}', [FieldTypesController::class, 'destroy']);
+	/*Route::patch('manage-field-types/{id}', [FieldTypesController::class, 'update']);
+	Route::delete('manage-field-types/{id}', [FieldTypesController::class, 'destroy']);*/
 
 });
 

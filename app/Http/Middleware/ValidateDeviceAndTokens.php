@@ -31,17 +31,16 @@ class ValidateDeviceAndTokens
             return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
         }
 
-		$v = Validator::make($request->all(), [
-			'device_id'		=>	'required',
-			'refresh_token'	=>	'required',
-		]);
-
-		if($v->fails()){
+		if(!$request->hasHeader('X-Refresh-Token') || !$request->hasHeader('X-Device-Id')){
 			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
 		}
 
-		$device_id = Sanitize::input($request->input('device_id'));
-        $refresh_token = Sanitize::input($request->input('refresh_token'));
+		if($request->header('X-Refresh-Token') === null || $request->header('X-Device-Id') === null){
+			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
+		}
+
+		$refresh_token = Sanitize::input($request->header('X-Refresh-Token'));
+        $device_id = Sanitize::input($request->header('X-Device-Id'));
 
 		$access_token_id = $this->getAccessTokenId($user);
 
