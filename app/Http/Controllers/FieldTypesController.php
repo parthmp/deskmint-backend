@@ -109,6 +109,7 @@ class FieldTypesController extends Controller{
 				
 				$fields = $fields->where('input_name', 'LIKE', '%'.$searched_term.'%');
 				$fields->orwhere('input_type', 'LIKE', '%'.$searched_term.'%');
+				$fields->orwhere('id', 'LIKE', '%'.$searched_term.'%');
 				
 			}
 
@@ -165,9 +166,74 @@ class FieldTypesController extends Controller{
 
 	}
 
+	private function findField(Request $request){
+
+		$field_id = Sanitize::input($request->segment(3));
+
+		if($field_id === ''){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}
+
+		$field = CustomFieldType::where('id', '=', $field_id)->first();
+		if(!$field){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}
+
+		return $field;
+
+	}
+
 	public function show(Request $request){
 
+		return $this->findField($request);	
+
+	}
+
+	public function update(Request $request){
+
+		$field = $this->findField($request);
+
+		if($field instanceof \Illuminate\Http\Response){
+        	return $field;
+    	}
+
+		$v = Validator::make($request->all(), [
+			'input_type' 	=> 	'required',
+			'input_name'	=>	'required'
+		]);
 		
+		if($v->fails()){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}
+
+		$input_type = Sanitize::input($request->input('input_type'));
+		$input_name = Sanitize::input($request->input('input_name'));
+
+		if(!in_array($input_type, config('global.field_types'))){
+			return response(['message' => 'Invalid field provided', 'validity' => 'invalid_field'], config('global.error_code'));
+		}
+
+
+		try{
+
+			
+			$field->input_type = $input_type;
+			$field->input_name = $input_name;
+
+			if($field->save()){
+				return response(['message' => 'Custom field type updated successfully', 'validity' => 'updated_success'], 200);
+			}
+
+			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], config('global.error_code'));
+
+		}catch(Exception $e){
+			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], config('global.error_code'));
+		}
+
+
+
+
+		return $field;
 
 	}
 
