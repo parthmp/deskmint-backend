@@ -11,10 +11,6 @@ use App\Http\Middleware\ValidateDeviceAndTokens;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
-
-Route::post('manage-field-types', [FieldTypesController::class, 'index']);
-Route::post('manage-field-types/create', [FieldTypesController::class, 'store']);
-
 Route::middleware(['throttle:60,1'])->group(function (){
 	Route::post('login', [LoginController::class, 'login'])->name('login');
 	Route::post('send-reset-password-code', [ForgotPasswordController::class, 'sendResetPasswordCode']);
@@ -36,18 +32,11 @@ Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::cla
 	Route::resource('manage-admins', AdminController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	Route::delete('manage-admins', [AdminController::class, 'destroy']);
 
-	
-	/*
-	Route::resource('manage-field-types', FieldTypesController::class)->except(array_merge(config('global.skip_routes'), ['index']));
-	Route::post('manage-field-types', [FieldTypesController::class, 'index']);
-	Route::post('manage-field-types/create', [FieldTypesController::class, 'store']);*/
 
 	Route::get('manage-field-types/fetch-input-types', [FieldTypesController::class, 'getInputTypes']);
-	Route::post('manage-field-types', [FieldTypesController::class, 'index']);
-	Route::post('manage-field-types/create', [FieldTypesController::class, 'store']);
-	Route::get('manage-field-types/{id}', [FieldTypesController::class, 'show']);
-	Route::patch('manage-field-types/{id}', [FieldTypesController::class, 'update']);
-	/*Route::delete('manage-field-types/{id}', [FieldTypesController::class, 'destroy']);*/
+	Route::resource('manage-field-types', FieldTypesController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
+	Route::delete('manage-field-types', [FieldTypesController::class, 'destroy']);
+
 
 });
 

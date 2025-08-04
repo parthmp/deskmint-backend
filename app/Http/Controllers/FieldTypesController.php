@@ -70,65 +70,79 @@ class FieldTypesController extends Controller{
 	public function index(Request $request){
 		
 		$v = Validator::make($request->all(), [
-			'default_per_page'	=>	'required'
+			'default_per_page'	=>	'required|integer|min:1'
 		]);
 
 		if($v->fails()){
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}
+		/*
+		/ http://192.168.29.5:8000/api/manage-field-types?type=page&per_page=15&searched_term=text&current_page=3&sorted_column[label]=input_type&sorted_column[text]=Input+type&sorted_column[sort_visibility]=desc&default_per_page=15&company_id=4
 
-		$mapped_array = config('global.field_types');
-		$mapped_array = array_flip($mapped_array);
-
+		*/
 		$paginate = false;
 
-		if($request->has('page_data')){
-			$page_data = json_decode(Sanitize::input($request->input('page_data')));
-			if(json_last_error() === JSON_ERROR_NONE && $page_data !== null && $page_data !== ''){
-				$paginate = true;
-			}
+		$allowed_columns = ['id', 'input_name', 'input_type'];
+		$allowed_sorting_directions = ['asc', 'desc'];
+
+		if($request->filled('searched_term') || $request->filled('current_page') || $request->filled('sorted_column') || $request->filled('per_page')){
+			$paginate = true;
 		}
 
-		$default_per_page = Sanitize::input($request->input('default_per_page'));
+		$default_per_page = (int)Sanitize::input($request->input('default_per_page'));
 
 		$fields = CustomFieldType::query();
 		
 		$current_page = 1;
+		$per_page = $default_per_page;
 
 		if($paginate){
 			
-			
-			$searched_term = trim($page_data->searched_term);
-			if(isset($page_data->current_page)){
-				$current_page = $page_data->current_page;
+			$searched_term = '';
+			if($request->filled('searched_term')){
+				$searched_term = Sanitize::input($request->input('searched_term'));
 			}
 			
-			$sorted_column = $page_data->sorted_column;
+			if($request->filled('per_page')){
+				$per_page = (int)Sanitize::input($request->input('per_page'));
+			}
+
+			if($request->filled('current_page')){
+				$current_page = (int)Sanitize::input($request->input('current_page'));
+			}
+
+			$sorted_column = null;
+			if($request->filled('sorted_column')){
+				$sorted_column = $request->input('sorted_column');
+				foreach($sorted_column as $key => $value){
+					$sorted_column[$key] = Sanitize::input($value);
+				}
+			}
 			
 			if($searched_term !== ''){
 				
-				$fields = $fields->where('input_name', 'LIKE', '%'.$searched_term.'%');
-				$fields->orwhere('input_type', 'LIKE', '%'.$searched_term.'%');
-				$fields->orwhere('id', 'LIKE', '%'.$searched_term.'%');
+				$fields->where(function ($q) use ($searched_term){
+					$q->where('input_name', 'LIKE', "%$searched_term%")
+					->orWhere('input_type', 'LIKE', "%$searched_term%")
+					->orWhere('id', 'LIKE', "%$searched_term%");
+				});
 				
 			}
 
-			if($sorted_column !== ''){
-				if(isset($sorted_column->label) && isset($sorted_column->sort_visibility)){
-					$fields->orderBy($sorted_column->label, $sorted_column->sort_visibility);
-				}
+				
+			if(isset($sorted_column['label'], $sorted_column['sort_visibility']) && in_array($sorted_column['label'], $allowed_columns, true) && in_array(strtolower($sorted_column['sort_visibility']), $allowed_sorting_directions, true)){
+				$direction = strtolower($sorted_column['sort_visibility']);
+				$fields->orderBy($sorted_column['label'], $direction);
 			}
 
-			if(isset($page_data->per_page)){
-				$fields = $fields->paginate($page_data->per_page, ['*'], 'page', $current_page);
-			}else{
-				$fields = $fields->paginate($default_per_page, ['*'], 'page', $current_page);
-			}
-
-		}else{
-			$fields = $fields->paginate($default_per_page, ['*'], 'page', $current_page);
 		}
 
+		if($paginate){
+			$fields = $fields->paginate($per_page, ['*'], 'page', (int)$current_page);
+		}else{
+			$fields = $fields->orderBy('id', 'desc')->paginate($per_page, ['*'], 'page', (int)$current_page);
+		}
+		
 		
 		$fields->each(function($ele){
 			$ele->input_type = ucfirst($ele->input_type);
@@ -163,6 +177,7 @@ class FieldTypesController extends Controller{
 			'total_pages'	=>		$total_pages
 		];
 
+		
 
 	}
 
@@ -190,7 +205,7 @@ class FieldTypesController extends Controller{
 	}
 
 	public function update(Request $request){
-
+		
 		$field = $this->findField($request);
 
 		if($field instanceof \Illuminate\Http\Response){
@@ -230,10 +245,31 @@ class FieldTypesController extends Controller{
 			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], config('global.error_code'));
 		}
 
+	}
 
+	public function destroy(Request $request){
 
+		$ids = $request->input('ids');
 
-		return $field;
+		if (!is_array($ids) || empty($ids)) {
+			return response(['message' => 'No valid IDs provided', 'validity' => 'invalid_ids'], config('global.error_code'));
+		}
+
+		foreach ($ids as $id){
+			if (!is_numeric($id)) {
+				return response(['message' => 'All IDs must be numeric', 'validity' => 'non_numeric'], config('global.error_code'));
+			}
+		}
+
+		try{
+			
+			CustomFieldType::whereIn('id', $ids)->delete();
+
+			return response(['message' => 'Field(s) deleted successfully'], 200);
+
+		}catch(Exception $e){
+			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], 500);
+		}
 
 	}
 
