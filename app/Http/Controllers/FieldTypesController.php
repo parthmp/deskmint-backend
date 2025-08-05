@@ -78,13 +78,12 @@ class FieldTypesController extends Controller{
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}
 		
-		$fields = DataTable::sortNPaginate($request, CustomFieldType::class);
+		$fields = DataTable::sortNPaginate($request, CustomFieldType::class, ['deleted_at', 'updated_at', 'created_at']);
 		
 		$fields->each(function($ele){
 			$ele->input_type = ucfirst($ele->input_type);
 		});
 		
-
 		$table_data = [
 			'columns' => [
 				[
@@ -112,8 +111,6 @@ class FieldTypesController extends Controller{
 			'table_data'	=>		$table_data,
 			'total_pages'	=>		$total_pages
 		];
-
-		
 
 	}
 
