@@ -6,6 +6,7 @@ use App\Helpers\Sanitize;
 use App\Mail\SendLoginEmail;
 use App\Mail\SendOTP;
 use App\Models\AccessTokenData;
+use App\Models\LoginAttempt;
 use App\Models\RefreshToken;
 use App\Models\TwoFactorAuthToken;
 use App\Models\User;
@@ -82,6 +83,12 @@ class LoginService{
 
 	}
 
+	private function resetLoginAttempts(User $user){
+
+		LoginAttempt::where('user_id', '=', $user->id)->delete();
+
+	}
+
 	public function issueTokens($user, $device, $request){
 
 		$access_token = $user->createToken(env("APP_NAME"));
@@ -102,6 +109,8 @@ class LoginService{
 		$refresh_token->refresh_token = $refresh_token_hash;
 		$refresh_token->device = $device;
 		$refresh_token->save();
+
+		$this->resetLoginAttempts($user);
 
 		return [
 			'token'			=>	$access_token->plainTextToken,
