@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\Sanitize;
 use App\Models\CustomFieldType;
+use App\Services\DataTable;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -76,73 +77,8 @@ class FieldTypesController extends Controller{
 		if($v->fails()){
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}
-		/*
-		/ http://192.168.29.5:8000/api/manage-field-types?type=page&per_page=15&searched_term=text&current_page=3&sorted_column[label]=input_type&sorted_column[text]=Input+type&sorted_column[sort_visibility]=desc&default_per_page=15&company_id=4
-
-		*/
-		$paginate = false;
-
-		$allowed_columns = ['id', 'input_name', 'input_type'];
-		$allowed_sorting_directions = ['asc', 'desc'];
-
-		if($request->filled('searched_term') || $request->filled('current_page') || $request->filled('sorted_column') || $request->filled('per_page')){
-			$paginate = true;
-		}
-
-		$default_per_page = (int)Sanitize::input($request->input('default_per_page'));
-
-		$fields = CustomFieldType::query();
 		
-		$current_page = 1;
-		$per_page = $default_per_page;
-
-		if($paginate){
-			
-			$searched_term = '';
-			if($request->filled('searched_term')){
-				$searched_term = Sanitize::input($request->input('searched_term'));
-			}
-			
-			if($request->filled('per_page')){
-				$per_page = (int)Sanitize::input($request->input('per_page'));
-			}
-
-			if($request->filled('current_page')){
-				$current_page = (int)Sanitize::input($request->input('current_page'));
-			}
-
-			$sorted_column = null;
-			if($request->filled('sorted_column')){
-				$sorted_column = $request->input('sorted_column');
-				foreach($sorted_column as $key => $value){
-					$sorted_column[$key] = Sanitize::input($value);
-				}
-			}
-			
-			if($searched_term !== ''){
-				
-				$fields->where(function ($q) use ($searched_term){
-					$q->where('input_name', 'LIKE', "%$searched_term%")
-					->orWhere('input_type', 'LIKE', "%$searched_term%")
-					->orWhere('id', 'LIKE', "%$searched_term%");
-				});
-				
-			}
-
-				
-			if(isset($sorted_column['label'], $sorted_column['sort_visibility']) && in_array($sorted_column['label'], $allowed_columns, true) && in_array(strtolower($sorted_column['sort_visibility']), $allowed_sorting_directions, true)){
-				$direction = strtolower($sorted_column['sort_visibility']);
-				$fields->orderBy($sorted_column['label'], $direction);
-			}
-
-		}
-
-		if($paginate){
-			$fields = $fields->paginate($per_page, ['*'], 'page', (int)$current_page);
-		}else{
-			$fields = $fields->orderBy('id', 'desc')->paginate($per_page, ['*'], 'page', (int)$current_page);
-		}
-		
+		$fields = DataTable::sortNPaginate($request, CustomFieldType::class);
 		
 		$fields->each(function($ele){
 			$ele->input_type = ucfirst($ele->input_type);
