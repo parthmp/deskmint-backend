@@ -295,6 +295,10 @@ class LoginControllerTest extends TestCase
 		$this->assertArrayHasKey('token', $response);
 		$this->assertArrayHasKey('refresh_token', $response);
 
+		/* test if login attempts are erased */
+		$login_attempts = LoginAttempt::where('user_id', '=', $user->id)->get();
+		$this->assertEmpty($login_attempts);
+
 		$this->assertTrue(strlen($response['refresh_token']) === 128);
 
     }
@@ -553,6 +557,15 @@ class LoginControllerTest extends TestCase
 			'created_at'	=>		now()->subMinutes(1)
 		]);
 
+		$temp_token = TwoFactorAuthToken::where('id', '=', $current_token->id)->first();
+		$user = $temp_token->user;
+
+		LoginAttempt::factory()->create([
+			'user_id'               => $user->id,
+			'number_of_attempts'    => 2,
+			'last_attempted_at'     => now()->subMinutes(5)
+		]);
+
 		Setting::factory()->create([
 			'login_limits_flag'     => 1,
 			'login_limits_minutes'  => 15,
@@ -584,6 +597,10 @@ class LoginControllerTest extends TestCase
 
 		$past_access_token_data = AccessTokenData::where([['user_id', '=', $current_token_temp->user->id], ['device', '=', $device], ['token_id', '!=', $token->id]])->get();
 		$this->assertEmpty($past_access_token_data);
+
+		/* test if login attempts are erased */
+		$login_attempts = LoginAttempt::where('user_id', '=', $user->id)->get();
+		$this->assertEmpty($login_attempts);
 
 	}
 
