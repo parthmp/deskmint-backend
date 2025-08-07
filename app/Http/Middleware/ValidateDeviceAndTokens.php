@@ -7,6 +7,7 @@ use App\Models\AccessTokenData;
 use App\Models\RefreshToken;
 use App\Models\User;
 use Closure;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -87,7 +88,7 @@ class ValidateDeviceAndTokens
 
 		$response = $next($request);
 
-		if($this->generated_access_token && $this->generated_refresh_token){
+		if ($this->generated_access_token && $this->generated_refresh_token && $response instanceof JsonResponse) {
 
 			$original = $response->getData(true);
 
