@@ -423,6 +423,7 @@ class FieldTypesControllerTest extends TestCase{
 		
 		/* check if it is really on second page */
 		$this->assertEquals('BLA2', $response['table_data']['rows'][0]['input_name']);
+		$this->assertEquals(2, (int)$response['current_page']);
 
 	}
 
@@ -473,6 +474,301 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$this->assertEquals(5, count($response['table_data']['rows']));
 		
+	}
+
+	/*
+	/ combinations & tests
+	
+	
+	/ 6. Check if column sorts, asc and desc -> change current page
+	/ 10. Check if column sorts, asc and desc -> change per page -> add search term -> change current page
+	/ 10. add search term -> change per page -> sort column -> goto current page 2 -> should show current page 2
+	/ 11. test for malicious column label
+	*/
+
+	public function test_if_page_shows_page_1_for_current_page_search_term(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		/* add fake data */
+		for($z = 0 ; $z < 10 ; $z++){
+			CustomFieldType::factory()->create([
+				'input_name'	=>	'BLABLA'.$z
+			]);
+		}
+
+		CustomFieldType::factory()->create([
+			'input_name'	=>	'BLATEST123'
+		]);
+
+		
+		$queryParams = http_build_query([
+			'company_id' 		=> $company_id,
+			'default_per_page'	=>	2,
+			'per_page'			=>	5,
+			'searched_term'		=>	'BLABLA'
+		]);
+
+		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		
+
+		$response->assertStatus(200);
+
+		$response = $response->json();
+		
+		$this->assertArrayHasKey('table_data', $response);
+		$this->assertArrayHasKey('total_pages', $response);
+		$this->assertNotEmpty($response['table_data']['rows']);
+		$this->assertNotEmpty($response['table_data']['columns']);
+		
+		$this->assertEquals(5, count($response['table_data']['rows']));
+
+		$this->assertEquals(1, (int)$response['current_page']);
+
+	}
+
+	public function test_if_page_shows_page_1_for_per_page(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		/* add fake data */
+		for($z = 0 ; $z < 10 ; $z++){
+			CustomFieldType::factory()->create([
+				'input_name'	=>	'BLABLA'.$z
+			]);
+		}
+
+		CustomFieldType::factory()->create([
+			'input_name'	=>	'BLATEST123'
+		]);
+
+		
+		$queryParams = http_build_query([
+			'company_id' 		=> $company_id,
+			'default_per_page'	=>	2,
+			'per_page'			=>	5
+		]);
+
+		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		
+
+		$response->assertStatus(200);
+
+		$response = $response->json();
+		
+		$this->assertArrayHasKey('table_data', $response);
+		$this->assertArrayHasKey('total_pages', $response);
+		$this->assertNotEmpty($response['table_data']['rows']);
+		$this->assertNotEmpty($response['table_data']['columns']);
+		
+		$this->assertEquals(5, count($response['table_data']['rows']));
+
+		$this->assertEquals(1, (int)$response['current_page']);
+
+	}
+
+	/* Check if column sorts, asc and desc */
+	public function test_if_column_sorts_asc(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		/* add fake data */
+		for($z = 0 ; $z < 10 ; $z++){
+			CustomFieldType::factory()->create([
+				'input_name'	=>	'BLABLA'.$z
+			]);
+		}
+
+		CustomFieldType::factory()->create([
+			'input_name'	=>	'BLATEST123'
+		]);
+
+		
+		$queryParams = http_build_query([
+			'company_id' 		=> $company_id,
+			'default_per_page'	=>	2,
+			'per_page'			=>	5,
+			'sorted_column'		=>	[
+				'label'					=>		'input_name',
+				'sort_visibility'		=>		'asc'
+			]
+		]);
+
+		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		
+
+		$response->assertStatus(200);
+
+		$response = $response->json();
+		
+		$this->assertArrayHasKey('table_data', $response);
+		$this->assertArrayHasKey('total_pages', $response);
+		$this->assertNotEmpty($response['table_data']['rows']);
+		$this->assertNotEmpty($response['table_data']['columns']);
+		
+		$this->assertEquals(5, count($response['table_data']['rows']));
+
+		$this->assertEquals(1, (int)$response['current_page']);
+
+		for($z = 0 ; $z < 5 ; $z++){
+			$this->assertEquals('BLABLA'.$z, $response['table_data']['rows'][$z]['input_name']);
+		}
+		
+		
+
+	}
+
+	public function test_if_column_sorts_asc_with_current_page(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		CustomFieldType::truncate();
+		
+		/* add fake data */
+		for($z = 11 ; $z < 33 ; $z++){
+			CustomFieldType::factory()->create([
+				'input_name'	=>	'BLABLA'.$z
+			]);
+		}
+		
+		$queryParams = http_build_query([
+			'company_id' 		=> $company_id,
+			'default_per_page'	=>	5,
+			'per_page'			=>	5,
+			'current_page'		=>	2,
+			'sorted_column'		=>	[
+				'label'					=>		'input_name',
+				'sort_visibility'		=>		'asc'
+			]
+		]);
+
+		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		
+
+		$response->assertStatus(200);
+
+		$response = $response->json();
+		
+		$this->assertArrayHasKey('table_data', $response);
+		$this->assertArrayHasKey('total_pages', $response);
+		$this->assertNotEmpty($response['table_data']['rows']);
+		$this->assertNotEmpty($response['table_data']['columns']);
+		
+		$this->assertEquals(5, count($response['table_data']['rows']));
+
+		$this->assertEquals(2, (int)$response['current_page']);
+		
+		for($z = 16 ; $z < 21 ; $z++){
+			$this->assertEquals('BLABLA'.$z, $response['table_data']['rows'][($z-16)]['input_name']);
+		}
+		
+		
+
+	}
+
+	public function test_if_column_sorts_desc(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		/* add fake data */
+		for($z = 0 ; $z < 10 ; $z++){
+			CustomFieldType::factory()->create([
+				'input_name'	=>	'BLABLA'.$z
+			]);
+		}
+
+		CustomFieldType::factory()->create([
+			'input_name'	=>	'BLATEST123'
+		]);
+
+		
+		$queryParams = http_build_query([
+			'company_id' 		=> $company_id,
+			'default_per_page'	=>	2,
+			'per_page'			=>	5,
+			'sorted_column'		=>	[
+				'label'					=>		'input_name',
+				'sort_visibility'		=>		'desc'
+			]
+		]);
+
+		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		
+
+		$response->assertStatus(200);
+
+		$response = $response->json();
+		
+		$this->assertArrayHasKey('table_data', $response);
+		$this->assertArrayHasKey('total_pages', $response);
+		$this->assertNotEmpty($response['table_data']['rows']);
+		$this->assertNotEmpty($response['table_data']['columns']);
+		
+		$this->assertEquals(5, count($response['table_data']['rows']));
+
+		$this->assertEquals(1, (int)$response['current_page']);
+
+		for($z = 5 ; $z > 10 ; $z++){
+			$this->assertEquals('BLABLA'.$z, $response['table_data']['rows'][$z]['input_name']);
+		}
+		
+		
+
 	}
 
 }

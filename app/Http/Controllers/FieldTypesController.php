@@ -109,7 +109,8 @@ class FieldTypesController extends Controller{
 
 		return [
 			'table_data'	=>		$table_data,
-			'total_pages'	=>		$total_pages
+			'total_pages'	=>		$total_pages,
+			'current_page'	=>		$fields->currentPage()
 		];
 
 	}
