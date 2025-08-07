@@ -199,7 +199,7 @@ class FieldTypesController extends Controller{
 			
 			CustomFieldType::whereIn('id', $ids)->delete();
 
-			return response(['message' => 'Field(s) deleted successfully'], 200);
+			return response(['message' => 'Field(s) deleted successfully', 'validity' => 'delete_success'], 200);
 
 		}catch(Exception $e){
 			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], 500);

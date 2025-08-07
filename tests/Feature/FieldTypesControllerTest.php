@@ -202,14 +202,14 @@ class FieldTypesControllerTest extends TestCase{
 		
 	}
 
-	private function getQuery($token, $refresh_token, $device, $queryParams){
+	private function getQuery($token, $refresh_token, $device, $queryParams, $url = '/api/manage-field-types?'){
 
 		$response = $this->withHeaders([
 			'Accept' => 'application/json',
 			'Authorization' => 'Bearer ' . $token,
 			'X-Refresh-Token' => $refresh_token,
 			'X-Device-Id' => $device
-		])->get('/api/manage-field-types?' . $queryParams);
+		])->get($url . $queryParams);
 
 		return $response;
 
@@ -476,15 +476,7 @@ class FieldTypesControllerTest extends TestCase{
 		
 	}
 
-	/*
-	/ combinations & tests
 	
-	
-	/ 6. Check if column sorts, asc and desc -> change current page
-	/ 10. Check if column sorts, asc and desc -> change per page -> add search term -> change current page
-	/ 10. add search term -> change per page -> sort column -> goto current page 2 -> should show current page 2
-	/ 11. test for malicious column label
-	*/
 
 	public function test_if_page_shows_page_1_for_current_page_search_term(){
 
@@ -770,5 +762,611 @@ class FieldTypesControllerTest extends TestCase{
 		
 
 	}
+
+	
+	public function test_if_column_sorts_desc_with_current_page(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		CustomFieldType::truncate();
+		
+		/* add fake data */
+		for($z = 11 ; $z < 33 ; $z++){
+			CustomFieldType::factory()->create([
+				'input_name'	=>	'BLABLA'.$z
+			]);
+		}
+		
+		$queryParams = http_build_query([
+			'company_id' 		=> $company_id,
+			'default_per_page'	=>	5,
+			'per_page'			=>	5,
+			'current_page'		=>	2,
+			'sorted_column'		=>	[
+				'label'					=>		'input_name',
+				'sort_visibility'		=>		'desc'
+			]
+		]);
+
+		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		
+
+		$response->assertStatus(200);
+
+		$response = $response->json();
+		
+		$this->assertArrayHasKey('table_data', $response);
+		$this->assertArrayHasKey('total_pages', $response);
+		$this->assertNotEmpty($response['table_data']['rows']);
+		$this->assertNotEmpty($response['table_data']['columns']);
+		
+		$this->assertEquals(5, count($response['table_data']['rows']));
+
+		$this->assertEquals(2, (int)$response['current_page']);
+		
+		$index = 0;
+		for($z = 27 ; $z >= 23 ; $z--){
+			$this->assertEquals('BLABLA'.$z, $response['table_data']['rows'][$index]['input_name']);
+			$index++;
+		}
+		
+		
+
+	}
+
+
+	public function test_if_column_sorts_desc_with_per_page_search_term_and_current_page(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		CustomFieldType::truncate();
+		
+		/* add fake data */
+		for($z = 11 ; $z < 33 ; $z++){
+			CustomFieldType::factory()->create([
+				'input_name'	=>	'BLABLA'.$z
+			]);
+		}
+
+		/* add fake data */
+		for($z = 55 ; $z < 66 ; $z++){
+			CustomFieldType::factory()->create([
+				'input_name'	=>	'YAYBLA'.$z
+			]);
+		}
+		
+		$queryParams = http_build_query([
+			'company_id' 		=> $company_id,
+			'default_per_page'	=>	5,
+			'per_page'			=>	5,
+			'current_page'		=>	2,
+			'searched_term'		=>	'YaY',
+			'sorted_column'		=>	[
+				'label'					=>		'input_name',
+				'sort_visibility'		=>		'desc'
+			]
+		]);
+
+		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		
+
+		$response->assertStatus(200);
+
+		$response = $response->json();
+		
+		$this->assertArrayHasKey('table_data', $response);
+		$this->assertArrayHasKey('total_pages', $response);
+		$this->assertNotEmpty($response['table_data']['rows']);
+		$this->assertNotEmpty($response['table_data']['columns']);
+		
+		$this->assertEquals(5, count($response['table_data']['rows']));
+
+		$this->assertEquals(2, (int)$response['current_page']);
+		
+		$index = 0;
+		for($z = 60 ; $z >= 56 ; $z--){
+			$this->assertEquals('YAYBLA'.$z, $response['table_data']['rows'][$index]['input_name']);
+			$index++;
+		}
+
+	}
+
+	public function test_if_column_sorts_asc_with_per_page_search_term_and_current_page(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		CustomFieldType::truncate();
+		
+		/* add fake data */
+		for($z = 11 ; $z < 33 ; $z++){
+			CustomFieldType::factory()->create([
+				'input_name'	=>	'BLABLA'.$z
+			]);
+		}
+
+		/* add fake data */
+		for($z = 55 ; $z < 66 ; $z++){
+			CustomFieldType::factory()->create([
+				'input_name'	=>	'YAYBLA'.$z
+			]);
+		}
+		
+		$queryParams = http_build_query([
+			'company_id' 		=> $company_id,
+			'default_per_page'	=>	5,
+			'per_page'			=>	5,
+			'current_page'		=>	2,
+			'searched_term'		=>	'YaY',
+			'sorted_column'		=>	[
+				'label'					=>		'input_name',
+				'sort_visibility'		=>		'asc'
+			]
+		]);
+
+		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		
+
+		$response->assertStatus(200);
+
+		$response = $response->json();
+		
+		$this->assertArrayHasKey('table_data', $response);
+		$this->assertArrayHasKey('total_pages', $response);
+		$this->assertNotEmpty($response['table_data']['rows']);
+		$this->assertNotEmpty($response['table_data']['columns']);
+		
+		$this->assertEquals(5, count($response['table_data']['rows']));
+
+		$this->assertEquals(2, (int)$response['current_page']);
+		
+		$index = 0;
+		for($z = 60 ; $z < 65 ; $z++){
+			$this->assertEquals('YAYBLA'.$z, $response['table_data']['rows'][$index]['input_name']);
+			$index++;
+		}
+
+	}
+
+
+	public function test_if_user_tries_sql_injection_by_adding_non_existant_column_label(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		CustomFieldType::truncate();
+		
+		/* add fake data */
+		for($z = 11 ; $z < 33 ; $z++){
+			CustomFieldType::factory()->create([
+				'input_name'	=>	'BLABLA'.$z
+			]);
+		}
+		
+		$queryParams = http_build_query([
+			'company_id' 		=> $company_id,
+			'default_per_page'	=>	5,
+			'per_page'			=>	5,
+			'current_page'		=>	2,
+			'sorted_column'		=>	[
+				'label'					=>		'malicious_column_name',
+				'sort_visibility'		=>		'desc'
+			]
+		]);
+
+		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		
+
+		$response->assertStatus(200);
+
+		$response = $response->json();
+		
+		$this->assertArrayHasKey('table_data', $response);
+		$this->assertArrayHasKey('total_pages', $response);
+		$this->assertNotEmpty($response['table_data']['rows']);
+		$this->assertNotEmpty($response['table_data']['columns']);
+		
+		$this->assertEquals(5, count($response['table_data']['rows']));
+
+		$this->assertEquals(2, (int)$response['current_page']);
+		
+		$index = 0;
+		for($z = 16 ; $z < 21 ; $z++){
+			/* should have no effect */
+			$this->assertEquals('BLABLA'.$z, $response['table_data']['rows'][$index]['input_name']);
+			$index++;
+		}
+
+	}
+
+
+	public function test_if_fetching_field_type_fails_with_invalid_id(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		CustomFieldType::truncate();
+
+		$queryParams = http_build_query([
+			'company_id' 		=> $company_id
+		]);
+
+		$response = $this->getQuery($token, $refresh_token, $device, $queryParams, '/api/manage-field-types/100?');
+
+		$response->assertStatus((int)config('global.error_code'));
+		
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_request', $response['validity']);
+		
+
+	}
+
+	public function test_if_fetching_field_type_succeeded_with_valid_id(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		CustomFieldType::truncate();
+
+		CustomFieldType::factory()->create();
+
+		$queryParams = http_build_query([
+			'company_id' 		=> $company_id
+		]);
+
+		$response = $this->getQuery($token, $refresh_token, $device, $queryParams, '/api/manage-field-types/1?');
+
+		$response->assertStatus(200);
+		
+		$json = $response->json();
+		
+		$this->assertArrayHasKey('id', $json);
+		$this->assertEquals(1, (int)$json['id']);
+
+	}
+
+	public function test_if_update_fails_with_invalid_data(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		CustomFieldType::truncate();
+		
+		$response = $this->patch('/api/manage-field-types/100', [
+			'input_type'	=>	'',
+			'input_name'	=>	'',
+			'company_id'	=>	$company_id
+		], [
+			'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+		]);
+
+		$response->assertStatus((int)config('global.error_code'));
+
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_request', $response['validity']);
+
+	}
+
+	public function test_if_update_fails_with_invalid_data_2(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		CustomFieldType::truncate();
+
+		$field_temp = CustomFieldType::factory()->create();
+		
+		$response = $this->patch('/api/manage-field-types/'.$field_temp->id, [
+			'input_type'	=>	'',
+			'input_name'	=>	'test',
+			'company_id'	=>	$company_id
+		], [
+			'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+		]);
+
+		$response->assertStatus((int)config('global.error_code'));
+
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_request', $response['validity']);
+
+	}
+
+	public function test_if_update_fails_with_invalid_data_3(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		CustomFieldType::truncate();
+
+		$field_temp = CustomFieldType::factory()->create();
+		
+		$response = $this->patch('/api/manage-field-types/'.$field_temp->id, [
+			'input_type'	=>	'bla',
+			'input_name'	=>	'',
+			'company_id'	=>	$company_id
+		], [
+			'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+		]);
+
+		$response->assertStatus((int)config('global.error_code'));
+
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_request', $response['validity']);
+
+	}
+
+
+	public function test_if_update_succeeded_with_valid_data(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		CustomFieldType::truncate();
+
+		$field_temp = CustomFieldType::factory()->create();
+		
+		$response = $this->patch('/api/manage-field-types/'.$field_temp->id, [
+			'input_type'	=>	'datetime',
+			'input_name'	=>	'blatesthere',
+			'company_id'	=>	$company_id
+		], [
+			'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+		]);
+
+		$response->assertStatus(200);
+
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('updated_success', $response['validity']);
+
+		/* now check if data actually updated */
+
+		$field = CustomFieldType::where('id', '=', $field_temp->id)->first();
+		$this->assertEquals('blatesthere', $field->input_name);
+		$this->assertEquals('datetime', $field->input_type);
+
+
+	}
+
+	
+	public function test_if_delete_fails_with_invalid_data(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		$response = $this->delete('/api/manage-field-types', [
+			'ids'			=>	'',
+			'company_id'	=>	$company_id
+		], [
+			'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+		]);
+
+		$response->assertStatus((int)config('global.error_code'));
+
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_ids', $response['validity']);
+
+	}
+	
+	public function test_if_delete_fails_with_non_numeric_data(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		CustomFieldType::truncate();
+
+		$response = $this->delete('/api/manage-field-types', [
+			'ids'			=>	[
+				'bla', 'whatever'
+			],
+			'company_id'	=>	$company_id
+		], [
+			'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+		]);
+
+		$response->assertStatus((int)config('global.error_code'));
+
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('non_numeric', $response['validity']);
+
+	}
+
+	public function test_if_delete_succeeded_with_valid_data(){
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		CustomFieldType::truncate();
+
+		$to_be_deleted_ids = [];
+		$to_not_to_be_deleted_ids = [];
+
+		for($z = 0 ; $z < 10 ; $z++){
+
+			$temp_field = CustomFieldType::factory()->create([
+				'id'	=>	$z
+			]);
+
+			if($z < 6){
+				$to_be_deleted_ids[] = $temp_field->id;
+			}else{
+				$to_not_to_be_deleted_ids[] = $temp_field->id;
+			}
+
+		}
+		
+		/* delete ids */
+		$response = $this->delete('/api/manage-field-types', [
+			'ids'			=>	$to_be_deleted_ids,
+			'company_id'	=>	$company_id
+		], [
+			'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+		]);
+
+		$response->assertStatus(200);
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('delete_success', $response['validity']);
+
+		/* verify deletion */
+		$deleted_ones = CustomFieldType::whereIn('id', $to_be_deleted_ids)->get();
+		$this->assertEmpty($deleted_ones);
+
+		$not_deleted_ones = CustomFieldType::whereIn('id', $to_not_to_be_deleted_ids)->get();
+		$this->assertNotEmpty($not_deleted_ones);
+
+	}
+
 
 }
