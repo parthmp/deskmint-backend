@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\ClientsCustomFieldsController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\FieldTypesController;
 use App\Http\Controllers\ForgotPasswordController;
@@ -38,7 +39,7 @@ Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::cla
 	Route::delete('manage-field-types', [FieldTypesController::class, 'destroy']);
 
 
-	//Route::get('');
+	Route::get('clients-custom-fields/fetch-field-types', [ClientsCustomFieldsController::class, 'fetchFieldTypes']);
 
 });
 
