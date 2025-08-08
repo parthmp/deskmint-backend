@@ -38,5 +38,7 @@ Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::cla
 	Route::delete('manage-field-types', [FieldTypesController::class, 'destroy']);
 
 
+	//Route::get('');
+
 });
 
