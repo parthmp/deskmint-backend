@@ -40,6 +40,8 @@ Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::cla
 
 
 	Route::get('clients-custom-fields/fetch-field-types', [ClientsCustomFieldsController::class, 'fetchFieldTypes']);
-
+	Route::resource('clients-custom-fields', ClientsCustomFieldsController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
+	Route::delete('clients-custom-fields', [ClientsCustomFieldsController::class, 'destroy']);
+	
 });
 

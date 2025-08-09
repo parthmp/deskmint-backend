@@ -129,15 +129,14 @@ class AdminController extends Controller{
 
 		$v = Validator::make($request->all(), $required_array);
 
+		if($v->fails()){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}
+
 		$name = Sanitize::input($request->input('name'));
 		$email = Sanitize::input($request->input('email'));
 		$password = $request->input('password');
 		$confirm_password = $request->input('confirm_password');
-
-
-		if($v->fails()){
-			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
-		}
 
 		if($update_password && $password !== $confirm_password){
 			return response(['message' => 'Password and confirm password do not match', 'validity' => 'passwords_not_matched'], config('global.error_code'));
