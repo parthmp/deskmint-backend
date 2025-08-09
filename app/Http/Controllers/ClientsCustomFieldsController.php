@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\Sanitize;
 use App\Models\ClientsCustomField;
 use App\Models\CustomFieldType;
+use App\Services\DataTable;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -120,6 +121,64 @@ class ClientsCustomFieldsController extends Controller{
 
 		}
 
+
+	}
+
+	public function index(Request $request){
+
+		$v = Validator::make($request->all(), [
+			'default_per_page'	=>	'required|integer|min:1'
+		]);
+
+		if($v->fails()){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}
+		
+		$company_id = Sanitize::input($request->input('company_id'));
+
+		$fields = DataTable::sortNPaginate($request, ClientsCustomField::class, ['deleted_at', 'updated_at', 'created_at'], $company_id);
+		
+		$fields->each(function($ele){
+			$ele->input_type = ucfirst($ele->input_type);
+		});
+		
+		$table_data = [
+			'columns' => [
+				[
+					'label' => 	'id',
+					'text'	=>	'ID'
+				],
+				[
+					'label' => 	'field_type',
+					'text'	=>	'Field type'
+				],
+				[
+					'label' => 	'label',
+					'text'	=>	'Label'
+				],
+				[
+					'label' => 	'required',
+					'text'	=>	'Required'
+				],
+				[
+					'label' => 	'created_at',
+					'text'	=>	'Added on'
+				],
+				[
+					'label'	=> 'actions',
+					'text'	=> 'Actions'
+				]
+			],
+			'rows' => $fields->items()
+		];
+
+		$total_pages = $fields->lastPage();
+
+		return [
+			'table_data'	=>		$table_data,
+			'total_pages'	=>		$total_pages,
+			'current_page'	=>		$fields->currentPage()
+		];
 
 	}
 

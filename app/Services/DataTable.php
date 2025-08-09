@@ -7,7 +7,7 @@
 
 	class DataTable{
 
-		public static function sortNPaginate($request, $model, $skip_columns = []){
+		public static function sortNPaginate($request, $model, $skip_columns = [], $company_id = null){
 
 			$paginate = false;
 			$model = new $model;
@@ -27,8 +27,12 @@
 
 			$default_per_page = (int)Sanitize::input($request->input('default_per_page'));
 
+			if($company_id === null){
+				$fields = $model::query();
+			}else{
+				$fields = $model::where('company_id', '=', $company_id);
+			}
 			
-			$fields = $model::query();
 			
 			$current_page = 1;
 			$per_page = $default_per_page;
