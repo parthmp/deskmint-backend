@@ -160,8 +160,10 @@ class ClientsCustomFieldsController extends Controller{
 		);
 		
 		$fields->each(function($ele){
+
 			$ele->input_type = ucfirst($ele->input_type);
-			if($ele->required === 0){
+
+			if((int)$ele->required === 0){
 				$ele->required = [
 					'type'		=>	'label',
 					'highlight'	=>	'error',
@@ -174,6 +176,7 @@ class ClientsCustomFieldsController extends Controller{
 					'text'		=>	'Yes'
 				];
 			}
+
 		});
 		
 		$table_data = [
@@ -213,6 +216,21 @@ class ClientsCustomFieldsController extends Controller{
 			'total_pages'	=>		$total_pages,
 			'current_page'	=>		$fields->currentPage()
 		];
+
+	}
+
+	public function show(Request $request){
+
+		$id = $request->segment(3);
+
+		$company_id = Sanitize::input($request->input('company_id'));
+		
+		$client_custom_field = ClientsCustomField::select('custom_field_type_id', 'label', 'placeholder', 'required', 'default_value', 'show_on_index_page', 'order_on_add_edit_page', 'order_column_on_index_page', 'type_params')->where([['id', '=', $id], ['company_id','=', $company_id]])->with('customFieldType')->first();
+		if(!$client_custom_field){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}
+
+		return $client_custom_field;
 
 	}
 

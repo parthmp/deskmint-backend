@@ -12,4 +12,8 @@ class ClientsCustomField extends Model{
 
 	protected $table = 'clients_custom_fields';
 
+	public function customFieldType(){
+		return $this->belongsTo(CustomFieldType::class, 'custom_field_type_id');
+	}
+
 }
