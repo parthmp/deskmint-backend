@@ -136,7 +136,22 @@ class ClientsCustomFieldsController extends Controller{
 		
 		$company_id = Sanitize::input($request->input('company_id'));
 
-		$fields = DataTable::sortNPaginate($request, ClientsCustomField::class, ['deleted_at', 'updated_at', 'created_at'], $company_id);
+		/*$fields = DataTable::sortNPaginate($request, ClientsCustomField::class, ['deleted_at', 'updated_at', 'created_at'], $company_id);*/
+		$fields = DataTable::sortNPaginate(
+			$request,
+			\App\Models\ClientsCustomField::class,
+			['deleted_at', 'updated_at'],
+			$company_id,
+			[
+				[
+					'table' => 'custom_field_types',
+					'first' => 'clients_custom_fields.custom_field_type_id',
+					'operator' => '=',
+					'second' => 'custom_field_types.id',
+					'columns' => ['custom_field_types.input_type as input_type']
+				]
+			]
+		);
 		
 		$fields->each(function($ele){
 			$ele->input_type = ucfirst($ele->input_type);
@@ -149,7 +164,7 @@ class ClientsCustomFieldsController extends Controller{
 					'text'	=>	'ID'
 				],
 				[
-					'label' => 	'field_type',
+					'label' => 	'input_type',
 					'text'	=>	'Field type'
 				],
 				[

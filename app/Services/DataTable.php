@@ -7,7 +7,7 @@
 
 	class DataTable{
 
-		public static function sortNPaginate($request, $model, $skip_columns = [], $company_id = null){
+		public static function sortNPaginate($request, $model, $skip_columns = [], $company_id = null, $joins = []){
 
 			$paginate = false;
 			$model = new $model;
@@ -15,8 +15,13 @@
 			$table = $model->getTable();
 
 			$allowed_columns = Schema::getColumnListing($table);
+			$tables_for_columns = [];
 			if(count($skip_columns) > 0){
 				$allowed_columns = array_values(array_diff($allowed_columns, $skip_columns));
+			}
+
+			for($z = 0 ; $z < count($allowed_columns) ; $z++){
+				$tables_for_columns[] = $table;
 			}
 
 			$allowed_sorting_directions = ['asc', 'desc'];
@@ -27,13 +32,44 @@
 
 			$default_per_page = (int)Sanitize::input($request->input('default_per_page'));
 
-			if($company_id === null){
-				$fields = $model::query();
-			}else{
-				$fields = $model::where('company_id', '=', $company_id);
+		
+			$fields = $model::query()->from($table);
+
+			/* joins for relative tables */
+			$selects = ["{$table}.*"];
+			foreach($joins as $join){
+				$fields->leftJoin($join['table'], $join['first'], $join['operator'], $join['second']);
+				if(!empty($join['columns'])){
+					foreach ($join['columns'] as $col){
+
+						$selects[] = $col;
+						
+						/* Extract alias if present */
+						if(stripos($col, ' as ') !== false) {
+							[, $alias] = preg_split('/\s+as\s+/i', $col);
+							$allowed_columns[] = trim($alias);
+						}else{
+							$allowed_columns[] = basename(str_replace('.', '/', $col));
+						}
+
+						$tables_for_columns[] = $join['table'];
+					}
+				}
 			}
 			
+			$fields->select($selects);
 			
+			if ($company_id !== null) {
+				$fields->where("{$table}.company_id", '=', $company_id);
+			}
+			
+			$modified_columns_for_tables = [];
+			for($z = 0 ; $z < count($allowed_columns) ; $z++){
+				$modified_columns_for_tables[$z] = $tables_for_columns[$z].'.'.$allowed_columns[$z];
+			}
+			
+			$tables_for_columns = null;
+
 			$current_page = 1;
 			$per_page = $default_per_page;
 
@@ -62,9 +98,8 @@
 				
 				if($searched_term !== ''){
 					
-					
-					$fields->where(function ($q) use ($searched_term, $allowed_columns) {
-						foreach ($allowed_columns as $index => $column) {
+					$fields->where(function ($q) use ($searched_term, $modified_columns_for_tables){
+						foreach ($modified_columns_for_tables as $index => $column) {
 							if($index === 0){
 								$q->where($column, 'LIKE', "%$searched_term%");
 							}else{
