@@ -2,6 +2,7 @@
 
 	namespace App\Helpers;
 
+	use Carbon\Carbon;
 	use Illuminate\Http\Response;
 
 	class General{
@@ -22,6 +23,115 @@
 
 		public static function wentWrong() : Response{
 			return response(['message' 	=> 	'Something went wrong', 'validity'	=>	'something_went_wrong'], config('global.error_code'));
+		}
+
+		public static function generateSearchDateText($datetime){
+
+			$date = $datetime instanceof Carbon ? $datetime : Carbon::parse($datetime);
+			
+			$components = [
+				'year' => $date->year,
+				'year_short' => substr($date->year, 2),
+				'month' => $date->month,
+				'month_padded' => sprintf('%02d', $date->month),
+				'month_short' => strtolower($date->format('M')),
+				'month_full' => strtolower($date->format('F')),
+				'day' => $date->day,
+				'day_padded' => sprintf('%02d', $date->day),
+				'day_ordinal' => strtolower($date->format('jS')),
+				'hour' => $date->format('H'),
+				'minute' => $date->format('i'),
+				'second' => $date->format('s'),
+			];
+			
+			$combinations = [];
+			
+			$combinations = array_merge($combinations, [
+				$components['year'],
+				$components['year_short'],
+				$components['month'],
+				$components['month_padded'],
+				$components['month_short'],
+				$components['month_full'],
+				$components['day'],
+				$components['day_padded'],
+				$components['day_ordinal'],
+			]);
+			
+			$combinations = array_merge($combinations, self::generateMonthDayCombinations($components));
+			
+			$combinations = array_merge($combinations, self::generateDateFormatCombinations($components));
+			
+			$combinations = array_merge($combinations, [
+				"{$components['hour']}:{$components['minute']}",
+				"{$components['hour']}:{$components['minute']}:{$components['second']}",
+			]);
+
+			$combinations = array_merge($combinations, [
+				"{$components['day']}-{$components['month_short']}-{$components['year']} {$components['hour']}:{$components['minute']}:{$components['second']}",
+				"{$components['day']}-{$components['month_short']}-{$components['year']} {$components['hour']}:{$components['minute']}",
+				"{$components['day']}-{$components['month_short']}-{$components['year']} {$components['hour']}",
+				"{$components['day']}-{$components['month_short']}-{$components['year']}",
+				"{$components['day']}-{$components['month_short']}",
+				"{$components['day_ordinal']}-{$components['month_short']}-{$components['year']} {$components['hour']}:{$components['minute']}:{$components['second']}",
+				"{$components['day_ordinal']}-{$components['month_short']}-{$components['year']} {$components['hour']}:{$components['minute']}",
+				"{$components['day_ordinal']}-{$components['month_short']}-{$components['year']} {$components['hour']}",
+				"{$components['day_ordinal']}-{$components['month_short']}-{$components['year']}",
+				"{$components['day_ordinal']}-{$components['month_short']}",
+			]);
+			
+			$combinations = array_merge($combinations, [
+				"{$components['month_short']} {$components['year']}",
+				"{$components['month_full']} {$components['year']}",
+			]);
+			
+			return strtolower(implode(' ', array_unique($combinations)));
+
+		}
+
+		private static function generateMonthDayCombinations($components){
+
+			$combinations = [];
+
+			$day_formats = [$components['day'], $components['day_padded'], $components['day_ordinal']];
+			$month_formats = [$components['month_short'], $components['month_full']];
+			
+			foreach ($day_formats as $day) {
+				foreach ($month_formats as $month) {
+					$combinations[] = "{$day} {$month}";
+					$combinations[] = "{$month} {$day}";
+					$combinations[] = "{$day} {$month} {$components['year']}";
+					if($day !== $components['day_ordinal']){
+						$combinations[] = "{$month} {$day} {$components['year']}";
+					}
+				}
+			}
+			
+			return $combinations;
+		}
+
+		private static function generateDateFormatCombinations($components){
+
+			$combinations = [];
+			
+			$day_formats = [$components['day'], $components['day_padded']];
+			$month_formats = [$components['month'], $components['month_padded']];
+			$separators = ['/', '-'];
+			
+			foreach ($day_formats as $day) {
+				foreach ($month_formats as $month) {
+					foreach ($separators as $sep) {
+						
+						$combinations[] = "{$day}{$sep}{$month}{$sep}{$components['year']}";
+						$combinations[] = "{$month}{$sep}{$day}{$sep}{$components['year']}";
+						$combinations[] = "{$components['year']}{$sep}{$month}{$sep}{$day}";
+						$combinations[] = "{$month}{$sep}{$components['year']}{$sep}{$day}";
+
+					}
+				}
+			}
+			
+			return $combinations;
 		}
 
 	}

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\ClientsCustomField;
 use App\Models\CustomFieldType;
@@ -27,7 +28,7 @@ class ClientsCustomFieldsController extends Controller{
 	}
 
 	public function store(Request $request){
-
+		
 		$v = Validator::make($request->all(), [
 			'input_field'			=>		'required',
 			'label'					=>		'required',
@@ -43,7 +44,7 @@ class ClientsCustomFieldsController extends Controller{
 
 		$input_field = Sanitize::input($request->input('input_field'));
 
-		/* get input field type */
+		
 		$field = CustomFieldType::where('id', '=', $input_field)->first();
 		if(!$field){
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
@@ -52,7 +53,7 @@ class ClientsCustomFieldsController extends Controller{
 		$options = '';
 		if(strtolower($field->input_type) === 'select'){
 
-			/* validate for options */
+			
 			if(!$request->filled('select_options')){
 				return response(['message' => 'Please fill options', 'validity' => 'invalid_data'], config('global.error_code'));
 			}
@@ -108,6 +109,7 @@ class ClientsCustomFieldsController extends Controller{
 			$ccf->order_on_add_edit_page = (int)$add_edit_page_order;
 			$ccf->order_column_on_index_page = (int)$column_order;
 			$ccf->show_on_index_page = $show_on_index_flag;
+			$ccf->searchable_created_at = General::generateSearchDateText(now());
 			
 			if($ccf->save()){
 				return response(['message' => 'Custom field created successfully', 'validity' => 'created_success'], 200);
@@ -120,7 +122,7 @@ class ClientsCustomFieldsController extends Controller{
 			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], config('global.error_code'));
 
 		}
-
+	
 
 	}
 
@@ -136,7 +138,6 @@ class ClientsCustomFieldsController extends Controller{
 		
 		$company_id = Sanitize::input($request->input('company_id'));
 
-		/*$fields = DataTable::sortNPaginate($request, ClientsCustomField::class, ['deleted_at', 'updated_at', 'created_at'], $company_id);*/
 		$fields = DataTable::sortNPaginate(
 			$request,
 			\App\Models\ClientsCustomField::class,

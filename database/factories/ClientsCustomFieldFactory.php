@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Helpers\General;
 use App\Models\ClientsCustomField;
 use App\Models\Company;
 use App\Models\CustomFieldType;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class ClientsCustomFieldFactory extends Factory{
 
-
+	/*
 	private function setTypeParams(ClientsCustomField $model){
 
 		if(!empty($model->type_params)){
@@ -23,7 +24,7 @@ class ClientsCustomFieldFactory extends Factory{
 			$model->type_params = implode(', ', $this->faker->words($this->faker->numberBetween(2, 10)));
 		}
 
-	}
+	}*/
 
     /**
      * Define the model's default state.
@@ -32,20 +33,25 @@ class ClientsCustomFieldFactory extends Factory{
      */
     public function definition(): array{
 
+		$created_at = $this->faker->dateTimeBetween('-1 year', 'now')->format('Y-m-d H:i:s');
+
         return [
             'custom_field_type_id'					=>			CustomFieldType::factory(),
             'company_id'							=>			Company::factory(),
             'label'									=>			$this->faker->text(10),
             'placeholder'							=>			'PL '.$this->faker->text(12),
             'required'								=>			$this->faker->boolean(),
-            'type_params'							=>			'',
+            'type_params'							=>			implode(', ', $this->faker->words($this->faker->numberBetween(2, 10))),
             'default_value'							=>			$this->faker->text(5),
             'order_on_add_edit_page'				=>			$this->faker->numberBetween(1, 100),
             'order_column_on_index_page'			=>			$this->faker->numberBetween(1, 100),
-            'show_on_index_page'					=>			$this->faker->boolean()
+            'show_on_index_page'					=>			$this->faker->boolean(),
+            'searchable_created_at'					=>			General::generateSearchDateText($created_at),
+			'created_at'							=>			$created_at
         ];
     }
 
+	/*
 	public function configure(){
         return $this->afterMaking(function (ClientsCustomField $model){
             $this->setTypeParams($model);
@@ -53,5 +59,5 @@ class ClientsCustomFieldFactory extends Factory{
 			$this->setTypeParams($model);
             $model->save();
         });
-    }
+    }*/
 }
