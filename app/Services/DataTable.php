@@ -7,7 +7,7 @@
 
 	class DataTable{
 
-		public static function sortNPaginate($request, $model, $skip_columns = [], $company_id = null, $joins = []){
+		public static function sortNPaginate($request, $model, $skip_columns = [], $company_id = null, $joins = [], $rewrites = []){
 
 			$paginate = false;
 			$model = new $model;
@@ -98,21 +98,59 @@
 				
 				if($searched_term !== ''){
 					
-					$fields->where(function ($q) use ($searched_term, $modified_columns_for_tables){
-						foreach ($modified_columns_for_tables as $index => $column) {
-							if($index === 0){
-								$q->where($column, 'LIKE', "%$searched_term%");
-							}else{
-								$q->orWhere($column, 'LIKE', "%$searched_term%");
+					$fields->where(function ($q) use ($searched_term, $modified_columns_for_tables, $rewrites){
+						foreach ($modified_columns_for_tables as $index => $column){
+
+							$search_expr = $column;
+
+							foreach ($rewrites as $key => $map){
+								if ($column === $key || $column === $key || $column === preg_replace('/.*\./', '', $key)){
+									$case = "CASE";
+									foreach($map as $db_value => $display_value){
+										$case .= " WHEN {$key} = '".addslashes($db_value)."' THEN '".addslashes($display_value)."'";
+									}
+									$case .= " ELSE {$key} END";
+									$search_expr = \DB::raw($case);
+									break;
+								}
+							}
+
+							if ($index === 0) {
+								$q->whereRaw($search_expr instanceof \Illuminate\Database\Query\Expression ? $search_expr->getValue(\DB::connection()->getQueryGrammar()) . " LIKE ?" : "{$search_expr} LIKE ?", ["%{$searched_term}%"]);
+							} else {
+								$q->orWhereRaw($search_expr instanceof \Illuminate\Database\Query\Expression ? $search_expr->getValue(\DB::connection()->getQueryGrammar()) . " LIKE ?" : "{$search_expr} LIKE ?", ["%{$searched_term}%"]
+								);
 							}
 						}
 					});
 				}
 
-					
-				if(isset($sorted_column['label'], $sorted_column['sort_visibility']) && in_array($sorted_column['label'], $allowed_columns, true) && in_array(strtolower($sorted_column['sort_visibility']), $allowed_sorting_directions, true)){
+				if (isset($sorted_column['label'], $sorted_column['sort_visibility']) && in_array($sorted_column['label'], $allowed_columns, true) && in_array(strtolower($sorted_column['sort_visibility']), $allowed_sorting_directions, true)){
+
 					$direction = strtolower($sorted_column['sort_visibility']);
-					$fields->orderBy($sorted_column['label'], $direction);
+					$column = $sorted_column['label'];
+
+					$rewrite_key = null;
+					foreach($rewrites as $key => $map){
+						if($column === $key || $column === preg_replace('/.*\./', '', $key)){
+							$rewrite_key = $key;
+							break;
+						}
+					}
+
+					if($rewrite_key !== null){
+
+						$case = "CASE";
+						foreach($rewrites[$rewrite_key] as $db_value => $display_value){
+							$case .= " WHEN {$rewrite_key} = '".addslashes($db_value)."' THEN '".addslashes($display_value)."'";
+						}
+						$case .= " ELSE {$rewrite_key} END";
+
+						$fields->orderByRaw("$case $direction");
+
+					}else{
+						$fields->orderBy($column, $direction);
+					}
 				}
 
 			}

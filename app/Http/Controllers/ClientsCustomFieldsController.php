@@ -150,11 +150,29 @@ class ClientsCustomFieldsController extends Controller{
 					'second' => 'custom_field_types.id',
 					'columns' => ['custom_field_types.input_type as input_type']
 				]
+			], [
+				'clients_custom_fields.required' => [
+					0	=>	'No',
+					1	=>	"Yes"
+				]
 			]
 		);
 		
 		$fields->each(function($ele){
 			$ele->input_type = ucfirst($ele->input_type);
+			if($ele->required === 0){
+				$ele->required = [
+					'type'		=>	'label',
+					'highlight'	=>	'error',
+					'text'		=>	'No'
+				];
+			}else{
+				$ele->required = [
+					'type'		=>	'label',
+					'highlight'	=>	'success',
+					'text'		=>	'Yes'
+				];
+			}
 		});
 		
 		$table_data = [
