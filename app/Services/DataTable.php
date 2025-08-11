@@ -156,9 +156,9 @@
 			}
 
 			if($paginate){
-				$fields = $fields->paginate($per_page, ['*'], 'page', (int)$current_page);
+				$fields = $fields->orderBy($table.'.id', 'desc')->paginate($per_page, ['*'], 'page', (int)$current_page);
 			}else{
-				$fields = $fields->orderBy('id', 'desc')->paginate($per_page, ['*'], 'page', (int)$current_page);
+				$fields = $fields->orderBy($table.'.id', 'desc')->paginate($per_page, ['*'], 'page', (int)$current_page);
 			}
 
 			return $fields;

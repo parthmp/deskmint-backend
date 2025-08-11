@@ -10,7 +10,6 @@ use App\Services\DataTable;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use SebastianBergmann\CodeCoverage\Report\Html\CustomCssFile;
 
 class ClientsCustomFieldsController extends Controller{
     
@@ -268,6 +267,32 @@ class ClientsCustomFieldsController extends Controller{
 		}
 
 		return $this->addOrUpdateCustomClientsField($request, $company_id, false, $client_custom_field);		
+
+	}
+
+	public function destroy(Request $request){
+
+		$ids = $request->input('ids');
+
+		if (!is_array($ids) || empty($ids)) {
+			return response(['message' => 'No valid IDs provided', 'validity' => 'invalid_ids'], config('global.error_code'));
+		}
+
+		foreach ($ids as $id){
+			if (!is_numeric($id)) {
+				return response(['message' => 'All IDs must be numeric', 'validity' => 'non_numeric'], config('global.error_code'));
+			}
+		}
+
+		try{
+			
+			ClientsCustomField::whereIn('id', $ids)->delete();
+
+			return response(['message' => 'Custom field(s) deleted successfully', 'validity' => 'delete_success'], 200);
+
+		}catch(Exception $e){
+			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], 500);
+		}
 
 	}
 
