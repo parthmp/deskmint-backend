@@ -29,101 +29,9 @@ class ClientsCustomFieldsController extends Controller{
 
 	public function store(Request $request){
 		
-		$v = Validator::make($request->all(), [
-			'input_field'			=>		'required',
-			'label'					=>		'required',
-			'is_required'			=>		'required',
-			'show_on_index'			=>		'required',
-			'add_edit_page_order'	=>		'required',
-			'column_order'			=>		'required'
-		]);
-
-		if($v->fails()){
-			return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_data'], config('global.error_code'));
-		}
-
-		$input_field = Sanitize::input($request->input('input_field'));
-
-		
-		$field = CustomFieldType::where('id', '=', $input_field)->first();
-		if(!$field){
-			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
-		}
-
-		$options = '';
-		if(strtolower($field->input_type) === 'select'){
-
-			
-			if(!$request->filled('select_options')){
-				return response(['message' => 'Please fill options', 'validity' => 'invalid_data'], config('global.error_code'));
-			}
-
-			$options_temp = Sanitize::input($request->input('select_options'));
-			if($options_temp === ''){
-				return response(['message' => 'Please fill options', 'validity' => 'invalid_data'], config('global.error_code'));
-			}
-
-			$options = $options_temp;
-
-		}
-
 		$company_id = Sanitize::input($request->input('company_id'));
-		$label = Sanitize::input($request->input('label'));
-		
-		$placeholder = '';
-		if($request->filled('placeholder')){
-			$placeholder = Sanitize::input($request->input('placeholder'));
-		}
-
-		$is_required = Sanitize::input($request->input('is_required'));
-
-		$default_value = '';
-		if($request->filled('default_value')){
-			$default_value = Sanitize::input($request->input('default_value'));
-		}
-		
-		$show_on_index = Sanitize::input($request->input('show_on_index'));
-		$add_edit_page_order = Sanitize::input($request->input('add_edit_page_order'));
-		$column_order = Sanitize::input($request->input('column_order'));
-		
-		try{
-
-			$is_required_flag = 0;
-			if((string)$is_required === 'true'){
-				$is_required_flag = 1;
-			}
-
-			$show_on_index_flag = 0;
-			if((string)$show_on_index === 'true'){
-				$show_on_index_flag = 1;
-			}
-
-			$ccf = new ClientsCustomField();
-			$ccf->custom_field_type_id = $field->id;
-			$ccf->company_id = $company_id;
-			$ccf->label = $label;
-			$ccf->placeholder = $placeholder;
-			$ccf->required = $is_required_flag;
-			$ccf->type_params = $options;
-			$ccf->default_value = $default_value;
-			$ccf->order_on_add_edit_page = (int)$add_edit_page_order;
-			$ccf->order_column_on_index_page = (int)$column_order;
-			$ccf->show_on_index_page = $show_on_index_flag;
-			$ccf->searchable_created_at = General::generateSearchDateText(now());
-			
-			if($ccf->save()){
-				return response(['message' => 'Custom field created successfully', 'validity' => 'created_success'], 200);
-			}else{
-				return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], config('global.error_code'));
-			}
-
-		}catch(Exception $e){
-
-			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], config('global.error_code'));
-
-		}
+		return $this->addOrUpdateCustomClientsField($request, $company_id, true);
 	
-
 	}
 
 	public function index(Request $request){
@@ -234,27 +142,7 @@ class ClientsCustomFieldsController extends Controller{
 
 	}
 
-	private function addOrUpdate(Request $request, $add = true, $object = null){
-
-		if($add){
-			
-		}else{
-
-		}
-
-	}
-
-	public function update(Request $request){
-
-		$id = $request->segment(3);
-
-		$company_id = Sanitize::input($request->input('company_id'));
-
-		$client_custom_field = ClientsCustomField::where([['id', '=', $id], ['company_id','=', $company_id]])->first();
-
-		if(!$client_custom_field){
-			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
-		}
+	private function addOrUpdateCustomClientsField(Request $request, $company_id, $add = true, $object = null){
 
 		$v = Validator::make($request->all(), [
 			'input_field'			=>		'required',
@@ -277,7 +165,7 @@ class ClientsCustomFieldsController extends Controller{
 		}
 
 		$options = '';
-		if(strtolower($field->input_type) === 'select'){
+		if(strtolower($field->input_type) === 'select' || strtolower($field->input_type) === 'multiselect'){
 
 			if(!$request->filled('select_options')){
 				return response(['message' => 'Please fill options', 'validity' => 'invalid_data'], config('global.error_code'));
@@ -291,8 +179,6 @@ class ClientsCustomFieldsController extends Controller{
 			$options = $options_temp;
 
 		}
-
-		
 
 		$label = Sanitize::input($request->input('label'));
 		
@@ -312,21 +198,24 @@ class ClientsCustomFieldsController extends Controller{
 		$add_edit_page_order = Sanitize::input($request->input('add_edit_page_order'));
 		$column_order = Sanitize::input($request->input('column_order'));
 
+		$is_required_flag = 0;
+		if((string)$is_required === 'true'){
+			$is_required_flag = 1;
+		}
+
+		$show_on_index_flag = 0;
+		if((string)$show_on_index === 'true'){
+			$show_on_index_flag = 1;
+		}
+
 		try{
-
-			$is_required_flag = 0;
-			if((string)$is_required === 'true'){
-				$is_required_flag = 1;
+			
+			if($add){
+				$ccf = new ClientsCustomField();
+			}else{
+				$ccf = $object;
+				$object = null;
 			}
-
-			$show_on_index_flag = 0;
-			if((string)$show_on_index === 'true'){
-				$show_on_index_flag = 1;
-			}
-
-			$ccf = $client_custom_field;
-
-			$client_custom_field = null;
 
 			$ccf->custom_field_type_id = $field->id;
 			$ccf->company_id = $company_id;
@@ -338,18 +227,47 @@ class ClientsCustomFieldsController extends Controller{
 			$ccf->order_on_add_edit_page = (int)$add_edit_page_order;
 			$ccf->order_column_on_index_page = (int)$column_order;
 			$ccf->show_on_index_page = $show_on_index_flag;
-			
+
+			if($add){
+				$ccf->searchable_created_at = General::generateSearchDateText(now());
+			}
+
+			$success_message = 'Custom field updated successfully';
+			$validity_message = 'updated_success';
+
+			if($add){
+
+				$success_message = 'Custom field created successfully';
+				$validity_message = 'created_success';
+
+			}
+
 			if($ccf->save()){
-				return response(['message' => 'Custom field updated successfully', 'validity' => 'created_success'], 200);
+				return response(['message' => $success_message, 'validity' => $validity_message], 200);
 			}else{
 				return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], config('global.error_code'));
 			}
 
+
 		}catch(Exception $e){
-
 			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], config('global.error_code'));
-
 		}
+
+	}
+
+	public function update(Request $request){
+
+		$id = $request->segment(3);
+
+		$company_id = Sanitize::input($request->input('company_id'));
+
+		$client_custom_field = ClientsCustomField::where([['id', '=', $id], ['company_id','=', $company_id]])->first();
+
+		if(!$client_custom_field){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}
+
+		return $this->addOrUpdateCustomClientsField($request, $company_id, false, $client_custom_field);		
 
 	}
 
