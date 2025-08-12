@@ -421,8 +421,8 @@ class FieldTypesControllerTest extends TestCase{
 		$this->assertNotEmpty($response['table_data']['rows']);
 		$this->assertNotEmpty($response['table_data']['columns']);
 		
-		/* check if it is really on second page */
-		$this->assertEquals('BLA2', $response['table_data']['rows'][0]['input_name']);
+		/* check if it is really on second page, it is descending id by default now */
+		$this->assertEquals('BLA8', $response['table_data']['rows'][0]['input_name']);
 		$this->assertEquals(2, (int)$response['current_page']);
 
 	}
@@ -1013,7 +1013,7 @@ class FieldTypesControllerTest extends TestCase{
 		$this->assertEquals(2, (int)$response['current_page']);
 		
 		$index = 0;
-		for($z = 16 ; $z < 21 ; $z++){
+		for($z = 27 ; $z < 24 ; $z--){
 			/* should have no effect */
 			$this->assertEquals('BLABLA'.$z, $response['table_data']['rows'][$index]['input_name']);
 			$index++;
