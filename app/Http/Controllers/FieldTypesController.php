@@ -129,7 +129,7 @@ class FieldTypesController extends Controller{
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}
 
-		$field = CustomFieldType::where('id', '=', $field_id)->first();
+		$field = CustomFieldType::select('id', 'input_type', 'input_name')->where('id', '=', $field_id)->first();
 		if(!$field){
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}
