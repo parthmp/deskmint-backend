@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\CustomFieldType;
 use App\Services\DataTable;
@@ -55,6 +56,7 @@ class FieldTypesController extends Controller{
 			$custom_type = new CustomFieldType();
 			$custom_type->input_type = $input_type;
 			$custom_type->input_name = $input_name;
+			$custom_type->searchable_created_at = General::generateSearchDateText(now());
 
 			if($custom_type->save()){
 				return response(['message' => 'Custom field type created successfully', 'validity' => 'created_success'], 200);
@@ -78,7 +80,7 @@ class FieldTypesController extends Controller{
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}
 		
-		$fields = DataTable::sortNPaginate($request, CustomFieldType::class, ['deleted_at', 'updated_at', 'created_at']);
+		$fields = DataTable::sortNPaginate($request, CustomFieldType::class, ['deleted_at', 'updated_at']);
 		
 		$fields->each(function($ele){
 			$ele->input_type = ucfirst($ele->input_type);
@@ -88,7 +90,7 @@ class FieldTypesController extends Controller{
 			'columns' => [
 				[
 					'label' => 	'id',
-					'text'	=>	'ID'
+					'text'	=>	'ID#'
 				],
 				[
 					'label' => 	'input_type',
@@ -97,6 +99,10 @@ class FieldTypesController extends Controller{
 				[
 					'label'	=>	'input_name',
 					'text'	=>	'Input name'
+				],
+				[
+					'label'	=>	'created_at',
+					'text'	=>	'Added on'
 				],[
 					'label'	=> 'actions',
 					'text'	=> 'Actions'

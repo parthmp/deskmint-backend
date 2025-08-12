@@ -9,6 +9,8 @@
 
 		public static function sortNPaginate($request, $model, $skip_columns = [], $company_id = null, $joins = [], $rewrites = []){
 
+			$hide_columns = ['searchable_created_at', 'deleted_at', 'updated_at'];
+
 			$paginate = false;
 			$model = new $model;
 			
@@ -36,12 +38,20 @@
 			$fields = $model::query()->from($table);
 
 			/* joins for relative tables */
-			$selects = ["{$table}.*"];
+			/*$selects = ["{$table}.*"];*/
+			/* hide columns in response */
+			$all_columns = Schema::getColumnListing($table);
+			$selects = array_diff($all_columns, $hide_columns);
+
+			$selects = array_map(function($column) use ($table) {
+				return "{$table}.{$column}";
+			}, $selects);
+			
 			foreach($joins as $join){
 				$fields->leftJoin($join['table'], $join['first'], $join['operator'], $join['second']);
 				if(!empty($join['columns'])){
 					foreach ($join['columns'] as $col){
-
+						
 						$selects[] = $col;
 						
 						/* Extract alias if present */

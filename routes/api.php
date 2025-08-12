@@ -28,7 +28,7 @@ Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::cla
 	Route::post('set-default-company', [CompanyController::class, 'setDefaultCompany']);
 });
 
-Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::class, IfUserHasAccessToFeature::class, DefaultCompany::class])->group(function (){
+Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::class, IfUserHasAccessToFeature::class, DefaultCompany::class])->group(function (){
 
 	Route::resource('manage-admins', AdminController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	Route::delete('manage-admins', [AdminController::class, 'destroy']);
