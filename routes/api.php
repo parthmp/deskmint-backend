@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\ClientsCustomFieldsController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\FieldTypesController;
@@ -42,6 +43,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('clients-custom-fields/fetch-field-types', [ClientsCustomFieldsController::class, 'fetchFieldTypes']);
 	Route::resource('clients-custom-fields', ClientsCustomFieldsController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	Route::delete('clients-custom-fields', [ClientsCustomFieldsController::class, 'destroy']);
+
+	Route::get('manage-clients/fetch-clients-custom-fields', [ClientsController::class, 'fetchClientsCustomFields']);
 	
 });
 
