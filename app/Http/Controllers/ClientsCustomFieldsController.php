@@ -90,7 +90,7 @@ class ClientsCustomFieldsController extends Controller{
 			'columns' => [
 				[
 					'label' => 	'id',
-					'text'	=>	'ID'
+					'text'	=>	'ID#'
 				],
 				[
 					'label' => 	'input_type',
