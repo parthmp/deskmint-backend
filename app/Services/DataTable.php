@@ -4,10 +4,12 @@
 
 	use App\Helpers\Sanitize;
 	use Illuminate\Support\Facades\Schema;
+	use Carbon\Carbon;
+	use Carbon\CarbonTimeZone;
 
 	class DataTable{
 
-		public static function sortNPaginate($request, $model, $skip_columns = [], $company_id = null, $joins = [], $rewrites = []){
+		public static function sortNPaginate($request, $model, $skip_columns = [], $company_id = null, $dates_columns = [], $joins = [], $rewrites = []){
 
 			$hide_columns = ['searchable_created_at', 'deleted_at', 'updated_at'];
 
@@ -28,7 +30,7 @@
 
 			$allowed_sorting_directions = ['asc', 'desc'];
 
-			if($request->filled('searched_term') || $request->filled('current_page') || $request->filled('sorted_column') || $request->filled('per_page')){
+			if($request->filled('searched_term') || $request->filled('current_page') || $request->filled('sorted_column') || $request->filled('per_page') || $request->filled('date_range')){
 				$paginate = true;
 			}
 
@@ -105,6 +107,33 @@
 						$sorted_column[$key] = Sanitize::input($value);
 					}
 				}
+
+				if($request->filled('date_range')){
+
+					$date_range = $request->input('date_range');
+					
+
+					if(is_array($date_range) && count($date_range) === 2){
+						
+						$from_date = Sanitize::input($date_range[0]);
+						$to_date = Sanitize::input($date_range[1]);
+						
+						if(strtotime($from_date) !== false && strtotime($to_date) !== false){
+
+							$fields = $fields->where(function ($query) use ($dates_columns, $from_date, $to_date) {
+								foreach($dates_columns as $index => $column){
+									if($index === 0){
+										$query->whereBetween($column, [$from_date, $to_date]);
+									}else{
+										$query->orWhereBetween($column, [$from_date, $to_date]);
+									}
+								}
+							});
+
+						}
+					} 
+
+				}
 				
 				if($searched_term !== ''){
 					
@@ -113,8 +142,8 @@
 
 							$search_expr = $column;
 
-							foreach ($rewrites as $key => $map){
-								if ($column === $key || $column === $key || $column === preg_replace('/.*\./', '', $key)){
+							foreach($rewrites as $key => $map){
+								if($column === $key || $column === $key || $column === preg_replace('/.*\./', '', $key)){
 									$case = "CASE";
 									foreach($map as $db_value => $display_value){
 										$case .= " WHEN {$key} = '".addslashes($db_value)."' THEN '".addslashes($display_value)."'";
@@ -125,17 +154,25 @@
 								}
 							}
 
-							if ($index === 0) {
+							if($index === 0){
 								$q->whereRaw($search_expr instanceof \Illuminate\Database\Query\Expression ? $search_expr->getValue(\DB::connection()->getQueryGrammar()) . " LIKE ?" : "{$search_expr} LIKE ?", ["%{$searched_term}%"]);
-							} else {
+							}else{
 								$q->orWhereRaw($search_expr instanceof \Illuminate\Database\Query\Expression ? $search_expr->getValue(\DB::connection()->getQueryGrammar()) . " LIKE ?" : "{$search_expr} LIKE ?", ["%{$searched_term}%"]
 								);
 							}
 						}
 					});
+
+					/*
+					if($timezone !== null){
+						
+						$timezone_dates = self::parseSearchDateToUTC($searched_term, $timezone);
+						dd($timezone_dates);
+					}*/
+
 				}
 
-				if (isset($sorted_column['label'], $sorted_column['sort_visibility']) && in_array($sorted_column['label'], $allowed_columns, true) && in_array(strtolower($sorted_column['sort_visibility']), $allowed_sorting_directions, true)){
+				if(isset($sorted_column['label'], $sorted_column['sort_visibility']) && in_array($sorted_column['label'], $allowed_columns, true) && in_array(strtolower($sorted_column['sort_visibility']), $allowed_sorting_directions, true)){
 
 					$direction = strtolower($sorted_column['sort_visibility']);
 					$column = $sorted_column['label'];

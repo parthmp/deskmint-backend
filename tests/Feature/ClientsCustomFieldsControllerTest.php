@@ -606,129 +606,6 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		
 	}
 
-	public function test_if_table_filters_for_searched_term_for_date(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
-		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
-		$company_id = $this->set_default_company();
-
-		ClientsCustomField::truncate();
-
-		ClientsCustomField::factory()->create([
-			'company_id'			=>	$company_id,
-			'created_at'			=>	'2025-08-11 12:15:05',
-			'searchable_created_at'	=>	General::generateSearchDateText('2025-08-11 12:15:05')
-		]);
-
-		$queryParams = http_build_query([
-			'company_id' 		=> 		$company_id,
-			'default_per_page'	=>		15,
-			'searched_term'		=>		'11th aug'
-		]);
-
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
-
-		$response->assertStatus(200);
-
-		$response = $response->json();
-		$this->assertArrayHasKey('table_data', $response);
-		$this->assertArrayHasKey('total_pages', $response);
-		$this->assertNotEmpty($response['table_data']['rows']);
-		$this->assertNotEmpty($response['table_data']['columns']);
-		
-	}
-
-	public function test_if_table_filters_for_searched_term_for_date2(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
-		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
-		$company_id = $this->set_default_company();
-
-		ClientsCustomField::truncate();
-
-		ClientsCustomField::factory()->create([
-			'company_id'			=>	$company_id,
-			'created_at'			=>	'2025-08-11 12:15:05',
-			'searchable_created_at'	=>	General::generateSearchDateText('2025-08-11 12:15:05')
-		]);
-
-		$queryParams = http_build_query([
-			'company_id' 		=> 		$company_id,
-			'default_per_page'	=>		15,
-			'searched_term'		=>		'11/08/2025'
-		]);
-
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
-
-		$response->assertStatus(200);
-
-		$response = $response->json();
-		$this->assertArrayHasKey('table_data', $response);
-		$this->assertArrayHasKey('total_pages', $response);
-		$this->assertNotEmpty($response['table_data']['rows']);
-		$this->assertNotEmpty($response['table_data']['columns']);
-		
-	}
-
-	public function test_if_table_filters_for_searched_term_for_date3(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
-		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
-		$company_id = $this->set_default_company();
-
-		ClientsCustomField::truncate();
-
-		ClientsCustomField::factory()->create([
-			'company_id'			=>	$company_id,
-			'created_at'			=>	'2025-08-11 12:15:05',
-			'searchable_created_at'	=>	General::generateSearchDateText('2025-08-11 12:15:05')
-		]);
-
-		$queryParams = http_build_query([
-			'company_id' 		=> 		$company_id,
-			'default_per_page'	=>		15,
-			'searched_term'		=>		'11th august 2025'
-		]);
-
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
-
-		$response->assertStatus(200);
-
-		$response = $response->json();
-		$this->assertArrayHasKey('table_data', $response);
-		$this->assertArrayHasKey('total_pages', $response);
-		$this->assertNotEmpty($response['table_data']['rows']);
-		$this->assertNotEmpty($response['table_data']['columns']);
-		
-	}
-
 	public function test_if_table_filters_for_searched_term_not_matched(){
 
 		$user = User::factory()->create([
@@ -750,7 +627,6 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'company_id'			=>	$company_id,
 			'label'					=>	'test label',
 			'created_at'			=>	'2025-08-11 12:15:05',
-			'searchable_created_at'	=>	General::generateSearchDateText('2025-08-11 12:15:05')
 		]);
 
 		

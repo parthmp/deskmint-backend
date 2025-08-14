@@ -46,7 +46,6 @@ class ClientsCustomFieldFactory extends Factory{
             'order_on_add_edit_page'				=>			$this->faker->numberBetween(1, 100),
             'order_column_on_index_page'			=>			$this->faker->numberBetween(1, 100),
             'show_on_index_page'					=>			$this->faker->boolean(),
-            'searchable_created_at'					=>			General::generateSearchDateText($created_at),
 			'created_at'							=>			$created_at
         ];
     }

@@ -7,6 +7,7 @@ use App\Helpers\Sanitize;
 use App\Models\ClientsCustomField;
 use App\Models\CustomFieldType;
 use App\Services\DataTable;
+use DateTimeZone;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -50,6 +51,7 @@ class ClientsCustomFieldsController extends Controller{
 			\App\Models\ClientsCustomField::class,
 			['deleted_at', 'updated_at'],
 			$company_id,
+			['clients_custom_fields.created_at'],
 			[
 				[
 					'table' => 'custom_field_types',
@@ -226,10 +228,6 @@ class ClientsCustomFieldsController extends Controller{
 			$ccf->order_on_add_edit_page = (int)$add_edit_page_order;
 			$ccf->order_column_on_index_page = (int)$column_order;
 			$ccf->show_on_index_page = $show_on_index_flag;
-
-			if($add){
-				$ccf->searchable_created_at = General::generateSearchDateText(now());
-			}
 
 			$success_message = 'Custom field updated successfully';
 			$validity_message = 'updated_success';
