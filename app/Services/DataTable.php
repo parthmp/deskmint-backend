@@ -11,7 +11,7 @@
 
 		public static function sortNPaginate($request, $model, $skip_columns = [], $company_id = null, $dates_columns = [], $joins = [], $rewrites = []){
 
-			$hide_columns = ['searchable_created_at', 'deleted_at', 'updated_at'];
+			$hide_columns = ['deleted_at', 'updated_at'];
 
 			$paginate = false;
 			$model = new $model;
