@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\ClientsCustomFieldsController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CountriesController;
 use App\Http\Controllers\FieldTypesController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\LoginController;
@@ -44,6 +45,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::resource('clients-custom-fields', ClientsCustomFieldsController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	Route::delete('clients-custom-fields', [ClientsCustomFieldsController::class, 'destroy']);
 
+	Route::get('get-countries', [CountriesController::class, 'fetchCountries']);
 	Route::get('manage-clients/fetch-clients-custom-fields', [ClientsController::class, 'fetchClientsCustomFields']);
 	
 });
