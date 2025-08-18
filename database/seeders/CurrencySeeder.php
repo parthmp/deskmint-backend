@@ -12,6 +12,7 @@ class CurrencySeeder extends Seeder
      * Run the database seeds.
      */
     public function run(): void{
+		
         $currencies = config('currencies');
 
 		foreach($currencies as $currency){
