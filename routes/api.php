@@ -8,6 +8,7 @@ use App\Http\Controllers\CountriesController;
 use App\Http\Controllers\CurrenciesControlller;
 use App\Http\Controllers\FieldTypesController;
 use App\Http\Controllers\ForgotPasswordController;
+use App\Http\Controllers\IndustriesController;
 use App\Http\Controllers\LoginController;
 use App\Http\Middleware\DefaultCompany;
 use App\Http\Middleware\IfUserHasAccessToFeature;
@@ -48,6 +49,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 
 	Route::get('get-countries', [CountriesController::class, 'fetchCountries']);
 	Route::get('get-currencies', [CurrenciesControlller::class, 'fetchCurrencies']);
+	Route::get('get-industries', [IndustriesController::class, 'fetchIndustries']);
+	
 	Route::get('manage-clients/fetch-clients-custom-fields', [ClientsController::class, 'fetchClientsCustomFields']);
 	
 });
