@@ -134,4 +134,19 @@
 			return $combinations;
 		}
 
+		public static function isValidTime($time) {
+			$patterns = [
+				'/^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/',         // 24h HH:MM:SS
+				'/^(?:[01]\d|2[0-3]):[0-5]\d$/',                 // 24h HH:MM
+				'/^(0[1-9]|1[0-2]):[0-5]\d\s?(AM|PM)$/i'         // 12h HH:MM AM/PM
+			];
+			
+			foreach ($patterns as $pattern) {
+				if (preg_match($pattern, $time)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
 	}
