@@ -149,4 +149,8 @@
 			return false;
 		}
 
+		public static function onlyLettersAndNumbers(string $input) : string{
+			return strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $input));
+		}
+
 	}

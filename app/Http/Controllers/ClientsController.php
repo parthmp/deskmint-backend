@@ -94,7 +94,7 @@ class ClientsController extends Controller{
 		if(!empty($current_row)){
 			$rows[] = $current_row;
 		}
-
+		$index = 0;
 		foreach($rows as $row){
 
 			$count = count($row);
@@ -210,8 +210,9 @@ class ClientsController extends Controller{
 					
 				}
 
+				$field->ref = "cf_client_".$index."_".General::onlyLettersAndNumbers($field->label);
 				
-
+				$index++;
 				
 				
 			}

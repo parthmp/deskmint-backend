@@ -52,26 +52,26 @@ class ValidateDeviceAndTokens
 		$access_token_data = $this->checkAccessTokenWithDevice($access_token_id, $device_id);
 		
 		if(!$access_token_data){
-			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
+			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized1'], 401);
 		}
 
 		$refresh_token_data = $this->checkRefreshTokenWithDevice($refresh_token, $device_id, $user->id);
-		if(!$refresh_token_data){
-			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
-		}
-
 		
-		if(!$this->isRefreshTokenValid($refresh_token_data)){
-			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
+		if(!$refresh_token_data){
+			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized2'], 401);
 		}
 
+		if(!$this->isRefreshTokenValid($refresh_token_data)){
+			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized3'], 401);
+		}
+		
 		if(!$this->isAccessTokenValid($access_token_data) && !$this->isRefreshTokenValid($refresh_token_data)){
-			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized'], 401);
+			return response(['message' => 'Unauthorized', 'validity' => 'unauthorized4'], 401);
 		}
 
 		/* 1) if access token and refresh token are valid but refresh token is near expiry (13 days passed), issue both tokens */
 		/* 2) if access token is invalid and refresh token is valid, issue both tokens */
-
+		
 		if(($this->isAccessTokenValid($access_token_data) && $this->isRefreshTokenValid($refresh_token_data) && $this->refreshTokenIsNearExpiry($refresh_token_data)) || (!$this->isAccessTokenValid($access_token_data) && $this->isRefreshTokenValid($refresh_token_data))){
 
 			$this->invalidatePastAccessTokens($user->id, $device_id);
@@ -83,9 +83,8 @@ class ValidateDeviceAndTokens
 
 			$this->generated_access_token = $new_access_token;
 			$this->generated_refresh_token = $new_refresh_token;
-
 		}
-
+		
 		$response = $next($request);
 
 		if ($this->generated_access_token && $this->generated_refresh_token && $response instanceof JsonResponse) {
