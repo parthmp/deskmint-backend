@@ -1000,9 +1000,23 @@ class ClientsController extends Controller{
 		}
 
 		$billing_and_shipping_validation = $this->validateBillingNShippingInfo($request, $copy_to_shipping);
+		if($billing_and_shipping_validation !== null){
+			return $billing_and_shipping_validation;
+		}
 
-		return $request->all();
+		$custom_fields_validation = $this->validateCustomFields($request);
+		if($custom_fields_validation !== null){
+			return $custom_fields_validation;
+		}
 
+		$settings_validation = $this->validateSettings($request);
+		if($settings_validation !== null){
+			return $settings_validation;
+		}
+
+		return 'all good!';
+		/* insert data here */
+		
 	}
 
 	private function validatePersonInfo(Request $request){
@@ -1092,7 +1106,90 @@ class ClientsController extends Controller{
 		}
 		
 		return null;
-		
+
+	}
+
+	private function validateCustomFields(Request $request){
+
+		$response = ['message' => 'Please fill in required fields', 'validity' => 'invalid_data_tab4', 'tab_switch' => 3];
+
+		if(!$request->has('billing_info')){
+			return response($response, config('global.error_code'));
+		}
+
+		$company_id = Sanitize::input($request->input('company_id'));
+
+		$db_custom_fields = ClientsCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->get();
+
+		if(empty($db_custom_fields)){
+			return null;
+		}
+
+		$validation_rules = [
+			'custom_fields'							=>	'required|array|min:1'
+		];
+
+		$custom_fields_validation_1 = Validator::make($request->all(), $validation_rules);
+		if($custom_fields_validation_1->fails()){
+			return response($response, config('global.error_code'));
+		}
+
+		$custom_fields_submitted = $request->input('custom_fields');
+
+		$validation_rules = [];
+
+		/* generate validation rules dynamically */
+		foreach($db_custom_fields as $field){
+
+			if($field->required == 1){
+
+				for($z = 0 ; $z < count($custom_fields_submitted) ; $z++){
+
+					if($custom_fields_submitted[$z]['id'] == $field->id){
+
+						$validation_rules['custom_fields.'.$z.'.value'] = 'required';
+
+					}
+
+				}
+
+			}
+
+		}
+
+		$custom_fields_validation_2 = Validator::make($request->all(), $validation_rules);
+		if($custom_fields_validation_2->fails()){
+			return response($response, config('global.error_code'));
+		}
+
+		return null;
+
+	}
+
+	private function validateSettings(Request $request){
+
+		$response = ['message' => 'Please fill in required fields', 'validity' => 'invalid_data_tab4', 'tab_switch' => 4];
+
+		if(!$request->has('settings')){
+			return response($response, config('global.error_code'));
+		}
+
+		$settings_rules = [
+			'settings.currency.value'								=>	'required|exists:currencies,id',
+			'settings.industry.value'								=>	'required|exists:industries,id',
+			'settings.payment_terms.value'							=>	'required',
+			'settings.quote_valid.value'							=>	'required',
+			'settings.send_reminder.value'							=>	'required',
+			'settings.size.value'									=>	'required',
+		];
+
+		$settings_validation = Validator::make($request->all(), $settings_rules);
+		if($settings_validation->fails()){
+			return response($response, config('global.error_code'));
+		}
+
+		return null;
+
 	}
 	
 
