@@ -1016,7 +1016,7 @@ class ClientsController extends Controller{
 
 		return 'all good!';
 		/* insert data here */
-		
+
 	}
 
 	private function validatePersonInfo(Request $request){
@@ -1126,7 +1126,7 @@ class ClientsController extends Controller{
 		}
 
 		$validation_rules = [
-			'custom_fields'							=>	'required|array|min:1'
+			'custom_fields'	 =>	'required|array|min:1'
 		];
 
 		$custom_fields_validation_1 = Validator::make($request->all(), $validation_rules);
@@ -1177,9 +1177,9 @@ class ClientsController extends Controller{
 		$settings_rules = [
 			'settings.currency.value'								=>	'required|exists:currencies,id',
 			'settings.industry.value'								=>	'required|exists:industries,id',
-			'settings.payment_terms.value'							=>	'required',
-			'settings.quote_valid.value'							=>	'required',
-			'settings.send_reminder.value'							=>	'required',
+			'settings.payment_terms.value'							=>	'required|in:0,7,14,30,60,90',
+			'settings.quote_valid.value'							=>	'required|in:0,7,14,30,60,90',
+			'settings.send_reminder.value'							=>	'required|in:0,1',
 			'settings.size.value'									=>	'required',
 		];
 
