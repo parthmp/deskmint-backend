@@ -266,9 +266,9 @@ class ClientsController extends Controller{
 			$company_id = Sanitize::input($request->input('company_id'));
 			$personal_info_first_name = Sanitize::input($request->input('personal_info.first_name.value'));
 			$personal_info_last_name = Sanitize::input($request->input('personal_info.last_name.value'));
-			$personal_info_tax_id = Sanitize::input($request->input('personal_info.tax_id.value'));
-			$website = Sanitize::input($request->input('personal_info.website.value'));
-			$phone = Sanitize::input($request->input('personal_info.phone.value'));
+			$personal_info_tax_id = Sanitize::input($request->input('personal_info.tax_id.value').'');
+			$website = Sanitize::input($request->input('personal_info.website.value').'');
+			$phone = Sanitize::input($request->input('personal_info.phone.value').'');
 			$email = Sanitize::input($request->input('personal_info.email.value'));
 			$billing_street = Sanitize::input($request->input('billing_info.street.value'));
 			$billing_apt = Sanitize::input($request->input('billing_info.apt.value'));
@@ -278,12 +278,12 @@ class ClientsController extends Controller{
 			$billing_country_id = Sanitize::input($request->input('billing_info.country.value'));
 
 			/* init shipping info */
-			$shipping_street = Sanitize::input($request->input('shipping_info.street.value'));
-			$shipping_apt = Sanitize::input($request->input('shipping_info.apt.value'));
-			$shipping_city = Sanitize::input($request->input('shipping_info.city.value'));
-			$shipping_state = Sanitize::input($request->input('shipping_info.state.value'));
-			$shipping_postal_code = Sanitize::input($request->input('shipping_info.postal_code.value'));
-			$shipping_country_id = Sanitize::input($request->input('shipping_info.country.value'));
+			$shipping_street = Sanitize::input($request->input('shipping_info.street.value').'');
+			$shipping_apt = Sanitize::input($request->input('shipping_info.apt.value').'');
+			$shipping_city = Sanitize::input($request->input('shipping_info.city.value').'');
+			$shipping_state = Sanitize::input($request->input('shipping_info.state.value').'');
+			$shipping_postal_code = Sanitize::input($request->input('shipping_info.postal_code.value').'');
+			$shipping_country_id = Sanitize::input($request->input('shipping_info.country.value').'');
 			if($copy_to_shipping){
 				$shipping_street = $billing_street;
 				$shipping_apt = $billing_apt;
@@ -331,10 +331,18 @@ class ClientsController extends Controller{
 			$client->send_reminders = $send_reminders;
 			$client->size = $size;
 			$client->industry_id = $industry_id;
-			$client->save();
+			$added = $client->save();
 
 			$this->insertContactInfoForClient($request, $client->id);
 			$this->insertClientCustomFieldValues($request, $client->id, $company_id);
+
+			if($added){
+				return response(['message' => 'Client added successfully', 'validity' => 'client_added'], 200);
+			}else{
+				return General::wentWrong();
+			}
+			
+			
 
 		}catch(Exception $e){
 			return General::wentWrong();
@@ -365,6 +373,7 @@ class ClientsController extends Controller{
 			}
 
 			$insert[] = [
+				'client_id'					=>		$client_id,
 				'clients_custom_field_id'	=>		$field->id,
 				'field_value'				=>		$value,
 				'created_at'				=>		now(),
@@ -388,7 +397,7 @@ class ClientsController extends Controller{
 			$first_name = Sanitize::input($info['first_name']['value']);
 			$last_name = Sanitize::input($info['last_name']['value']);
 			$email = Sanitize::input($info['email']['value']);
-			$phone = Sanitize::input($info['phone']['value']);
+			$phone = Sanitize::input($info['phone']['value'].'');
 
 			$insert[] = [
 				'client_id'		=>	$client_id,
