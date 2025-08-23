@@ -8,6 +8,7 @@ use App\Models\Client;
 use App\Models\ClientContactInfo;
 use App\Models\ClientCustomFieldValue;
 use App\Models\ClientsCustomField;
+use App\Services\DataTable;
 use Carbon\Carbon;
 use Carbon\Exceptions\InvalidFormatException;
 use Exception;
@@ -586,6 +587,82 @@ class ClientsController extends Controller{
 		}
 
 		return null;
+
+	}
+
+	public function index(Request $request){
+
+		$v = Validator::make($request->all(), [
+			'default_per_page'	=>	'required|integer|min:1'
+		]);
+
+		if($v->fails()){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}
+		
+		$company_id = Sanitize::input($request->input('company_id'));
+
+		$fields = DataTable::sortNPaginate(
+			$request,
+			\App\Models\Client::class,
+			['deleted_at', 'updated_at'],
+			$company_id,
+			['clients.created_at']
+		);
+		
+		// $fields->each(function($ele){
+
+		// 	$ele->input_type = ucfirst($ele->input_type);
+
+		// 	if((int)$ele->required === 0){
+		// 		$ele->required = [
+		// 			'type'		=>	'label',
+		// 			'highlight'	=>	'error',
+		// 			'text'		=>	'No'
+		// 		];
+		// 	}else{
+		// 		$ele->required = [
+		// 			'type'		=>	'label',
+		// 			'highlight'	=>	'success',
+		// 			'text'		=>	'Yes'
+		// 		];
+		// 	}
+
+		// });
+		
+		$table_data = [
+			'columns' => [
+				[
+					'label' => 	'first_name',
+					'text'	=>	'First name'
+				],
+				[
+					'label' => 	'last_name',
+					'text'	=>	'Last name'
+				],
+				[
+					'label' => 	'email',
+					'text'	=>	'Email'
+				],
+				[
+					'label' => 	'created_at',
+					'text'	=>	'Added on'
+				],
+				[
+					'label'	=> 'actions',
+					'text'	=> 'Actions'
+				]
+			],
+			'rows' => $fields->items()
+		];
+
+		$total_pages = $fields->lastPage();
+
+		return [
+			'table_data'	=>		$table_data,
+			'total_pages'	=>		$total_pages,
+			'current_page'	=>		$fields->currentPage()
+		];
 
 	}
 	
