@@ -8,11 +8,14 @@ use App\Models\Client;
 use App\Models\ClientContactInfo;
 use App\Models\ClientCustomFieldValue;
 use App\Models\ClientsCustomField;
+use App\Models\SettingsIndexColumn;
+use App\Models\UserIndexColumn;
 use App\Services\DataTable;
 use Carbon\Carbon;
 use Carbon\Exceptions\InvalidFormatException;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class ClientsController extends Controller{
@@ -602,13 +605,46 @@ class ClientsController extends Controller{
 		
 		$company_id = Sanitize::input($request->input('company_id'));
 
+		/* check custom fields showing fallback */
+		$custom_fields_ids = [];
+		$custom_columns = UserIndexColumn::where([['company_id', '=', $company_id], ['user_id', '=', Auth::user()->id], ['feature_name', '=', 'clients']])->first();
+		if(!$custom_columns){
+			$custom_columns = SettingsIndexColumn::where([['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->first();
+		}
+
+		$json_decoded = [];
+
+		if($custom_columns){
+			
+			$custom_columns = json_decode($custom_columns->columns_json);
+			$json_decoded = $custom_columns;
+			$custom_columns = $custom_columns->custom_fields;
+			
+			foreach($custom_columns as $c_column){
+				$custom_fields_ids[] = $c_column->clients_custom_fields_id;
+			}
+
+		}
+
 		$fields = DataTable::sortNPaginate(
 			$request,
 			\App\Models\Client::class,
 			['deleted_at', 'updated_at'],
 			$company_id,
-			['clients.created_at']
+			['clients.created_at'],
+			[], 
+			[],
+			[
+				'field_table'						=>	'clients_custom_fields',
+				'value_table'						=>	'clients_custom_fields_values',
+				'field_table_join_column_first'		=>	'client_id',
+				'field_table_join_column_second'	=>	'clients.id',
+				'select_ids'						=>	$custom_fields_ids,
+				'group_by'							=>	'clients.id'
+			]
 		);
+
+		//return $fields;
 		
 		// $fields->each(function($ele){
 
@@ -655,6 +691,8 @@ class ClientsController extends Controller{
 			],
 			'rows' => $fields->items()
 		];
+		
+		$table_data['columns'] = DataTable::modifyForColumns($table_data['columns'], $json_decoded);
 
 		$total_pages = $fields->lastPage();
 

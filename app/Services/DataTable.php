@@ -3,13 +3,15 @@
 	namespace App\Services;
 
 	use App\Helpers\Sanitize;
-	use Illuminate\Support\Facades\Schema;
+use App\Models\ClientsCustomField;
+use Illuminate\Support\Facades\Schema;
 	use Carbon\Carbon;
 	use Carbon\CarbonTimeZone;
+	use Illuminate\Support\Facades\DB;
 
 	class DataTable{
 
-		public static function sortNPaginate($request, $model, $skip_columns = [], $company_id = null, $dates_columns = [], $joins = [], $rewrites = []){
+		public static function sortNPaginate($request, $model, $skip_columns = [], $company_id = null, $dates_columns = [], $joins = [], $rewrites = [], $custom_fields_data = []){
 
 			$hide_columns = ['deleted_at', 'updated_at'];
 
@@ -51,6 +53,7 @@
 			
 			foreach($joins as $join){
 				$fields->leftJoin($join['table'], $join['first'], $join['operator'], $join['second']);
+
 				if(!empty($join['columns'])){
 					foreach ($join['columns'] as $col){
 						
@@ -69,7 +72,31 @@
 				}
 			}
 			
-			$fields->select($selects);
+			$fields->select(array_merge($selects));
+
+			/**/
+			/* for custom fields */
+			if(!empty($custom_fields_data) && $company_id !== null) {
+    
+				$custom_fields = DB::table($custom_fields_data['field_table'])->where('company_id', $company_id)->get(['id', 'label']);
+				
+				$fields->leftJoin($custom_fields_data['value_table'].' as cfv', 'cfv.'.$custom_fields_data['field_table_join_column_first'], '=', $custom_fields_data['field_table_join_column_second'])->leftJoin($custom_fields_data['field_table'].' as cf', 'cf.id', '=', 'cfv.clients_custom_field_id');
+				
+				foreach($custom_fields as $field) {
+					if(in_array($field->id, $custom_fields_data['select_ids'])){
+						$column_alias = str_replace([' ', '-', '.'], '_', strtolower($field->label));
+						$selects[] = DB::raw("MAX(CASE WHEN cf.id = {$field->id} THEN cfv.field_value END) AS {$column_alias}");
+						$allowed_columns[] = $column_alias;
+						$tables_for_columns[] = 'cfv';
+					}
+				}
+				
+				$fields->groupBy($custom_fields_data['group_by']);
+				$fields->select($selects);
+
+			}
+
+			/**/
 			
 			if ($company_id !== null) {
 				$fields->where("{$table}.company_id", '=', $company_id);
@@ -163,13 +190,6 @@
 						}
 					});
 
-					/*
-					if($timezone !== null){
-						
-						$timezone_dates = self::parseSearchDateToUTC($searched_term, $timezone);
-						dd($timezone_dates);
-					}*/
-
 				}
 
 				if(isset($sorted_column['label'], $sorted_column['sort_visibility']) && in_array($sorted_column['label'], $allowed_columns, true) && in_array(strtolower($sorted_column['sort_visibility']), $allowed_sorting_directions, true)){
@@ -201,7 +221,10 @@
 				}
 
 			}
-
+			if(isset($join['raw'])){
+				$fields->groupBy('clients.id');
+				
+			}
 			if($paginate){
 				$fields = $fields->orderBy($table.'.id', 'desc')->paginate($per_page, ['*'], 'page', (int)$current_page);
 			}else{
@@ -210,6 +233,52 @@
 
 			return $fields;
 
+		}
+
+		public static function modifyForColumns($columns, $columns_sorting){
+			if(empty($columns_sorting)){
+				return $columns;
+			}
+			
+			$result = [];
+			
+			if (!empty($columns_sorting->custom_fields)) {
+				$custom_field_ids = array_column($columns_sorting->custom_fields, 'clients_custom_fields_id');
+				
+				$labels = ClientsCustomField::whereIn('id', $custom_field_ids)->pluck('label', 'id');
+				
+				foreach ($columns_sorting->custom_fields as $item) {
+					$text = $labels[$item->clients_custom_fields_id] ?? null;
+					$result[] = [
+						'label' => str_replace([' ', '-'], '_', strtolower($text ?? '')),
+						'text' => $text,
+						'order' => $item->order
+					];
+				}
+			}
+			
+			if (!empty($columns_sorting->client_fields)){
+				foreach ($columns_sorting->client_fields as $item){
+					$result[] = [
+						'label' => $item->field,
+						'text' => ucwords(str_replace('_', ' ', $item->field)),
+						'order' => $item->order
+					];
+				}
+			}
+			
+			usort($result, function($a, $b){
+				return $a['order'] <=> $b['order'];
+			});
+			
+			unset($item);
+			
+			array_push($result, [
+						'label'	=> 'actions',
+						'text'	=> 'Actions'
+					]);
+
+			return $result;
 		}
 
 	}
