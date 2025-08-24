@@ -265,7 +265,7 @@ class ClientsController extends Controller{
 			return $settings_validation;
 		}
 
-		try{
+		//try{
 
 			$company_id = Sanitize::input($request->input('company_id'));
 			$personal_info_first_name = Sanitize::input($request->input('personal_info.first_name.value'));
@@ -348,9 +348,9 @@ class ClientsController extends Controller{
 			
 			
 
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
 
 	}
 
@@ -368,10 +368,19 @@ class ClientsController extends Controller{
 
 			for($z = 0 ; $z < count($custom_fields_submitted) ; $z++){
 
-				if($custom_fields_submitted[$z]['id'] == $field->id){
+				if($custom_fields_submitted[$z]['id'] == $field->id && $field->customFieldType->input_type !== 'time'){
+					
+					if($field->customFieldType->input_type === 'multiselect'){
+						$value = Sanitize::input(json_encode($custom_fields_submitted[$z]['value']));
+					}else{
+						$value = Sanitize::input($custom_fields_submitted[$z]['value'].'');
+					}
+					
 
-					$value = Sanitize::input(json_encode($custom_fields_submitted[$z]['value']));
-
+				}else{
+					if($field->customFieldType->input_type === 'time'){
+						$value = General::jsonTimeToAmPm(json_encode($custom_fields_submitted[$z]['value']));
+					}
 				}
 
 			}
@@ -693,7 +702,7 @@ class ClientsController extends Controller{
 		];
 		
 		$table_data['columns'] = DataTable::modifyForColumns($table_data['columns'], $json_decoded);
-
+		
 		$total_pages = $fields->lastPage();
 
 		return [

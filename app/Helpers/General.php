@@ -153,4 +153,32 @@
 			return strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $input));
 		}
 
+		public static function jsonTimeToAmPm($json){
+			
+			if(!is_string($json)){
+				return null;
+			}
+			
+			$time_data = json_decode($json, true);
+			
+			if(json_last_error() !== JSON_ERROR_NONE || !is_array($time_data)){
+				return null;
+			}
+			
+			$hours = isset($time_data['hours']) ? (int)$time_data['hours'] : 0;
+			$minutes = isset($time_data['minutes']) ? (int)$time_data['minutes'] : 0;
+			$seconds = isset($time_data['seconds']) ? (int)$time_data['seconds'] : 0;
+			
+			if($hours < 0 || $hours > 23 || $minutes < 0 || $minutes > 59 || $seconds < 0 || $seconds > 59){
+				return null;
+			}
+
+			$ampm = $hours >= 12 ? 'PM' : 'AM';
+			$display_hours = $hours % 12;
+			$display_hours = $display_hours === 0 ? 12 : $display_hours;
+			
+			return sprintf('%02d:%02d %s', $display_hours, $minutes, $ampm);
+
+		}
+
 	}
