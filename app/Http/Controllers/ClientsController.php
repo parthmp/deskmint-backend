@@ -653,8 +653,8 @@ class ClientsController extends Controller{
 			]
 		);
 
-		//return $fields;
 		
+		/*hide time for custom date fields*/
 		// $fields->each(function($ele){
 
 		// 	$ele->input_type = ucfirst($ele->input_type);

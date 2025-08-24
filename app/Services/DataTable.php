@@ -78,13 +78,16 @@
 			/* for custom fields */
 			if(!empty($custom_fields_data) && $company_id !== null) {
     
-				$custom_fields = DB::table($custom_fields_data['field_table'])->where('company_id', $company_id)->get(['id', 'label']);
+				$custom_fields = DB::table($custom_fields_data['field_table'])->where('company_id', $company_id)->leftJoin('custom_field_types as cft', 'cft.id', '=', $custom_fields_data['field_table'].'.custom_field_type_id')->get([$custom_fields_data['field_table'].'.id', $custom_fields_data['field_table'].'.label', 'cft.input_type']);
 				
 				$fields->leftJoin($custom_fields_data['value_table'].' as cfv', 'cfv.'.$custom_fields_data['field_table_join_column_first'], '=', $custom_fields_data['field_table_join_column_second'])->leftJoin($custom_fields_data['field_table'].' as cf', 'cf.id', '=', 'cfv.clients_custom_field_id');
 				
 				foreach($custom_fields as $field) {
 					if(in_array($field->id, $custom_fields_data['select_ids'])){
 						$column_alias = str_replace([' ', '-', '.'], '_', strtolower($field->label));
+						if($field->input_type === 'date'){
+							$column_alias .= '_cdate_';
+						}
 						$selects[] = DB::raw("MAX(CASE WHEN cf.id = {$field->id} THEN cfv.field_value END) AS {$column_alias}");
 						$allowed_columns[] = $column_alias;
 						$tables_for_columns[] = 'cfv';
@@ -242,23 +245,32 @@
 			
 			$result = [];
 			
-			if (!empty($columns_sorting->custom_fields)) {
+			if(!empty($columns_sorting->custom_fields)){
+				
 				$custom_field_ids = array_column($columns_sorting->custom_fields, 'clients_custom_fields_id');
 				
-				$labels = ClientsCustomField::whereIn('id', $custom_field_ids)->pluck('label', 'id');
+				$custom_fields = ClientsCustomField::whereIn('id', $custom_field_ids)->with('customFieldType')->get()->keyBy('id');
 				
-				foreach ($columns_sorting->custom_fields as $item) {
-					$text = $labels[$item->clients_custom_fields_id] ?? null;
+				foreach($columns_sorting->custom_fields as $item){
+
+					$field = $custom_fields[$item->clients_custom_fields_id] ?? null;
+					$input_type = $field->customFieldType->input_type ?? null;
+
+					$label = str_replace([' ', '-'], '_', strtolower($field->label ?? ''));
+					if($input_type === 'date'){
+						$label .= '_cdate_';
+					}
+					
 					$result[] = [
-						'label' => str_replace([' ', '-'], '_', strtolower($text ?? '')),
-						'text' => $text,
+						'label' => $label,
+						'text' => $field->label ?? null,
 						'order' => $item->order
 					];
 				}
 			}
 			
-			if (!empty($columns_sorting->client_fields)){
-				foreach ($columns_sorting->client_fields as $item){
+			if(!empty($columns_sorting->client_fields)){
+				foreach($columns_sorting->client_fields as $item){
 					$result[] = [
 						'label' => $item->field,
 						'text' => ucwords(str_replace('_', ' ', $item->field)),
