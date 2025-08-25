@@ -134,7 +134,7 @@ class ClientsCustomFieldsController extends Controller{
 
 		$company_id = Sanitize::input($request->input('company_id'));
 		
-		$client_custom_field = ClientsCustomField::select('custom_field_type_id', 'label', 'placeholder', 'required', 'default_value', 'show_on_index_page', 'order_on_add_edit_page', 'order_column_on_index_page', 'type_params')->where([['id', '=', $id], ['company_id','=', $company_id]])->with('customFieldType')->first();
+		$client_custom_field = ClientsCustomField::select('custom_field_type_id', 'label', 'placeholder', 'required', 'default_value', 'order_on_add_edit_page', 'type_params')->where([['id', '=', $id], ['company_id','=', $company_id]])->with('customFieldType')->first();
 		if(!$client_custom_field){
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}
@@ -149,9 +149,7 @@ class ClientsCustomFieldsController extends Controller{
 			'input_field'			=>		'required',
 			'label'					=>		'required',
 			'is_required'			=>		'required',
-			'show_on_index'			=>		'required',
-			'add_edit_page_order'	=>		'required',
-			'column_order'			=>		'required'
+			'add_edit_page_order'	=>		'required'
 		]);
 
 		if($v->fails()){
@@ -195,18 +193,11 @@ class ClientsCustomFieldsController extends Controller{
 			$default_value = Sanitize::input($request->input('default_value'));
 		}
 		
-		$show_on_index = Sanitize::input($request->input('show_on_index'));
 		$add_edit_page_order = Sanitize::input($request->input('add_edit_page_order'));
-		$column_order = Sanitize::input($request->input('column_order'));
 
 		$is_required_flag = 0;
 		if((string)$is_required === 'true'){
 			$is_required_flag = 1;
-		}
-
-		$show_on_index_flag = 0;
-		if((string)$show_on_index === 'true'){
-			$show_on_index_flag = 1;
 		}
 
 		try{
@@ -226,8 +217,6 @@ class ClientsCustomFieldsController extends Controller{
 			$ccf->type_params = $options;
 			$ccf->default_value = $default_value;
 			$ccf->order_on_add_edit_page = (int)$add_edit_page_order;
-			$ccf->order_column_on_index_page = (int)$column_order;
-			$ccf->show_on_index_page = $show_on_index_flag;
 
 			$success_message = 'Custom field updated successfully';
 			$validity_message = 'updated_success';

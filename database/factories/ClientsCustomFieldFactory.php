@@ -44,8 +44,6 @@ class ClientsCustomFieldFactory extends Factory{
             'type_params'							=>			implode(', ', $this->faker->words($this->faker->numberBetween(2, 10))),
             'default_value'							=>			$this->faker->text(5),
             'order_on_add_edit_page'				=>			$this->faker->numberBetween(1, 100),
-            'order_column_on_index_page'			=>			$this->faker->numberBetween(1, 100),
-            'show_on_index_page'					=>			$this->faker->boolean(),
 			'created_at'							=>			$created_at
         ];
     }
