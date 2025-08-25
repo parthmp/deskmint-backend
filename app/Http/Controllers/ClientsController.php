@@ -640,17 +640,17 @@ class ClientsController extends Controller{
 			\App\Models\Client::class,
 			['deleted_at', 'updated_at'],
 			$company_id,
-			['clients.created_at'],
-			[], 
-			[],
-			[
-				'field_table'						=>	'clients_custom_fields',
-				'value_table'						=>	'clients_custom_fields_values',
-				'field_table_join_column_first'		=>	'client_id',
-				'field_table_join_column_second'	=>	'clients.id',
-				'select_ids'						=>	$custom_fields_ids,
-				'group_by'							=>	'clients.id'
-			]
+			['clients.created_at']
+			// [], 
+			// [],
+			// [
+			// 	'field_table'						=>	'clients_custom_fields',
+			// 	'value_table'						=>	'clients_custom_fields_values',
+			// 	'field_table_join_column_first'		=>	'client_id',
+			// 	'field_table_join_column_second'	=>	'clients.id',
+			// 	'select_ids'						=>	$custom_fields_ids,
+			// 	'group_by'							=>	'clients.id'
+			// ]
 		);
 
 		
@@ -701,7 +701,7 @@ class ClientsController extends Controller{
 			'rows' => $fields->items()
 		];
 		
-		$table_data['columns'] = DataTable::modifyForColumns($table_data['columns'], $json_decoded);
+		//$table_data['columns'] = DataTable::modifyForColumns($table_data['columns'], $json_decoded);
 		
 		$total_pages = $fields->lastPage();
 

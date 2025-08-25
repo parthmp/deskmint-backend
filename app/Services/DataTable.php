@@ -72,32 +72,32 @@
 				}
 			}
 			
-			$fields->select(array_merge($selects));
+			$fields->select($selects);
 
 			/**/
 			/* for custom fields */
-			if(!empty($custom_fields_data) && $company_id !== null) {
+			// if(!empty($custom_fields_data) && $company_id !== null) {
     
-				$custom_fields = DB::table($custom_fields_data['field_table'])->where('company_id', $company_id)->leftJoin('custom_field_types as cft', 'cft.id', '=', $custom_fields_data['field_table'].'.custom_field_type_id')->get([$custom_fields_data['field_table'].'.id', $custom_fields_data['field_table'].'.label', 'cft.input_type']);
+			// 	$custom_fields = DB::table($custom_fields_data['field_table'])->where('company_id', $company_id)->leftJoin('custom_field_types as cft', 'cft.id', '=', $custom_fields_data['field_table'].'.custom_field_type_id')->get([$custom_fields_data['field_table'].'.id', $custom_fields_data['field_table'].'.label', 'cft.input_type']);
 				
-				$fields->leftJoin($custom_fields_data['value_table'].' as cfv', 'cfv.'.$custom_fields_data['field_table_join_column_first'], '=', $custom_fields_data['field_table_join_column_second'])->leftJoin($custom_fields_data['field_table'].' as cf', 'cf.id', '=', 'cfv.clients_custom_field_id');
+			// 	$fields->leftJoin($custom_fields_data['value_table'].' as cfv', 'cfv.'.$custom_fields_data['field_table_join_column_first'], '=', $custom_fields_data['field_table_join_column_second'])->leftJoin($custom_fields_data['field_table'].' as cf', 'cf.id', '=', 'cfv.clients_custom_field_id');
 				
-				foreach($custom_fields as $field) {
-					if(in_array($field->id, $custom_fields_data['select_ids'])){
-						$column_alias = str_replace([' ', '-', '.'], '_', strtolower($field->label));
-						if($field->input_type === 'date'){
-							$column_alias .= '_cdate_';
-						}
-						$selects[] = DB::raw("MAX(CASE WHEN cf.id = {$field->id} THEN cfv.field_value END) AS {$column_alias}");
-						$allowed_columns[] = $column_alias;
-						$tables_for_columns[] = 'cfv';
-					}
-				}
+			// 	foreach($custom_fields as $field) {
+			// 		if(in_array($field->id, $custom_fields_data['select_ids'])){
+			// 			$column_alias = str_replace([' ', '-', '.'], '_', strtolower($field->label));
+			// 			if($field->input_type === 'date'){
+			// 				$column_alias .= '_cdate_';
+			// 			}
+			// 			$selects[] = DB::raw("MAX(CASE WHEN cf.id = {$field->id} THEN cfv.field_value END) AS {$column_alias}");
+			// 			$allowed_columns[] = $column_alias;
+			// 			$tables_for_columns[] = 'cfv';
+			// 		}
+			// 	}
 				
-				$fields->groupBy($custom_fields_data['group_by']);
-				$fields->select($selects);
+			// 	$fields->groupBy($custom_fields_data['group_by']);
+			// 	$fields->select($selects);
 
-			}
+			// }
 
 			/**/
 			
