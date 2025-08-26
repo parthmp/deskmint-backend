@@ -7,6 +7,7 @@ use App\Helpers\Sanitize;
 use App\Models\ClientsCustomField;
 use App\Models\CustomFieldType;
 use App\Services\DataTable;
+use App\Services\ManageFlatTable;
 use DateTimeZone;
 use Exception;
 use Illuminate\Http\Request;
@@ -156,6 +157,12 @@ class ClientsCustomFieldsController extends Controller{
 			return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_data'], config('global.error_code'));
 		}
 
+		if(!$add){
+			if(!$request->filled('past_label')){
+				return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+			}
+		}
+
 		$input_field = Sanitize::input($request->input('input_field'));
 
 		$field = CustomFieldType::where('id', '=', $input_field)->first();
@@ -180,6 +187,22 @@ class ClientsCustomFieldsController extends Controller{
 		}
 
 		$label = Sanitize::input($request->input('label'));
+		
+		/* check if label exists already */
+		if($add){
+
+			$found_label = ClientsCustomField::where([['company_id', '=', $company_id], ['label', '=', trim($label)]])->first();
+			
+
+		}else{
+
+			$found_label = ClientsCustomField::where([['company_id', '=', $company_id], ['label', '=', trim($label)], ['label', '<>', $object->label]])->first();
+
+		}
+
+		if($found_label){
+			return response(['message' => 'Label already exists', 'validity' => 'invalid_label'], config('global.error_code'));
+		}
 		
 		$placeholder = '';
 		if($request->filled('placeholder')){
@@ -228,6 +251,16 @@ class ClientsCustomFieldsController extends Controller{
 
 			}
 
+			/* handle flat table */
+			$flat_table = new ManageFlatTable('clients_flat', 'clients', 'client_id');
+			if($add){
+				$flat_table->addFlatTableColumn($label, $field->input_type);
+			}else{
+				$past_label = Sanitize::input($request->input('past_label'));
+				$flat_table->editFlatTableColumn($past_label, $label, $field->input_type);
+			}
+			/**/
+
 			if($ccf->save()){
 				return response(['message' => $success_message, 'validity' => $validity_message], 200);
 			}else{
@@ -273,7 +306,22 @@ class ClientsCustomFieldsController extends Controller{
 
 		try{
 			
+			$flat_table = new ManageFlatTable('clients_flat', 'clients', 'client_id');
+
+			$column_names = ClientsCustomField::whereIn('id', $ids)->get();
+
+			$column_names_arranged = [];
+
+			foreach($column_names as $column){
+				$column_names_arranged[] = $column->label;
+			}
+
+			$flat_table->dropColumns($column_names_arranged);
+			$column_names_arranged = null;
+			
+
 			ClientsCustomField::whereIn('id', $ids)->delete();
+			
 
 			return response(['message' => 'Custom field(s) deleted successfully', 'validity' => 'delete_success'], 200);
 

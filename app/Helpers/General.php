@@ -181,4 +181,8 @@
 
 		}
 
+		public static function replaceWithUnderscores(string $input): string{
+			return strtolower(preg_replace('/[^a-zA-Z0-9]/', '_', $input));
+		}
+
 	}

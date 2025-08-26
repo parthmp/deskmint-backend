@@ -2,7 +2,8 @@
 
 	namespace App\Services;
 
-	use Illuminate\Database\Schema\Blueprint;
+use App\Helpers\General;
+use Illuminate\Database\Schema\Blueprint;
 	use Illuminate\Support\Facades\Schema;
 
 	class ManageFlatTable{
@@ -11,10 +12,11 @@
 		private $ref_table = '';
 		private $foreign = '';
 
-		public function __construct(string $flat_table_name, string $ref_table,string $foreign){
+		public function __construct(string $flat_table_name, string $ref_table, string $foreign){
 			$this->flat_table_name = $flat_table_name;
 			$this->ref_table = $ref_table;
 			$this->foreign = $foreign;
+			$this->generateDefaultTable();
 		}
 
 		public function generateDefaultTable() : void{
@@ -44,6 +46,7 @@
 		/* $object->addFlatTableColumn('price', 'decimal:12,2'); */
 		/* $object->addFlatTableColumn('email', 'string:191'); */
 		public function addFlatTableColumn(string $name, string $type = 'string'){
+			$name = General::replaceWithUnderscores($name);
 			if(!Schema::hasColumn($this->flat_table_name, $name)){
 				Schema::table($this->flat_table_name, function (Blueprint $table) use ($name, $type){
 					$this->applyColumn($table, $type, $name);
@@ -52,8 +55,12 @@
 		}
 
 		public function editFlatTableColumn(string $from, string $to, ?string $type = null):void{
-			if(Schema::hasColumn($this->flat_table_name, $from)){
 
+			$from = General::replaceWithUnderscores($from);
+			$to = General::replaceWithUnderscores($to);
+			
+			if(Schema::hasColumn($this->flat_table_name, $from)){
+				
 				Schema::table($this->flat_table_name, function (Blueprint $table) use ($from, $to, $type){
 					
 					if($from !== $to){
@@ -66,9 +73,11 @@
 					
 				});
 			}
+
 		}
 
 		public function dropColumn(string $name){
+			$name = General::replaceWithUnderscores($name);
 			if(Schema::hasColumn($this->flat_table_name, $name)){
 				Schema::table($this->flat_table_name, function (Blueprint $table) use ($name){
 					$table->dropColumn($name);
@@ -76,49 +85,60 @@
 			}
 		}
 
-		protected function applyColumn(Blueprint $table, string $type, string $name): void{
+		public function dropColumns(array $names){
+
+			$names = (array) $names;
+			$names = array_map(fn($n) => General::replaceWithUnderscores($n), $names);
+
+			$names = array_filter($names, fn($n) => Schema::hasColumn($this->flat_table_name, $n));
+
+			if($names){
+				Schema::table($this->flat_table_name, function (Blueprint $table) use ($names) {
+					$table->dropColumn($names);
+				});
+			}
+		}
+
+		protected function applyColumn(Blueprint $table, string $type, string $name){
 			
 			$parts = explode(':', $type);
-			$base_type = $parts[0];
+			$base_type = strtolower($parts[0]);
 			$params = isset($parts[1]) ? explode(',', $parts[1]) : [];
 
 			switch($base_type){
-				case 'string':
-					$length = $params[0] ?? 191;
-					$table->string($name, $length)->default('');
-					break;
 
-				case 'decimal':
-					$precision = $params[0] ?? 12;
-					$scale = $params[1] ?? 2;
-					$table->decimal($name, $precision, $scale)->default(0);
+				case 'select':
+				case 'email':
+				case 'time':
+				case 'telephone':
+					$length = $params[0] ?? 191;
+					return $table->string($name, $length)->default('');
 					break;
 
 				case 'text':
-					$table->text($name)->nullable();
+				case 'textarea':
+				case 'multiselect':
+					return $table->text($name);
 					break;
 
-				case 'integer':
-				case 'bigInteger':
-					$table->$base_type($name)->default(0);
+				case 'number':
+					return $table->integer($name)->nullable();
 					break;
-
-				case 'boolean':
-					$table->boolean($name)->default(false);
-					break;
-
+				
 				case 'date':
+					return $table->date($name)->nullable();
+					break;
+
 				case 'datetime':
-				case 'time':
-					$table->$base_type($name)->nullable();
+					return $table->timestamp($name)->nullable();
 					break;
 
 				case 'json':
-					$table->json($name)->nullable();
+					return $table->json($name)->nullable();
 					break;
 
 				default:
-					$table->$base_type($name);
+					return $table->$base_type($name);
 			}
 
 		}
