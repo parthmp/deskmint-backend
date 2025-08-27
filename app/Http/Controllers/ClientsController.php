@@ -395,6 +395,7 @@ class ClientsController extends Controller{
 		$db_custom_fields = ClientsCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->get();
 
 		$insert = [];
+		$insert_flat = [];
 
 		foreach($db_custom_fields as $field){
 
@@ -419,6 +420,14 @@ class ClientsController extends Controller{
 					}
 				}
 
+				if($custom_fields_submitted[$z]['id'] == $field->id){
+					
+					// $custom_column_name = General::replaceWithUnderscores($field->label);
+					// $insert_flat[] = [
+
+					// ];
+				}
+
 			}
 
 			$insert[] = [
@@ -432,6 +441,8 @@ class ClientsController extends Controller{
 		}
 
 		ClientCustomFieldValue::insert($insert);
+
+		
 
 	}
 
@@ -593,7 +604,39 @@ class ClientsController extends Controller{
 
 					if($custom_fields_submitted[$z]['id'] == $field->id){
 
-						$validation_rules['custom_fields.'.$z.'.value'] = 'required';
+						if($field->customFieldType->input_type === config('global.field_types')[0] || $field->customFieldType->input_type === config('global.field_types')[1] || $field->customFieldType->input_type === config('global.field_types')[3] || $field->customFieldType->input_type === config('global.field_types')[9]){
+
+							$validation_rules['custom_fields.'.$z.'.value'] = 'required';
+
+						}else{
+
+							if($field->customFieldType->input_type === config('global.field_types')[2]){ //email
+								
+								$validation_rules['custom_fields.'.$z.'.value'] = 'required|email';
+
+							}else if($field->customFieldType->input_type === config('global.field_types')[4]){ //number
+
+								$validation_rules['custom_fields.'.$z.'.value'] = 'required|numeric';
+
+							}else if($field->customFieldType->input_type === config('global.field_types')[5] || $field->customFieldType->input_type === config('global.field_types')[7]){ //date and datetime
+
+								$validation_rules['custom_fields.'.$z.'.value'] = 'required|date';
+
+							}else if($field->customFieldType->input_type === config('global.field_types')[6]){ //time
+
+								$validation_rules['custom_fields.'.$z.'.value'] = 'required|array';
+								$validation_rules['custom_fields.'.$z.'.value.hours'] = 'required|integer|between:0,23';
+								$validation_rules['custom_fields.'.$z.'.value.minutes'] = 'required|integer|between:0,59';
+								$validation_rules['custom_fields.'.$z.'.value.seconds'] = 'required|integer|between:0,59';
+
+							}else if($field->customFieldType->input_type === config('global.field_types')[8]){ //telephone
+
+								$validation_rules['custom_fields.'.$z.'.value'] = 'required|regex:/^\+?\d+$/';
+
+							}
+
+						}
+						
 
 					}
 
