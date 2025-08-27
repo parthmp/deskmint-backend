@@ -193,6 +193,21 @@
 			return ''; // Should not reach here if isValidTime worked correctly
 		}
 
+		public static function isValidPhoneNumber($phone){
+			// Check if string contains only digits and optional + at the beginning
+			if(!preg_match('/^\+?\d+$/', $phone)){
+				return false;
+			}
+			
+			// If it starts with +, ensure there's at least one digit after it
+			if(str_starts_with($phone, '+')){
+				return strlen($phone) > 1;
+			}
+			
+			// If no +, just ensure it's not empty (already checked it's all digits)
+			return strlen($phone) > 0;
+		}
+
 		public static function onlyLettersAndNumbers(string $input) : string{
 			return strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $input));
 		}

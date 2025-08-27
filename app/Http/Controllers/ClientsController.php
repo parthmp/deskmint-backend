@@ -142,7 +142,7 @@ class ClientsController extends Controller{
 
 				$field->span = $span;
 
-				$field->value = $field->default_value;
+				$field->value = trim($field->default_value);
 				$field->error = '';
 		
 				if(isset($field->type_params) && $field->type_params !== ''){
@@ -231,6 +231,19 @@ class ClientsController extends Controller{
 					$field->default_value = '';
 					
 				}
+
+				if($field->customFieldType->input_type === config('global.field_types')[8]){
+					
+					$default_value = trim($field->default_value);
+
+					$field->default_value = '';
+					$field->value = '';
+					if(General::isValidPhoneNumber($default_value)){
+						$field->value = $default_value;
+					}
+
+				}
+
 
 				if($field->customFieldType->input_type === config('global.field_types')[9]){
 					
