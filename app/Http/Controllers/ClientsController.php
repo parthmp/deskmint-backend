@@ -206,6 +206,7 @@ class ClientsController extends Controller{
 
 					foreach ($datetime_formats as $format) {
 						if((\DateTime::createFromFormat($format, $default_value) !== false)){
+							$default_value = \DateTime::createFromFormat($format, $default_value)->format('Y-m-d H:i:s');
 							$parsed = true;
 							break;
 						}
