@@ -181,7 +181,7 @@ class ClientsController extends Controller{
 					
 					foreach($date_formats as $format){
 						if((\DateTime::createFromFormat($format, $default_value) !== false)){
-							$default_value = \DateTime::createFromFormat($format, $default_value)->format('Y-m-d H:i:s');
+							$default_value = \DateTime::createFromFormat($format, $default_value)->format('Y-m-d');
 							$parsed = true;
 							break;
 						}
@@ -270,7 +270,7 @@ class ClientsController extends Controller{
 	}
 
 	public function store(Request $request){
-		return response(['message' => 'blocked', 'validity' => 'client_added'], 500);
+		
 		$personal_info_validation = $this->validatePersonInfo($request);
 		if($personal_info_validation !== null){
 			return $personal_info_validation;
