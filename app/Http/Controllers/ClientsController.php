@@ -43,6 +43,7 @@ class ClientsController extends Controller{
 			'm/d/Y',        // 08/19/2025
 			'd-M-Y',        // 01-Jan-2025
 			'j-M-Y',        // 1-Jan-2025
+			'j M Y',        // 1 Jan 2025
 		];
 
 		$datetime_formats = [
@@ -69,6 +70,16 @@ class ClientsController extends Controller{
 			'd-M-Y h:i:s A',
 			'j-M-Y h:i A',
 			'j-M-Y h:i:s A',
+			'Y m d h:i A',
+			'Y m d h:i:s A',
+			'd m Y h:i A',
+			'd m Y h:i:s A',
+			'm d Y h:i A',
+			'm d Y h:i:s A',
+			'd M Y h:i A',
+			'd M Y h:i:s A',
+			'j M Y h:i A',
+			'j M Y h:i:s A',
 		];
 
 		$rows = [];
@@ -155,10 +166,11 @@ class ClientsController extends Controller{
 				if($field->customFieldType->input_type === config('global.field_types')[5]){
 					
 					$default_value = trim($field->default_value);
-					$parsed = null;
-
-					foreach ($date_formats as $format) {
+					$parsed = false;
+					
+					foreach($date_formats as $format){
 						if((\DateTime::createFromFormat($format, $default_value) !== false)){
+							$default_value = \DateTime::createFromFormat($format, $default_value)->format('Y-m-d');
 							$parsed = true;
 							break;
 						}

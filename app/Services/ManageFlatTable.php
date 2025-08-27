@@ -2,8 +2,8 @@
 
 	namespace App\Services;
 
-use App\Helpers\General;
-use Illuminate\Database\Schema\Blueprint;
+	use App\Helpers\General;
+	use Illuminate\Database\Schema\Blueprint;
 	use Illuminate\Support\Facades\Schema;
 
 	class ManageFlatTable{
@@ -43,8 +43,6 @@ use Illuminate\Database\Schema\Blueprint;
 			return false;
 		}
 
-		/* $object->addFlatTableColumn('price', 'decimal:12,2'); */
-		/* $object->addFlatTableColumn('email', 'string:191'); */
 		public function addFlatTableColumn(string $name, string $type = 'string'){
 			$name = General::replaceWithUnderscores($name);
 			if(!Schema::hasColumn($this->flat_table_name, $name)){
@@ -118,7 +116,7 @@ use Illuminate\Database\Schema\Blueprint;
 				case 'text':
 				case 'textarea':
 				case 'multiselect':
-					return $table->text($name);
+					return $table->text($name)->nullable();
 					break;
 
 				case 'number':
