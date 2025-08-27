@@ -134,19 +134,63 @@
 			return $combinations;
 		}
 
-		public static function isValidTime($time) {
+		public static function isValidTime($time){
 			$patterns = [
-				'/^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/',         // 24h HH:MM:SS
-				'/^(?:[01]\d|2[0-3]):[0-5]\d$/',                 // 24h HH:MM
-				'/^(0[1-9]|1[0-2]):[0-5]\d\s?(AM|PM)$/i'         // 12h HH:MM AM/PM
+				'/^(?:[01]?\d|2[0-3]):[0-5]\d:[0-5]\d$/',               // 24h H:MM:SS or HH:MM:SS
+				'/^(?:[01]?\d|2[0-3]):[0-5]\d$/',                       // 24h H:MM or HH:MM
+				'/^(0?[1-9]|1[0-2]):[0-5]\d:[0-5]\d\s*(AM|PM)$/i',     // 12h H:MM:SS AM/PM or HH:MM:SS AM/PM
+				'/^(0?[1-9]|1[0-2]):[0-5]\d\s*(AM|PM)$/i'              // 12h H:MM AM/PM or HH:MM AM/PM
 			];
 			
-			foreach ($patterns as $pattern) {
-				if (preg_match($pattern, $time)) {
+			foreach($patterns as $pattern){
+				if(preg_match($pattern, $time)){
 					return true;
 				}
 			}
 			return false;
+		}
+
+		public static function convertToStandardTime($time) {
+			
+			if(!self::isValidTime($time)){
+				return '';
+			}
+			
+			$time = trim($time);
+			
+			
+			if(preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)$/i', $time, $matches)){
+				$hours = (int)$matches[1];
+				$minutes = (int)$matches[2];
+				$seconds = isset($matches[3]) ? (int)$matches[3] : 0;
+				$ampm = strtoupper($matches[4]);
+				
+				
+				if($ampm === 'AM'){
+					if($hours === 12){
+						$hours = 0; // 12:xx AM becomes 00:xx
+					}
+				}else{
+					if($hours !== 12){
+						$hours += 12; // 1-11 PM becomes 13-23
+					}
+					// 12:xx PM stays as 12:xx
+				}
+				
+				return sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+
+			}
+			
+			// It's 24-hour format
+			if(preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $time, $matches)){
+				$hours = (int)$matches[1];
+				$minutes = (int)$matches[2];
+				$seconds = isset($matches[3]) ? (int)$matches[3] : 0;
+				
+				return sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+			}
+			
+			return ''; // Should not reach here if isValidTime worked correctly
 		}
 
 		public static function onlyLettersAndNumbers(string $input) : string{

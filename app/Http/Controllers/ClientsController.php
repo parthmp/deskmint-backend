@@ -58,6 +58,16 @@ class ClientsController extends Controller{
 			'd-M-Y H:i:s',
 			'j-M-Y H:i',
 			'j-M-Y H:i:s',
+			'Y m d H:i',
+			'Y m d H:i:s',
+			'd m Y H:i',
+			'd m Y H:i:s',
+			'm d Y H:i',
+			'm d Y H:i:s',
+			'd M Y H:i',
+			'd M Y H:i:s',
+			'j M Y H:i',
+			'j M Y H:i:s',
 
 			// Date + 12h time with AM/PM
 			'Y-m-d h:i A',
@@ -192,7 +202,7 @@ class ClientsController extends Controller{
 
 					$field->value = '';
 					if(General::isValidTime($default_value)){
-						$field->value = $default_value;
+						$field->value = General::convertToStandardTime($default_value);
 					}
 					
 					$field->default_value = '';
