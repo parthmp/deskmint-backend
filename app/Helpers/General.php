@@ -3,7 +3,8 @@
 	namespace App\Helpers;
 
 	use Carbon\Carbon;
-	use Illuminate\Http\Response;
+use Exception;
+use Illuminate\Http\Response;
 
 	class General{
 
@@ -242,6 +243,15 @@
 
 		public static function replaceWithUnderscores(string $input): string{
 			return strtolower(preg_replace('/[^a-zA-Z0-9]/', '_', $input));
+		}
+
+		public static function isValidISODateTime($dateTime) {
+			try{
+				\Carbon\Carbon::parse($dateTime);
+				return true;
+			}catch(Exception $e){
+				return false;
+			}
 		}
 
 	}

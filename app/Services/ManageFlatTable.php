@@ -124,9 +124,6 @@
 					break;
 				
 				case 'date':
-					return $table->date($name)->nullable();
-					break;
-
 				case 'datetime':
 					return $table->timestamp($name)->nullable();
 					break;
@@ -136,7 +133,9 @@
 					break;
 
 				default:
-					return $table->$base_type($name);
+					$length = $params[0] ?? 191;
+					return $table->string($name, $length)->default('');
+					break;
 			}
 
 		}

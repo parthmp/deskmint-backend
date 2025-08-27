@@ -16,6 +16,7 @@ use Carbon\Exceptions\InvalidFormatException;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class ClientsController extends Controller{
@@ -173,14 +174,14 @@ class ClientsController extends Controller{
 					}
 				}
 
-				if($field->customFieldType->input_type === config('global.field_types')[5]){
+				if($field->customFieldType->input_type === config('global.field_types')[5]){ //date only
 					
 					$default_value = trim($field->default_value);
 					$parsed = false;
 					
 					foreach($date_formats as $format){
 						if((\DateTime::createFromFormat($format, $default_value) !== false)){
-							$default_value = \DateTime::createFromFormat($format, $default_value)->format('Y-m-d');
+							$default_value = \DateTime::createFromFormat($format, $default_value)->format('Y-m-d H:i:s');
 							$parsed = true;
 							break;
 						}
@@ -269,7 +270,7 @@ class ClientsController extends Controller{
 	}
 
 	public function store(Request $request){
-
+		return response(['message' => 'blocked', 'validity' => 'client_added'], 500);
 		$personal_info_validation = $this->validatePersonInfo($request);
 		if($personal_info_validation !== null){
 			return $personal_info_validation;
@@ -396,38 +397,85 @@ class ClientsController extends Controller{
 
 		$insert = [];
 		$insert_flat = [];
+		$insert_flat['client_id'] = $client_id;
 
 		foreach($db_custom_fields as $field){
 
 			$custom_fields_submitted = $request->input('custom_fields');
 
 			$value = '';
+			$flat_value = '';
 
 			for($z = 0 ; $z < count($custom_fields_submitted) ; $z++){
 
-				if($custom_fields_submitted[$z]['id'] == $field->id && $field->customFieldType->input_type !== 'time'){
-					
-					if($field->customFieldType->input_type === 'multiselect'){
-						$value = Sanitize::input(json_encode($custom_fields_submitted[$z]['value']));
-					}else{
-						$value = Sanitize::input($custom_fields_submitted[$z]['value'].'');
-					}
-					
-
-				}else{
-					if($field->customFieldType->input_type === 'time'){
-						$value = General::jsonTimeToAmPm(json_encode($custom_fields_submitted[$z]['value']));
-					}
-				}
-
 				if($custom_fields_submitted[$z]['id'] == $field->id){
-					
-					// $custom_column_name = General::replaceWithUnderscores($field->label);
-					// $insert_flat[] = [
 
-					// ];
+					if($field->customFieldType->input_type === config('global.field_types')[0] || $field->customFieldType->input_type === config('global.field_types')[1] || $field->customFieldType->input_type === config('global.field_types')[3] || $field->customFieldType->input_type === config('global.field_types')[2] || $field->customFieldType->input_type === config('global.field_types')[4] || $field->customFieldType->input_type === config('global.field_types')[8]){ //text, textarea, select, email, number, telephone
+
+						$value = trim($custom_fields_submitted[$z]['value']);
+						$flat_value = $value;
+						if($field->customFieldType->input_type === config('global.field_types')[4] && trim($custom_fields_submitted[$z]['value']) == ''){
+							$flat_value = null;
+						}
+
+					}else{
+
+						if($field->customFieldType->input_type === config('global.field_types')[5] || $field->customFieldType->input_type === config('global.field_types')[7]){ //date and datetime
+
+							if($custom_fields_submitted[$z]['value'] === null || $custom_fields_submitted[$z]['value'] === ''){
+
+								$value = '';
+								$flat_value = null;
+
+							}else{
+								
+								
+								$datetime_string = trim($custom_fields_submitted[$z]['value']);
+
+								if(General::isValidISODateTime($datetime_string)){
+									
+									$value = $datetime_string;
+									$flat_value = Carbon::parse($datetime_string)->format('Y-m-d H:i:s'); //for date and time
+									
+								}else{
+									$value = '';
+									$flat_value = null;
+								}
+
+							}
+							
+
+						}else if($field->customFieldType->input_type === config('global.field_types')[6]){ //time
+
+							if($field->required == 1){
+								$value = General::jsonTimeToAmPm(json_encode($custom_fields_submitted[$z]['value']));
+								$flat_value = $value;
+							}else{
+								if($custom_fields_submitted[$z]['value'] !== null){
+									$value = General::jsonTimeToAmPm(json_encode($custom_fields_submitted[$z]['value']));
+									$flat_value = $value;
+								}else{
+									$value = json_encode('');
+									$flat_value = '';
+								}
+							}
+
+						}else if($field->customFieldType->input_type === config('global.field_types')[9]){ //multiselect
+							$value = json_encode('');
+							if($custom_fields_submitted[$z]['value'] !== null){
+								$value = json_encode($custom_fields_submitted[$z]['value']);
+								$flat_value = $value;
+							}
+						}
+
+					}
+
+					if($custom_fields_submitted[$z]['id'] == $field->id){
+						$custom_column_name = General::replaceWithUnderscores($field->label);
+						$insert_flat[$custom_column_name] = $flat_value;
+					}
+
 				}
-
 			}
 
 			$insert[] = [
@@ -441,9 +489,11 @@ class ClientsController extends Controller{
 		}
 
 		ClientCustomFieldValue::insert($insert);
-
 		
-
+		$insert_flat['created_at'] = now();
+		$insert_flat['updated_at'] = now();
+		DB::table('clients_flat')->insert($insert_flat);
+		
 	}
 
 	private function insertContactInfoForClient(Request $request, int $client_id){
