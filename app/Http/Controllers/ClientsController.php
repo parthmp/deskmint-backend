@@ -848,6 +848,27 @@ class ClientsController extends Controller{
 		];
 
 	}
+
+	public function fetchArrangedColumns(Request $request){
+		
+		$company_id = Sanitize::input($request->input('company_id'));
+
+		/* check if user has any data */
+		$user_data = UserIndexColumn::where([['user_id', '=', Auth::user()->id], ['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->first();
+
+		if(!$user_data){
+			$user_data = SettingsIndexColumn::where([['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->first();
+		}
+
+		
+
+		if($user_data){
+
+			/* handle userdata here */
+
+		}
+
+	}
 	
 
 }
