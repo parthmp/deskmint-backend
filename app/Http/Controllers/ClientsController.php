@@ -769,17 +769,16 @@ class ClientsController extends Controller{
 			\App\Models\Client::class,
 			['deleted_at', 'updated_at'],
 			$company_id,
-			['clients.created_at']
-			// [], 
-			// [],
-			// [
-			// 	'field_table'						=>	'clients_custom_fields',
-			// 	'value_table'						=>	'clients_custom_fields_values',
-			// 	'field_table_join_column_first'		=>	'client_id',
-			// 	'field_table_join_column_second'	=>	'clients.id',
-			// 	'select_ids'						=>	$custom_fields_ids,
-			// 	'group_by'							=>	'clients.id'
-			// ]
+			['clients.created_at'],
+			[
+				[
+					'table' => 'clients_flat',
+					'first' => 'clients.id',
+					'operator' => '=',
+					'second' => 'clients_flat.client_id',
+					'columns' => ['clients_flat.date_required as date_required', 'clients_flat.multiselect_not_required as multiselect_not_required']
+				]
+			]
 		);
 
 		
@@ -807,8 +806,16 @@ class ClientsController extends Controller{
 		$table_data = [
 			'columns' => [
 				[
+					'label' => 	'date_required',
+					'text'	=>	'date r'
+				],
+				[
 					'label' => 	'first_name',
 					'text'	=>	'First name'
+				],
+				[
+					'label' => 	'multiselect_not_required',
+					'text'	=>	'm r'
 				],
 				[
 					'label' => 	'last_name',
