@@ -1031,21 +1031,23 @@ class ClientsController extends Controller{
 
 		}
 		
+		try{
 
-		$columns = json_encode($columns);
-		
-		UserIndexColumn::where([['user_id', '=', Auth::user()->id], ['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->delete();
-		
-		$user_index_col = new UserIndexColumn();
-		$user_index_col->user_id = Auth::user()->id;
-		$user_index_col->company_id = $company_id;
-		$user_index_col->feature_name = 'clients';
-		$user_index_col->columns_json = $columns;
-		$user_index_col->save();
-		return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
+			$columns = json_encode($columns);
+			
+			UserIndexColumn::where([['user_id', '=', Auth::user()->id], ['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->delete();
+			
+			$user_index_col = new UserIndexColumn();
+			$user_index_col->user_id = Auth::user()->id;
+			$user_index_col->company_id = $company_id;
+			$user_index_col->feature_name = 'clients';
+			$user_index_col->columns_json = $columns;
+			$user_index_col->save();
+			return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
 
-
-
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 	}
 	
