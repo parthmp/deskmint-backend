@@ -53,6 +53,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	
 	Route::get('manage-clients/fetch-clients-custom-fields', [ClientsController::class, 'fetchClientsCustomFields']);
 	Route::get('manage-clients/fetch-arranged-columns', [ClientsController::class, 'fetchArrangedColumns']);
+	Route::post('manage-clients/save-arranged-columns', [ClientsController::class, 'saveArrangedColumns']);
 	Route::resource('manage-clients', ClientsController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	
 });

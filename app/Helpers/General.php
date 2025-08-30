@@ -255,6 +255,7 @@ use Illuminate\Http\Response;
 		}
 
 		public static function NormalizeColumnName(string $column):string{
+			$column = str_ireplace('_id', '', $column);
 			return ucfirst(strtolower(str_ireplace('_', ' ', $column)));
 		}
 

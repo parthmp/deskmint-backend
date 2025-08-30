@@ -745,25 +745,25 @@ class ClientsController extends Controller{
 		$company_id = Sanitize::input($request->input('company_id'));
 
 		/* check custom fields showing fallback */
-		$custom_fields_ids = [];
-		$custom_columns = UserIndexColumn::where([['company_id', '=', $company_id], ['user_id', '=', Auth::user()->id], ['feature_name', '=', 'clients']])->first();
-		if(!$custom_columns){
-			$custom_columns = SettingsIndexColumn::where([['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->first();
-		}
+		// $custom_fields_ids = [];
+		// $custom_columns = UserIndexColumn::where([['company_id', '=', $company_id], ['user_id', '=', Auth::user()->id], ['feature_name', '=', 'clients']])->first();
+		// if(!$custom_columns){
+		// 	$custom_columns = SettingsIndexColumn::where([['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->first();
+		// }
 
-		$json_decoded = [];
+		// $json_decoded = [];
 
-		if($custom_columns){
+		// if($custom_columns){
 			
-			$custom_columns = json_decode($custom_columns->columns_json);
-			$json_decoded = $custom_columns;
-			$custom_columns = $custom_columns->custom_fields;
+		// 	$custom_columns = json_decode($custom_columns->columns_json);
+		// 	$json_decoded = $custom_columns;
+		// 	$custom_columns = $custom_columns->custom_fields;
 			
-			foreach($custom_columns as $c_column){
-				$custom_fields_ids[] = $c_column->clients_custom_fields_id;
-			}
+		// 	foreach($custom_columns as $c_column){
+		// 		$custom_fields_ids[] = $c_column->clients_custom_fields_id;
+		// 	}
 
-		}
+		// }
 
 		$fields = DataTable::sortNPaginate(
 			$request,
@@ -865,9 +865,6 @@ class ClientsController extends Controller{
 		$clients_columns = Schema::getColumnListing('clients');
 		$clients_columns = array_values(array_diff($clients_columns, ['deleted_at', 'updated_at']));
 		
-		// $clients_custom_columns = Schema::getColumnListing('clients_flat');
-		// $clients_custom_columns = array_diff($clients_custom_columns, ['id', 'client_id', 'created_at', 'deleted_at', 'updated_at']);
-
 		$clients_custom_columns = ClientsCustomField::where('company_id', '=', $company_id)->get()->toArray();
 
 		$merged = [];
@@ -876,84 +873,179 @@ class ClientsController extends Controller{
 		$user_custom_fields = [];
 		$user_fields = [];
 		if($user_data){
-			$fields_json = json_decode($user_data->columns_json);
-			$user_custom_fields = $fields_json->custom_fields;
-			$user_fields = $fields_json->client_fields;
-		}
-		
-
-		
-
-		for($z = 0 ; $z < count($clients_columns) ; $z++){
-
-			$to_push = [];
-
-			$to_push['label'] = $clients_columns[$z];
-			$to_push['text'] = General::NormalizeColumnName($clients_columns[$z]);
-			$to_push['order'] = 0;
-			$to_push['type'] = 'normal';
-			$to_push['searchable'] = 0;
-			$to_push['show'] = 0;
-
-			if($clients_columns[$z] === 'created_at'){
-				$to_push['text'] = 'Added on';
-			}
-
-			if($user_data){
-
-				foreach($user_fields as $user_field){
-
-					if($user_field->field === $clients_columns[$z]){
-						$to_push['order'] = $user_field->order;
-						$to_push['searchable'] = $user_field->searchable;
-						$to_push['show'] = $user_field->show;
-					}
-
-				}
-
-			}else{
-				if($clients_columns[$z] === 'first_name' || $clients_columns[$z] === 'last_name' || $clients_columns[$z] === 'email' || $clients_columns[$z] === 'created_at'){
-					$to_push['searchable'] = 1;
-					$to_push['show'] = 1;
-				}
-			}
 			
+			$fields_json = json_decode($user_data->columns_json, true);
 
-			$merged[] = $to_push;
+			$saved_labels_normal = [];
+			$saved_labels_custom = [];
 
-		}
-
-
-		for($z = 0 ; $z < count($clients_custom_columns) ; $z++){
-
-			$to_push = [];
-
-			$to_push['label'] = General::replaceWithUnderscores($clients_custom_columns[$z]['label']);
-			$to_push['text'] = ucfirst(strtolower($clients_custom_columns[$z]['label']));
-			$to_push['order'] = 0;
-			$to_push['type'] = 'custom';
-			$to_push['clients_custom_fields_id'] = 0;
-			$to_push['searchable'] = 0;
-			$to_push['show'] = 0;
-
-			if($user_data){
-				foreach($user_custom_fields as $custom_field){
-
-					if($custom_field->clients_custom_fields_id === $clients_columns[$z]['id']){
-						$to_push['order'] = $custom_field->order;
-						$to_push['clients_custom_fields_id'] = $clients_columns[$z]['id'];
-						$to_push['searchable'] = $custom_field->searchable;
-						$to_push['show'] = $custom_field->show;
-					}
-
+			for($z = 0 ; $z < count($fields_json) ; $z++){
+				if($fields_json[$z]['type'] === 'normal'){
+					$saved_labels_normal[] = $fields_json[$z]['label'];
+				}else{
+					$saved_labels_custom[] = $fields_json[$z]['label'];
 				}
 			}
 
-			$merged[] = $to_push;
+			$clients_columns = Schema::getColumnListing('clients');
+			$clients_columns = array_values(array_diff($clients_columns, ['deleted_at', 'updated_at']));
+			
+			$clients_custom_columns = ClientsCustomField::where('company_id', '=', $company_id)->pluck('label')->map(function($label){
+				return General::replaceWithUnderscores($label);
+			})->toArray();
+
+			foreach($fields_json as $field){
+
+				if(in_array($field['label'], $clients_columns) || in_array(General::replaceWithUnderscores($field['label']), $clients_custom_columns)){
+					$user_fields[] = $field;
+				}
+
+			}
+
+			$counter = 1;
+			foreach($clients_columns as $temp_client_column){
+				$to_push = [];
+				if(!in_array($temp_client_column, $saved_labels_normal)){
+					$to_push['id'] = $counter++;
+					$to_push['label'] = $temp_client_column;
+					$to_push['text'] = General::NormalizeColumnName($temp_client_column);
+					if($temp_client_column === 'created_at'){
+						$to_push['text'] = 'Added on';
+					}
+					$to_push['order'] = 0;
+					$to_push['type'] = 'normal';
+					$to_push['searchable'] = false;
+					$to_push['show'] = false;
+					$user_fields[] = $to_push;
+				}
+			}
+
+			foreach($clients_custom_columns as $temp_client_custom_column){
+				$to_push = [];
+				if(!in_array($temp_client_custom_column, $saved_labels_custom)){
+					$to_push['id'] = $counter++;
+					$to_push['label'] = $temp_client_custom_column;
+					$to_push['text'] = General::NormalizeColumnName($temp_client_custom_column);
+					$to_push['order'] = 0;
+					$to_push['type'] = 'custom';
+					$to_push['searchable'] = false;
+					$to_push['show'] = false;
+					$user_fields[] = $to_push;
+				}
+			}
+
+			return $user_fields;
+			
+		}else{
+
+			
+			$counter = 1;
+
+			for($z = 0 ; $z < count($clients_columns) ; $z++){
+
+				$to_push = [];
+
+				$to_push['id'] = $counter++;
+				$to_push['label'] = $clients_columns[$z];
+				$to_push['text'] = General::NormalizeColumnName($clients_columns[$z]);
+				$to_push['order'] = 0;
+				$to_push['type'] = 'normal';
+				$to_push['searchable'] = false;
+				$to_push['show'] = false;
+
+				if($clients_columns[$z] === 'created_at'){
+					$to_push['text'] = 'Added on';
+				}
+
+				if($clients_columns[$z] === 'first_name' || $clients_columns[$z] === 'last_name' || $clients_columns[$z] === 'email' || $clients_columns[$z] === 'created_at'){
+					$to_push['searchable'] = true;
+					$to_push['show'] = true;
+				}
+				
+				$merged[] = $to_push;
+
+			}
+
+
+			for($z = 0 ; $z < count($clients_custom_columns) ; $z++){
+
+				$to_push = [];
+				$to_push['id'] = $counter++;
+				$to_push['label'] = General::replaceWithUnderscores($clients_custom_columns[$z]['label']);
+				$to_push['text'] = ucfirst(strtolower($clients_custom_columns[$z]['label']));
+				$to_push['order'] = 0;
+				$to_push['type'] = 'custom';
+				$to_push['clients_custom_fields_id'] = 0;
+				$to_push['searchable'] = false;
+				$to_push['show'] = false;
+
+				$merged[] = $to_push;
+
+			}
+
+			return $merged;
 
 		}
+		
 
-		return $merged;
+
+	}
+
+	public function saveArrangedColumns(Request $request){
+
+		$validation_rules = [
+			'columns'	 =>	'required|array'
+		];
+
+		$v = Validator::make($request->all(), $validation_rules);
+
+		if($v->fails()){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}
+
+		$columns = $request->input('columns');
+		$company_id = Sanitize::input($request->input('company_id'));
+
+		if(empty($columns)){
+			UserIndexColumn::where([['user_id', '=', Auth::user()->id], ['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->delete();
+			return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
+		}
+
+		$clients_columns = Schema::getColumnListing('clients');
+		$clients_columns = array_values(array_diff($clients_columns, ['deleted_at', 'updated_at']));
+		
+		$clients_custom_columns = ClientsCustomField::where('company_id', '=', $company_id)->pluck('label')->map(function($label){
+			return General::replaceWithUnderscores($label);
+		})->toArray();
+
+		$order = 1;
+
+		for($z = 0 ; $z < count($columns) ; $z++){
+
+			if(!in_array($columns[$z]['label'], $clients_columns) && !in_array(General::replaceWithUnderscores($columns[$z]['label']), $clients_custom_columns)){
+				return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+			}
+
+			$columns[$z]['order'] = $order;
+			$order++;
+
+		}
+		
+
+		$columns = json_encode($columns);
+		
+		UserIndexColumn::where([['user_id', '=', Auth::user()->id], ['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->delete();
+		
+		$user_index_col = new UserIndexColumn();
+		$user_index_col->user_id = Auth::user()->id;
+		$user_index_col->company_id = $company_id;
+		$user_index_col->feature_name = 'clients';
+		$user_index_col->columns_json = $columns;
+		$user_index_col->save();
+		return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
+
+
+
 
 	}
 	
