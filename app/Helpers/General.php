@@ -254,4 +254,8 @@ use Illuminate\Http\Response;
 			}
 		}
 
+		public static function NormalizeColumnName(string $column):string{
+			return ucfirst(strtolower(str_ireplace('_', ' ', $column)));
+		}
+
 	}

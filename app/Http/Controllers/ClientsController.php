@@ -17,6 +17,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 
 class ClientsController extends Controller{
@@ -860,13 +861,133 @@ class ClientsController extends Controller{
 			$user_data = SettingsIndexColumn::where([['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->first();
 		}
 
+		/* fetch all fields */
+		$clients_columns = Schema::getColumnListing('clients');
+		$clients_columns = array_values(array_diff($clients_columns, ['deleted_at', 'updated_at']));
 		
+		// $clients_custom_columns = Schema::getColumnListing('clients_flat');
+		// $clients_custom_columns = array_diff($clients_custom_columns, ['id', 'client_id', 'created_at', 'deleted_at', 'updated_at']);
+
+		$clients_custom_columns = ClientsCustomField::where('company_id', '=', $company_id)->get()->toArray();
+
+		$merged = [];
 
 		if($user_data){
 
 			/* handle userdata here */
 
+			$fields_json = json_decode($user_data->columns_json);
+			$user_custom_fields = $fields_json->custom_fields;
+
+			$user_fields = $fields_json->client_fields;
+
+			for($z = 0 ; $z < count($clients_columns) ; $z++){
+
+				$to_push = [];
+
+				$to_push['label'] = $clients_columns[$z];
+				$to_push['text'] = General::NormalizeColumnName($clients_columns[$z]);
+				$to_push['order'] = 0;
+				$to_push['type'] = 'normal';
+				$to_push['searchable'] = 0;
+				$to_push['show'] = 0;
+
+				if($clients_columns[$z] === 'created_at'){
+					$to_push['text'] = 'Added on';
+				}
+
+				foreach($user_fields as $user_field){
+
+					if($user_field->field === $clients_columns[$z]){
+						$to_push['order'] = $user_field->order;
+						$to_push['searchable'] = $user_field->searchable;
+						$to_push['show'] = $user_field->show;
+					}
+
+				}
+
+				$merged[] = $to_push;
+
+			}
+
+
+			for($z = 0 ; $z < count($clients_custom_columns) ; $z++){
+
+				$to_push = [];
+
+				$to_push['label'] = General::replaceWithUnderscores($clients_custom_columns[$z]['label']);
+				$to_push['text'] = ucfirst(strtolower($clients_custom_columns[$z]['label']));
+				$to_push['order'] = 0;
+				$to_push['type'] = 'custom';
+				$to_push['clients_custom_fields_id'] = 0;
+				$to_push['searchable'] = 0;
+				$to_push['show'] = 0;
+
+				foreach($user_custom_fields as $custom_field){
+
+					if($custom_field->clients_custom_fields_id === $clients_columns[$z]['id']){
+						$to_push['order'] = $custom_field->order;
+						$to_push['clients_custom_fields_id'] = $clients_columns[$z]['id'];
+						$to_push['searchable'] = $custom_field->searchable;
+						$to_push['show'] = $custom_field->show;
+					}
+
+				}
+
+				$merged[] = $to_push;
+
+			}
+
+
+
+
+		}else{
+
+			for($z = 0 ; $z < count($clients_columns) ; $z++){
+
+				$to_push = [];
+
+				$to_push['label'] = $clients_columns[$z];
+				$to_push['text'] = General::NormalizeColumnName($clients_columns[$z]);
+				$to_push['order'] = ($z+1);
+				$to_push['type'] = 'normal';
+				$to_push['searchable'] = 0;
+				$to_push['show'] = 0;
+
+				if($clients_columns[$z] === 'first_name' || $clients_columns[$z] === 'last_name' || $clients_columns[$z] === 'email' || $clients_columns[$z] === 'created_at'){
+					$to_push['searchable'] = 1;
+					$to_push['show'] = 1;
+				}
+
+				if($clients_columns[$z] === 'created_at'){
+					$to_push['text'] = 'Added on';
+				}
+
+
+				$merged[] = $to_push;
+
+			}
+
+			for($z = 0 ; $z < count($clients_custom_columns) ; $z++){
+
+				$to_push = [];
+
+				$to_push['label'] = General::replaceWithUnderscores($clients_custom_columns[$z]['label']);
+				$to_push['text'] = ucfirst(strtolower($clients_custom_columns[$z]['label']));
+				$to_push['order'] = 0;
+				$to_push['type'] = 'custom';
+				$to_push['clients_custom_fields_id'] = 0;
+				$to_push['searchable'] = 0;
+				$to_push['show'] = 0;
+
+
+				$merged[] = $to_push;
+
+			}
+
 		}
+
+		return $merged;
 
 	}
 	
