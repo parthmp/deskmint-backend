@@ -868,35 +868,32 @@ class ClientsController extends Controller{
 		$clients_custom_columns = ClientsCustomField::where('company_id', '=', $company_id)->get()->toArray();
 
 		$merged = [];
+		$user_fields = [];
 
 		/* handle userdata here */
-		$user_custom_fields = [];
-		$user_fields = [];
 		if($user_data){
 			
 			$fields_json = json_decode($user_data->columns_json, true);
 
 			$saved_labels_normal = [];
-			$saved_labels_custom = [];
-
+			$saved_ids_custom = [];
+			
 			for($z = 0 ; $z < count($fields_json) ; $z++){
 				if($fields_json[$z]['type'] === 'normal'){
 					$saved_labels_normal[] = $fields_json[$z]['label'];
 				}else{
-					$saved_labels_custom[] = $fields_json[$z]['label'];
+					$saved_ids_custom[] = $fields_json[$z]['clients_custom_fields_id'];
 				}
 			}
 
 			$clients_columns = Schema::getColumnListing('clients');
 			$clients_columns = array_values(array_diff($clients_columns, ['deleted_at', 'updated_at']));
 			
-			$clients_custom_columns = ClientsCustomField::where('company_id', '=', $company_id)->pluck('label')->map(function($label){
-				return General::replaceWithUnderscores($label);
-			})->toArray();
-
+			$clients_custom_columns_ids = ClientsCustomField::where('company_id', '=', $company_id)->pluck('id')->toArray();
+			
 			foreach($fields_json as $field){
 
-				if(in_array($field['label'], $clients_columns) || in_array(General::replaceWithUnderscores($field['label']), $clients_custom_columns)){
+				if(in_array($field['label'], $clients_columns) || in_array($field['clients_custom_fields_id'], $clients_custom_columns_ids)){
 					$user_fields[] = $field;
 				}
 
@@ -912,7 +909,6 @@ class ClientsController extends Controller{
 					if($temp_client_column === 'created_at'){
 						$to_push['text'] = 'Added on';
 					}
-					$to_push['order'] = 0;
 					$to_push['type'] = 'normal';
 					$to_push['searchable'] = false;
 					$to_push['show'] = false;
@@ -920,14 +916,35 @@ class ClientsController extends Controller{
 				}
 			}
 
-			foreach($clients_custom_columns as $temp_client_custom_column){
+			/* modify text to show */
+			for($z = 0 ; $z < count($user_fields) ; $z++){
+
+				if($user_fields[$z]['type'] === 'custom'){
+
+					for($x = 0 ; $x < count($clients_custom_columns) ; $x++){
+
+						if($clients_custom_columns[$x]['id'] === $user_fields[$z]['clients_custom_fields_id']){
+
+							$user_fields[$z]['text'] = General::NormalizeColumnName($clients_custom_columns[$x]['label']);
+
+						}
+
+					}
+
+				}
+
+			}
+
+			/*  */
+
+			foreach($clients_custom_columns as $t_clients_custom_columns){
 				$to_push = [];
-				if(!in_array($temp_client_custom_column, $saved_labels_custom)){
+				if(!in_array($t_clients_custom_columns['id'], $saved_ids_custom)){
 					$to_push['id'] = $counter++;
-					$to_push['label'] = $temp_client_custom_column;
-					$to_push['text'] = General::NormalizeColumnName($temp_client_custom_column);
-					$to_push['order'] = 0;
+					$to_push['label'] = '-';
+					$to_push['text'] = General::NormalizeColumnName($t_clients_custom_columns['label']);
 					$to_push['type'] = 'custom';
+					$to_push['clients_custom_fields_id'] = $t_clients_custom_columns['id'];
 					$to_push['searchable'] = false;
 					$to_push['show'] = false;
 					$user_fields[] = $to_push;
@@ -944,11 +961,9 @@ class ClientsController extends Controller{
 			for($z = 0 ; $z < count($clients_columns) ; $z++){
 
 				$to_push = [];
-
 				$to_push['id'] = $counter++;
 				$to_push['label'] = $clients_columns[$z];
 				$to_push['text'] = General::NormalizeColumnName($clients_columns[$z]);
-				$to_push['order'] = 0;
 				$to_push['type'] = 'normal';
 				$to_push['searchable'] = false;
 				$to_push['show'] = false;
@@ -971,11 +986,10 @@ class ClientsController extends Controller{
 
 				$to_push = [];
 				$to_push['id'] = $counter++;
-				$to_push['label'] = General::replaceWithUnderscores($clients_custom_columns[$z]['label']);
+				$to_push['label'] = '-';
 				$to_push['text'] = ucfirst(strtolower($clients_custom_columns[$z]['label']));
-				$to_push['order'] = 0;
 				$to_push['type'] = 'custom';
-				$to_push['clients_custom_fields_id'] = 0;
+				$to_push['clients_custom_fields_id'] = $clients_custom_columns[$z]['id'];
 				$to_push['searchable'] = false;
 				$to_push['show'] = false;
 
@@ -1014,20 +1028,13 @@ class ClientsController extends Controller{
 		$clients_columns = Schema::getColumnListing('clients');
 		$clients_columns = array_values(array_diff($clients_columns, ['deleted_at', 'updated_at']));
 		
-		$clients_custom_columns = ClientsCustomField::where('company_id', '=', $company_id)->pluck('label')->map(function($label){
-			return General::replaceWithUnderscores($label);
-		})->toArray();
-
-		$order = 1;
+		$clients_custom_column_ids = ClientsCustomField::where('company_id', '=', $company_id)->pluck('id')->toArray();
 
 		for($z = 0 ; $z < count($columns) ; $z++){
 
-			if(!in_array($columns[$z]['label'], $clients_columns) && !in_array(General::replaceWithUnderscores($columns[$z]['label']), $clients_custom_columns)){
+			if(!in_array($columns[$z]['label'], $clients_columns) && !in_array($columns[$z]['clients_custom_fields_id'], $clients_custom_column_ids)){
 				return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 			}
-
-			$columns[$z]['order'] = $order;
-			$order++;
 
 		}
 		
