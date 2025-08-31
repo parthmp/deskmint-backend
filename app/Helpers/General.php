@@ -259,4 +259,10 @@ use Illuminate\Http\Response;
 			return ucfirst(strtolower(str_ireplace('_', ' ', $column)));
 		}
 
+		public static function isMySQLDateTime($date) {
+			$format = 'Y-m-d H:i:s';
+			$d = \DateTime::createFromFormat($format, $date);
+			return $d && $d->format($format) === $date;
+		}
+
 	}

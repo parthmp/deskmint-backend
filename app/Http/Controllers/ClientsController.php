@@ -755,6 +755,7 @@ class ClientsController extends Controller{
 		$show_columns = [];
 		$searchable_dates = [];
 		$clients_flat_columns = [];
+		$date_only_columns = [];
 
 		if($user_data){
 
@@ -796,8 +797,11 @@ class ClientsController extends Controller{
 
 								$label_with_underscores = General::replaceWithUnderscores($clients_custom_columns[$x]['label']);
 
+								if($clients_custom_columns[$x]['custom_field_type']['input_type'] === config('global.field_types')[5]){
+									$date_only_columns[] = $label_with_underscores;
+								}
+
 								$clients_flat_columns[] = 'clients_flat.'.$label_with_underscores.' as '.$label_with_underscores;
-								
 								$show_columns[] = [
 									'label'	=>	General::replaceWithUnderscores($clients_custom_columns[$x]['label']),
 									'text'	=>	General::NormalizeColumnName($clients_custom_columns[$x]['label'])
@@ -946,6 +950,30 @@ class ClientsController extends Controller{
 			$searchable_columns
 		);
 		
+		$rows = $fields->items();
+		
+		for($z = 0 ; $z < count($rows) ; $z++){
+			
+			foreach($rows[$z]->getAttributes() as $col_key => $col_val){
+				
+				if(General::isMySQLDateTime($col_val)){
+					
+					if(in_array($col_key, $date_only_columns)){
+						$rows[$z]->{$col_key} = [
+							'type' 	=> 'date',
+							'text'	=>	Carbon::parse($col_val)->toISOString()
+						];
+					}else{
+						$rows[$z]->{$col_key} = Carbon::parse($col_val)->toISOString();
+					}
+
+				}
+
+				
+			}
+		 	
+		}
+
 		$table_data = [
 			'columns' => $show_columns,
 			'rows' => $fields->items()
