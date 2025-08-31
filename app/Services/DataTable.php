@@ -11,7 +11,7 @@
 
 	class DataTable{
 
-		public static function sortNPaginate($request, $model, $skip_columns = [], $company_id = null, $dates_columns = [], $joins = [], $rewrites = [], $custom_fields_data = []){
+		public static function sortNPaginate($request, $model, $skip_columns = [], $company_id = null, $dates_columns = [], $joins = [], $rewrites = [], $searchables = []){
 
 			$hide_columns = ['deleted_at', 'updated_at'];
 
@@ -26,8 +26,10 @@
 				$allowed_columns = array_values(array_diff($allowed_columns, $skip_columns));
 			}
 
+			$searchable_columns_with_tables = [];
 			for($z = 0 ; $z < count($allowed_columns) ; $z++){
 				$tables_for_columns[] = $table;
+				$searchable_columns_with_tables[] = $table . '.' . $allowed_columns[$z];
 			}
 
 			$allowed_sorting_directions = ['asc', 'desc'];
@@ -55,49 +57,54 @@
 				$fields->leftJoin($join['table'], $join['first'], $join['operator'], $join['second']);
 
 				if(!empty($join['columns'])){
+
 					foreach ($join['columns'] as $col){
-						
+
 						$selects[] = $col;
 						
-						/* Extract alias if present */
 						if(stripos($col, ' as ') !== false) {
-							[, $alias] = preg_split('/\s+as\s+/i', $col);
+							[$actual_column, $alias] = preg_split('/\s+as\s+/i', $col);
 							$allowed_columns[] = trim($alias);
+							$searchable_columns_with_tables[] = trim($actual_column);
 						}else{
 							$allowed_columns[] = basename(str_replace('.', '/', $col));
+							$searchable_columns_with_tables[] = $col;
 						}
 
-						$tables_for_columns[] = $join['table'];
+						if(stripos($join['table'], ' as ') !== false){
+							[, $alias] = preg_split('/\s+as\s+/i', $join['table']);
+							$tables_for_columns[] = trim($alias);
+						}else{
+							$tables_for_columns[] = $join['table'];
+						}
 					}
+
 				}
+
+				// if(!empty($join['columns'])){
+				// 	foreach ($join['columns'] as $col){
+						
+				// 		$selects[] = $col;
+						
+				// 		/* Extract alias if present */
+				// 		if(stripos($col, ' as ') !== false) {
+				// 			[, $alias] = preg_split('/\s+as\s+/i', $col);
+				// 			$allowed_columns[] = trim($alias);
+				// 		}else{
+				// 			$allowed_columns[] = basename(str_replace('.', '/', $col));
+				// 		}
+
+				// 		if(stripos($join['table'], ' as ') !== false){
+				// 			[, $alias] = preg_split('/\s+as\s+/i', $join['table']);
+				// 			$tables_for_columns[] = trim($alias);
+				// 		}else{
+				// 			$tables_for_columns[] = $join['table'];
+				// 		}
+				// 	}
+				// }
 			}
 			
 			$fields->select($selects);
-
-			/**/
-			/* for custom fields */
-			// if(!empty($custom_fields_data) && $company_id !== null) {
-    
-			// 	$custom_fields = DB::table($custom_fields_data['field_table'])->where('company_id', $company_id)->leftJoin('custom_field_types as cft', 'cft.id', '=', $custom_fields_data['field_table'].'.custom_field_type_id')->get([$custom_fields_data['field_table'].'.id', $custom_fields_data['field_table'].'.label', 'cft.input_type']);
-				
-			// 	$fields->leftJoin($custom_fields_data['value_table'].' as cfv', 'cfv.'.$custom_fields_data['field_table_join_column_first'], '=', $custom_fields_data['field_table_join_column_second'])->leftJoin($custom_fields_data['field_table'].' as cf', 'cf.id', '=', 'cfv.clients_custom_field_id');
-				
-			// 	foreach($custom_fields as $field) {
-			// 		if(in_array($field->id, $custom_fields_data['select_ids'])){
-			// 			$column_alias = str_replace([' ', '-', '.'], '_', strtolower($field->label));
-			// 			if($field->input_type === 'date'){
-			// 				$column_alias .= '_cdate_';
-			// 			}
-			// 			$selects[] = DB::raw("MAX(CASE WHEN cf.id = {$field->id} THEN cfv.field_value END) AS {$column_alias}");
-			// 			$allowed_columns[] = $column_alias;
-			// 			$tables_for_columns[] = 'cfv';
-			// 		}
-			// 	}
-				
-			// 	$fields->groupBy($custom_fields_data['group_by']);
-			// 	$fields->select($selects);
-
-			// }
 
 			/**/
 			
@@ -105,10 +112,10 @@
 				$fields->where("{$table}.company_id", '=', $company_id);
 			}
 			
-			$modified_columns_for_tables = [];
-			for($z = 0 ; $z < count($allowed_columns) ; $z++){
-				$modified_columns_for_tables[$z] = $tables_for_columns[$z].'.'.$allowed_columns[$z];
-			}
+			// $modified_columns_for_tables = [];
+			// for($z = 0 ; $z < count($allowed_columns) ; $z++){
+			// 	$modified_columns_for_tables[$z] = $tables_for_columns[$z].'.'.$allowed_columns[$z];
+			// }
 			
 			$tables_for_columns = null;
 
@@ -167,31 +174,39 @@
 				
 				if($searched_term !== ''){
 					
-					$fields->where(function ($q) use ($searched_term, $modified_columns_for_tables, $rewrites){
-						foreach ($modified_columns_for_tables as $index => $column){
+					//if(empty($searchables)){
+						$fields->where(function ($q) use ($searched_term, $searchable_columns_with_tables, $rewrites, $searchables){
+							
+							foreach($searchable_columns_with_tables as $index => $column){
 
-							$search_expr = $column;
+								if(empty($searchables) || in_array($column, $searchables)){
 
-							foreach($rewrites as $key => $map){
-								if($column === $key || $column === $key || $column === preg_replace('/.*\./', '', $key)){
-									$case = "CASE";
-									foreach($map as $db_value => $display_value){
-										$case .= " WHEN {$key} = '".addslashes($db_value)."' THEN '".addslashes($display_value)."'";
+									$search_expr = $column;
+
+									foreach($rewrites as $key => $map){
+										if($column === $key || $column === $key || $column === preg_replace('/.*\./', '', $key)){
+											$case = "CASE";
+											foreach($map as $db_value => $display_value){
+												$case .= " WHEN {$key} = '".addslashes($db_value)."' THEN '".addslashes($display_value)."'";
+											}
+											$case .= " ELSE {$key} END";
+											$search_expr = \DB::raw($case);
+											break;
+										}
 									}
-									$case .= " ELSE {$key} END";
-									$search_expr = \DB::raw($case);
-									break;
-								}
-							}
 
-							if($index === 0){
-								$q->whereRaw($search_expr instanceof \Illuminate\Database\Query\Expression ? $search_expr->getValue(\DB::connection()->getQueryGrammar()) . " LIKE ?" : "{$search_expr} LIKE ?", ["%{$searched_term}%"]);
-							}else{
-								$q->orWhereRaw($search_expr instanceof \Illuminate\Database\Query\Expression ? $search_expr->getValue(\DB::connection()->getQueryGrammar()) . " LIKE ?" : "{$search_expr} LIKE ?", ["%{$searched_term}%"]
-								);
+									if($index === 0){
+										$q->whereRaw($search_expr instanceof \Illuminate\Database\Query\Expression ? $search_expr->getValue(\DB::connection()->getQueryGrammar()) . " LIKE ?" : "{$search_expr} LIKE ?", ["%{$searched_term}%"]);
+									}else{
+										$q->orWhereRaw($search_expr instanceof \Illuminate\Database\Query\Expression ? $search_expr->getValue(\DB::connection()->getQueryGrammar()) . " LIKE ?" : "{$search_expr} LIKE ?", ["%{$searched_term}%"]
+										);
+									}
+
+								}
+							
 							}
-						}
-					});
+						});
+					//}
 
 				}
 
@@ -224,10 +239,10 @@
 				}
 
 			}
-			if(isset($join['raw'])){
-				$fields->groupBy('clients.id');
+			// if(isset($join['raw'])){
+			// 	$fields->groupBy('clients.id');
 				
-			}
+			// }
 			if($paginate){
 				$fields = $fields->orderBy($table.'.id', 'desc')->paginate($per_page, ['*'], 'page', (int)$current_page);
 			}else{

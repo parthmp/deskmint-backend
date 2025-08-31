@@ -745,100 +745,191 @@ class ClientsController extends Controller{
 		$company_id = Sanitize::input($request->input('company_id'));
 
 		/* check custom fields showing fallback */
-		// $custom_fields_ids = [];
-		// $custom_columns = UserIndexColumn::where([['company_id', '=', $company_id], ['user_id', '=', Auth::user()->id], ['feature_name', '=', 'clients']])->first();
-		// if(!$custom_columns){
-		// 	$custom_columns = SettingsIndexColumn::where([['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->first();
-		// }
+		$user_data = UserIndexColumn::where([['user_id', '=', Auth::user()->id], ['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->first();
 
-		// $json_decoded = [];
+		if(!$user_data){
+			$user_data = SettingsIndexColumn::where([['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->first();
+		}
 
-		// if($custom_columns){
-			
-		// 	$custom_columns = json_decode($custom_columns->columns_json);
-		// 	$json_decoded = $custom_columns;
-		// 	$custom_columns = $custom_columns->custom_fields;
-			
-		// 	foreach($custom_columns as $c_column){
-		// 		$custom_fields_ids[] = $c_column->clients_custom_fields_id;
-		// 	}
+		$searchable_columns = [];
+		$show_columns = [];
+		$searchable_dates = [];
+		$clients_flat_columns = [];
 
-		// }
+		if($user_data){
+
+			$user_data =  json_decode($user_data->columns_json, true);
+
+			for($z = 0 ; $z < count($user_data) ; $z++){
+
+				if($user_data[$z]['show'] === true){
+					if($user_data[$z]['type'] === 'normal'){
+
+						$temp_label = $user_data[$z]['label'];
+
+						/* handle edge cases here */
+						if($temp_label === 'company_id'){
+							$temp_label = 'company_name';
+						}else if($temp_label === 'currency_id'){
+							$temp_label = 'currency';
+						}else if($temp_label === 'billing_country_id'){
+							$temp_label = 'b_country_name';
+						}else if($temp_label === 'shipping_country_id'){
+							$temp_label = 's_country_name';
+						}else if($temp_label === 'industry_id'){
+							$temp_label = 'industry_name';
+						}
+
+						$show_columns[] = [
+							'label'	=>	$temp_label,
+							'text'	=>	$user_data[$z]['text']
+						];
+						
+						if($user_data[$z]['searchable'] === true){
+							if($user_data[$z]['is_date'] === true){
+								$searchable_dates[] = 'clients.'.$user_data[$z]['label'];
+							}else{
+
+								if($temp_label === 'company_id'){
+									$searchable_columns[] = 'companies.company_name';
+								}else if($temp_label === 'currency_id'){
+									$searchable_columns[] = 'currencies.currency';
+								}else if($temp_label === 'billing_country_id'){
+									$searchable_columns[] = 'b_countries.country_name';
+								}else if($temp_label === 'shipping_country_id'){
+									$searchable_columns[] = 's_countries.country_name';
+								}else if($temp_label === 'industry_id'){
+									$searchable_columns[] = 'industries.industry_name';
+								}else{
+									$searchable_columns[] = 'clients.'.$user_data[$z]['label'];
+								}
+
+								
+							}
+							
+						}
+					}else{
+
+						$clients_custom_columns = ClientsCustomField::where('company_id', '=', $company_id)->get()->toArray();
+						
+						for($x = 0 ; $x < count($clients_custom_columns) ; $x++){
+
+							if($user_data[$z]['clients_custom_fields_id'] === $clients_custom_columns[$x]['id']){
+
+								$label_with_underscores = General::replaceWithUnderscores($clients_custom_columns[$x]['label']);
+
+								$clients_flat_columns[] = 'clients_flat.'.$label_with_underscores.' as '.$label_with_underscores;
+								$show_columns[] = [
+									'label'	=>	General::replaceWithUnderscores($clients_custom_columns[$x]['label']),
+									'text'	=>	General::NormalizeColumnName($clients_custom_columns[$x]['label'])
+								];
+
+								if($user_data[$z]['searchable'] === true){
+									if($user_data[$z]['is_date'] === true){
+										$searchable_dates[] = 'clients_flat.'.$label_with_underscores;
+									}else{
+										$searchable_columns[] = 'clients_flat.'.$label_with_underscores;
+									}
+								}
+
+							}
+
+						}
+
+					}
+				}
+
+			}
+
+
+		}else{
+
+			array_push($searchable_columns, 'clients.first_name');
+			array_push($searchable_columns, 'clients.last_name');
+			array_push($searchable_columns, 'clients.email');
+			array_push($searchable_dates, 'clients.created_at');
+
+			array_push($show_columns, [
+				'label'	=>	'first_name',
+				'text'	=>	'First name',
+			]);
+			array_push($show_columns, [
+				'label'	=>	'last_name',
+				'text'	=>	'Last name',
+			]);
+			array_push($show_columns, [
+				'label'	=>	'email',
+				'text'	=>	'Email',
+			]);
+			array_push($show_columns, [
+				'label'	=>	'created_at',
+				'text'	=>	'Added on',
+			]);
+
+		}
+
+		
 
 		$fields = DataTable::sortNPaginate(
 			$request,
 			\App\Models\Client::class,
 			['deleted_at', 'updated_at'],
 			$company_id,
-			['clients.created_at'],
+			$searchable_dates,
 			[
 				[
 					'table' => 'clients_flat',
 					'first' => 'clients.id',
 					'operator' => '=',
 					'second' => 'clients_flat.client_id',
-					'columns' => ['clients_flat.date_required as date_required', 'clients_flat.multiselect_not_required as multiselect_not_required']
-				]
-			]
-		);
-
-		
-		/*hide time for custom date fields*/
-		// $fields->each(function($ele){
-
-		// 	$ele->input_type = ucfirst($ele->input_type);
-
-		// 	if((int)$ele->required === 0){
-		// 		$ele->required = [
-		// 			'type'		=>	'label',
-		// 			'highlight'	=>	'error',
-		// 			'text'		=>	'No'
-		// 		];
-		// 	}else{
-		// 		$ele->required = [
-		// 			'type'		=>	'label',
-		// 			'highlight'	=>	'success',
-		// 			'text'		=>	'Yes'
-		// 		];
-		// 	}
-
-		// });
-		
-		$table_data = [
-			'columns' => [
-				[
-					'label' => 	'date_required',
-					'text'	=>	'date r'
+					'columns' => $clients_flat_columns
 				],
 				[
-					'label' => 	'first_name',
-					'text'	=>	'First name'
+					'table' => 'companies',
+					'first' => 'clients.company_id',
+					'operator' => '=',
+					'second' => 'companies.id',
+					'columns' => ['companies.company_name as company_name']
 				],
 				[
-					'label' => 	'multiselect_not_required',
-					'text'	=>	'm r'
+					'table' => 'currencies',
+					'first' => 'clients.currency_id',
+					'operator' => '=',
+					'second' => 'currencies.id',
+					'columns' => ['currencies.currency as currency']
 				],
 				[
-					'label' => 	'last_name',
-					'text'	=>	'Last name'
+					'table' => 'countries as b_countries',
+					'first' => 'clients.billing_country_id',
+					'operator' => '=',
+					'second' => 'b_countries.id',
+					'columns' => ['b_countries.country_name as b_country_name']
 				],
 				[
-					'label' => 	'email',
-					'text'	=>	'Email'
+					'table' => 'countries as s_countries',
+					'first' => 'clients.shipping_country_id',
+					'operator' => '=',
+					'second' => 's_countries.id',
+					'columns' => ['s_countries.country_name as s_country_name']
 				],
 				[
-					'label' => 	'created_at',
-					'text'	=>	'Added on'
-				],
-				[
-					'label'	=> 'actions',
-					'text'	=> 'Actions'
+					'table' => 'industries',
+					'first' => 'clients.industry_id',
+					'operator' => '=',
+					'second' => 'industries.id',
+					'columns' => ['industries.industry_name as industry_name']
 				]
 			],
+			[],
+			$searchable_columns
+		);
+		
+		$table_data = [
+			'columns' => $show_columns,
 			'rows' => $fields->items()
 		];
 		
-		//$table_data['columns'] = DataTable::modifyForColumns($table_data['columns'], $json_decoded);
+		// //$table_data['columns'] = DataTable::modifyForColumns($table_data['columns'], $json_decoded);
 		
 		$total_pages = $fields->lastPage();
 
@@ -865,9 +956,8 @@ class ClientsController extends Controller{
 		$clients_columns = Schema::getColumnListing('clients');
 		$clients_columns = array_values(array_diff($clients_columns, ['deleted_at', 'updated_at']));
 		
-		$clients_custom_columns = ClientsCustomField::where('company_id', '=', $company_id)->get()->toArray();
+		$clients_custom_columns = ClientsCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->with('customFieldType')->get()->toArray();
 
-		$merged = [];
 		$user_fields = [];
 
 		/* handle userdata here */
@@ -878,13 +968,9 @@ class ClientsController extends Controller{
 			$saved_labels_normal = [];
 			$saved_ids_custom = [];
 			
-			for($z = 0 ; $z < count($fields_json) ; $z++){
-				if($fields_json[$z]['type'] === 'normal'){
-					$saved_labels_normal[] = $fields_json[$z]['label'];
-				}else{
-					$saved_ids_custom[] = $fields_json[$z]['clients_custom_fields_id'];
-				}
-			}
+			$splitted = $this->splitFields($fields_json);
+			$saved_labels_normal = $splitted['normal'];
+			$saved_ids_custom = $splitted['custom'];
 
 			$clients_columns = Schema::getColumnListing('clients');
 			$clients_columns = array_values(array_diff($clients_columns, ['deleted_at', 'updated_at']));
@@ -905,13 +991,16 @@ class ClientsController extends Controller{
 				if(!in_array($temp_client_column, $saved_labels_normal)){
 					$to_push['id'] = $counter++;
 					$to_push['label'] = $temp_client_column;
+					$to_push['is_date'] = false;
 					$to_push['text'] = General::NormalizeColumnName($temp_client_column);
 					if($temp_client_column === 'created_at'){
 						$to_push['text'] = 'Added on';
+						$to_push['is_date'] = true;
 					}
 					$to_push['type'] = 'normal';
 					$to_push['searchable'] = false;
 					$to_push['show'] = false;
+					
 					$user_fields[] = $to_push;
 				}
 			}
@@ -926,6 +1015,10 @@ class ClientsController extends Controller{
 						if($clients_custom_columns[$x]['id'] === $user_fields[$z]['clients_custom_fields_id']){
 
 							$user_fields[$z]['text'] = General::NormalizeColumnName($clients_custom_columns[$x]['label']);
+							$user_fields[$z]['is_date'] = false;
+							if($clients_custom_columns[$x]['custom_field_type']['input_type'] === config('global.field_types')[5] || $clients_custom_columns[$x]['custom_field_type']['input_type'] === config('global.field_types')[7]){
+								$user_fields[$z]['is_date'] = true;
+							}
 
 						}
 
@@ -947,6 +1040,10 @@ class ClientsController extends Controller{
 					$to_push['clients_custom_fields_id'] = $t_clients_custom_columns['id'];
 					$to_push['searchable'] = false;
 					$to_push['show'] = false;
+					$to_push['is_date'] = false;
+					if($t_clients_custom_columns['custom_field_type']['input_type'] === config('global.field_types')[5] || $t_clients_custom_columns['custom_field_type']['input_type'] === config('global.field_types')[7]){
+						$to_push['is_date'] = true;
+					}
 					$user_fields[] = $to_push;
 				}
 			}
@@ -954,54 +1051,85 @@ class ClientsController extends Controller{
 			return $user_fields;
 			
 		}else{
-
-			
-			$counter = 1;
-
-			for($z = 0 ; $z < count($clients_columns) ; $z++){
-
-				$to_push = [];
-				$to_push['id'] = $counter++;
-				$to_push['label'] = $clients_columns[$z];
-				$to_push['text'] = General::NormalizeColumnName($clients_columns[$z]);
-				$to_push['type'] = 'normal';
-				$to_push['searchable'] = false;
-				$to_push['show'] = false;
-
-				if($clients_columns[$z] === 'created_at'){
-					$to_push['text'] = 'Added on';
-				}
-
-				if($clients_columns[$z] === 'first_name' || $clients_columns[$z] === 'last_name' || $clients_columns[$z] === 'email' || $clients_columns[$z] === 'created_at'){
-					$to_push['searchable'] = true;
-					$to_push['show'] = true;
-				}
-				
-				$merged[] = $to_push;
-
-			}
-
-
-			for($z = 0 ; $z < count($clients_custom_columns) ; $z++){
-
-				$to_push = [];
-				$to_push['id'] = $counter++;
-				$to_push['label'] = '-';
-				$to_push['text'] = ucfirst(strtolower($clients_custom_columns[$z]['label']));
-				$to_push['type'] = 'custom';
-				$to_push['clients_custom_fields_id'] = $clients_custom_columns[$z]['id'];
-				$to_push['searchable'] = false;
-				$to_push['show'] = false;
-
-				$merged[] = $to_push;
-
-			}
-
-			return $merged;
-
+			return $this->nonUserDataColumns($clients_columns, $clients_custom_columns);
 		}
 		
 
+
+	}
+
+	private function splitFields(array $json_fields) : array{
+
+		$saved_labels_normal = [];
+		$saved_ids_custom = [];
+
+		for($z = 0 ; $z < count($json_fields) ; $z++){
+			if($json_fields[$z]['type'] === 'normal'){
+				$saved_labels_normal[] = $json_fields[$z]['label'];
+			}else{
+				$saved_ids_custom[] = $json_fields[$z]['clients_custom_fields_id'];
+			}
+		}
+
+		return ['normal' => $saved_labels_normal, 'custom' => $saved_ids_custom];
+
+	}
+
+	private function nonUserDataColumns(array $columns, array $custom_columns) : array{
+
+		$counter = 1;
+
+		$merged = [];
+
+		for($z = 0 ; $z < count($columns) ; $z++){
+
+			$to_push = [];
+			$to_push['id'] = $counter++;
+			$to_push['label'] = $columns[$z];
+			$to_push['text'] = General::NormalizeColumnName($columns[$z]);
+			$to_push['type'] = 'normal';
+			$to_push['is_date'] = false;
+			$to_push['searchable'] = false;
+			$to_push['show'] = false;
+
+			if($columns[$z] === 'created_at'){
+				$to_push['text'] = 'Added on';
+				$to_push['is_date'] = true;
+			}
+
+			if($columns[$z] === 'first_name' || $columns[$z] === 'last_name' || $columns[$z] === 'email' || $columns[$z] === 'created_at'){
+				$to_push['searchable'] = true;
+				$to_push['show'] = true;
+			}
+			
+			$merged[] = $to_push;
+
+		}
+		
+		for($z = 0 ; $z < count($custom_columns) ; $z++){
+
+			$to_push = [];
+			if($custom_columns[$z]['custom_field_type']['input_type'] !== config('global.field_types')[9]){
+				
+				$to_push['id'] = $counter++;
+				$to_push['label'] = '-';
+				$to_push['text'] = ucfirst(strtolower($custom_columns[$z]['label']));
+				$to_push['type'] = 'custom';
+				$to_push['clients_custom_fields_id'] = $custom_columns[$z]['id'];
+				$to_push['searchable'] = false;
+				$to_push['show'] = false;
+				$to_push['is_date'] = false;
+				
+				if($custom_columns[$z]['custom_field_type']['input_type'] === config('global.field_types')[5] || $custom_columns[$z]['custom_field_type']['input_type'] === config('global.field_types')[7]){
+					$to_push['is_date'] = true;
+				}
+
+				$merged[] = $to_push;
+			}
+
+		}
+
+		return $merged;
 
 	}
 
