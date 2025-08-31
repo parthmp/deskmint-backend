@@ -759,7 +759,7 @@ class ClientsController extends Controller{
 		if($user_data){
 
 			$user_data =  json_decode($user_data->columns_json, true);
-			$clients_custom_columns = ClientsCustomField::where('company_id', '=', $company_id)->get()->toArray();
+			$clients_custom_columns = ClientsCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->with('customFieldType')->get()->toArray();
 
 			for($z = 0 ; $z < count($user_data) ; $z++){
 				$temp_label2 = $user_data[$z]['label'];
@@ -797,6 +797,7 @@ class ClientsController extends Controller{
 								$label_with_underscores = General::replaceWithUnderscores($clients_custom_columns[$x]['label']);
 
 								$clients_flat_columns[] = 'clients_flat.'.$label_with_underscores.' as '.$label_with_underscores;
+								
 								$show_columns[] = [
 									'label'	=>	General::replaceWithUnderscores($clients_custom_columns[$x]['label']),
 									'text'	=>	General::NormalizeColumnName($clients_custom_columns[$x]['label'])
@@ -1051,19 +1052,21 @@ class ClientsController extends Controller{
 
 			foreach($clients_custom_columns as $t_clients_custom_columns){
 				$to_push = [];
-				if(!in_array($t_clients_custom_columns['id'], $saved_ids_custom)){
-					$to_push['id'] = $counter++;
-					$to_push['label'] = '-';
-					$to_push['text'] = General::NormalizeColumnName($t_clients_custom_columns['label']);
-					$to_push['type'] = 'custom';
-					$to_push['clients_custom_fields_id'] = $t_clients_custom_columns['id'];
-					$to_push['searchable'] = false;
-					$to_push['show'] = false;
-					$to_push['is_date'] = false;
-					if($t_clients_custom_columns['custom_field_type']['input_type'] === config('global.field_types')[5] || $t_clients_custom_columns['custom_field_type']['input_type'] === config('global.field_types')[7]){
-						$to_push['is_date'] = true;
+				if($t_clients_custom_columns['custom_field_type']['input_type'] !== config('global.field_types')[9]){
+					if(!in_array($t_clients_custom_columns['id'], $saved_ids_custom)){
+						$to_push['id'] = $counter++;
+						$to_push['label'] = '-';
+						$to_push['text'] = General::NormalizeColumnName($t_clients_custom_columns['label']);
+						$to_push['type'] = 'custom';
+						$to_push['clients_custom_fields_id'] = $t_clients_custom_columns['id'];
+						$to_push['searchable'] = false;
+						$to_push['show'] = false;
+						$to_push['is_date'] = false;
+						if($t_clients_custom_columns['custom_field_type']['input_type'] === config('global.field_types')[5] || $t_clients_custom_columns['custom_field_type']['input_type'] === config('global.field_types')[7]){
+							$to_push['is_date'] = true;
+						}
+						$user_fields[] = $to_push;
 					}
-					$user_fields[] = $to_push;
 				}
 			}
 
