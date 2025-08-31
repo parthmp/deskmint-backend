@@ -11,7 +11,7 @@
 
 	class DataTable{
 
-		public static function sortNPaginate($request, $model, $skip_columns = [], $company_id = null, $dates_columns = [], $joins = [], $rewrites = [], $searchables = []){
+		public static function sortNPaginate($request, $model, $skip_columns = [], $company_id = null, $dates_columns = [], $joins = [], $rewrites = [], $searchables = null){
 
 			$hide_columns = ['deleted_at', 'updated_at'];
 
@@ -179,7 +179,17 @@
 							
 							foreach($searchable_columns_with_tables as $index => $column){
 
-								if(empty($searchables) || in_array($column, $searchables)){
+								$search_allowed = false;
+
+								if($searchables === null){
+									$search_allowed = true;
+								}else if(is_array($searchables)){
+									if(in_array($column, $searchables)){
+										$search_allowed = true;
+									}
+								}
+
+								if($search_allowed){
 
 									$search_expr = $column;
 

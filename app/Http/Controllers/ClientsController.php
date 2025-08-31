@@ -759,13 +759,15 @@ class ClientsController extends Controller{
 		if($user_data){
 
 			$user_data =  json_decode($user_data->columns_json, true);
+			$clients_custom_columns = ClientsCustomField::where('company_id', '=', $company_id)->get()->toArray();
 
 			for($z = 0 ; $z < count($user_data) ; $z++){
-
+				$temp_label2 = $user_data[$z]['label'];
 				if($user_data[$z]['show'] === true){
 					if($user_data[$z]['type'] === 'normal'){
 
 						$temp_label = $user_data[$z]['label'];
+						
 
 						/* handle edge cases here */
 						if($temp_label === 'company_id'){
@@ -785,33 +787,9 @@ class ClientsController extends Controller{
 							'text'	=>	$user_data[$z]['text']
 						];
 						
-						if($user_data[$z]['searchable'] === true){
-							if($user_data[$z]['is_date'] === true){
-								$searchable_dates[] = 'clients.'.$user_data[$z]['label'];
-							}else{
-
-								if($temp_label === 'company_id'){
-									$searchable_columns[] = 'companies.company_name';
-								}else if($temp_label === 'currency_id'){
-									$searchable_columns[] = 'currencies.currency';
-								}else if($temp_label === 'billing_country_id'){
-									$searchable_columns[] = 'b_countries.country_name';
-								}else if($temp_label === 'shipping_country_id'){
-									$searchable_columns[] = 's_countries.country_name';
-								}else if($temp_label === 'industry_id'){
-									$searchable_columns[] = 'industries.industry_name';
-								}else{
-									$searchable_columns[] = 'clients.'.$user_data[$z]['label'];
-								}
-
-								
-							}
-							
-						}
+						
 					}else{
 
-						$clients_custom_columns = ClientsCustomField::where('company_id', '=', $company_id)->get()->toArray();
-						
 						for($x = 0 ; $x < count($clients_custom_columns) ; $x++){
 
 							if($user_data[$z]['clients_custom_fields_id'] === $clients_custom_columns[$x]['id']){
@@ -824,18 +802,62 @@ class ClientsController extends Controller{
 									'text'	=>	General::NormalizeColumnName($clients_custom_columns[$x]['label'])
 								];
 
-								if($user_data[$z]['searchable'] === true){
-									if($user_data[$z]['is_date'] === true){
-										$searchable_dates[] = 'clients_flat.'.$label_with_underscores;
-									}else{
-										$searchable_columns[] = 'clients_flat.'.$label_with_underscores;
-									}
-								}
+								
 
 							}
 
 						}
 
+					}
+				}
+
+				/* refactor this later on if possible */
+				if($user_data[$z]['type'] === 'normal'){
+					if($user_data[$z]['searchable'] === true){
+						if($user_data[$z]['is_date'] === true){
+							$searchable_dates[] = 'clients.'.$user_data[$z]['label'];
+						}else{
+
+							if($temp_label2 === 'company_id'){
+								$searchable_columns[] = 'companies.company_name';
+							}else if($temp_label2 === 'currency_id'){
+								$searchable_columns[] = 'currencies.currency';
+							}else if($temp_label2 === 'billing_country_id'){
+								$searchable_columns[] = 'b_countries.country_name';
+							}else if($temp_label2 === 'shipping_country_id'){
+								$searchable_columns[] = 's_countries.country_name';
+							}else if($temp_label2 === 'industry_id'){
+								$searchable_columns[] = 'industries.industry_name';
+							}else{
+								$searchable_columns[] = 'clients.'.$user_data[$z]['label'];
+							}
+
+							
+						}
+						
+					}
+				}else{
+					if($user_data[$z]['searchable'] === true){
+
+						for($x = 0 ; $x < count($clients_custom_columns) ; $x++){
+
+							if($user_data[$z]['clients_custom_fields_id'] === $clients_custom_columns[$x]['id']){
+
+								$label_with_underscores = General::replaceWithUnderscores($clients_custom_columns[$x]['label']);
+
+								$clients_flat_columns[] = 'clients_flat.'.$label_with_underscores.' as '.$label_with_underscores;
+
+								if($user_data[$z]['is_date'] === true){
+									$searchable_dates[] = 'clients_flat.'.$label_with_underscores;
+								}else{
+									$searchable_columns[] = 'clients_flat.'.$label_with_underscores;
+								}
+								
+							}
+
+						}
+
+						
 					}
 				}
 
@@ -867,9 +889,8 @@ class ClientsController extends Controller{
 			]);
 
 		}
-
+		$clients_flat_columns = array_unique($clients_flat_columns);
 		
-
 		$fields = DataTable::sortNPaginate(
 			$request,
 			\App\Models\Client::class,
@@ -928,8 +949,6 @@ class ClientsController extends Controller{
 			'columns' => $show_columns,
 			'rows' => $fields->items()
 		];
-		
-		// //$table_data['columns'] = DataTable::modifyForColumns($table_data['columns'], $json_decoded);
 		
 		$total_pages = $fields->lastPage();
 
