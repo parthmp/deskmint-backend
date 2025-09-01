@@ -1269,6 +1269,23 @@ class ClientsController extends Controller{
 		}
 
 	}
+
+	public function show(Request $request){
+		
+		$id = $request->segment(3);
+
+		$client = Client::where('id', '=', $id)->first();
+		if(!$client){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}
+
+		$custom_fields = ClientCustomFieldValue::where('client_id', '=', $id)->whereHas('ClientsCustomField')->whereHas('ClientsCustomField.customFieldType')->with('ClientsCustomField', 'ClientsCustomField.customFieldType')->get();
+
+		$contact_info = ClientContactInfo::where('client_id', '=', $id)->get();
+		
+		return ['client_info' => $client, 'contact_info' => $contact_info, 'custom_fields' => $custom_fields];
+
+	}
 	
 
 }
