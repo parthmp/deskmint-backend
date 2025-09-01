@@ -187,6 +187,9 @@ class ClientsCustomFieldsController extends Controller{
 		}
 
 		$label = Sanitize::input($request->input('label'));
+		if(strlen($label) > 50){
+			return response(['message' => 'Label must not have more than 50 characters', 'validity' => 'invalid_label'], config('global.error_code'));
+		}
 		
 		/* check if label exists already */
 		if($add){
