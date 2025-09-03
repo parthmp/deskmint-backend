@@ -520,7 +520,6 @@ class ClientsController extends Controller{
 		$response = ['message' => 'Please fill in required fields', 'validity' => 'invalid_data_tab4', 'tab_switch' => 3];
 
 		if(!$request->has('billing_info')){
-			//return response($response, config('global.error_code'));
 			return response(['message' => 'no billing info', 'validity' => 'invalid_data_tab4', 'tab_switch' => 3], config('global.error_code'));
 		}
 
@@ -538,9 +537,7 @@ class ClientsController extends Controller{
 
 		$custom_fields_validation_1 = Validator::make($request->all(), $validation_rules);
 		if($custom_fields_validation_1->fails()){
-			//return response(['message' => 'custom_fields_validation_1', 'validity' => json_encode($custom_fields_validation_1->errors()), 'tab_switch' => 3], config('global.error_code'));
 			return response($response, config('global.error_code'));
-			
 		}
 
 		$custom_fields_submitted = $request->input('custom_fields');
@@ -600,7 +597,6 @@ class ClientsController extends Controller{
 
 		$custom_fields_validation_2 = Validator::make($request->all(), $validation_rules);
 		if($custom_fields_validation_2->fails()){
-			//return response(['message' => 'custom_fields_validation_2', 'validity' => json_encode($custom_fields_validation_2->errors()), 'tab_switch' => 3], config('global.error_code'));
 			return response($response, config('global.error_code'));
 		}
 
