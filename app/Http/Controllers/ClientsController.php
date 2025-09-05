@@ -280,8 +280,17 @@ class ClientsController extends Controller{
 
 	private function upsertClientCustomFieldValues(Request $request, int $client_id, int $company_id, $add = true){
 
-		$db_custom_fields = ClientsCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->get();
-
+		
+		if($add){
+			$db_custom_fields = ClientsCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->get();
+		}else{
+			$db_custom_fields = ClientsCustomField::where('company_id', $company_id)->whereHas('customFieldType')->whereHas('customFieldValue', function($query) use ($client_id){
+				$query->where('client_id', $client_id);
+			})->with(['customFieldValue' => function($query) use ($client_id) {
+    			$query->where('client_id', $client_id);
+			}])->get();
+		}
+		
 		$upsert = [];
 		$insert_flat = [];
 		$insert_flat['client_id'] = $client_id;
@@ -296,6 +305,10 @@ class ClientsController extends Controller{
 			for($z = 0 ; $z < count($custom_fields_submitted) ; $z++){
 
 				if($custom_fields_submitted[$z]['id'] == $field->id){
+
+					if(!$add){
+						$field->value_id = $field->customFieldValue->id;
+					}
 
 					if($field->customFieldType->input_type === config('global.field_types')[0] || $field->customFieldType->input_type === config('global.field_types')[1] || $field->customFieldType->input_type === config('global.field_types')[3] || $field->customFieldType->input_type === config('global.field_types')[2] || $field->customFieldType->input_type === config('global.field_types')[4] || $field->customFieldType->input_type === config('global.field_types')[8]){ //text, textarea, select, email, number, telephone
 
