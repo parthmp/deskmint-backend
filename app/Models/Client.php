@@ -12,4 +12,20 @@ class Client extends Model{
 
 	protected $table = 'clients';
 
+	public function billing_country(){
+		return $this->belongsTo(Country::class, 'billing_country_id', 'id',);
+	}
+
+	public function shipping_country(){
+		return $this->belongsTo(Country::class, 'shipping_country_id', 'id');
+	}
+
+	public function currency(){
+		return $this->belongsTo(Currency::class, 'currency_id', 'id');
+	}
+
+	public function industry(){
+		return $this->belongsTo(Industry::class, 'industry_id', 'id');
+	}
+
 }

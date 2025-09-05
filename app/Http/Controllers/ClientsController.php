@@ -1185,7 +1185,7 @@ class ClientsController extends Controller{
 		
 		$id = $request->segment(3);
 
-		$client = Client::where('id', '=', $id)->first();
+		$client = Client::where('id', '=', $id)->with('billing_country')->with('shipping_country')->with('currency')->with('industry')->first();
 		if(!$client){
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}
