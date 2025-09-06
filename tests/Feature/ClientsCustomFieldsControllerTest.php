@@ -9,8 +9,10 @@ use App\Models\Company;
 use App\Models\CustomFieldType;
 use App\Models\RefreshToken;
 use App\Models\User;
+use App\Services\ManageFlatTable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class ClientsCustomFieldsControllerTest extends TestCase{
@@ -116,9 +118,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'input_field'			=>		'',
 			'label'					=>		'',
 			'is_required'			=>		'',
-			'show_on_index'			=>		'',
 			'add_edit_page_order'	=>		'',
-			'column_order'			=>		'',
 			'company_id'				=>	$company_id
 		], [
         	'Accept' => 'application/json',
@@ -186,9 +186,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'input_field'			=>		'',
 			'label'					=>		'123',
 			'is_required'			=>		'',
-			'show_on_index'			=>		'',
 			'add_edit_page_order'	=>		'456',
-			'column_order'			=>		'',
 			'company_id'				=>	$company_id
 		], [
         	'Accept' => 'application/json',
@@ -224,9 +222,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'input_field'			=>		'20',
 			'label'					=>		'test label',
 			'is_required'			=>		'true',
-			'show_on_index'			=>		'false',
 			'add_edit_page_order'	=>		'5',
-			'column_order'			=>		'10',
 			'company_id'			=>	$company_id
 		], [
         	'Accept' => 'application/json',
@@ -267,9 +263,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'input_field'			=>		$select_field->id,
 			'label'					=>		'test label',
 			'is_required'			=>		'true',
-			'show_on_index'			=>		'false',
 			'add_edit_page_order'	=>		'5',
-			'column_order'			=>		'10',
 			'company_id'			=>		$company_id
 		], [
         	'Accept' => 'application/json',
@@ -281,6 +275,8 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
 		$this->assertEquals('invalid_data', $response['validity']);
+
+		$this->assertFalse(Schema::hasColumn('clients_flat', 'test_label'));
 
 	}
 
@@ -310,9 +306,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'input_field'			=>		$select_field->id,
 			'label'					=>		'test label',
 			'is_required'			=>		'true',
-			'show_on_index'			=>		'false',
 			'add_edit_page_order'	=>		'5',
-			'column_order'			=>		'10',
 			'select_options'		=>		'  ',
 			'company_id'			=>		$company_id
 		], [
@@ -325,6 +319,8 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
 		$this->assertEquals('invalid_data', $response['validity']);
+
+		$this->assertFalse(Schema::hasColumn('clients_flat', 'test_label'));
 
 	}
 
@@ -356,9 +352,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'input_field'			=>		$select_field->id,
 			'label'					=>		'test label',
 			'is_required'			=>		'true',
-			'show_on_index'			=>		'false',
 			'add_edit_page_order'	=>		'5',
-			'column_order'			=>		'10',
 			'select_options'		=>		'one, two, three',
 			'company_id'			=>		$company_id
 		], [
@@ -374,6 +368,8 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 		$added_field = ClientsCustomField::where('label', '=', 'test label')->first();
 		$this->assertNotEmpty($added_field);
+
+		$this->assertTrue(Schema::hasColumn('clients_flat', 'test_label'));
 
 	}
 
@@ -405,9 +401,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'input_field'			=>		$select_field->id,
 			'label'					=>		'test label',
 			'is_required'			=>		'true',
-			'show_on_index'			=>		'false',
 			'add_edit_page_order'	=>		'5',
-			'column_order'			=>		'10',
 			'select_options'		=>		'one, two, three',
 			'company_id'			=>		$company_id
 		], [
@@ -423,6 +417,8 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 		$added_field = ClientsCustomField::where('label', '=', 'test label')->first();
 		$this->assertNotEmpty($added_field);
+
+		$this->assertTrue(Schema::hasColumn('clients_flat', 'test_label'));
 
 	}
 
@@ -454,9 +450,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'input_field'			=>		$select_field->id,
 			'label'					=>		'test label email',
 			'is_required'			=>		'true',
-			'show_on_index'			=>		'false',
 			'add_edit_page_order'	=>		'5',
-			'column_order'			=>		'10',
 			'company_id'			=>		$company_id
 		], [
         	'Accept' => 'application/json',
@@ -471,6 +465,8 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 		$added_field = ClientsCustomField::where('label', '=', 'test label email')->first();
 		$this->assertNotEmpty($added_field);
+
+		$this->assertTrue(Schema::hasColumn('clients_flat', 'test_label_email'));
 
 	}
 
@@ -978,7 +974,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	}
 
 	
-	public function test_if_updating_new_client_custom_field_fails_invalid_data_for_select_and_multiselect() : void{
+	public function test_if_updating_new_client_custom_field_fails_with_invalid_data_for_select_multiselect() : void{
 
 		$user = User::factory()->create([
 			'user_type'		=>		config('global.user_types.admin')
@@ -1009,11 +1005,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 		$response = $this->patch('/api/clients-custom-fields/150', [
 			'input_field'			=>		$select_field->id,
-			'label'					=>		'test label',
+			'label'					=>		'test label here',
+			'past_label'			=>		'past label here',
 			'is_required'			=>		'true',
-			'show_on_index'			=>		'false',
 			'add_edit_page_order'	=>		'5',
-			'column_order'			=>		'10',
 			'company_id'			=>		$company_id
 		], [
         	'Accept' => 'application/json',
@@ -1060,11 +1055,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 		$response = $this->patch('/api/clients-custom-fields/150', [
 			'input_field'			=>		$select_field->id,
+			'past_label'			=>		'past test label',
 			'label'					=>		'test label',
 			'is_required'			=>		'true',
-			'show_on_index'			=>		'false',
 			'add_edit_page_order'	=>		'5',
-			'column_order'			=>		'10',
 			'select_options'		=>		'  ',
 			'company_id'			=>		$company_id
 		], [
@@ -1096,6 +1090,9 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 		$company_id = $this->set_default_company();
 
+		$flat_table = new ManageFlatTable('clients_flat', 'clients', 'client_id');
+		$flat_table->addFlatTableColumn('past label here');
+
 		CustomFieldType::truncate();
 		CustomFieldType::factory()->create([
 			'id'			=>		10,
@@ -1109,16 +1106,16 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'label'			=>	'before update'
 		]);
 
+		$this->assertFalse(Schema::hasColumn('clients_flat', 'after_update_label'));
 
 		$select_field = CustomFieldType::where('input_type', '=', 'multiselect')->first();
 
 		$response = $this->patch('/api/clients-custom-fields/150', [
 			'input_field'			=>		$select_field->id,
-			'label'					=>		'after update',
+			'label'					=>		'after update label',
+			'past_label'			=>		'past label here',
 			'is_required'			=>		'true',
-			'show_on_index'			=>		'false',
 			'add_edit_page_order'	=>		'5',
-			'column_order'			=>		'10',
 			'select_options'		=>		'one, two, three',
 			'company_id'			=>		$company_id
 		], [
@@ -1135,8 +1132,11 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		$updated_field = ClientsCustomField::where('label', '=', 'before update')->first();
 		$this->assertEmpty($updated_field);
 
-		$updated_field = ClientsCustomField::where('label', '=', 'after update')->first();
+		$updated_field = ClientsCustomField::where('label', '=', 'after update label')->first();
 		$this->assertNotEmpty($updated_field);
+
+		/* test for flat table */
+		$this->assertTrue(Schema::hasColumn('clients_flat', 'after_update_label'));
 
 	}
 	
@@ -1170,13 +1170,18 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 		$select_field = CustomFieldType::where('input_type', '=', 'multiselect')->first();
 
+		Schema::dropIfExists('clients_flat');
+
+		$flat_table = new ManageFlatTable('clients_flat', 'clients', 'client_id');
+		$flat_table->addFlatTableColumn('past label here');
+		$this->assertFalse(Schema::hasColumn('clients_flat', 'after_update'));
+
 		$response = $this->patch('/api/clients-custom-fields/150', [
 			'input_field'			=>		$select_field->id,
+			'past_label'			=>		'past label here',
 			'label'					=>		'after update',
 			'is_required'			=>		'true',
-			'show_on_index'			=>		'false',
 			'add_edit_page_order'	=>		'5',
-			'column_order'			=>		'10',
 			'select_options'		=>		'one, two, three',
 			'company_id'			=>		$company_id
 		], [
@@ -1195,6 +1200,8 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 		$updated_field = ClientsCustomField::where('label', '=', 'after update')->first();
 		$this->assertNotEmpty($updated_field);
+
+		$this->assertTrue(Schema::hasColumn('clients_flat', 'after_update'));
 
 	}
 	
@@ -1231,8 +1238,15 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 		ClientsCustomField::truncate();
 
+		Schema::dropIfExists('clients_flat');
+
+		$flat_table = new ManageFlatTable('clients_flat', 'clients', 'client_id');
+		$flat_table->addFlatTableColumn('past label here');
+		$this->assertFalse(Schema::hasColumn('clients_flat', 'after_update'));
+
 		$response = $this->post('/api/clients-custom-fields', [
 			'input_field'			=>		$select_field->id,
+			'past_label'			=>		'past label here',
 			'label'					=>		'after update',
 			'is_required'			=>		'true',
 			'show_on_index'			=>		'false',
@@ -1261,6 +1275,8 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 		$updated_field = ClientsCustomField::where('order_column_on_index_page', '=', 500)->first();
 		$this->assertNotEmpty($updated_field);
+
+		$this->assertTrue(Schema::hasColumn('clients_flat', 'after_update_label'));
 
 	}
 

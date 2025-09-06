@@ -14,7 +14,6 @@ use App\Http\Middleware\DefaultCompany;
 use App\Http\Middleware\IfUserHasAccessToFeature;
 use App\Http\Middleware\ValidateDeviceAndTokens;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
 
 Route::middleware(['throttle:60,1'])->group(function (){
 	Route::post('login', [LoginController::class, 'login'])->name('login');
