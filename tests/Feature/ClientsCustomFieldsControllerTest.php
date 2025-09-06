@@ -1220,38 +1220,33 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 		$company_id = $this->set_default_company();
 
+		Schema::dropIfExists('clients_flat');
+
 		CustomFieldType::truncate();
 		CustomFieldType::factory()->create([
-			'id'			=>		10,
 			'input_type'	=>		'email'
 		]);
-
+		
 		ClientsCustomField::truncate();
 		ClientsCustomField::factory()->create([
 			'id'							=>	150,
 			'company_id'					=>	$company_id,
-			'label'							=>	'before update',
-			'order_column_on_index_page'	=>	'100'
+			'label'							=>	'before update'
 		]);
 
 		$select_field = CustomFieldType::where('input_type', '=', 'email')->first();
 
-		ClientsCustomField::truncate();
-
-		Schema::dropIfExists('clients_flat');
-
 		$flat_table = new ManageFlatTable('clients_flat', 'clients', 'client_id');
 		$flat_table->addFlatTableColumn('past label here');
 		$this->assertFalse(Schema::hasColumn('clients_flat', 'after_update'));
-
-		$response = $this->post('/api/clients-custom-fields', [
+		
+		$response = $this->put('/api/clients-custom-fields/150', [
 			'input_field'			=>		$select_field->id,
 			'past_label'			=>		'past label here',
 			'label'					=>		'after update',
 			'is_required'			=>		'true',
-			'show_on_index'			=>		'false',
 			'add_edit_page_order'	=>		'5',
-			'column_order'			=>		'500',
+			'select_options'		=>		'one, two, three',
 			'company_id'			=>		$company_id
 		], [
         	'Accept' => 'application/json',
@@ -1259,25 +1254,72 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'X-Refresh-Token' => $refresh_token,
 			'X-Device-Id' => $device
     	]);
-
+		
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('created_success', $response['validity']);
+		$this->assertEquals('updated_success', $response['validity']);
 
 		$updated_field = ClientsCustomField::where('label', '=', 'before update')->first();
-		$this->assertEmpty($updated_field);
-
-		$updated_field = ClientsCustomField::where('order_column_on_index_page', '=', 100)->first();
 		$this->assertEmpty($updated_field);
 
 		$updated_field = ClientsCustomField::where('label', '=', 'after update')->first();
 		$this->assertNotEmpty($updated_field);
 
-		$updated_field = ClientsCustomField::where('order_column_on_index_page', '=', 500)->first();
-		$this->assertNotEmpty($updated_field);
+		$this->assertTrue(Schema::hasColumn('clients_flat', 'after_update'));
 
-		$this->assertTrue(Schema::hasColumn('clients_flat', 'after_update_label'));
+	}
 
+	public function test_if_it_fails_if_label_length_greater_than_allowed() : void{
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		Schema::dropIfExists('clients_flat');
+
+		CustomFieldType::truncate();
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'email'
+		]);
+		
+		ClientsCustomField::truncate();
+		ClientsCustomField::factory()->create([
+			'id'							=>	150,
+			'company_id'					=>	$company_id,
+			'label'							=>	'before update'
+		]);
+
+		$select_field = CustomFieldType::where('input_type', '=', 'email')->first();
+		
+		$response = $this->put('/api/clients-custom-fields/150', [
+			'input_field'			=>		$select_field->id,
+			'past_label'			=>		'past label here',
+			'label'					=>		'very very very very very very very very very long label',
+			'is_required'			=>		'true',
+			'add_edit_page_order'	=>		'5',
+			'select_options'		=>		'one, two, three',
+			'company_id'			=>		$company_id
+		], [
+        	'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+    	]);
+		
+		$response->assertStatus((int)config('global.error_code'));
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_label', $response['validity']);
+
+		
 	}
 
 	/**/

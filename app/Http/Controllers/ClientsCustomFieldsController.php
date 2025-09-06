@@ -145,27 +145,29 @@ class ClientsCustomFieldsController extends Controller{
 	}
 
 	private function addOrUpdateCustomClientsField(Request $request, $company_id, $add = true, $object = null){
-
+		
 		$v = Validator::make($request->all(), [
 			'input_field'			=>		'required',
 			'label'					=>		'required',
 			'is_required'			=>		'required',
 			'add_edit_page_order'	=>		'required'
 		]);
-
+		
 		if($v->fails()){
 			return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_data'], config('global.error_code'));
 		}
-
+		
 		if(!$add){
 			if(!$request->filled('past_label')){
 				return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 			}
 		}
-
+		
+		
 		$input_field = Sanitize::input($request->input('input_field'));
-
+		
 		$field = CustomFieldType::where('id', '=', $input_field)->first();
+		
 		if(!$field){
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}
@@ -278,13 +280,13 @@ class ClientsCustomFieldsController extends Controller{
 	}
 
 	public function update(Request $request){
-
+		
 		$id = $request->segment(3);
-
+		
 		$company_id = Sanitize::input($request->input('company_id'));
 
 		$client_custom_field = ClientsCustomField::where([['id', '=', $id], ['company_id','=', $company_id]])->first();
-
+		
 		if(!$client_custom_field){
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}
