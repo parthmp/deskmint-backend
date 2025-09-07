@@ -41,55 +41,35 @@ class ClientsController extends Controller{
 
 		$date_formats = [
 			'Y-m-d',        // 2025-08-19
-			'd-M-Y',        // 01-Jan-2025
+			'd-M-Y',        // 01-Jan-2025  
 			'j-M-Y',        // 1-Jan-2025
-			'j M Y',        // 1 Jan 2025
+			'd M Y',        // 21 Jan 2025 (with leading zeros)
+			'j M Y',        // 1 Jan 2025 (without leading zeros)
 		];
 
 		$datetime_formats = [
-			// Date + 24h time
+			'Y-m-d H:i:s', 
 			'Y-m-d H:i',
-			'Y-m-d H:i:s',
-			'd/m/Y H:i',
-			'd/m/Y H:i:s',
-			'm/d/Y H:i',
-			'm/d/Y H:i:s',
-			'd-M-Y H:i',
+			'd-M-Y H:i',        // Month names = unambiguous
 			'd-M-Y H:i:s',
-			'j-M-Y H:i',
+			'j-M-Y H:i', 
 			'j-M-Y H:i:s',
-			'Y m d H:i',
-			'Y m d H:i:s',
-			'd m Y H:i',
-			'd m Y H:i:s',
-			'm d Y H:i',
-			'm d Y H:i:s',
-			'd M Y H:i',
+			'd M Y H:i',        // Month names = unambiguous
 			'd M Y H:i:s',
 			'j M Y H:i',
 			'j M Y H:i:s',
-
-			// Date + 12h time with AM/PM
-			'Y-m-d h:i A',
+			
+			// 12h versions
 			'Y-m-d h:i:s A',
-			'd/m/Y h:i A',
-			'd/m/Y h:i:s A',
-			'm/d/Y h:i A',
-			'm/d/Y h:i:s A',
+			'Y-m-d h:i A',
+			'd-M-Y h:i:s A', 
 			'd-M-Y h:i A',
-			'd-M-Y h:i:s A',
-			'j-M-Y h:i A',
 			'j-M-Y h:i:s A',
-			'Y m d h:i A',
-			'Y m d h:i:s A',
-			'd m Y h:i A',
-			'd m Y h:i:s A',
-			'm d Y h:i A',
-			'm d Y h:i:s A',
-			'd M Y h:i A',
+			'j-M-Y h:i A',
 			'd M Y h:i:s A',
-			'j M Y h:i A',
+			'd M Y h:i A',
 			'j M Y h:i:s A',
+			'j M Y h:i A'
 		];
 
 		$rows = [];
@@ -198,12 +178,11 @@ class ClientsController extends Controller{
 					
 					foreach($date_formats as $format){
 						if((\DateTime::createFromFormat($format, $default_value) !== false)){
-							$parsed_date = \DateTime::createFromFormat($format, $default_value);
-							if($parsed_date->format($format) === $default_value) {
-								$default_value = \DateTime::createFromFormat($format, $default_value)->format('Y-m-d');
-								$parsed = true;
-								break;
-							}
+							
+							$default_value = \DateTime::createFromFormat($format, $default_value)->format('Y-m-d');
+							$parsed = true;
+							break;
+							
 						}
 					}
 					
@@ -230,7 +209,7 @@ class ClientsController extends Controller{
 
 				}
 
-				if($field->customFieldType->input_type === config('global.field_types')[7]){
+				if($field->customFieldType->input_type === config('global.field_types')[7]){ /* datetime */
 					
 					$default_value = trim($field->default_value);
 					$parsed = null;
