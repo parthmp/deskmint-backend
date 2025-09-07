@@ -179,7 +179,7 @@ class ClientsControllerTest extends TestCase
 			}else if($field_type->input_type === config('global.field_types')[6]){ /* time */
 				$default_value = '01:45 AM';
 			}else if($field_type->input_type === config('global.field_types')[7]){ /* datetime */
-				$default_value = '20 jan 2025 05:04:25';
+				$default_value = '20 Jan 2025 05:04:25';
 			}else if($field_type->input_type === config('global.field_types')[8]){ /* telephone */
 				$default_value = '12346798';
 			}else if($field_type->input_type === config('global.field_types')[9]){ /* multiselect */
@@ -565,31 +565,22 @@ class ClientsControllerTest extends TestCase
 
 	public function test_if_it_fetches_clients_custom_fields_with_valid_datetime_formats(): void{
 
-		$datetime_formats = [
-			'Y-m-d H:i:s', 
-			'Y-m-d H:i',
-			'd-M-Y H:i',        // Month names = unambiguous
-			'd-M-Y H:i:s',
-			'j-M-Y H:i', 
-			'j-M-Y H:i:s',
-			'd M Y H:i',        // Month names = unambiguous
-			'd M Y H:i:s',
-			'j M Y H:i',
-			'j M Y H:i:s',
-			
-			// 12h versions
-			'Y-m-d h:i:s A',
-			'Y-m-d h:i A',
-			'd-M-Y h:i:s A', 
-			'd-M-Y h:i A',
-			'j-M-Y h:i:s A',
-			'j-M-Y h:i A',
-			'd M Y h:i:s A',
-			'd M Y h:i A',
-			'j M Y h:i:s A',
-			'j M Y h:i A'
-		];
 		
+		$datetime_formats = [
+			'Y-m-d h:i:s A',
+			'd-M-Y h:i:s A',
+			'd M Y h:i:s A',
+			'Y-m-d h:i A',
+			'Y-m-d H:i:s',
+			'd-M-Y H:i:s',
+			'd M Y H:i:s',
+			'd-M-Y h:i A',
+			'd M Y h:i A',
+			'Y-m-d H:i',
+			'd-M-Y H:i',
+			'd M Y H:i'
+		];
+				
 
 		$user = User::factory()->create([
 			'user_type'		=>		config('global.user_types.admin')
@@ -660,8 +651,137 @@ class ClientsControllerTest extends TestCase
 
         	$carbon_date = DateTime::createFromFormat($dates_to_check[$z]['format'], $dates_to_check[$z]['date']);
             $temp_date = $carbon_date->format('Y-m-d H:i:s');
-
+			// if($temp_date !== $response[$z]['value']){
+			// 	echo "\n temp date".$temp_date.'== format: '.$dates_to_check[$z]['format'].' == value: '.$dates_to_check[$z]['date']."\n";
+			// }
         	$this->assertEquals($temp_date, $response[$z]['value']);
+
+        }
+
+	}
+
+
+	public function test_if_it_fetches_clients_custom_fields_with_invalid_datetime_formats(): void{
+
+		$invalid_formats = [
+			// Totally invalid / nonsense
+			'abc',
+			'123',
+			'date-time',
+			'DD-MM-YYYY',
+			'YYYY/MM/DD',
+			'something-random',
+
+			// Valid PHP formats but not in your whitelist
+			'Y-m-d',            // missing time
+			'd-m-Y',            // uses d-m-Y, not allowed
+			'd/m/Y H:i:s',      // slash separator
+			'Y/m/d H:i:s',
+			'Y.m.d H:i',
+			'm/d/Y H:i:s',
+			'j/n/Y H:i',
+			'd.m.Y H:i:s',
+			'y-m-d H:i:s',      // 2-digit year
+			'd-M-y H:i',
+			'j-M-y h:i A',
+			'd M y H:i:s',
+			'j M y h:i A',
+
+			// Wrong tokens (not in PHP or not in list)
+			'hh:mm:ss',
+			'HH:MM:SS',
+			'mm-dd-yyyy',
+			'dd.mm.yyyy',
+			'EEE, MMM d, YYYY',
+
+			// Special formats (valid in PHP, but not in your array)
+			'c',   // ISO 8601
+			'r',   // RFC 2822
+			'U',   // Unix timestamp
+			'l, d-M-Y H:i:s', // weekday included
+
+			// Time-only (not in your whitelist)
+			'H:i:s',
+			'h:i:s A',
+			'H:i',
+			'h:i A',
+
+			// Edge / impossible formats
+			'25:61:61',
+			'2025-99-99',
+			'0000-00-00 00:00:00'
+		];
+
+		
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$tokens = $this->set_access($user, $device);
+		$token = $tokens['token'];
+		$refresh_token = $tokens['refresh_token'];
+
+		
+
+		$this->setCustomFieldTypes();
+		$this->set_default_company();
+
+		$custom_field_types = CustomFieldType::all();
+
+		$order = 1;
+		ClientsCustomField::truncate();
+		
+		$dates_to_check = [];
+		
+		foreach($custom_field_types as $field_type){
+
+			if($field_type->input_type === config('global.field_types')[7]){ /* datetime */
+				
+				for($z = 0 ; $z < count($invalid_formats) ; $z++){
+
+					$start = Carbon::create(2010, 1, 1)->timestamp;
+					$end   = Carbon::create(2025, 12, 31)->timestamp;
+
+					$random_date = Carbon::createFromTimestamp(rand($start, $end));
+					$formatted_date = $random_date->format($invalid_formats[$z]);
+					
+					$dates_to_check[] = [
+						'format'	=>	$invalid_formats[$z],
+						'date' 		=> 	$formatted_date
+					];
+					
+					ClientsCustomField::factory()->create([
+						'custom_field_type_id'		=>	$field_type->id,
+						'company_id'				=>	1,
+						'label'						=>	'client '.$z.''.$field_type->input_type,
+						'default_value'				=>	$formatted_date,
+						'order_on_add_edit_page'	=>	$order,
+						'type_params'				=>	''
+					]);
+
+					$order++;
+
+				}
+
+			}
+
+		
+			
+		}
+
+		$params = http_build_query([
+			'company_id'	=>	1
+		]);
+
+		$response = $this->getQuery($token, $refresh_token, $device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
+		$response = $response->json();
+		
+		for($z = 0 ; $z < count($dates_to_check); $z++){
+			
+        	$this->assertEmpty($response[$z]['value']);
 
         }
 

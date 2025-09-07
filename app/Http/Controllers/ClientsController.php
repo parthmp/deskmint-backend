@@ -48,28 +48,18 @@ class ClientsController extends Controller{
 		];
 
 		$datetime_formats = [
-			'Y-m-d H:i:s', 
-			'Y-m-d H:i',
-			'd-M-Y H:i',        // Month names = unambiguous
-			'd-M-Y H:i:s',
-			'j-M-Y H:i', 
-			'j-M-Y H:i:s',
-			'd M Y H:i',        // Month names = unambiguous
-			'd M Y H:i:s',
-			'j M Y H:i',
-			'j M Y H:i:s',
-			
-			// 12h versions
-			'Y-m-d h:i:s A',
-			'Y-m-d h:i A',
-			'd-M-Y h:i:s A', 
-			'd-M-Y h:i A',
-			'j-M-Y h:i:s A',
-			'j-M-Y h:i A',
-			'd M Y h:i:s A',
-			'd M Y h:i A',
-			'j M Y h:i:s A',
-			'j M Y h:i A'
+			'Y-m-d h:i:s A',    // 2025-01-20 05:04:25 PM
+			'd-M-Y h:i:s A',    // 20-Jan-2025 05:04:25 PM  
+			'd M Y h:i:s A',    // 20 Jan 2025 05:04:25 PM
+			'Y-m-d h:i A',      // 2025-01-20 05:04 PM
+			'Y-m-d H:i:s',      // 2025-01-20 17:04:25
+			'd-M-Y H:i:s',      // 20-Jan-2025 17:04:25
+			'd M Y H:i:s',      // 20 Jan 2025 17:04:25
+			'd-M-Y h:i A',      // 20-Jan-2025 05:04 PM
+			'd M Y h:i A',      // 20 Jan 2025 05:04 PM
+			'Y-m-d H:i',        // 2025-01-20 17:04
+			'd-M-Y H:i',        // 20-Jan-2025 17:04
+			'd M Y H:i'       // 20 Jan 2025 17:04
 		];
 
 		$rows = [];
@@ -211,15 +201,20 @@ class ClientsController extends Controller{
 
 				if($field->customFieldType->input_type === config('global.field_types')[7]){ /* datetime */
 					
-					$default_value = trim($field->default_value);
+					$default_value = General::fixMonthNames(trim($field->default_value));
 					$parsed = null;
 
-					foreach ($datetime_formats as $format) {
-						if((\DateTime::createFromFormat($format, $default_value) !== false)){
+					foreach($datetime_formats as $format){
+
+						$date_obj = \DateTime::createFromFormat($format, $default_value);
+						
+						if($date_obj !== false && $date_obj->format($format) === $default_value){
+							
 							$default_value = \DateTime::createFromFormat($format, $default_value)->format('Y-m-d H:i:s');
 							$parsed = true;
 							break;
 						}
+						
 					}
 					
 					if($parsed){
