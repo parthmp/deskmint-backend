@@ -141,20 +141,22 @@ class ClientsController extends Controller{
 			}
 			
 			foreach($row as $field){
-
+				$temp_params = [];
 				$field->span = $span;
 
 				$field->value = trim($field->default_value);
 				$field->error = '';
-		
+				
 				if(isset($field->type_params) && $field->type_params !== ''){
 					$temp = array_map('trim', explode(',', $field->type_params));
+					$temp_params = $temp;
 					$params = [];
 					for($z = 0 ; $z < count($temp) ; $z++){
 						$params[] = [
 							'value'	=>	$temp[$z],
 							'text'	=>	$temp[$z]
 						];
+						
 					}
 					$field->type_params = $params;
 					$params = null;
@@ -168,6 +170,22 @@ class ClientsController extends Controller{
 				}
 				
 				$field->required = $required;
+
+				if($field->customFieldType->input_type === config('global.field_types')[2]){ /* email */
+
+					if(!filter_var($field->default_value, FILTER_VALIDATE_EMAIL)){
+						$field->value = '';
+					}
+
+				}
+
+				if($field->customFieldType->input_type === config('global.field_types')[3]){ /* select */
+					
+					if(!in_array($field->default_value, $temp_params)){
+						$field->value = '';
+					}
+					
+				}
 
 				if($field->customFieldType->input_type === config('global.field_types')[4]){
 					if(filter_var($field->default_value, FILTER_VALIDATE_INT) === false){
@@ -248,11 +266,13 @@ class ClientsController extends Controller{
 
 
 				if($field->customFieldType->input_type === config('global.field_types')[9]){
-					
-					$default_value = trim($field->default_value);
-					$field->value = [$default_value];
 
-					
+					if(!in_array($field->default_value, $temp_params)){
+						$field->value = '';
+					}else{
+						$default_value = trim($field->default_value);
+						$field->value = [$default_value];
+					}
 					$field->default_value = '';
 					
 				}
