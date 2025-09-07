@@ -41,8 +41,6 @@ class ClientsController extends Controller{
 
 		$date_formats = [
 			'Y-m-d',        // 2025-08-19
-			'd/m/Y',        // 19/08/2025
-			'm/d/Y',        // 08/19/2025
 			'd-M-Y',        // 01-Jan-2025
 			'j-M-Y',        // 1-Jan-2025
 			'j M Y',        // 1 Jan 2025
@@ -200,9 +198,12 @@ class ClientsController extends Controller{
 					
 					foreach($date_formats as $format){
 						if((\DateTime::createFromFormat($format, $default_value) !== false)){
-							$default_value = \DateTime::createFromFormat($format, $default_value)->format('Y-m-d');
-							$parsed = true;
-							break;
+							$parsed_date = \DateTime::createFromFormat($format, $default_value);
+							if($parsed_date->format($format) === $default_value) {
+								$default_value = \DateTime::createFromFormat($format, $default_value)->format('Y-m-d');
+								$parsed = true;
+								break;
+							}
 						}
 					}
 					

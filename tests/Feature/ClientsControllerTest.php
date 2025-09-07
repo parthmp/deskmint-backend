@@ -8,6 +8,8 @@ use App\Models\Company;
 use App\Models\CustomFieldType;
 use App\Models\RefreshToken;
 use App\Models\User;
+use Carbon\Carbon;
+use DateTime;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -235,7 +237,7 @@ class ClientsControllerTest extends TestCase
 
 	}
 
-	public function test_if_it_fetches_clientS_custom_fields_with_testing_invalid_default_values(): void{
+	public function test_if_it_fetches_clients_custom_fields_with_testing_invalid_default_values(): void{
 
 		$user = User::factory()->create([
 			'user_type'		=>		config('global.user_types.admin')
@@ -337,6 +339,111 @@ class ClientsControllerTest extends TestCase
 			// }
 
 		}
+
+	}
+
+	public function test_if_it_fetches_clients_custom_fields_with_valid_date_formats(): void{
+
+		$date_formats = [
+			'Y-m-d',        // 2025-08-19
+			'd-M-Y',        // 01-Jan-2025
+			'j-M-Y',        // 1-Jan-2025
+			'j M Y',        // 1 Jan 2025
+		];
+		
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$tokens = $this->set_access($user, $device);
+		$token = $tokens['token'];
+		$refresh_token = $tokens['refresh_token'];
+
+		
+
+		$this->setCustomFieldTypes();
+		$this->set_default_company();
+
+		$custom_field_types = CustomFieldType::all();
+
+		$order = 1;
+		ClientsCustomField::truncate();
+		
+		$dates_to_check = [];
+		
+		foreach($custom_field_types as $field_type){
+
+			if($field_type->input_type === config('global.field_types')[5]){ /* date */
+				
+				for($z = 0 ; $z < count($date_formats) ; $z++){
+
+					$start = Carbon::create(2010, 1, 1)->timestamp;
+					$end   = Carbon::create(2025, 12, 31)->timestamp;
+
+					$random_date = Carbon::createFromTimestamp(rand($start, $end));
+					$formatted_date = $random_date->format($date_formats[$z]);
+					
+					$dates_to_check[] = [
+						'format'	=>	$date_formats[$z],
+						'date' 		=> 	$formatted_date
+					];
+					
+					ClientsCustomField::factory()->create([
+						'custom_field_type_id'		=>	$field_type->id,
+						'company_id'				=>	1,
+						'label'						=>	'client '.$z.''.$field_type->input_type,
+						'default_value'				=>	$formatted_date,
+						'order_on_add_edit_page'	=>	$order,
+						'type_params'				=>	''
+					]);
+
+					$order++;
+
+				}
+
+			}
+
+		
+			
+		}
+
+		$params = http_build_query([
+			'company_id'	=>	1
+		]);
+
+		$response = $this->getQuery($token, $refresh_token, $device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
+		$response = $response->json();
+		
+		for($z = 0 ; $z < count($dates_to_check); $z++){
+
+        	$carbon_date = DateTime::createFromFormat($dates_to_check[$z]['format'], $dates_to_check[$z]['date']);
+            $temp_date = $carbon_date->format('Y-m-d');
+
+        	$this->assertEquals($temp_date, $response[$z]['value']);
+
+        }
+
+
+		// foreach($response as $r_field){
+			
+		// 	$carbon_date = DateTime::createFromFormat($dates_to_check[$counter]['format'], $dates_to_check[$counter]['date']);
+		// 	$temp_date = $carbon_date->format('Y-m-d');
+		// 	echo $r_field['value'].'==='.$temp_date."\n\n";
+		// 	//$this->assertEquals($temp_date, $r_field['value']);
+		// 	// if($temp_date !== $r_field['value']){
+		// 	// 	dd(json_encode($dates_to_check[$counter]).'==='.$r_field['value']);
+		// 	// 	dd($r_field);
+		// 	// }else{
+		// 	// 	$this->assertEquals($temp_date, $r_field['value']);
+		// 	// }
+			
+			
+		// 	$counter++;
+			
+		// }
 
 	}
 }
