@@ -179,7 +179,7 @@ class ClientsControllerTest extends TestCase
 			}else if($field_type->input_type === config('global.field_types')[6]){ /* time */
 				$default_value = '01:45 AM';
 			}else if($field_type->input_type === config('global.field_types')[7]){ /* datetime */
-				$default_value = '20 Jan 2025 05:04:25';
+				$default_value = '20 jan 2025 05:04:25';
 			}else if($field_type->input_type === config('global.field_types')[8]){ /* telephone */
 				$default_value = '12346798';
 			}else if($field_type->input_type === config('global.field_types')[9]){ /* multiselect */
@@ -651,9 +651,6 @@ class ClientsControllerTest extends TestCase
 
         	$carbon_date = DateTime::createFromFormat($dates_to_check[$z]['format'], $dates_to_check[$z]['date']);
             $temp_date = $carbon_date->format('Y-m-d H:i:s');
-			// if($temp_date !== $response[$z]['value']){
-			// 	echo "\n temp date".$temp_date.'== format: '.$dates_to_check[$z]['format'].' == value: '.$dates_to_check[$z]['date']."\n";
-			// }
         	$this->assertEquals($temp_date, $response[$z]['value']);
 
         }
@@ -785,6 +782,39 @@ class ClientsControllerTest extends TestCase
 
         }
 
+	}
+
+	public function test_if_fails_to_store_client_with_invalid_data_tab1():void{
+		
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		$response = $this->post('/api/manage-clients', [
+			'personal_info.first_name.value'	=>	'Jack',
+			'personal_info.last_name.value'		=>	'',
+			'company_id'			=>		$company_id
+		], [
+        	'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+    	]);
+
+		$response->assertStatus((int)config('global.error_code'));
+
+		$this->arrayHasKey('validity', $response);
+		$this->assertEquals('invalid_data_tab1', $response['validity']);
+		
 	}
 
 }

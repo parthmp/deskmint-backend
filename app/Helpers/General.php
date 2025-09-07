@@ -259,19 +259,18 @@ use Illuminate\Http\Response;
 			return ucfirst(strtolower(str_ireplace('_', ' ', $column)));
 		}
 
-		public static function isMySQLDateTime($date) {
+		public static function isMySQLDateTime($date){
 			$format = 'Y-m-d H:i:s';
 			$d = \DateTime::createFromFormat($format, $date);
 			return $d && $d->format($format) === $date;
 		}
 
-		public static function fixMonthNames($dateString){
+		public static function fixMonthNames(string $date_string):string{
 			$months = ['jan' => 'Jan', 'feb' => 'Feb', 'mar' => 'Mar', 'apr' => 'Apr',
                'may' => 'May', 'jun' => 'Jun', 'jul' => 'Jul', 'aug' => 'Aug',
                'sep' => 'Sep', 'oct' => 'Oct', 'nov' => 'Nov', 'dec' => 'Dec'];
     
-    		return str_ireplace(array_keys($months), array_values($months), $dateString);
-
+    		return str_ireplace(array_keys($months), array_values($months), $date_string);
 		}
 
 	}
