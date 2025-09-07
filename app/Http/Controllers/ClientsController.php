@@ -274,8 +274,6 @@ class ClientsController extends Controller{
 
 		return $this->saveOrUpdateClient($request, true);
 		
-		
-
 	}
 
 	private function upsertClientCustomFieldValues(Request $request, int $client_id, int $company_id, $add = true){
