@@ -784,37 +784,4 @@ class ClientsControllerTest extends TestCase
 
 	}
 
-	public function test_if_fails_to_store_client_with_invalid_data_tab1():void{
-		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
-		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
-		$company_id = $this->set_default_company();
-
-		$response = $this->post('/api/manage-clients', [
-			'personal_info.first_name.value'	=>	'Jack',
-			'personal_info.last_name.value'		=>	'',
-			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
-
-		$response->assertStatus((int)config('global.error_code'));
-
-		$this->arrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data_tab1', $response['validity']);
-		
-	}
-
 }

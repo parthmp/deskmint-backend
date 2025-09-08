@@ -32,7 +32,7 @@ class ClientsController extends Controller{
 
 	}
 
-	private function adjustRowsPrinting($fields){ 
+	private function adjustRowsPrinting($fields){
 
 		$full_width_types = [
 			config('global.field_types')[1],
