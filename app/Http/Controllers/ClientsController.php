@@ -550,15 +550,19 @@ class ClientsController extends Controller{
 
 		$validation_rules = [];
 
+		$required_count = 0;
+
+
+		$found_and_valid = 0;
 		/* generate validation rules dynamically */
 		foreach($db_custom_fields as $field){
 
 			if($field->required == 1){
-				$found_and_valid = false;
+				$required_count++;
 				for($z = 0 ; $z < count($custom_fields_submitted) ; $z++){
 
-					if($custom_fields_submitted[$z]['id'] == $field->id){
-						$found_and_valid = true;
+					if($custom_fields_submitted[$z]['id'] === $field->id){
+						$found_and_valid++;
 						if($field->customFieldType->input_type === config('global.field_types')[0] || $field->customFieldType->input_type === config('global.field_types')[1] || $field->customFieldType->input_type === config('global.field_types')[3] || $field->customFieldType->input_type === config('global.field_types')[9]){
 							
 							$validation_rules['custom_fields.'.$z.'.value'] = 'required';
@@ -597,7 +601,7 @@ class ClientsController extends Controller{
 
 				}
 
-				if(!$found_and_valid){
+				if(count($custom_fields_submitted) !== count($db_custom_fields) && $found_and_valid === $required_count){
 					return response($response, config('global.error_code'));
 				}
 
