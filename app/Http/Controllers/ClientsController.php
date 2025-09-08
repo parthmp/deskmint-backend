@@ -395,7 +395,7 @@ class ClientsController extends Controller{
 		
 	}
 
-	private function upsertContactInfoForClient(Request $request, int $client_id, bool $add= true){
+	private function upsertContactInfoForClient(Request $request, int $client_id, bool $add = true){
 
 		$contact_info = $request->input('contact_info');
 
@@ -463,6 +463,7 @@ class ClientsController extends Controller{
 
 		$validation_rules2 = [
 			'contact_info'							=>	'required|array|min:1',
+			'contact_info.*.id'						=>	'required',
 			'contact_info.*.first_name.value'		=>	'required',
 			'contact_info.*.last_name.value'		=>	'required',
 			'contact_info.*.email.value'			=>	'required|email',
