@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\AccessTokenData;
+use App\Models\ClientsCustomField;
 use App\Models\Company;
 use App\Models\Country;
+use App\Models\CustomFieldType;
 use App\Models\RefreshToken;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -55,6 +57,21 @@ class ClientsControllerStoreValidationTest extends TestCase{
 		]);
 
 		return $company->id;
+
+	}
+
+	private function setCustomFieldTypes() : void{
+
+		/* set custom field types */
+		foreach(config('global.field_types') as $field){
+
+			CustomFieldType::factory()->create([
+				'input_type'	=>	$field,
+				'input_name'	=>	'client '.$field
+			]);
+
+		}
+		
 
 	}
 
@@ -1033,6 +1050,267 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'X-Device-Id' => $device
     	]);
 
+		$response->assertStatus((int)config('global.error_code'));
+
+		$this->arrayHasKey('validity', $response);
+		$this->assertEquals('invalid_data_tab4', $response['validity']);
+		
+	}
+
+
+	public function test_if_fails_to_store_client_with_invalid_data_tab_4_custom_fields():void{
+		
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		$country = Country::inRandomOrder()->first();
+		ClientsCustomField::truncate();
+		
+		$post_data = [
+			'personal_info'	=>	[
+				'first_name'	=>	[
+					'value'		=>	'test firstname'
+				],
+				'last_name'		=>	[
+					'value'		=>	'test lastname'
+				],
+				'email'		=>	[
+					'value'		=>	'some@thing.com'
+				]
+			],
+			'contact_info'	=>	[
+				[
+					'first_name'	=>	[
+						'value'		=>	'test firstname'
+					],
+					'last_name'		=>	[
+						'value'		=>	'test last name'
+					],
+					'email'			=>	[
+						'value'		=>	'some@thing.com'
+					],
+					'phone'			=>	[
+						'value'		=>	1234567980
+					]
+				]
+			],
+			'billing_info'	=>	[
+				'street'	=>	[
+					'value'		=>	'test street'
+				],
+				'apt'	=>	[
+					'value'		=>	'apt here'
+				],
+				'city'	=>	[
+					'value'		=>	'test city here'
+				],
+				'state'	=>	[
+					'value'		=>	'test state'
+				],
+				'postal_code'	=>	[
+					'value'		=>	'123'
+				],
+				'country'	=>	[
+					'value'		=>	$country->id
+				]
+			],
+			'shipping_info'	=>	[
+				'street'	=>	[
+					'value'		=>	'test street'
+				],
+				'apt'	=>	[
+					'value'		=>	'apt here'
+				],
+				'city'	=>	[
+					'value'		=>	'test city here'
+				],
+				'state'	=>	[
+					'value'		=>	'test state'
+				],
+				'postal_code'	=>	[
+					'value'		=>	'123'
+				],
+				'country'	=>	[
+					'value'		=>	$country->id
+				]
+			],
+			'custom_fields'	=>	'invalid custom fields data',
+			'company_id'	=>	$company_id
+		];
+
+		$response = $this->post('/api/manage-clients', $post_data, [
+        	'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+    	]);
+		
+		$response->assertStatus((int)config('global.error_code'));
+
+		$this->arrayHasKey('validity', $response);
+		$this->assertEquals('invalid_data_tab4', $response['validity']);
+		
+	}
+
+	public function test_if_fails_to_store_client_with_invalid_data_tab_4_custom_fields_with_db():void{
+		
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		$country = Country::inRandomOrder()->first();
+		$this->setCustomFieldTypes();
+
+		$custom_field_types = CustomFieldType::all();
+
+		/* add one field per type to test */
+		$order = 1;
+		foreach($custom_field_types as $field_type){
+
+			$default_value = '';
+			$options = [];
+
+			if($field_type->input_type === config('global.field_types')[0]){ /* text */
+				$default_value = '    ';
+			}else if($field_type->input_type === config('global.field_types')[1]){ /* textarea */
+				$default_value = '  ';
+			}else if($field_type->input_type === config('global.field_types')[2]){ /* email */
+				$default_value = 'thisisnotemail.com';
+			}else if($field_type->input_type === config('global.field_types')[3]){ /* select */
+				$default_value = 'something';
+				$options = ['one', 'two', 'three'];
+			}else if($field_type->input_type === config('global.field_types')[4]){ /* number */
+				$default_value = 'abc';
+			}else if($field_type->input_type === config('global.field_types')[5]){ /* date */
+				$default_value = 'this is not date';
+			}else if($field_type->input_type === config('global.field_types')[6]){ /* time */
+				$default_value = 'this is not time';
+			}else if($field_type->input_type === config('global.field_types')[7]){ /* datetime */
+				$default_value = 'this is not timestamp';
+			}else if($field_type->input_type === config('global.field_types')[8]){ /* telephone */
+				$default_value = 'this is not telephone';
+			}else if($field_type->input_type === config('global.field_types')[9]){ /* multiselect */
+				$default_value = 'something else';
+				$options = ['one', 'two', 'three'];
+			}
+
+			$options = implode(',', $options);
+
+			ClientsCustomField::factory()->create([
+				'custom_field_type_id'		=>	$field_type->id,
+				'company_id'				=>	1,
+				'label'						=>	'client '.$field_type->input_type,
+				'default_value'				=>	$default_value,
+				'type_params'				=>	$options,
+				'required'					=>	1,
+				'order_on_add_edit_page'	=>	$order
+			]);
+			$order++;
+		}
+		
+		$post_data = [
+			'personal_info'	=>	[
+				'first_name'	=>	[
+					'value'		=>	'test firstname'
+				],
+				'last_name'		=>	[
+					'value'		=>	'test lastname'
+				],
+				'email'		=>	[
+					'value'		=>	'some@thing.com'
+				]
+			],
+			'contact_info'	=>	[
+				[
+					'first_name'	=>	[
+						'value'		=>	'test firstname'
+					],
+					'last_name'		=>	[
+						'value'		=>	'test last name'
+					],
+					'email'			=>	[
+						'value'		=>	'some@thing.com'
+					],
+					'phone'			=>	[
+						'value'		=>	1234567980
+					]
+				]
+			],
+			'billing_info'	=>	[
+				'street'	=>	[
+					'value'		=>	'test street'
+				],
+				'apt'	=>	[
+					'value'		=>	'apt here'
+				],
+				'city'	=>	[
+					'value'		=>	'test city here'
+				],
+				'state'	=>	[
+					'value'		=>	'test state'
+				],
+				'postal_code'	=>	[
+					'value'		=>	'123'
+				],
+				'country'	=>	[
+					'value'		=>	$country->id
+				]
+			],
+			'shipping_info'	=>	[
+				'street'	=>	[
+					'value'		=>	'test street'
+				],
+				'apt'	=>	[
+					'value'		=>	'apt here'
+				],
+				'city'	=>	[
+					'value'		=>	'test city here'
+				],
+				'state'	=>	[
+					'value'		=>	'test state'
+				],
+				'postal_code'	=>	[
+					'value'		=>	'123'
+				],
+				'country'	=>	[
+					'value'		=>	$country->id
+				]
+			],
+			'custom_fields'	=>	[ /* only one custom field added, others are not which means it fails */
+				[
+					'id'		=>	1,
+					'value'		=>	'something',
+				]
+			],
+			'company_id'	=>	$company_id
+		];
+
+		$response = $this->post('/api/manage-clients', $post_data, [
+        	'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+    	]);
+		
 		$response->assertStatus((int)config('global.error_code'));
 
 		$this->arrayHasKey('validity', $response);

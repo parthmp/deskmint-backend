@@ -525,8 +525,8 @@ class ClientsController extends Controller{
 
 		$response = ['message' => 'Please fill in required fields', 'validity' => 'invalid_data_tab4', 'tab_switch' => 3];
 
-		if(!$request->has('billing_info')){
-			return response(['message' => 'no billing info', 'validity' => 'invalid_data_tab4', 'tab_switch' => 3], config('global.error_code'));
+		if(!$request->has('custom_fields')){
+			return response(['message' => 'no custom fields', 'validity' => 'invalid_data_tab4', 'tab_switch' => 3], config('global.error_code'));
 		}
 
 		$company_id = Sanitize::input($request->input('company_id'));
@@ -554,13 +554,13 @@ class ClientsController extends Controller{
 		foreach($db_custom_fields as $field){
 
 			if($field->required == 1){
-
+				$found_and_valid = false;
 				for($z = 0 ; $z < count($custom_fields_submitted) ; $z++){
 
 					if($custom_fields_submitted[$z]['id'] == $field->id){
-
+						$found_and_valid = true;
 						if($field->customFieldType->input_type === config('global.field_types')[0] || $field->customFieldType->input_type === config('global.field_types')[1] || $field->customFieldType->input_type === config('global.field_types')[3] || $field->customFieldType->input_type === config('global.field_types')[9]){
-
+							
 							$validation_rules['custom_fields.'.$z.'.value'] = 'required';
 
 						}else{
@@ -595,6 +595,10 @@ class ClientsController extends Controller{
 
 					}
 
+				}
+
+				if(!$found_and_valid){
+					return response($response, config('global.error_code'));
 				}
 
 			}
