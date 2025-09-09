@@ -533,13 +533,13 @@ class ClientsController extends Controller{
 		$company_id = Sanitize::input($request->input('company_id'));
 
 		$db_custom_fields = ClientsCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->get();
-
-		if(empty($db_custom_fields)){
+		
+		if($db_custom_fields->isEmpty()){
 			return null;
 		}
-
+		
 		$validation_rules = [
-			'custom_fields'	 =>	'required|array|min:1'
+			'custom_fields'	 =>	'required|array'
 		];
 
 		$custom_fields_validation_1 = Validator::make($request->all(), $validation_rules);
