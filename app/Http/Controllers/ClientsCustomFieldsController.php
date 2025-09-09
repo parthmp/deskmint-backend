@@ -162,7 +162,14 @@ class ClientsCustomFieldsController extends Controller{
 				return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 			}
 		}
-		
+
+		/* check if label has any special chars */
+		$v = Validator::make($request->all(), [
+			'label'					=>		'required|regex:/^[a-zA-Z0-9 ]*$/'
+		]);
+		if($v->fails()){
+			return response(['message' => 'Only letters and numbers allowed for label', 'validity' => 'invalid_label_chars'], config('global.error_code'));
+		}
 		
 		$input_field = Sanitize::input($request->input('input_field'));
 		
