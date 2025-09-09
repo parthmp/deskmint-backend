@@ -1323,4 +1323,115 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	}
 
 	/**/
+
+	public function test_if_label_already_exists_fails_to_save() : void{
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		Schema::dropIfExists('clients_flat');
+
+		CustomFieldType::truncate();
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'email'
+		]);
+		
+		ClientsCustomField::truncate();
+		ClientsCustomField::factory()->create([
+			'id'							=>	150,
+			'company_id'					=>	$company_id,
+			'label'							=>	'sample label here'
+		]);
+
+		$select_field = CustomFieldType::where('input_type', '=', 'email')->first();
+		
+		$response = $this->post('/api/clients-custom-fields', [
+			'input_field'			=>		$select_field->id,
+			'label'					=>		'sample label here',
+			'is_required'			=>		'true',
+			'add_edit_page_order'	=>		'5',
+			'select_options'		=>		'one, two, three',
+			'company_id'			=>		$company_id
+		], [
+        	'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+    	]);
+		
+		$response->assertStatus((int)config('global.error_code'));
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_label', $response['validity']);
+
+	}
+
+	public function test_if_label_already_exists_fails_to_update() : void{
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		Schema::dropIfExists('clients_flat');
+
+		CustomFieldType::truncate();
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'email'
+		]);
+		
+		ClientsCustomField::truncate();
+		ClientsCustomField::factory()->create([
+			'id'							=>	150,
+			'company_id'					=>	$company_id,
+			'label'							=>	'sample label here'
+		]);
+
+		ClientsCustomField::factory()->create([
+			'id'							=>	151,
+			'company_id'					=>	$company_id,
+			'label'							=>	'sample label here 2'
+		]);
+
+		$select_field = CustomFieldType::where('input_type', '=', 'email')->first();
+		
+		$response = $this->patch('/api/clients-custom-fields/151', [
+			'input_field'			=>		$select_field->id,
+			'past_label'			=>		'sample label here 2',
+			'label'					=>		'sample label here',
+			'is_required'			=>		'true',
+			'add_edit_page_order'	=>		'5',
+			'select_options'		=>		'one, two, three',
+			'company_id'			=>		$company_id
+		], [
+        	'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+    	]);
+		
+		$response->assertStatus((int)config('global.error_code'));
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_label', $response['validity']);
+
+	}
+
+
 }
