@@ -343,7 +343,7 @@ class ClientsControllerStoreTest extends TestCase{
 			}else if($db_field->customFieldType->input_type === config('global.field_types')[4]){ /* number */
 				$temp_post['value'] = 1234678;
 			}else if($db_field->customFieldType->input_type === config('global.field_types')[5]){ /* date */
-				$temp_post['value'] = '20 jan 2018';
+				$temp_post['value'] = '2018-01-20T00:00:00.000Z';
 			}else if($db_field->customFieldType->input_type === config('global.field_types')[6]){ /* time */
 				$temp_post['value'] = [
 					'hours'		=>	10,
@@ -351,7 +351,7 @@ class ClientsControllerStoreTest extends TestCase{
 					'seconds'	=>	10
 				];
 			}else if($db_field->customFieldType->input_type === config('global.field_types')[7]){ /* datetime */
-				$temp_post['value'] = '19 jan 2018 11:08:15';
+				$temp_post['value'] = '2018-01-19T11:08:15Z';
 			}else if($db_field->customFieldType->input_type === config('global.field_types')[8]){ /* telephone */
 				$temp_post['value'] = '+123457890';
 			}else if($db_field->customFieldType->input_type === config('global.field_types')[9]){ /* multiselect */
@@ -499,7 +499,7 @@ class ClientsControllerStoreTest extends TestCase{
 		/* validate all inputs from clients_flat */
 		$field_values = ClientCustomFieldValue::where('client_id', '=', $client->id)->orderBy('id', 'asc')->get();
 		for($z = 0 ; $z < count($field_values) ; $z++){
-			echo $field_values[$z]->field_value."\n";
+			
 			if($custom_fields_types[$z] === config('global.field_types')[0]){ /* text */
 				$this->assertEquals('some text', $field_values[$z]->field_value);
 			}else if($custom_fields_types[$z] === config('global.field_types')[1]){ /* textarea */
@@ -511,20 +511,15 @@ class ClientsControllerStoreTest extends TestCase{
 			}else if($custom_fields_types[$z] === config('global.field_types')[4]){ /* number */
 				$this->assertEquals(1234678, $field_values[$z]->field_value);
 			}else if($custom_fields_types[$z] === config('global.field_types')[5]){ /* date */
-				//$temp_post['value'] = '20 jan 2018';
-				//$this->assertEquals(1234678, $field_values[$z]->field_value);
+				$this->assertEquals('2018-01-20T00:00:00.000Z', $field_values[$z]->field_value);
 			}else if($custom_fields_types[$z] === config('global.field_types')[6]){ /* time */
-				// $temp_post['value'] = [
-				// 	'hours'		=>	10,
-				// 	'minutes'	=>	15,
-				// 	'seconds'	=>	10
-				// ];
+				$this->assertEquals('10:15 AM', $field_values[$z]->field_value);
 			}else if($custom_fields_types[$z] === config('global.field_types')[7]){ /* datetime */
-				//$temp_post['value'] = '19 jan 2018 11:08:15';
+				$this->assertEquals('2018-01-19T11:08:15Z', $field_values[$z]->field_value);
 			}else if($custom_fields_types[$z] === config('global.field_types')[8]){ /* telephone */
-				//$temp_post['value'] = '+123457890';
+				$this->assertEquals('+123457890', $field_values[$z]->field_value);
 			}else if($custom_fields_types[$z] === config('global.field_types')[9]){ /* multiselect */
-				//$temp_post['value'] = ['one'];
+				$this->assertEquals(['one'], json_decode($field_values[$z]->field_value, true));
 			}
 		}
 

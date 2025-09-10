@@ -3,6 +3,7 @@
 	namespace App\Helpers;
 
 	use Carbon\Carbon;
+use DateTime;
 use Exception;
 use Illuminate\Http\Response;
 
@@ -245,13 +246,33 @@ use Illuminate\Http\Response;
 			return strtolower(preg_replace('/[^a-zA-Z0-9]/', '_', $input));
 		}
 
-		public static function isValidISODateTime($dateTime) {
-			try{
-				\Carbon\Carbon::parse($dateTime);
-				return true;
-			}catch(Exception $e){
-				return false;
+		public static function isValidISODateTime($datetime){
+
+			// JavaScript's toISOString() produces a format like YYYY-MM-DDTHH:mm:ss.sssZ
+			// The 'T' separates date and time, 'Z' indicates UTC.
+			// The milliseconds part ('.sss') is optional in ISO 8601, but common in JS.
+			// We'll try to parse with and without milliseconds for robustness.
+
+			// Format with milliseconds
+			$format_with_ms = 'Y-m-d\TH:i:s.v\Z'; 
+			// Format without milliseconds (or with only seconds)
+			$format_without_ms = 'Y-m-d\TH:i:s\Z';
+
+			// Attempt to create a DateTime object from the string using the format with milliseconds
+			$datetime_with_ms = DateTime::createFromFormat($format_with_ms, $datetime);
+			$errors_with_ms = DateTime::getLastErrors();
+
+			// If parsing with milliseconds failed or resulted in warnings, try without milliseconds
+			if($datetime_with_ms === false || !empty($errors_with_ms['warnings']) || !empty($errors_with_ms['errors'])){
+				$datetime_without_ms = DateTime::createFromFormat($format_without_ms, $datetime);
+				$errors_without_ms = DateTime::getLastErrors();
+				
+				// Check if parsing without milliseconds was successful and without errors
+				return $datetime_without_ms !== false && empty($errors_without_ms['warnings']) && empty($errors_without_ms['errors']);
 			}
+
+			// If parsing with milliseconds was successful and without errors
+			return true;
 		}
 
 		public static function NormalizeColumnName(string $column):string{

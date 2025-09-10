@@ -324,7 +324,7 @@ class ClientsController extends Controller{
 								
 								
 								$datetime_string = trim($custom_fields_submitted[$z]['value']);
-
+								
 								if(General::isValidISODateTime($datetime_string)){
 									
 									$value = $datetime_string;
