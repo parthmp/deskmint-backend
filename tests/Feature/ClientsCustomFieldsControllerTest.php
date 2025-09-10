@@ -1904,6 +1904,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
 		$this->assertEquals('delete_success', $response['validity']);
+
+		$deleted_fields = ClientsCustomField::whereIn('ids', $ids)->get();
+
+		$this->assertEmpty($deleted_fields);
 		
 		foreach($labels as $label){
 			$this->assertFalse(Schema::hasColumn('clients_flat', General::replaceWithUnderscores($label)));

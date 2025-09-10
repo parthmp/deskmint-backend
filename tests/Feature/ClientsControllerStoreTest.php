@@ -589,6 +589,33 @@ class ClientsControllerStoreTest extends TestCase{
 		$custom_fields_types = [];
 		$custom_fields_db = ClientsCustomField::whereHas('customFieldType')->with('customFieldType')->get();
 
+		/* delete first three */
+		$delete_ids = [];
+		for($z = 0 ; $z < count($custom_fields_db) ; $z++){
+			array_push($delete_ids, $custom_fields_db[$z]->id);
+			if($z >= 2){
+				break;
+			}
+		}
+
+		$response = $this->delete('/api/clients-custom-fields', [
+			'ids' => $delete_ids,
+			'company_id' => $company_id
+		], [
+        	'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+    	]);
+		
+		$response->assertStatus(200);
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('delete_success', $response['validity']);
+
+		$order = ($order-count($delete_ids));
+
+		$custom_fields_db = ClientsCustomField::whereHas('customFieldType')->with('customFieldType')->get();
+
 		foreach($custom_fields_db as $db_field){
 
 			$temp_post = [];
