@@ -62,6 +62,21 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	}
 
+	private function setCustomFieldTypes() : void{
+
+		/* set custom field types */
+		foreach(config('global.field_types') as $field){
+
+			CustomFieldType::factory()->create([
+				'input_type'	=>	$field,
+				'input_name'	=>	'client '.$field
+			]);
+
+		}
+		
+
+	}
+
 	public function test_if_it_can_fetch_field_types() : void{
 
 		$user = User::factory()->create([
@@ -1541,6 +1556,99 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		$this->assertArrayHasKey('validity', $response);
 		$this->assertEquals('invalid_label_chars', $response['validity']);
 
+	}
+
+	public function test_custom_fields_column_data_types() : void{
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+		
+		CustomFieldType::truncate();
+
+		$company_id = $this->set_default_company();
+		$this->setCustomFieldTypes();
+
+		ClientsCustomField::truncate();
+
+		$field_types = CustomFieldType::all();
+		$order = 1;
+		$column_names = [];
+		$column_types = [];
+		foreach($field_types as $field_type){
+
+			$options = '';
+			
+			if($field_type->input_type === config('global.field_types')[3]){
+				$options = "one,two,three";
+			}
+
+			if($field_type->input_type === config('global.field_types')[9]){
+				$options = "five,six,seven";
+			}
+
+			$label = 'client '.$field_type->input_type;
+
+			array_push($column_names, General::replaceWithUnderscores($label));
+			array_push($column_types, $field_type->input_type);
+
+			$response = $this->post('/api/clients-custom-fields', [
+				'input_field'			=>		$field_type->id,
+				'label'					=>		$label,
+				'is_required'			=>		'true',
+				'add_edit_page_order'	=>		$order,
+				'select_options'		=>		$options,
+				'company_id'			=>		$company_id
+			], [
+				'Accept' => 'application/json',
+				'Authorization' => 'Bearer '.$token,
+				'X-Refresh-Token' => $refresh_token,
+				'X-Device-Id' => $device
+			]);
+			
+			$order++;
+			$response->assertStatus(200);
+			$this->assertArrayHasKey('validity', $response);
+			$this->assertEquals('created_success', $response['validity']);
+
+		}
+
+		/* validate input types in clients_flat for each column */
+
+		for($z = 0 ; $z < count($column_names) ; $z++){
+			
+			$this->assertTrue(Schema::hasColumn('clients_flat', $column_names[$z]));
+			$column_type_db = Schema::getColumnType('clients_flat', $column_names[$z]);
+			if($column_types[$z] === config('global.field_types')[0]){ /* text */
+				$this->assertEquals('text', $column_type_db);
+			}else if($column_types[$z] === config('global.field_types')[1]){ /* textarea */
+				$this->assertEquals('text', $column_type_db);
+			}else if($column_types[$z] === config('global.field_types')[2]){ /* email */
+				$this->assertEquals('varchar', $column_type_db);
+			}else if($column_types[$z] === config('global.field_types')[3]){ /* select */
+				$this->assertEquals('varchar', $column_type_db);
+			}else if($column_types[$z] === config('global.field_types')[4]){ /* number */
+				$this->assertEquals('integer', $column_type_db);
+			}else if($column_types[$z] === config('global.field_types')[5]){ /* date */
+				$this->assertEquals('datetime', $column_type_db);
+			}else if($column_types[$z] === config('global.field_types')[6]){ /* time */
+				$this->assertEquals('varchar', $column_type_db);
+			}else if($column_types[$z] === config('global.field_types')[7]){ /* datetime */
+				$this->assertEquals('datetime', $column_type_db);
+			}else if($column_types[$z] === config('global.field_types')[8]){ /* telephone */
+				$this->assertEquals('varchar', $column_type_db);
+			}else if($column_types[$z] === config('global.field_types')[9]){ /* multiselect */
+				$this->assertEquals('text', $column_type_db);
+			}
+		}
+		
 	}
 
 
