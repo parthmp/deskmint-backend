@@ -1651,5 +1651,266 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		
 	}
 
+	public function test_deletion_without_ids_provided_1() : void{
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		Schema::dropIfExists('clients_flat');
+
+		CustomFieldType::truncate();
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'email'
+		]);
+		
+		ClientsCustomField::truncate();
+		// ClientsCustomField::factory()->create([
+		// 	'id'							=>	150,
+		// 	'company_id'					=>	$company_id,
+		// 	'label'							=>	'sample label here'
+		// ]);
+
+		// ClientsCustomField::factory()->create([
+		// 	'id'							=>	151,
+		// 	'company_id'					=>	$company_id,
+		// 	'label'							=>	'sample label here 2'
+		// ]);
+
+		//$select_field = CustomFieldType::where('input_type', '=', 'email')->first();
+		
+		$response = $this->delete('/api/clients-custom-fields', [
+			'ids' => [],
+			'company_id' => $company_id
+		], [
+        	'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+    	]);
+		
+		$response->assertStatus((int)config('global.error_code'));
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_ids', $response['validity']);
+
+	}
+
+	public function test_deletion_without_ids_provided_2() : void{
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		Schema::dropIfExists('clients_flat');
+
+		CustomFieldType::truncate();
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'email'
+		]);
+		
+		ClientsCustomField::truncate();
+		// ClientsCustomField::factory()->create([
+		// 	'id'							=>	150,
+		// 	'company_id'					=>	$company_id,
+		// 	'label'							=>	'sample label here'
+		// ]);
+
+		// ClientsCustomField::factory()->create([
+		// 	'id'							=>	151,
+		// 	'company_id'					=>	$company_id,
+		// 	'label'							=>	'sample label here 2'
+		// ]);
+
+		//$select_field = CustomFieldType::where('input_type', '=', 'email')->first();
+		
+		$response = $this->delete('/api/clients-custom-fields', [
+			'company_id' => $company_id
+		], [
+        	'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+    	]);
+		
+		$response->assertStatus((int)config('global.error_code'));
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_ids', $response['validity']);
+
+	}
+
+	public function test_deletion_with_one_id_provided() : void{
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		Schema::dropIfExists('clients_flat');
+
+		CustomFieldType::truncate();
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'email'
+		]);
+		
+		ClientsCustomField::truncate();
+
+		$select_field = CustomFieldType::where('input_type', '=', 'email')->first();
+		$response = $this->post('/api/clients-custom-fields', [
+			'input_field'			=>		$select_field->id,
+			'label'					=>		'test label email',
+			'is_required'			=>		'true',
+			'add_edit_page_order'	=>		'5',
+			'company_id'			=>		$company_id
+		], [
+        	'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+    	]);
+		$response->assertStatus(200);
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('created_success', $response['validity']);
+		$this->assertTrue(Schema::hasColumn('clients_flat', General::replaceWithUnderscores('test label email')));
+		
+		$c_field = ClientsCustomField::first();
+
+		$response = $this->delete('/api/clients-custom-fields', [
+			'ids' => [$c_field->id],
+			'company_id' => $company_id
+		], [
+        	'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+    	]);
+		
+		$response->assertStatus(200);
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('delete_success', $response['validity']);
+		
+		$this->assertFalse(Schema::hasColumn('clients_flat', General::replaceWithUnderscores('test label email')));
+
+	}
+
+	public function test_deletion_with_multiple_ids_provided() : void{
+
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		Schema::dropIfExists('clients_flat');
+
+		CustomFieldType::truncate();
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'email'
+		]);
+
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'date'
+		]);
+
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'datetime'
+		]);
+
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'textarea'
+		]);
+		
+		ClientsCustomField::truncate();
+
+		$custom_field_types = CustomFieldType::all();
+
+		$labels = [];
+
+		foreach($custom_field_types as $c_field_type){
+
+			$label = 'test client '.$c_field_type->input_type;
+
+			$labels[] = $label;
+
+			$response = $this->post('/api/clients-custom-fields', [
+				'input_field'			=>		$c_field_type->id,
+				'label'					=>		$label,
+				'is_required'			=>		'true',
+				'add_edit_page_order'	=>		'5',
+				'company_id'			=>		$company_id
+			], [
+				'Accept' => 'application/json',
+				'Authorization' => 'Bearer '.$token,
+				'X-Refresh-Token' => $refresh_token,
+				'X-Device-Id' => $device
+			]);
+			$response->assertStatus(200);
+			$this->assertArrayHasKey('validity', $response);
+			$this->assertEquals('created_success', $response['validity']);
+			$this->assertTrue(Schema::hasColumn('clients_flat', General::replaceWithUnderscores($label)));
+		}
+
+		
+		
+		$custom_fields = ClientsCustomField::all();
+
+		$ids = [];
+		foreach($custom_fields as $c_field){
+			array_push($ids, $c_field->id);
+		}
+
+		$response = $this->delete('/api/clients-custom-fields', [
+			'ids' => $ids,
+			'company_id' => $company_id
+		], [
+        	'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+    	]);
+		
+		$response->assertStatus(200);
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('delete_success', $response['validity']);
+		
+		foreach($labels as $label){
+			$this->assertFalse(Schema::hasColumn('clients_flat', General::replaceWithUnderscores($label)));
+		}
+
+	}
+
+
 
 }
