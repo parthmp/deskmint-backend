@@ -243,7 +243,7 @@ class ClientsController extends Controller{
 				if($field->customFieldType->input_type === config('global.field_types')[9]){
 
 					if(!in_array($field->default_value, $temp_params)){
-						$field->value = '';
+						$field->value = [];
 					}else{
 						$default_value = trim($field->default_value);
 						$field->value = [$default_value];

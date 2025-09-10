@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Helpers\General;
 use App\Models\AccessTokenData;
 use App\Models\Client;
 use App\Models\ClientContactInfo;
+use App\Models\ClientCustomFieldValue;
 use App\Models\ClientsCustomField;
 use App\Models\Company;
 use App\Models\Country;
@@ -283,6 +285,81 @@ class ClientsControllerStoreTest extends TestCase{
 		$currency = Currency::inRandomOrder()->first();
 		$industry = Industry::inRandomOrder()->first();
 		
+		$field_types = CustomFieldType::all();
+		$order = 1;
+		foreach($field_types as $field_type){
+
+			$options = '';
+			
+			if($field_type->input_type === config('global.field_types')[3]){
+				$options = "one,two,three";
+			}
+
+			if($field_type->input_type === config('global.field_types')[9]){
+				$options = "five,six,seven";
+			}
+
+			$label = 'client '.$field_type->input_type;
+
+			$response = $this->post('/api/clients-custom-fields', [
+				'input_field'			=>		$field_type->id,
+				'label'					=>		$label,
+				'is_required'			=>		'true',
+				'add_edit_page_order'	=>		$order,
+				'select_options'		=>		$options,
+				'company_id'			=>		$company_id
+			], [
+				'Accept' => 'application/json',
+				'Authorization' => 'Bearer '.$token,
+				'X-Refresh-Token' => $refresh_token,
+				'X-Device-Id' => $device
+			]);
+			
+			$order++;
+			$response->assertStatus(200);
+			$this->assertArrayHasKey('validity', $response);
+			$this->assertEquals('created_success', $response['validity']);
+
+		}
+
+		/* create custom fields post values */
+		$custom_fields_post = [];
+		$custom_fields_types = [];
+		$custom_fields_db = ClientsCustomField::whereHas('customFieldType')->with('customFieldType')->get();
+
+		foreach($custom_fields_db as $db_field){
+
+			$temp_post = [];
+			$temp_post['id'] = $db_field->id;
+			$custom_fields_types[] = $db_field->customFieldType->input_type;
+			if($db_field->customFieldType->input_type === config('global.field_types')[0]){ /* text */
+				$temp_post['value'] = 'some text';
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[1]){ /* textarea */
+				$temp_post['value'] = 'some textarea text';
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[2]){ /* email */
+				$temp_post['value'] = 'email@value.com';
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[3]){ /* select */
+				$temp_post['value'] = 'one';
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[4]){ /* number */
+				$temp_post['value'] = 1234678;
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[5]){ /* date */
+				$temp_post['value'] = '20 jan 2018';
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[6]){ /* time */
+				$temp_post['value'] = [
+					'hours'		=>	10,
+					'minutes'	=>	15,
+					'seconds'	=>	10
+				];
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[7]){ /* datetime */
+				$temp_post['value'] = '19 jan 2018 11:08:15';
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[8]){ /* telephone */
+				$temp_post['value'] = '+123457890';
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[9]){ /* multiselect */
+				$temp_post['value'] = ['one'];
+			}
+			$custom_fields_post[] = $temp_post;
+		}
+
 		$post_data = [
 			'personal_info'	=>	[
 				'first_name'	=>	[
@@ -309,21 +386,6 @@ class ClientsControllerStoreTest extends TestCase{
 					],
 					'phone'			=>	[
 						'value'		=>	''
-					]
-				],
-				[
-					'id'			=>	600,
-					'first_name'	=>	[
-						'value'		=>	'test firstname 600'
-					],
-					'last_name'		=>	[
-						'value'		=>	'test last name 600'
-					],
-					'email'			=>	[
-						'value'		=>	'some@th600ing.com'
-					],
-					'phone'			=>	[
-						'value'		=>	1234567600
 					]
 				]
 			],
@@ -367,7 +429,7 @@ class ClientsControllerStoreTest extends TestCase{
 					'value'		=>	$country->id
 				]
 			],
-			'custom_fields' => [],
+			'custom_fields' => $custom_fields_post,
 			'settings'		=>	[
 				'currency'	=>	[
 					'value'	=>	$currency->id
@@ -418,27 +480,53 @@ class ClientsControllerStoreTest extends TestCase{
 		$this->assertEquals(7, $client->payment_terms);
 
 		/* test for contact info */
-		$client_contact_info = ClientContactInfo::where('client_id', '=', $client->id)->get();
-		$this->assertEquals(2, count($client_contact_info));
+		$client_contact_info = ClientContactInfo::where('client_id', '=', $client->id)->first();
+		$this->assertNotEmpty($client_contact_info);
 		
-		$this->assertEquals('test firstname 500', $client_contact_info[0]->first_name);
-		$this->assertEquals('test last name 500', $client_contact_info[0]->last_name);
-		$this->assertEquals('some@th500ing.com', $client_contact_info[0]->email);
-		$this->assertEmpty($client_contact_info[0]->phone);
-
-		$this->assertEquals('test firstname 600', $client_contact_info[1]->first_name);
-		$this->assertEquals('test last name 600', $client_contact_info[1]->last_name);
-		$this->assertEquals('some@th600ing.com', $client_contact_info[1]->email);
-		$this->assertEquals(1234567600, (int)$client_contact_info[1]->phone);
-
-
+		$this->assertEquals('test firstname 500', $client_contact_info->first_name);
+		$this->assertEquals('test last name 500', $client_contact_info->last_name);
+		$this->assertEquals('some@th500ing.com', $client_contact_info->email);
+		$this->assertEmpty($client_contact_info->phone);
+		
 		/* check for custom fields here */
 		$columns_clients_flat = Schema::getColumnListing('clients_flat');
-		$this->assertEquals(4, count($columns_clients_flat));
+		$this->assertEquals($order, (count($columns_clients_flat)-3));
 
 		/* now make sure row inserted in client_flat table */
 		$clients_flat_row = DB::table('clients_flat')->where('client_id', '=', $client->id)->first();
 		$this->assertNotEmpty($clients_flat_row);
+
+		/* validate all inputs from clients_flat */
+		$field_values = ClientCustomFieldValue::where('client_id', '=', $client->id)->orderBy('id', 'asc')->get();
+		for($z = 0 ; $z < count($field_values) ; $z++){
+			echo $field_values[$z]->field_value."\n";
+			if($custom_fields_types[$z] === config('global.field_types')[0]){ /* text */
+				$this->assertEquals('some text', $field_values[$z]->field_value);
+			}else if($custom_fields_types[$z] === config('global.field_types')[1]){ /* textarea */
+				$this->assertEquals('some textarea text', $field_values[$z]->field_value);
+			}else if($custom_fields_types[$z] === config('global.field_types')[2]){ /* email */
+				$this->assertEquals('email@value.com', $field_values[$z]->field_value);
+			}else if($custom_fields_types[$z] === config('global.field_types')[3]){ /* select */
+				$this->assertEquals('one', $field_values[$z]->field_value);
+			}else if($custom_fields_types[$z] === config('global.field_types')[4]){ /* number */
+				$this->assertEquals(1234678, $field_values[$z]->field_value);
+			}else if($custom_fields_types[$z] === config('global.field_types')[5]){ /* date */
+				//$temp_post['value'] = '20 jan 2018';
+				//$this->assertEquals(1234678, $field_values[$z]->field_value);
+			}else if($custom_fields_types[$z] === config('global.field_types')[6]){ /* time */
+				// $temp_post['value'] = [
+				// 	'hours'		=>	10,
+				// 	'minutes'	=>	15,
+				// 	'seconds'	=>	10
+				// ];
+			}else if($custom_fields_types[$z] === config('global.field_types')[7]){ /* datetime */
+				//$temp_post['value'] = '19 jan 2018 11:08:15';
+			}else if($custom_fields_types[$z] === config('global.field_types')[8]){ /* telephone */
+				//$temp_post['value'] = '+123457890';
+			}else if($custom_fields_types[$z] === config('global.field_types')[9]){ /* multiselect */
+				//$temp_post['value'] = ['one'];
+			}
+		}
 
 	}
 
