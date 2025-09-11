@@ -154,27 +154,14 @@ class ClientsControllerUpdateTest extends TestCase{
 		ClientCustomFieldValue::truncate();
 
 		/**/
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-		
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
 		/**/
 		/* insert */
-		$response = $this->post('/api/manage-clients', $this->storePostData($company_id), [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $this->storePostData($company_id), $c['headers']);
 		
 		$response->assertStatus(200);
 
@@ -298,12 +285,7 @@ class ClientsControllerUpdateTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 		
-		$response = $this->patch('/api/manage-clients/'.$client->id, $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->patch('/api/manage-clients/'.$client->id, $post_data, $c['headers']);
 		
 		$response->assertStatus(200);
 		$this->arrayHasKey('validity', $response);
@@ -355,27 +337,17 @@ class ClientsControllerUpdateTest extends TestCase{
 		ClientCustomFieldValue::truncate();
 
 		/**/
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
+		
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-		
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
 		/**/
 		/* insert */
-		$response = $this->post('/api/manage-clients', $this->storePostData($company_id), [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $this->storePostData($company_id), $c['headers']);
 		
 		$response->assertStatus(200);
 
@@ -505,12 +477,7 @@ class ClientsControllerUpdateTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 		
-		$response = $this->patch('/api/manage-clients/'.$client->id, $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->patch('/api/manage-clients/'.$client->id, $post_data, $c['headers']);
 		
 		$response->assertStatus(200);
 		$this->arrayHasKey('validity', $response);
