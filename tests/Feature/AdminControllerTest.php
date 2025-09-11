@@ -679,7 +679,7 @@ class AdminControllerTest extends TestCase{
 			'company_id'		=>	$company_id,
 			'device_id' 		=> 	$device,
 			'refresh_token' 	=> 	'abc'
-		], $headers = $this->headers($user, $device));
+		], $headers);
 
 		$response->assertStatus((int)config('global.error_code'));
 		

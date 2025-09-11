@@ -30,16 +30,9 @@ class ClientsControllerStoreTest extends TestCase{
 
 	public function test_if_it_stores_client_with_valid_data_with_no_custom_fields():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -48,6 +41,7 @@ class ClientsControllerStoreTest extends TestCase{
 		
 		$currency = Currency::inRandomOrder()->first();
 		$industry = Industry::inRandomOrder()->first();
+		
 		
 		$post_data = [
 			'personal_info'	=>	[
@@ -156,13 +150,8 @@ class ClientsControllerStoreTest extends TestCase{
 			],
 			'company_id'	=>	$company_id
 		];
-
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 		
 		$response->assertStatus(200);
 
@@ -211,17 +200,8 @@ class ClientsControllerStoreTest extends TestCase{
 
 	public function test_if_it_stores_client_with_valid_data_with_all_custom_fields():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
+		$c = $this->set_access($device);
 		$company_id = $this->set_default_company();
 
 		$country = Country::inRandomOrder()->first();
@@ -253,12 +233,7 @@ class ClientsControllerStoreTest extends TestCase{
 				'add_edit_page_order'	=>		$order,
 				'select_options'		=>		$options,
 				'company_id'			=>		$company_id
-			], [
-				'Accept' => 'application/json',
-				'Authorization' => 'Bearer '.$token,
-				'X-Refresh-Token' => $refresh_token,
-				'X-Device-Id' => $device
-			]);
+			], $c['headers']);
 			
 			$order++;
 			$response->assertStatus(200);
@@ -398,12 +373,7 @@ class ClientsControllerStoreTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 		
 		$response->assertStatus(200);
 
@@ -473,16 +443,10 @@ class ClientsControllerStoreTest extends TestCase{
 
 	public function test_if_it_stores_client_with_valid_data_with_all_custom_fields_with_some_deletions():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
+
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -515,12 +479,7 @@ class ClientsControllerStoreTest extends TestCase{
 				'add_edit_page_order'	=>		$order,
 				'select_options'		=>		$options,
 				'company_id'			=>		$company_id
-			], [
-				'Accept' => 'application/json',
-				'Authorization' => 'Bearer '.$token,
-				'X-Refresh-Token' => $refresh_token,
-				'X-Device-Id' => $device
-			]);
+			], $c['headers']);
 			
 			$order++;
 			$response->assertStatus(200);
@@ -546,12 +505,7 @@ class ClientsControllerStoreTest extends TestCase{
 		$response = $this->delete('/api/clients-custom-fields', [
 			'ids' => $delete_ids,
 			'company_id' => $company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 		
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
@@ -687,12 +641,7 @@ class ClientsControllerStoreTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 		
 		$response->assertStatus(200);
 
@@ -762,16 +711,10 @@ class ClientsControllerStoreTest extends TestCase{
 
 	public function test_if_it_stores_client_with_valid_data_with_all_custom_fields_with_all_deletions():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
+
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -804,12 +747,7 @@ class ClientsControllerStoreTest extends TestCase{
 				'add_edit_page_order'	=>		$order,
 				'select_options'		=>		$options,
 				'company_id'			=>		$company_id
-			], [
-				'Accept' => 'application/json',
-				'Authorization' => 'Bearer '.$token,
-				'X-Refresh-Token' => $refresh_token,
-				'X-Device-Id' => $device
-			]);
+			], $c['headers']);
 			
 			$order++;
 			$response->assertStatus(200);
@@ -832,12 +770,7 @@ class ClientsControllerStoreTest extends TestCase{
 		$response = $this->delete('/api/clients-custom-fields', [
 			'ids' => $delete_ids,
 			'company_id' => $company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 		
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
@@ -973,12 +906,7 @@ class ClientsControllerStoreTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 		
 		$response->assertStatus(200);
 

@@ -16,41 +16,14 @@ class CompanyControllerTest extends TestCase{
 	use RefreshDatabase, SetAccess;
 
     public function test_if_company_does_not_exist(): void{
-		
-        $user = User::factory()->create();
-		$access_token = $user->createToken(env("APP_NAME"));
-		$token_model = $access_token->accessToken;
-		$plain_text_token = $access_token->plainTextToken;
 
 		$device = 'device 123';
 
-		AccessTokenData::factory()->create([
-			'token_id' 		=> 	$token_model->id,
-			'user_id'		=> 	$user->id,
-			'device'		=>	$device,
-			'created_at'	=>	now()->subSeconds(3599)
-		]);
-
-		$refresh_token_plain_text = bin2hex(random_bytes(32));
-		$refresh_token_hash = hash('sha512', $refresh_token_plain_text);
-
-		RefreshToken::factory()->create([
-			'user_id'		=>	$user->id,
-			'refresh_token'	=>	$refresh_token_hash,
-			'device'		=>	$device,
-			'used'			=>	0,
-			'used_at'		=>	null,
-			'created_at'	=>	(now())->subSeconds(100)
-		]);
+		
 		
 		$response = $this->post('/api/check-company-exists', [
 			
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$plain_text_token,
-			'X-Refresh-Token' => $refresh_token_hash,
-			'X-Device-Id' => $device
-    	]);
+		], );
 
 		$response->assertStatus(200);
 		
