@@ -24,16 +24,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	
 	public function test_if_it_can_fetch_field_types() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -43,12 +37,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'company_id' 	=> $company_id
 		]);
 
-		$response = $this->withHeaders([
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer ' . $token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		])->get('/api/clients-custom-fields/fetch-field-types?' . $queryParams);
+		$response = $this->withHeaders($c['headers'])->get('/api/clients-custom-fields/fetch-field-types?' . $queryParams);
 
 		
 		$response->assertStatus(200);
@@ -59,16 +48,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_creating_new_client_custom_field_fails_invalid_data() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -80,12 +63,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'is_required'			=>		'',
 			'add_edit_page_order'	=>		'',
 			'company_id'				=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -94,17 +72,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	}
 
 	public function test_if_creating_new_client_custom_field_fails_invalid_data2() : void{
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -112,12 +83,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 		$response = $this->post('/api/clients-custom-fields', [
 			'company_id'				=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -127,16 +93,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_creating_new_client_custom_field_fails_invalid_data3() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -148,12 +108,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'is_required'			=>		'',
 			'add_edit_page_order'	=>		'456',
 			'company_id'				=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -163,16 +118,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_creating_new_client_custom_field_fails_invalid_input_field_id() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -184,12 +133,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'is_required'			=>		'true',
 			'add_edit_page_order'	=>		'5',
 			'company_id'			=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -198,18 +142,9 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	}
 
 	public function test_if_creating_new_client_custom_field_fails_invalid_data_for_select_and_multiselect() : void{
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
+		$c = $this->set_access($device);
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -225,12 +160,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'is_required'			=>		'true',
 			'add_edit_page_order'	=>		'5',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		],  $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -242,16 +172,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_creating_new_client_custom_field_fails_invalid_data_for_select_and_multiselect_2() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -269,12 +193,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'add_edit_page_order'	=>		'5',
 			'select_options'		=>		'  ',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -286,17 +205,8 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_creating_new_client_custom_field_success_1() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
+		$c = $this->set_access($device);
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -315,12 +225,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'add_edit_page_order'	=>		'5',
 			'select_options'		=>		'one, two, three',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
@@ -335,16 +240,9 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_creating_new_client_custom_field_success_2() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -364,12 +262,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'add_edit_page_order'	=>		'5',
 			'select_options'		=>		'one, two, three',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
@@ -384,17 +277,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_creating_new_client_custom_field_success_3() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
+		$c = $this->set_access($device);
+		
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -412,12 +298,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'is_required'			=>		'true',
 			'add_edit_page_order'	=>		'5',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
@@ -430,14 +311,11 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	}
 
-	private function getQuery($token, $refresh_token, $device, $queryParams, $url = '/api/clients-custom-fields?'){
+	private function getQuery($device, $queryParams, $url = '/api/clients-custom-fields?'){
 
-		$response = $this->withHeaders([
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer ' . $token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		])->get($url . $queryParams);
+		$c = $this->set_access($device);
+
+		$response = $this->withHeaders($c['headers'])->get($url . $queryParams);
 
 		return $response;
 
@@ -445,16 +323,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_table_does_not_load_because_of_empty(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
 
 		$company_id = $this->set_default_company();
 
@@ -465,7 +334,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'default_per_page'	=>	15
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -486,11 +355,6 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 		
 		ClientsCustomField::truncate();
@@ -503,7 +367,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'default_per_page'	=>	15
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -518,16 +382,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_table_filters_for_searched_term(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
 
 		$company_id = $this->set_default_company();
 
@@ -549,7 +404,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'searched_term'		=>	'BLATEST'
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -564,16 +419,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_table_filters_for_searched_term_not_matched(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
 
 		$company_id = $this->set_default_company();
 
@@ -592,7 +438,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'searched_term'		=>	'test lab123'
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -607,16 +453,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_table_filters_for_current_page(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
 
 		$company_id = $this->set_default_company();
 
@@ -636,7 +473,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'current_page'		=>	2
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -655,18 +492,12 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_fetching_fails_with_invalid_clients_custom_field_id() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
+
+		$c = $this->set_access($device);
 
 		ClientsCustomField::truncate();
 
@@ -674,12 +505,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'company_id' 	=> $company_id
 		]);
 
-		$response = $this->withHeaders([
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer ' . $token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		])->get('/api/clients-custom-fields/200?' . $queryParams);
+		$response = $this->withHeaders($c['headers'])->get('/api/clients-custom-fields/200?' . $queryParams);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -689,16 +515,9 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_fetching_success_with_valid_clients_custom_field_id() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -713,12 +532,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'company_id' 	=> $company_id
 		]);
 
-		$response = $this->withHeaders([
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer ' . $token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		])->get('/api/clients-custom-fields/500?' . $queryParams);
+		$response = $this->withHeaders($c['headers'])->get('/api/clients-custom-fields/500?' . $queryParams);
 
 		$response->assertStatus(200);
 
@@ -733,16 +547,9 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_updating_new_client_custom_field_fails_invalid_id() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -759,12 +566,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'add_edit_page_order'		=>		'',
 			'column_order'				=>		'',
 			'company_id'				=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -774,17 +576,8 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_updating_new_client_custom_field_fails_invalid_data() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
+		$c = $this->set_access($device);
 		$company_id = $this->set_default_company();
 
 		ClientsCustomField::factory()->create([
@@ -800,12 +593,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'add_edit_page_order'		=>		'',
 			'column_order'				=>		'',
 			'company_id'				=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -815,16 +603,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	
 	public function test_if_updating_new_client_custom_field_fails_invalid_data2() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -835,12 +617,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 		$response = $this->patch('/api/clients-custom-fields/150', [
 			'company_id'				=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -849,18 +626,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	}
 	
 	public function test_if_updating_new_client_custom_field_fails_invalid_data3() : void{
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
+		$c = $this->set_access($device);
 		$company_id = $this->set_default_company();
 
 		ClientsCustomField::factory()->create([
@@ -876,12 +645,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'add_edit_page_order'	=>		'456',
 			'column_order'			=>		'',
 			'company_id'				=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -892,16 +656,9 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	
 	public function test_if_updating_new_client_custom_field_fails_invalid_input_field_id() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -920,12 +677,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'add_edit_page_order'	=>		'5',
 			'column_order'			=>		'10',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -936,16 +688,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	
 	public function test_if_updating_new_client_custom_field_fails_with_invalid_data_for_select_multiselect() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
+
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -970,12 +716,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'is_required'			=>		'true',
 			'add_edit_page_order'	=>		'5',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -986,16 +727,9 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	
 	public function test_if_updating_new_client_custom_field_fails_invalid_data_for_select_and_multiselect_2() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1021,12 +755,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'add_edit_page_order'	=>		'5',
 			'select_options'		=>		'  ',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -1037,16 +766,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	
 	public function test_if_updating_new_client_custom_field_success_1() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1078,12 +801,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'add_edit_page_order'	=>		'5',
 			'select_options'		=>		'one, two, three',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
@@ -1102,17 +820,9 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	
 	public function test_if_updating_new_client_custom_field_success_2() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
+		$c = $this->set_access($device);
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -1144,12 +854,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'add_edit_page_order'	=>		'5',
 			'select_options'		=>		'one, two, three',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
@@ -1166,17 +871,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	}
 	
 	public function test_if_updating_new_client_custom_field_success_3() : void{
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1208,12 +906,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'add_edit_page_order'	=>		'5',
 			'select_options'		=>		'one, two, three',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 		
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
@@ -1231,16 +924,9 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_it_fails_if_label_length_greater_than_allowed() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1268,12 +954,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'add_edit_page_order'	=>		'5',
 			'select_options'		=>		'one, two, three',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -1286,16 +967,9 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_if_label_already_exists_fails_to_save() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1322,12 +996,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'add_edit_page_order'	=>		'5',
 			'select_options'		=>		'one, two, three',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -1336,17 +1005,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	}
 
 	public function test_if_label_already_exists_fails_to_update() : void{
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1380,12 +1042,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'add_edit_page_order'	=>		'5',
 			'select_options'		=>		'one, two, three',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -1395,17 +1052,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 
 	public function test_if_label_has_invalid_chars_fails_to_save() : void{
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1432,12 +1082,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'add_edit_page_order'	=>		'5',
 			'select_options'		=>		'one, two, three',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -1446,17 +1091,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	}
 
 	public function test_if_label_has_invalid_chars_fails_to_update() : void{
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1490,12 +1128,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'add_edit_page_order'	=>		'5',
 			'select_options'		=>		'one, two, three',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -1504,17 +1137,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	}
 
 	public function test_custom_fields_column_data_types() : void{
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 		
 		CustomFieldType::truncate();
 
@@ -1551,12 +1177,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 				'add_edit_page_order'	=>		$order,
 				'select_options'		=>		$options,
 				'company_id'			=>		$company_id
-			], [
-				'Accept' => 'application/json',
-				'Authorization' => 'Bearer '.$token,
-				'X-Refresh-Token' => $refresh_token,
-				'X-Device-Id' => $device
-			]);
+			], $c['headers']);
 			
 			$order++;
 			$response->assertStatus(200);
@@ -1597,17 +1218,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	}
 
 	public function test_deletion_without_ids_provided_1() : void{
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1636,12 +1250,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		$response = $this->delete('/api/clients-custom-fields', [
 			'ids' => [],
 			'company_id' => $company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -1650,17 +1259,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	}
 
 	public function test_deletion_without_ids_provided_2() : void{
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1672,28 +1274,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		]);
 		
 		ClientsCustomField::truncate();
-		// ClientsCustomField::factory()->create([
-		// 	'id'							=>	150,
-		// 	'company_id'					=>	$company_id,
-		// 	'label'							=>	'sample label here'
-		// ]);
-
-		// ClientsCustomField::factory()->create([
-		// 	'id'							=>	151,
-		// 	'company_id'					=>	$company_id,
-		// 	'label'							=>	'sample label here 2'
-		// ]);
-
-		//$select_field = CustomFieldType::where('input_type', '=', 'email')->first();
 		
 		$response = $this->delete('/api/clients-custom-fields', [
 			'company_id' => $company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -1703,16 +1287,9 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_deletion_with_one_id_provided() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1732,12 +1309,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 			'is_required'			=>		'true',
 			'add_edit_page_order'	=>		'5',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
 		$this->assertEquals('created_success', $response['validity']);
@@ -1748,12 +1320,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		$response = $this->delete('/api/clients-custom-fields', [
 			'ids' => [$c_field->id],
 			'company_id' => $company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 		
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
@@ -1765,16 +1332,9 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 	public function test_deletion_with_multiple_ids_provided() : void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1815,12 +1375,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 				'is_required'			=>		'true',
 				'add_edit_page_order'	=>		'5',
 				'company_id'			=>		$company_id
-			], [
-				'Accept' => 'application/json',
-				'Authorization' => 'Bearer '.$token,
-				'X-Refresh-Token' => $refresh_token,
-				'X-Device-Id' => $device
-			]);
+			], $c['headers']);
 			$response->assertStatus(200);
 			$this->assertArrayHasKey('validity', $response);
 			$this->assertEquals('created_success', $response['validity']);
@@ -1839,12 +1394,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		$response = $this->delete('/api/clients-custom-fields', [
 			'ids' => $ids,
 			'company_id' => $company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 		
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
