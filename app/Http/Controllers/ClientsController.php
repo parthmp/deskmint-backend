@@ -59,7 +59,7 @@ class ClientsController extends Controller{
 			'd M Y h:i A',      // 20 Jan 2025 05:04 PM
 			'Y-m-d H:i',        // 2025-01-20 17:04
 			'd-M-Y H:i',        // 20-Jan-2025 17:04
-			'd M Y H:i'       // 20 Jan 2025 17:04
+			'd M Y H:i'       	// 20 Jan 2025 17:04
 		];
 
 		$rows = [];
@@ -1201,18 +1201,18 @@ class ClientsController extends Controller{
 	}
 
 	public function update(Request $request){
-
+		
 		return $this->saveOrUpdateClient($request, false);
 
 	}
 
 	private function saveOrUpdateClient(Request $request, $add = true){
-
+		
 		if(!$add){
 
 			$client_id = Sanitize::input($request->segment(3));
 			$client = Client::where('id', '=', $client_id)->first();
-
+			
 			if(!$client){
 				return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 			}
