@@ -19,68 +19,13 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
+use Tests\Traits\CustomFields;
+use Tests\Traits\DefaultCompany;
+use Tests\Traits\SetAccess;
 
 class ClientsControllerUpdateTest extends TestCase{
 
-	use RefreshDatabase;
-
-    private function set_access(User $user, string $device) :Array{
-
-		$access_token = $user->createToken(env("APP_NAME"));
-		$token_model = $access_token->accessToken;
-		$plain_text_token = $access_token->plainTextToken;
-
-		AccessTokenData::factory()->create([
-			'token_id' 		=> 	$token_model->id,
-			'user_id'		=> 	$user->id,
-			'device'		=>	$device,
-			'created_at'	=>	now()->subSeconds(3599)
-		]);
-
-		$refresh_token_plain_text = bin2hex(random_bytes(32));
-		$refresh_token_hash = hash('sha512', $refresh_token_plain_text);
-
-		RefreshToken::factory()->create([
-			'user_id'		=>	$user->id,
-			'refresh_token'	=>	$refresh_token_hash,
-			'device'		=>	$device,
-			'used'			=>	0,
-			'used_at'		=>	null,
-			'created_at'	=>	(now())->subSeconds(100)
-		]);
-
-		return [
-			'token'				=>		$plain_text_token,
-			'refresh_token'		=>		$refresh_token_hash
-		];
-
-	}
-
-	private function set_default_company() : int{
-
-		$company = Company::factory()->create([
-			'company_name' 	=>  'ABC Company',
-			'default'		=>	1
-		]);
-
-		return $company->id;
-
-	}
-
-	private function setCustomFieldTypes() : void{
-
-		/* set custom field types */
-		foreach(config('global.field_types') as $field){
-
-			CustomFieldType::factory()->create([
-				'input_type'	=>	$field,
-				'input_name'	=>	'client '.$field
-			]);
-
-		}
-		
-
-	}
+	use RefreshDatabase, SetAccess, DefaultCompany, CustomFields;
 
 	private function storePostData($company_id){
 
@@ -248,10 +193,10 @@ class ClientsControllerUpdateTest extends TestCase{
 		$post_data = [
 			'personal_info'	=>	[
 				'first_name'	=>	[
-					'value'		=>	'test firstname'
+					'value'		=>	'test firstname u'
 				],
 				'last_name'		=>	[
-					'value'		=>	'test lastname'
+					'value'		=>	'test lastname u'
 				],
 				'email'		=>	[
 					'value'		=>	'some@thing.com'
@@ -261,13 +206,13 @@ class ClientsControllerUpdateTest extends TestCase{
 				[
 					'id'			=>	500,
 					'first_name'	=>	[
-						'value'		=>	'test firstname 500'
+						'value'		=>	'test firstname 500 u'
 					],
 					'last_name'		=>	[
-						'value'		=>	'test last name 500'
+						'value'		=>	'test last name 500 u'
 					],
 					'email'			=>	[
-						'value'		=>	'some@th500ing.com'
+						'value'		=>	'some@th500ingu.com'
 					],
 					'phone'			=>	[
 						'value'		=>	''
@@ -276,34 +221,34 @@ class ClientsControllerUpdateTest extends TestCase{
 				[
 					'id'			=>	600,
 					'first_name'	=>	[
-						'value'		=>	'test firstname 600'
+						'value'		=>	'test firstname 600 u'
 					],
 					'last_name'		=>	[
-						'value'		=>	'test last name 600'
+						'value'		=>	'test last name 600 u'
 					],
 					'email'			=>	[
-						'value'		=>	'some@th600ing.com'
+						'value'		=>	'some@th600ingu.com'
 					],
 					'phone'			=>	[
-						'value'		=>	1234567600
+						'value'		=>	1234567609
 					]
 				]
 			],
 			'billing_info'	=>	[
 				'street'	=>	[
-					'value'		=>	'test street'
+					'value'		=>	'test street u'
 				],
 				'apt'	=>	[
-					'value'		=>	'apt here'
+					'value'		=>	'apt here u'
 				],
 				'city'	=>	[
-					'value'		=>	'test city here'
+					'value'		=>	'test city here u'
 				],
 				'state'	=>	[
-					'value'		=>	'test state'
+					'value'		=>	'test state u'
 				],
 				'postal_code'	=>	[
-					'value'		=>	'123'
+					'value'		=>	'1239'
 				],
 				'country'	=>	[
 					'value'		=>	$country->id
@@ -311,19 +256,19 @@ class ClientsControllerUpdateTest extends TestCase{
 			],
 			'shipping_info'	=>	[
 				'street'	=>	[
-					'value'		=>	'test street'
+					'value'		=>	'test street u'
 				],
 				'apt'	=>	[
-					'value'		=>	'apt here'
+					'value'		=>	'apt here u'
 				],
 				'city'	=>	[
-					'value'		=>	'test city here s'
+					'value'		=>	'test city here s u'
 				],
 				'state'	=>	[
-					'value'		=>	'test state s'
+					'value'		=>	'test state s u'
 				],
 				'postal_code'	=>	[
-					'value'		=>	'1234'
+					'value'		=>	'12349'
 				],
 				'country'	=>	[
 					'value'		=>	$country->id
@@ -347,7 +292,7 @@ class ClientsControllerUpdateTest extends TestCase{
 					'value'	=>	1
 				],
 				'size'	=>	[
-					'value'	=>	'10-50'
+					'value'	=>	'10-100'
 				]
 			],
 			'company_id'	=>	$company_id
@@ -368,14 +313,221 @@ class ClientsControllerUpdateTest extends TestCase{
 		$client = Client::orderBy('id', 'desc')->first();
 		
 		$this->assertEquals($company_id, $client->company_id);
-		$this->assertEquals('test lastname', $client->last_name);
-		$this->assertEquals('123', $client->billing_postal_code);
-		$this->assertEquals('1234', $client->shipping_postal_code);
+		$this->assertEquals('test lastname u', $client->last_name);
+		$this->assertEquals('1239', $client->billing_postal_code);
+		$this->assertEquals('12349', $client->shipping_postal_code);
 		$this->assertEquals($currency->id, $client->currency_id);
 		$this->assertEquals($industry->id, $client->industry_id);
-		$this->assertEquals('test state', $client->billing_state);
-		$this->assertEquals('test city here s', $client->shipping_city);
-		$this->assertEquals('10-50', $client->size);
+		$this->assertEquals('test state u', $client->billing_state);
+		$this->assertEquals('test city here s u', $client->shipping_city);
+		$this->assertEquals('10-100', $client->size);
+		$this->assertEquals(7, $client->payment_terms);
+
+		/* test for contact info */
+		$client_contact_info = ClientContactInfo::where('client_id', '=', $client->id)->first();
+		$this->assertNotEmpty($client_contact_info);
+		
+		$this->assertEquals('test firstname 500', $client_contact_info->first_name);
+		$this->assertEquals('test last name 500', $client_contact_info->last_name);
+		$this->assertEquals('some@th500ing.com', $client_contact_info->email);
+		$this->assertEmpty($client_contact_info->phone);
+		
+		/* check for custom fields here */
+		$columns_clients_flat = Schema::getColumnListing('clients_flat');
+		$this->assertEquals(1, (count($columns_clients_flat)-3));
+
+		/* now make sure row inserted in client_flat table */
+		$clients_flat_row = DB::table('clients_flat')->where('client_id', '=', $client->id)->first();
+		$this->assertNotEmpty($clients_flat_row);
+
+		/* validate all inputs from clients_flat */
+		$field_values = ClientCustomFieldValue::where('client_id', '=', $client->id)->orderBy('id', 'asc')->get();
+		$this->assertEmpty($field_values);
+
+
+
+	}
+
+	public function test_if_it_updates_the_client_with_partial_custom_fields():void{
+
+		Client::truncate();
+		ClientsCustomField::truncate();
+		ClientCustomFieldValue::truncate();
+
+		/**/
+		$user = User::factory()->create([
+			'user_type'		=>		config('global.user_types.admin')
+		]);
+		
+		$device = 'device 123';
+
+		$access = $this->set_access($user, $device);
+		
+		$token = $access['token'];
+		$refresh_token = $access['refresh_token'];
+
+		$company_id = $this->set_default_company();
+
+		/**/
+		/* insert */
+		$response = $this->post('/api/manage-clients', $this->storePostData($company_id), [
+        	'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+    	]);
+		
+		$response->assertStatus(200);
+
+		$this->arrayHasKey('validity', $response);
+		$this->assertEquals('client_saved', $response['validity']);
+
+		$client = Client::orderBy('id', 'desc')->first();
+		/**/
+
+		/* add a few custom fields */
+
+
+
+		/* */
+
+		$country = Country::inRandomOrder()->first();
+		$this->setCustomFieldTypes();
+		
+		$currency = Currency::inRandomOrder()->first();
+		$industry = Industry::inRandomOrder()->first();
+		
+		$post_data = [
+			'personal_info'	=>	[
+				'first_name'	=>	[
+					'value'		=>	'test firstname u'
+				],
+				'last_name'		=>	[
+					'value'		=>	'test lastname u'
+				],
+				'email'		=>	[
+					'value'		=>	'some@thing.com'
+				]
+			],
+			'contact_info'	=>	[
+				[
+					'id'			=>	500,
+					'first_name'	=>	[
+						'value'		=>	'test firstname 500 u'
+					],
+					'last_name'		=>	[
+						'value'		=>	'test last name 500 u'
+					],
+					'email'			=>	[
+						'value'		=>	'some@th500ingu.com'
+					],
+					'phone'			=>	[
+						'value'		=>	''
+					]
+				],
+				[
+					'id'			=>	600,
+					'first_name'	=>	[
+						'value'		=>	'test firstname 600 u'
+					],
+					'last_name'		=>	[
+						'value'		=>	'test last name 600 u'
+					],
+					'email'			=>	[
+						'value'		=>	'some@th600ingu.com'
+					],
+					'phone'			=>	[
+						'value'		=>	1234567609
+					]
+				]
+			],
+			'billing_info'	=>	[
+				'street'	=>	[
+					'value'		=>	'test street u'
+				],
+				'apt'	=>	[
+					'value'		=>	'apt here u'
+				],
+				'city'	=>	[
+					'value'		=>	'test city here u'
+				],
+				'state'	=>	[
+					'value'		=>	'test state u'
+				],
+				'postal_code'	=>	[
+					'value'		=>	'1239'
+				],
+				'country'	=>	[
+					'value'		=>	$country->id
+				]
+			],
+			'shipping_info'	=>	[
+				'street'	=>	[
+					'value'		=>	'test street u'
+				],
+				'apt'	=>	[
+					'value'		=>	'apt here u'
+				],
+				'city'	=>	[
+					'value'		=>	'test city here s u'
+				],
+				'state'	=>	[
+					'value'		=>	'test state s u'
+				],
+				'postal_code'	=>	[
+					'value'		=>	'12349'
+				],
+				'country'	=>	[
+					'value'		=>	$country->id
+				]
+			],
+			'custom_fields' => [],
+			'settings'		=>	[
+				'currency'	=>	[
+					'value'	=>	$currency->id
+				],
+				'industry'	=>	[
+					'value'	=>	$industry->id
+				],
+				'payment_terms'	=>	[
+					'value'	=>	7
+				],
+				'quote_valid'	=>	[
+					'value'	=>	14
+				],
+				'send_reminder'	=>	[
+					'value'	=>	1
+				],
+				'size'	=>	[
+					'value'	=>	'10-100'
+				]
+			],
+			'company_id'	=>	$company_id
+		];
+		
+		$response = $this->patch('/api/manage-clients/'.$client->id, $post_data, [
+        	'Accept' => 'application/json',
+			'Authorization' => 'Bearer '.$token,
+			'X-Refresh-Token' => $refresh_token,
+			'X-Device-Id' => $device
+    	]);
+		
+		$response->assertStatus(200);
+		$this->arrayHasKey('validity', $response);
+		$this->assertEquals('client_saved', $response['validity']);
+
+		/* test for a few clients fields */
+		$client = Client::orderBy('id', 'desc')->first();
+		
+		$this->assertEquals($company_id, $client->company_id);
+		$this->assertEquals('test lastname u', $client->last_name);
+		$this->assertEquals('1239', $client->billing_postal_code);
+		$this->assertEquals('12349', $client->shipping_postal_code);
+		$this->assertEquals($currency->id, $client->currency_id);
+		$this->assertEquals($industry->id, $client->industry_id);
+		$this->assertEquals('test state u', $client->billing_state);
+		$this->assertEquals('test city here s u', $client->shipping_city);
+		$this->assertEquals('10-100', $client->size);
 		$this->assertEquals(7, $client->payment_terms);
 
 		/* test for contact info */
