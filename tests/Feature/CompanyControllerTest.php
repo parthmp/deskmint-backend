@@ -9,10 +9,11 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
+use Tests\Traits\SetAccess;
 
 class CompanyControllerTest extends TestCase{
 
-	use RefreshDatabase;
+	use RefreshDatabase, SetAccess;
 
     public function test_if_company_does_not_exist(): void{
 		

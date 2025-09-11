@@ -7,9 +7,8 @@ use App\Models\RefreshToken;
 use App\Models\User;
 
 trait SetAccess{
-	
-	protected function set_access(User $user, string $device) :Array{
 
+	protected function set_tokens(User $user, string $device):array{
 		$access_token = $user->createToken(env("APP_NAME"));
 		$token_model = $access_token->accessToken;
 		$plain_text_token = $access_token->plainTextToken;
@@ -34,9 +33,47 @@ trait SetAccess{
 		]);
 
 		return [
-			'token'				=>		$plain_text_token,
-			'refresh_token'		=>		$refresh_token_hash
+			'token'			=>	$plain_text_token,
+			'refresh_token'	=>	$refresh_token_hash
 		];
 
 	}
+
+	protected function userHeaders($tokens, $device){
+		return 	[
+					'Accept' => 'application/json',
+					'Authorization' => 'Bearer '.$tokens['token'],
+					'X-Refresh-Token' => $tokens['refresh_token'],
+					'X-Device-Id' => $device
+		];
+	}
+	
+	protected function set_access(string $device, $user = 'admin') :Array{
+
+		if($user === 'admin'){
+			$user = User::factory()->create([
+				'user_type'		=>		config('global.user_types.admin')
+			]);
+		}else{
+
+			/* handle other users here */
+
+		}
+		
+		$tokens = $this->set_tokens($user, $device);
+
+		return [
+			'headers' => $this->userHeaders($tokens, $device),
+			'user'	=>	$user
+		];
+
+	}
+
+	protected function headers(User $user, string $device):array{
+
+		$tokens = $this->set_tokens($user, $device);
+		return $this->userHeaders($tokens, $device);
+		
+	}
+
 }

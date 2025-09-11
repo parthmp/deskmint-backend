@@ -19,4 +19,8 @@ trait CustomFields{
 		}
 
 	}
+
+	protected function addAllCustomFields(){
+		
+	}
 }

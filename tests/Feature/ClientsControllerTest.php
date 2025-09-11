@@ -261,28 +261,6 @@ class ClientsControllerTest extends TestCase
 			
 			$this->assertEmpty($r_field['value']);
 
-			// if($r_field['custom_field_type']['input_type'] === config('global.field_types')[0]){ /* text */
-			// 	$this->assertEmpty($r_field['value']);
-			// }else if($r_field['custom_field_type']['input_type'] === config('global.field_types')[1]){ /* textarea */
-			// 	$this->assertEmpty($r_field['value']);
-			// }else if($r_field['custom_field_type']['input_type'] === config('global.field_types')[2]){ /* email */
-			// 	$this->assertEmpty($r_field['value']);
-			// }else if($r_field['custom_field_type']['input_type'] === config('global.field_types')[3]){ /* select */
-			// 	$this->assertEmpty($r_field['value']);
-			// }else if($r_field['custom_field_type']['input_type'] === config('global.field_types')[4]){ /* number */
-			// 	$this->assertEmpty($r_field['value']);
-			// }else if($r_field['custom_field_type']['input_type'] === config('global.field_types')[5]){ /* date */
-			// 	$this->assertEmpty($r_field['value']);
-			// }else if($r_field['custom_field_type']['input_type'] === config('global.field_types')[6]){ /* time */
-			// 	$this->assertEmpty($r_field['value']);
-			// }else if($r_field['custom_field_type']['input_type'] === config('global.field_types')[7]){ /* datetime */
-			// 	$this->assertEmpty($r_field['value']);
-			// }else if($r_field['custom_field_type']['input_type'] === config('global.field_types')[8]){ /* telephone */
-			// 	$this->assertEmpty($r_field['value']);
-			// }else if($r_field['custom_field_type']['input_type'] === config('global.field_types')[9]){ /* multiselect */
-			// 	$this->assertEmpty($r_field['value']);
-			// }
-
 		}
 
 	}

@@ -26,23 +26,13 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		$queryParams = http_build_query([
 			'company_id' 	=> $company_id
 		]);
 
-		$response = $this->withHeaders([
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer ' . $token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		])->get('/api/manage-field-types/fetch-input-types?' . $queryParams);
+		$response = $this->withHeaders($this->set_access($user, $device))->get('/api/manage-field-types/fetch-input-types?' . $queryParams);
 
 		
 		$response->assertStatus(200);
@@ -62,23 +52,13 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		$response = $this->post('/api/manage-field-types', [
 			'input_type'				=>	'',
 			'input_name'				=>	'',
 			'company_id'				=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $this->set_access($user, $device));
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -94,23 +74,13 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		$response = $this->post('/api/manage-field-types', [
 			'input_type'				=>	'something',
 			'input_name'				=>	'testname',
 			'company_id'				=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $this->set_access($user, $device));
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -126,12 +96,7 @@ class FieldTypesControllerTest extends TestCase{
 		]);
 		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
+		
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -140,12 +105,7 @@ class FieldTypesControllerTest extends TestCase{
 			'input_type'				=>	'datetime',
 			'input_name'				=>	'test datetime field',
 			'company_id'				=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $this->set_access($user, $device));
 
 		$response->assertStatus(200);
 
@@ -160,14 +120,9 @@ class FieldTypesControllerTest extends TestCase{
 		
 	}
 
-	private function getQuery($token, $refresh_token, $device, $queryParams, $url = '/api/manage-field-types?'){
+	private function getQuery($user, $device, $queryParams, $url = '/api/manage-field-types?'){
 
-		$response = $this->withHeaders([
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer ' . $token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		])->get($url . $queryParams);
+		$response = $this->withHeaders($this->set_access($user, $device))->get($url . $queryParams);
 
 		return $response;
 
@@ -181,11 +136,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -195,7 +145,7 @@ class FieldTypesControllerTest extends TestCase{
 			'default_per_page'	=>	15
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($user, $device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -216,11 +166,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		/* add fake data */
@@ -234,7 +179,7 @@ class FieldTypesControllerTest extends TestCase{
 			'default_per_page'	=>	15
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($user, $device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -255,11 +200,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		/* add fake data */
@@ -278,7 +218,7 @@ class FieldTypesControllerTest extends TestCase{
 			'searched_term'		=>	'BLATEST'
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($user, $device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -299,11 +239,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		/* add fake data */
@@ -322,7 +257,7 @@ class FieldTypesControllerTest extends TestCase{
 			'searched_term'		=>	'BLATEST4'
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($user, $device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -342,11 +277,6 @@ class FieldTypesControllerTest extends TestCase{
 		]);
 		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
 
 		$company_id = $this->set_default_company();
 
@@ -368,7 +298,7 @@ class FieldTypesControllerTest extends TestCase{
 			'current_page'		=>	2
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($user, $device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -393,11 +323,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		/* add fake data */
@@ -419,7 +344,7 @@ class FieldTypesControllerTest extends TestCase{
 			'current_page'		=>	2
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($user, $device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -444,11 +369,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		/* add fake data */
@@ -470,7 +390,7 @@ class FieldTypesControllerTest extends TestCase{
 			'searched_term'		=>	'BLABLA'
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($user, $device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -496,11 +416,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		/* add fake data */
@@ -521,7 +436,7 @@ class FieldTypesControllerTest extends TestCase{
 			'per_page'			=>	5
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($user, $device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -548,11 +463,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		/* add fake data */
@@ -577,7 +487,7 @@ class FieldTypesControllerTest extends TestCase{
 			]
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($user, $device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -608,12 +518,6 @@ class FieldTypesControllerTest extends TestCase{
 		]);
 		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -636,7 +540,7 @@ class FieldTypesControllerTest extends TestCase{
 			]
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($user, $device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -668,11 +572,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		/* add fake data */
@@ -697,7 +596,7 @@ class FieldTypesControllerTest extends TestCase{
 			]
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($user, $device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -730,11 +629,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -757,7 +651,7 @@ class FieldTypesControllerTest extends TestCase{
 			]
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($user, $device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -792,11 +686,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -827,7 +716,7 @@ class FieldTypesControllerTest extends TestCase{
 			]
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($user, $device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -859,11 +748,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -894,7 +778,7 @@ class FieldTypesControllerTest extends TestCase{
 			]
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($user, $device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -927,11 +811,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -954,7 +833,7 @@ class FieldTypesControllerTest extends TestCase{
 			]
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams);
+		$response = $this->getQuery($user, $device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -988,11 +867,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -1001,7 +875,7 @@ class FieldTypesControllerTest extends TestCase{
 			'company_id' 		=> $company_id
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams, '/api/manage-field-types/100?');
+		$response = $this->getQuery($user, $device, $queryParams, '/api/manage-field-types/100?');
 
 		$response->assertStatus((int)config('global.error_code'));
 		
@@ -1019,11 +893,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -1034,7 +903,7 @@ class FieldTypesControllerTest extends TestCase{
 			'company_id' 		=> $company_id
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $queryParams, '/api/manage-field-types/1?');
+		$response = $this->getQuery($user, $device, $queryParams, '/api/manage-field-types/1?');
 
 		$response->assertStatus(200);
 		
@@ -1053,11 +922,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -1066,12 +930,7 @@ class FieldTypesControllerTest extends TestCase{
 			'input_type'	=>	'',
 			'input_name'	=>	'',
 			'company_id'	=>	$company_id
-		], [
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		]);
+		], $this->set_access($user, $device));
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -1088,11 +947,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -1103,12 +957,7 @@ class FieldTypesControllerTest extends TestCase{
 			'input_type'	=>	'',
 			'input_name'	=>	'test',
 			'company_id'	=>	$company_id
-		], [
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		]);
+		], $this->set_access($user, $device));
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -1124,12 +973,6 @@ class FieldTypesControllerTest extends TestCase{
 		]);
 		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -1140,12 +983,7 @@ class FieldTypesControllerTest extends TestCase{
 			'input_type'	=>	'bla',
 			'input_name'	=>	'',
 			'company_id'	=>	$company_id
-		], [
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		]);
+		], $this->set_access($user, $device));
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -1163,11 +1001,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -1178,12 +1011,7 @@ class FieldTypesControllerTest extends TestCase{
 			'input_type'	=>	'datetime',
 			'input_name'	=>	'blatesthere',
 			'company_id'	=>	$company_id
-		], [
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		]);
+		], $this->set_access($user, $device));
 
 		$response->assertStatus(200);
 
@@ -1208,22 +1036,12 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		$response = $this->delete('/api/manage-field-types', [
 			'ids'			=>	'',
 			'company_id'	=>	$company_id
-		], [
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		]);
+		], $this->set_access($user, $device));
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -1240,11 +1058,6 @@ class FieldTypesControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -1254,12 +1067,7 @@ class FieldTypesControllerTest extends TestCase{
 				'bla', 'whatever'
 			],
 			'company_id'	=>	$company_id
-		], [
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		]);
+		], $this->set_access($user, $device));
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -1275,12 +1083,7 @@ class FieldTypesControllerTest extends TestCase{
 		]);
 		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
+		
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -1306,12 +1109,7 @@ class FieldTypesControllerTest extends TestCase{
 		$response = $this->delete('/api/manage-field-types', [
 			'ids'			=>	$to_be_deleted_ids,
 			'company_id'	=>	$company_id
-		], [
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		]);
+		], $this->set_access($user, $device));
 
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);

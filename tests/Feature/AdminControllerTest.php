@@ -35,29 +35,18 @@ class AdminControllerTest extends TestCase{
 
 	public function test_if_authorized_admin_can_fetch_admins(): void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
+
+		$ac = $this->set_access($device);
+		$headers = $ac['headers'];
 
 		$queryParams = http_build_query([
 			'company_id' 	=> $company_id
 		]);
 
-		$response = $this->withHeaders([
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer ' . $token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		])->get('/api/manage-admins?' . $queryParams);
+		$response = $this->withHeaders($headers)->get('/api/manage-admins?' . $queryParams);
 
 		$response->assertStatus(200);
 		
@@ -70,17 +59,12 @@ class AdminControllerTest extends TestCase{
 
 	public function test_if_authorized_admin_fails_to_create_admin_with_invalid_data(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
+		$ac = $this->set_access($device);
+		$headers = $ac['headers'];
 
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
+		
 		$company_id = $this->set_default_company();
 
 		$response = $this->post('/api/manage-admins', [
@@ -89,12 +73,7 @@ class AdminControllerTest extends TestCase{
 			'password'			=>	'',
 			'confirm_password'	=>	'',
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $headers);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -104,16 +83,12 @@ class AdminControllerTest extends TestCase{
 
 	public function test_if_authorized_admin_fails_to_create_admin_with_invalid_data_2(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
+	
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
+		$ac = $this->set_access($device);
+		$headers = $ac['headers'];
 
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
 
 		$company_id = $this->set_default_company();
 
@@ -123,12 +98,7 @@ class AdminControllerTest extends TestCase{
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password123',
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $headers);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -138,17 +108,13 @@ class AdminControllerTest extends TestCase{
 
 	public function test_if_authorized_admin_fails_to_create_admin_with_invalid_data_3(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
+		$ac = $this->set_access($device);
+		$headers = $ac['headers'];
 
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
+		
 		$company_id = $this->set_default_company();
 
 		$response = $this->post('/api/manage-admins', [
@@ -157,12 +123,7 @@ class AdminControllerTest extends TestCase{
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password1234',
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $headers);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -179,11 +140,6 @@ class AdminControllerTest extends TestCase{
 
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
 		$company_id = $this->set_default_company();
 
 		$response = $this->post('/api/manage-admins', [
@@ -192,12 +148,7 @@ class AdminControllerTest extends TestCase{
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password123',
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $this->headers($user, $device));
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -207,18 +158,11 @@ class AdminControllerTest extends TestCase{
 
 	public function test_if_authorized_admin_can_create_admin(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
+		
 		$company_id = $this->set_default_company();
+		$c =   $this->set_access($device);
 
 		$response = $this->post('/api/manage-admins', [
 			'name'				=>	'Jack',
@@ -226,12 +170,7 @@ class AdminControllerTest extends TestCase{
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password123',
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
@@ -241,16 +180,10 @@ class AdminControllerTest extends TestCase{
 
 	public function test_if_admin_fails_to_fetch_user_with_invalid_id(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c =  $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -258,12 +191,7 @@ class AdminControllerTest extends TestCase{
 			'company_id'	=>	$company_id
 		]);
 
-		$response = $this->withHeaders([
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer ' . $token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		])->get('/api/manage-admins/100?' . $queryParams);
+		$response = $this->withHeaders($c['headers'])->get('/api/manage-admins/100?' . $queryParams);
 
 		$response->assertStatus((int)config('global.error_code'));
 		
@@ -276,16 +204,9 @@ class AdminControllerTest extends TestCase{
 
 	public function test_if_admin_can_fetch_user_with_valid_id(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -293,12 +214,7 @@ class AdminControllerTest extends TestCase{
 			'company_id' 	=> $company_id
 		]);
 
-		$response = $this->withHeaders([
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer ' . $token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		])->get('/api/manage-admins/'.$user->id.'?' . $queryParams);
+		$response = $this->withHeaders($c['headers'])->get('/api/manage-admins/'.$c['user']->id.'?' . $queryParams);
 
 		$response->assertStatus(200);
 		
@@ -314,16 +230,9 @@ class AdminControllerTest extends TestCase{
 
 	public function test_if_authorized_admin_fails_to_update_admin_with_invalid_id(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -333,12 +242,7 @@ class AdminControllerTest extends TestCase{
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password123',
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -361,10 +265,7 @@ class AdminControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$headers = $this->headers($user, $device);
 
 		$company_id = $this->set_default_company();
 
@@ -374,12 +275,7 @@ class AdminControllerTest extends TestCase{
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password123',
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $headers);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -401,10 +297,7 @@ class AdminControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$headers = $this->headers($user, $device);
 
 		$company_id = $this->set_default_company();
 
@@ -414,12 +307,7 @@ class AdminControllerTest extends TestCase{
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password1234',
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $headers);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -441,10 +329,7 @@ class AdminControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$headers = $this->headers($user, $device);
 
 		$company_id = $this->set_default_company();
 
@@ -454,12 +339,7 @@ class AdminControllerTest extends TestCase{
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password123',
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $headers);
 
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
@@ -483,10 +363,7 @@ class AdminControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$headers = $this->headers($user, $device);
 
 		$company_id = $this->set_default_company();
 
@@ -496,12 +373,7 @@ class AdminControllerTest extends TestCase{
 			'password'			=>	'password123',
 			'confirm_password'	=>	'password123',
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $headers);
 
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
@@ -530,10 +402,7 @@ class AdminControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$headers = $this->headers($user, $device);
 
 		$company_id = $this->set_default_company();
 
@@ -541,12 +410,7 @@ class AdminControllerTest extends TestCase{
 			'name'				=>	'Jack Updated',
 			'email'				=>	'jack20@blackpearl.com',
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $headers);
 
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
@@ -576,10 +440,7 @@ class AdminControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$headers = $this->headers($user, $device);
 
 		$company_id = $this->set_default_company();
 
@@ -589,12 +450,7 @@ class AdminControllerTest extends TestCase{
 			'password'			=>	'password123DIFF',
 			'confirm_password'	=>	'password123DIFF',
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $headers);
 
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
@@ -622,10 +478,7 @@ class AdminControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$headers = $this->headers($user, $device);
 
 		$company_id = $this->set_default_company();
 
@@ -635,12 +488,7 @@ class AdminControllerTest extends TestCase{
 			'password'			=>	'123',
 			'confirm_password'	=>	'',
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $headers);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -664,10 +512,7 @@ class AdminControllerTest extends TestCase{
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$headers = $this->headers($user, $device);
 
 		$company_id = $this->set_default_company();
 
@@ -677,12 +522,7 @@ class AdminControllerTest extends TestCase{
 			'password'			=>	'',
 			'confirm_password'	=>	'123',
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $headers);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -700,22 +540,14 @@ class AdminControllerTest extends TestCase{
 
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$headers = $this->headers($user, $device);
 
 		$company_id = $this->set_default_company();
 
 		$response = $this->delete('/api/manage-admins', [
 			'ids'				=>	'',
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $headers);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -733,22 +565,14 @@ class AdminControllerTest extends TestCase{
 
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$headers = $this->headers($user, $device);
 
 		$company_id = $this->set_default_company();
 
 		$response = $this->delete('/api/manage-admins', [
 			'ids'				=>	['one'],
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $headers);
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
@@ -771,22 +595,14 @@ class AdminControllerTest extends TestCase{
 
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$headers = $this->headers($user, $device);
 
 		$company_id = $this->set_default_company();
 
 		$response = $this->delete('/api/manage-admins', [
 			'ids'				=>	[$user2->id],
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $headers);
 
 		$response->assertStatus(200);
 		
@@ -815,22 +631,14 @@ class AdminControllerTest extends TestCase{
 
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$headers = $this->headers($user, $device);
 
 		$company_id = $this->set_default_company();
 
 		$response = $this->delete('/api/manage-admins', [
 			'ids'				=>	[$user2->id, $user3->id],
 			'company_id'		=>	$company_id
-		], [
-        	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $headers);
 
 		$response->assertStatus(200);
 		
@@ -862,10 +670,7 @@ class AdminControllerTest extends TestCase{
 
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$headers = $this->headers($user, $device);
 
 		$company_id = $this->set_default_company();
 
@@ -873,13 +678,8 @@ class AdminControllerTest extends TestCase{
 			'ids'				=>	[$user2->id, $user3->id],
 			'company_id'		=>	$company_id,
 			'device_id' 		=> 	$device,
-			'refresh_token' 	=> 	$refresh_token
-		], [
-        	'Accept' 		=> 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+			'refresh_token' 	=> 	'abc'
+		], $headers = $this->headers($user, $device));
 
 		$response->assertStatus((int)config('global.error_code'));
 		
