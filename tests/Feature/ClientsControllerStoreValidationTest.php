@@ -24,16 +24,9 @@ class ClientsControllerStoreValidationTest extends TestCase{
 	
     public function test_if_fails_to_store_client_with_invalid_data_tab_1_personal_info():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -41,12 +34,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'personal_info.first_name.value'	=>	'Jack',
 			'personal_info.last_name.value'		=>	'',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -57,16 +45,9 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_1_personal_info_2():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -74,12 +55,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'personal_info.first_name.value'	=>	'',
 			'personal_info.last_name.value'		=>	'last name',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -90,16 +66,9 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_1_personal_info_3():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -108,12 +77,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'personal_info.last_name.value'		=>	'',
 			'personal_info.email.value'			=>	'not an email',
 			'company_id'			=>		$company_id
-		], [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -124,16 +88,9 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_2_contact_info():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -169,12 +126,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -185,16 +137,9 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 	public function test_if_fails_to_store_client_with_no_contact_info_1():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -215,12 +160,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -231,16 +171,10 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_2_contact_info_2():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -281,12 +215,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -297,17 +226,10 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_2_contact_info_3():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
-
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
+		
+		$c = $this->set_access($device);
+		
 		$company_id = $this->set_default_company();
 
 		/* valid personal info but invalid contact info */
@@ -339,12 +261,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -355,16 +272,9 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_3_billing_n_shipping_info_1():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -401,12 +311,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -417,16 +322,10 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_3_billing_info_1():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -483,12 +382,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -499,16 +393,10 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_3_billing_info_2():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -566,12 +454,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -581,17 +464,10 @@ class ClientsControllerStoreValidationTest extends TestCase{
 	}
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_3_shipping_info_1():void{
-		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
+
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -669,12 +545,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -685,16 +556,9 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_3_shipping_info_2():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -772,12 +636,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -788,16 +647,9 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_3_billing_info_copy_to_shipping():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -856,12 +708,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -871,17 +718,10 @@ class ClientsControllerStoreValidationTest extends TestCase{
 	}
 
 	public function test_if_fails_to_store_client_with_valid_data_tab_3_billing_info_copy_to_shipping():void{
-		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
+
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -940,12 +780,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -955,18 +790,10 @@ class ClientsControllerStoreValidationTest extends TestCase{
 	}
 
 	public function test_if_fails_to_store_client_with_valid_data_tab_3_billing_and_shipping_info():void{
-		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
+
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
+		$c = $this->set_access($device);
 		$company_id = $this->set_default_company();
 
 		$country = Country::inRandomOrder()->first();
@@ -1043,12 +870,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -1059,17 +881,11 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_4_custom_fields():void{
-		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
+
+
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1199,12 +1015,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -1215,16 +1026,10 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_4_custom_fields_with_db():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1356,12 +1161,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -1371,17 +1171,10 @@ class ClientsControllerStoreValidationTest extends TestCase{
 	}
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_4_custom_fields_with_db_2():void{
-		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
+
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1543,12 +1336,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -1558,17 +1346,11 @@ class ClientsControllerStoreValidationTest extends TestCase{
 	}
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_4_custom_fields_with_db_3():void{
-		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
+
+
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1734,12 +1516,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -1751,16 +1528,9 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 	public function test_if_fails_to_store_client_with_valid_data_tab_4_custom_fields_with_db():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1926,12 +1696,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -1943,17 +1708,10 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_5_settings_1():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
-
+		$c = $this->set_access($device);
 		$company_id = $this->set_default_company();
 
 		$country = Country::inRandomOrder()->first();
@@ -2138,12 +1896,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -2155,16 +1908,10 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_5_settings_2():void{
 		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -2352,12 +2099,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -2368,17 +2110,10 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 
 	public function test_if_fails_to_store_client_with_invalid_data_tab_4_no_custom_fields():void{
-		
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
+
 		$device = 'device 123';
 
-		$access = $this->set_access($user, $device);
-
-		$token = $access['token'];
-		$refresh_token = $access['refresh_token'];
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -2481,12 +2216,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			'company_id'	=>	$company_id
 		];
 
-		$response = $this->post('/api/manage-clients', $post_data, [
-        	'Accept' => 'application/json',
-			'Authorization' => 'Bearer '.$token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-    	]);
+		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
 
