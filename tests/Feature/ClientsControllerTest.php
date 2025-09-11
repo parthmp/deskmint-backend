@@ -21,14 +21,11 @@ class ClientsControllerTest extends TestCase
 {
     use RefreshDatabase, SetAccess, DefaultCompany, CustomFields;
 
-	private function getQuery($token, $refresh_token, $device, $queryParams, $url = '/api/clients-custom-fields?'){
+	private function getQuery($device, $queryParams, $url = '/api/clients-custom-fields?'){
 
-		$response = $this->withHeaders([
-			'Accept' => 'application/json',
-			'Authorization' => 'Bearer ' . $token,
-			'X-Refresh-Token' => $refresh_token,
-			'X-Device-Id' => $device
-		])->get($url . $queryParams);
+		$c = $this->set_access($device);
+
+		$response = $this->withHeaders($c['headers'])->get($url . $queryParams);
 
 		return $response;
 
@@ -36,17 +33,8 @@ class ClientsControllerTest extends TestCase
 
 	public function test_if_it_fetches_clientS_custom_fields_without_testing_default_values(): void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$tokens = $this->set_access($user, $device);
-		$token = $tokens['token'];
-		$refresh_token = $tokens['refresh_token'];
-
-		
 
 		$this->setCustomFieldTypes();
 		$this->set_default_company();
@@ -72,7 +60,7 @@ class ClientsControllerTest extends TestCase
 			'company_id'	=>	1
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
+		$response = $this->getQuery($device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
 		$response = $response->json();
 		
 		$this->assertEquals($added_custom_fields, count($response));
@@ -81,17 +69,10 @@ class ClientsControllerTest extends TestCase
 
 	public function test_if_it_fetches_clients_custom_fields_with_testing_valid_default_values(): void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$tokens = $this->set_access($user, $device);
-		$token = $tokens['token'];
-		$refresh_token = $tokens['refresh_token'];
-
-		
+	
 
 		$this->setCustomFieldTypes();
 		$this->set_default_company();
@@ -149,7 +130,7 @@ class ClientsControllerTest extends TestCase
 			'company_id'	=>	1
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
+		$response = $this->getQuery($device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
 		$response = $response->json();
 		
 		$this->assertEquals($added_custom_fields, count($response));
@@ -184,17 +165,7 @@ class ClientsControllerTest extends TestCase
 
 	public function test_if_it_fetches_clients_custom_fields_with_testing_invalid_default_values(): void{
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
-
-		$tokens = $this->set_access($user, $device);
-		$token = $tokens['token'];
-		$refresh_token = $tokens['refresh_token'];
-
-		
 
 		$this->setCustomFieldTypes();
 		$this->set_default_company();
@@ -252,7 +223,7 @@ class ClientsControllerTest extends TestCase
 			'company_id'	=>	1
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
+		$response = $this->getQuery($device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
 		$response = $response->json();
 		
 		$this->assertEquals($added_custom_fields, count($response));
@@ -275,18 +246,7 @@ class ClientsControllerTest extends TestCase
 			'j M Y',        // 1 Jan 2025 (without leading zeros)
 		];
 		
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
-
-		$tokens = $this->set_access($user, $device);
-		$token = $tokens['token'];
-		$refresh_token = $tokens['refresh_token'];
-
-		
 
 		$this->setCustomFieldTypes();
 		$this->set_default_company();
@@ -338,7 +298,7 @@ class ClientsControllerTest extends TestCase
 			'company_id'	=>	1
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
+		$response = $this->getQuery($device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
 		$response = $response->json();
 		
 		for($z = 0 ; $z < count($dates_to_check); $z++){
@@ -413,17 +373,7 @@ class ClientsControllerTest extends TestCase
 		];
 				
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
-
-		$tokens = $this->set_access($user, $device);
-		$token = $tokens['token'];
-		$refresh_token = $tokens['refresh_token'];
-
-		
 
 		$this->setCustomFieldTypes();
 		$this->set_default_company();
@@ -475,7 +425,7 @@ class ClientsControllerTest extends TestCase
 			'company_id'	=>	1
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
+		$response = $this->getQuery($device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
 		$response = $response->json();
 		
 		for($z = 0 ; $z < count($dates_to_check); $z++){
@@ -503,20 +453,10 @@ class ClientsControllerTest extends TestCase
 			'd-M-Y H:i',
 			'd M Y H:i'
 		];
-				
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
-		$tokens = $this->set_access($user, $device);
-		$token = $tokens['token'];
-		$refresh_token = $tokens['refresh_token'];
-
 		
-
 		$this->setCustomFieldTypes();
 		$this->set_default_company();
 
@@ -567,7 +507,7 @@ class ClientsControllerTest extends TestCase
 			'company_id'	=>	1
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
+		$response = $this->getQuery($device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
 		$response = $response->json();
 		
 		for($z = 0 ; $z < count($dates_to_check); $z++){
@@ -633,19 +573,9 @@ class ClientsControllerTest extends TestCase
 		];
 
 		
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
-		$tokens = $this->set_access($user, $device);
-		$token = $tokens['token'];
-		$refresh_token = $tokens['refresh_token'];
-
 		
-
 		$this->setCustomFieldTypes();
 		$this->set_default_company();
 
@@ -696,7 +626,7 @@ class ClientsControllerTest extends TestCase
 			'company_id'	=>	1
 		]);
 
-		$response = $this->getQuery($token, $refresh_token, $device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
+		$response = $this->getQuery($device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
 		$response = $response->json();
 		
 		for($z = 0 ; $z < count($dates_to_check); $z++){
