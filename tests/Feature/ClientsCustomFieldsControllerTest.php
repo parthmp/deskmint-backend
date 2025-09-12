@@ -348,10 +348,6 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 	}
 
 	public function test_if_table_loads_index(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
