@@ -20,11 +20,10 @@ class FieldTypesControllerTest extends TestCase{
 
     public function test_if_it_can_fetch_custom_field_types(): void{
        
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
+
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -32,7 +31,7 @@ class FieldTypesControllerTest extends TestCase{
 			'company_id' 	=> $company_id
 		]);
 
-		$response = $this->withHeaders($this->set_access($user, $device))->get('/api/manage-field-types/fetch-input-types?' . $queryParams);
+		$response = $this->withHeaders($c['headers'])->get('/api/manage-field-types/fetch-input-types?' . $queryParams);
 
 		
 		$response->assertStatus(200);
@@ -46,11 +45,9 @@ class FieldTypesControllerTest extends TestCase{
 
 	public function test_if_adding_input_type_fails_1(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
+
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -58,7 +55,7 @@ class FieldTypesControllerTest extends TestCase{
 			'input_type'				=>	'',
 			'input_name'				=>	'',
 			'company_id'				=>	$company_id
-		], $this->set_access($user, $device));
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -68,11 +65,9 @@ class FieldTypesControllerTest extends TestCase{
 
 	public function test_if_adding_input_type_fails_2(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
+
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -80,7 +75,7 @@ class FieldTypesControllerTest extends TestCase{
 			'input_type'				=>	'something',
 			'input_name'				=>	'testname',
 			'company_id'				=>	$company_id
-		], $this->set_access($user, $device));
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -91,11 +86,10 @@ class FieldTypesControllerTest extends TestCase{
 
 	public function test_if_adding_input_type_succeeded(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
+
+		$c = $this->set_access($device);
 		
 		$company_id = $this->set_default_company();
 
@@ -105,7 +99,7 @@ class FieldTypesControllerTest extends TestCase{
 			'input_type'				=>	'datetime',
 			'input_name'				=>	'test datetime field',
 			'company_id'				=>	$company_id
-		], $this->set_access($user, $device));
+		], $c['headers']);
 
 		$response->assertStatus(200);
 
@@ -120,9 +114,11 @@ class FieldTypesControllerTest extends TestCase{
 		
 	}
 
-	private function getQuery($user, $device, $queryParams, $url = '/api/manage-field-types?'){
+	private function getQuery($device, $queryParams, $url = '/api/manage-field-types?'){
 
-		$response = $this->withHeaders($this->set_access($user, $device))->get($url . $queryParams);
+		$c = $this->set_access($device);
+
+		$response = $this->withHeaders($c['headers'])->get($url . $queryParams);
 
 		return $response;
 
@@ -130,10 +126,7 @@ class FieldTypesControllerTest extends TestCase{
 
 	public function test_if_table_does_not_load_because_of_empty(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
+	
 		$device = 'device 123';
 
 		$company_id = $this->set_default_company();
@@ -145,7 +138,7 @@ class FieldTypesControllerTest extends TestCase{
 			'default_per_page'	=>	15
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -160,10 +153,7 @@ class FieldTypesControllerTest extends TestCase{
 
 	public function test_if_table_loads_index(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
+	
 		$device = 'device 123';
 
 		$company_id = $this->set_default_company();
@@ -179,7 +169,7 @@ class FieldTypesControllerTest extends TestCase{
 			'default_per_page'	=>	15
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -194,10 +184,6 @@ class FieldTypesControllerTest extends TestCase{
 
 	public function test_if_table_filters_for_searched_term(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
 		$company_id = $this->set_default_company();
@@ -218,7 +204,7 @@ class FieldTypesControllerTest extends TestCase{
 			'searched_term'		=>	'BLATEST'
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -232,10 +218,6 @@ class FieldTypesControllerTest extends TestCase{
 	}
 
 	public function test_if_table_filters_for_searched_term_not_matched(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
@@ -257,7 +239,7 @@ class FieldTypesControllerTest extends TestCase{
 			'searched_term'		=>	'BLATEST4'
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -271,10 +253,6 @@ class FieldTypesControllerTest extends TestCase{
 	}
 
 	public function test_if_table_filters_for_current_page(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
@@ -298,7 +276,7 @@ class FieldTypesControllerTest extends TestCase{
 			'current_page'		=>	2
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -317,10 +295,6 @@ class FieldTypesControllerTest extends TestCase{
 
 	public function test_if_table_filters_with_per_page(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
 		$company_id = $this->set_default_company();
@@ -344,7 +318,7 @@ class FieldTypesControllerTest extends TestCase{
 			'current_page'		=>	2
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 
 		$response->assertStatus(200);
 
@@ -362,10 +336,6 @@ class FieldTypesControllerTest extends TestCase{
 	
 
 	public function test_if_page_shows_page_1_for_current_page_search_term(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
@@ -390,7 +360,7 @@ class FieldTypesControllerTest extends TestCase{
 			'searched_term'		=>	'BLABLA'
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -409,10 +379,6 @@ class FieldTypesControllerTest extends TestCase{
 	}
 
 	public function test_if_page_shows_page_1_for_per_page(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
@@ -436,7 +402,7 @@ class FieldTypesControllerTest extends TestCase{
 			'per_page'			=>	5
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -456,10 +422,6 @@ class FieldTypesControllerTest extends TestCase{
 
 	/* Check if column sorts, asc and desc */
 	public function test_if_column_sorts_asc(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
@@ -487,7 +449,7 @@ class FieldTypesControllerTest extends TestCase{
 			]
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -513,10 +475,6 @@ class FieldTypesControllerTest extends TestCase{
 
 	public function test_if_column_sorts_asc_with_current_page(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 		$company_id = $this->set_default_company();
 
@@ -540,7 +498,7 @@ class FieldTypesControllerTest extends TestCase{
 			]
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -565,10 +523,6 @@ class FieldTypesControllerTest extends TestCase{
 	}
 
 	public function test_if_column_sorts_desc(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
@@ -596,7 +550,7 @@ class FieldTypesControllerTest extends TestCase{
 			]
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -622,10 +576,6 @@ class FieldTypesControllerTest extends TestCase{
 
 	
 	public function test_if_column_sorts_desc_with_current_page(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
@@ -651,7 +601,7 @@ class FieldTypesControllerTest extends TestCase{
 			]
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -680,10 +630,6 @@ class FieldTypesControllerTest extends TestCase{
 
 	public function test_if_column_sorts_desc_with_per_page_search_term_and_current_page(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
 		$company_id = $this->set_default_company();
@@ -716,7 +662,7 @@ class FieldTypesControllerTest extends TestCase{
 			]
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -741,10 +687,6 @@ class FieldTypesControllerTest extends TestCase{
 	}
 
 	public function test_if_column_sorts_asc_with_per_page_search_term_and_current_page(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
@@ -778,7 +720,7 @@ class FieldTypesControllerTest extends TestCase{
 			]
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -804,10 +746,6 @@ class FieldTypesControllerTest extends TestCase{
 
 
 	public function test_if_user_tries_sql_injection_by_adding_non_existant_column_label(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
@@ -833,7 +771,7 @@ class FieldTypesControllerTest extends TestCase{
 			]
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams);
+		$response = $this->getQuery($device, $queryParams);
 		
 
 		$response->assertStatus(200);
@@ -860,10 +798,6 @@ class FieldTypesControllerTest extends TestCase{
 
 
 	public function test_if_fetching_field_type_fails_with_invalid_id(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
 
@@ -875,7 +809,7 @@ class FieldTypesControllerTest extends TestCase{
 			'company_id' 		=> $company_id
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams, '/api/manage-field-types/100?');
+		$response = $this->getQuery($device, $queryParams, '/api/manage-field-types/100?');
 
 		$response->assertStatus((int)config('global.error_code'));
 		
@@ -887,10 +821,6 @@ class FieldTypesControllerTest extends TestCase{
 
 	public function test_if_fetching_field_type_succeeded_with_valid_id(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
 
 		$company_id = $this->set_default_company();
@@ -903,7 +833,7 @@ class FieldTypesControllerTest extends TestCase{
 			'company_id' 		=> $company_id
 		]);
 
-		$response = $this->getQuery($user, $device, $queryParams, '/api/manage-field-types/1?');
+		$response = $this->getQuery($device, $queryParams, '/api/manage-field-types/1?');
 
 		$response->assertStatus(200);
 		
@@ -916,11 +846,9 @@ class FieldTypesControllerTest extends TestCase{
 
 	public function test_if_update_fails_with_invalid_data(){
 
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
-		
 		$device = 'device 123';
+
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -930,7 +858,7 @@ class FieldTypesControllerTest extends TestCase{
 			'input_type'	=>	'',
 			'input_name'	=>	'',
 			'company_id'	=>	$company_id
-		], $this->set_access($user, $device));
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -940,12 +868,10 @@ class FieldTypesControllerTest extends TestCase{
 	}
 
 	public function test_if_update_fails_with_invalid_data_2(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
+
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -957,7 +883,7 @@ class FieldTypesControllerTest extends TestCase{
 			'input_type'	=>	'',
 			'input_name'	=>	'test',
 			'company_id'	=>	$company_id
-		], $this->set_access($user, $device));
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -967,12 +893,10 @@ class FieldTypesControllerTest extends TestCase{
 	}
 
 	public function test_if_update_fails_with_invalid_data_3(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
+		$c = $this->set_access($device);
+
 		$company_id = $this->set_default_company();
 
 		CustomFieldType::truncate();
@@ -983,7 +907,7 @@ class FieldTypesControllerTest extends TestCase{
 			'input_type'	=>	'bla',
 			'input_name'	=>	'',
 			'company_id'	=>	$company_id
-		], $this->set_access($user, $device));
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -994,12 +918,9 @@ class FieldTypesControllerTest extends TestCase{
 
 
 	public function test_if_update_succeeded_with_valid_data(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1011,7 +932,7 @@ class FieldTypesControllerTest extends TestCase{
 			'input_type'	=>	'datetime',
 			'input_name'	=>	'blatesthere',
 			'company_id'	=>	$company_id
-		], $this->set_access($user, $device));
+		], $c['headers']);
 
 		$response->assertStatus(200);
 
@@ -1029,19 +950,17 @@ class FieldTypesControllerTest extends TestCase{
 
 	
 	public function test_if_delete_fails_with_invalid_data(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
+
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
 		$response = $this->delete('/api/manage-field-types', [
 			'ids'			=>	'',
 			'company_id'	=>	$company_id
-		], $this->set_access($user, $device));
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -1051,12 +970,10 @@ class FieldTypesControllerTest extends TestCase{
 	}
 	
 	public function test_if_delete_fails_with_non_numeric_data(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
+
+		$c = $this->set_access($device);
 
 		$company_id = $this->set_default_company();
 
@@ -1067,7 +984,7 @@ class FieldTypesControllerTest extends TestCase{
 				'bla', 'whatever'
 			],
 			'company_id'	=>	$company_id
-		], $this->set_access($user, $device));
+		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
 
@@ -1077,12 +994,10 @@ class FieldTypesControllerTest extends TestCase{
 	}
 
 	public function test_if_delete_succeeded_with_valid_data(){
-
-		$user = User::factory()->create([
-			'user_type'		=>		config('global.user_types.admin')
-		]);
 		
 		$device = 'device 123';
+
+		$c = $this->set_access($device);
 		
 		$company_id = $this->set_default_company();
 
@@ -1109,7 +1024,7 @@ class FieldTypesControllerTest extends TestCase{
 		$response = $this->delete('/api/manage-field-types', [
 			'ids'			=>	$to_be_deleted_ids,
 			'company_id'	=>	$company_id
-		], $this->set_access($user, $device));
+		], $c['headers']);
 
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
