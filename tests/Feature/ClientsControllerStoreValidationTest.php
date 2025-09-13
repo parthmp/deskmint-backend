@@ -892,55 +892,8 @@ class ClientsControllerStoreValidationTest extends TestCase{
 		$country = Country::inRandomOrder()->first();
 		ClientsCustomField::truncate();
 
-		CustomFieldType::truncate();
-		$this->setCustomFieldTypes();
-		$custom_field_types = CustomFieldType::all();
-		
-		/* add one field per type to test */
-		$order = 1;
-		foreach($custom_field_types as $field_type){
-
-			$default_value = '';
-			$options = [];
-
-			if($field_type->input_type === config('global.field_types')[0]){ /* text */
-				$default_value = '    ';
-			}else if($field_type->input_type === config('global.field_types')[1]){ /* textarea */
-				$default_value = '  ';
-			}else if($field_type->input_type === config('global.field_types')[2]){ /* email */
-				$default_value = 'thisisnotemail.com';
-			}else if($field_type->input_type === config('global.field_types')[3]){ /* select */
-				$default_value = 'something';
-				$options = ['one', 'two', 'three'];
-			}else if($field_type->input_type === config('global.field_types')[4]){ /* number */
-				$default_value = 'abc';
-			}else if($field_type->input_type === config('global.field_types')[5]){ /* date */
-				$default_value = 'this is not date';
-			}else if($field_type->input_type === config('global.field_types')[6]){ /* time */
-				$default_value = 'this is not time';
-			}else if($field_type->input_type === config('global.field_types')[7]){ /* datetime */
-				$default_value = 'this is not timestamp';
-			}else if($field_type->input_type === config('global.field_types')[8]){ /* telephone */
-				$default_value = 'this is not telephone';
-			}else if($field_type->input_type === config('global.field_types')[9]){ /* multiselect */
-				$default_value = 'something else';
-				$options = ['one', 'two', 'three'];
-			}
-
-			$options = implode(',', $options);
-			
-			ClientsCustomField::factory()->create([
-				'id'						=>	$order,
-				'custom_field_type_id'		=>	$field_type->id,
-				'company_id'				=>	1,
-				'label'						=>	'client '.$field_type->input_type,
-				'default_value'				=>	$default_value,
-				'type_params'				=>	$options,
-				'required'					=>	1,
-				'order_on_add_edit_page'	=>	$order
-			]);
-			$order++;
-		}
+		$this->addAllCustomFields($company_id, $c['headers']);
+		$this->setCustomFields();
 		
 		$post_data = [
 			'personal_info'	=>	[
@@ -1034,54 +987,9 @@ class ClientsControllerStoreValidationTest extends TestCase{
 		$company_id = $this->set_default_company();
 
 		$country = Country::inRandomOrder()->first();
-		$this->setCustomFieldTypes();
-
-		$custom_field_types = CustomFieldType::all();
-
-		/* add one field per type to test */
-		$order = 1;
-		foreach($custom_field_types as $field_type){
-
-			$default_value = '';
-			$options = [];
-
-			if($field_type->input_type === config('global.field_types')[0]){ /* text */
-				$default_value = '    ';
-			}else if($field_type->input_type === config('global.field_types')[1]){ /* textarea */
-				$default_value = '  ';
-			}else if($field_type->input_type === config('global.field_types')[2]){ /* email */
-				$default_value = 'thisisnotemail.com';
-			}else if($field_type->input_type === config('global.field_types')[3]){ /* select */
-				$default_value = 'something';
-				$options = ['one', 'two', 'three'];
-			}else if($field_type->input_type === config('global.field_types')[4]){ /* number */
-				$default_value = 'abc';
-			}else if($field_type->input_type === config('global.field_types')[5]){ /* date */
-				$default_value = 'this is not date';
-			}else if($field_type->input_type === config('global.field_types')[6]){ /* time */
-				$default_value = 'this is not time';
-			}else if($field_type->input_type === config('global.field_types')[7]){ /* datetime */
-				$default_value = 'this is not timestamp';
-			}else if($field_type->input_type === config('global.field_types')[8]){ /* telephone */
-				$default_value = 'this is not telephone';
-			}else if($field_type->input_type === config('global.field_types')[9]){ /* multiselect */
-				$default_value = 'something else';
-				$options = ['one', 'two', 'three'];
-			}
-
-			$options = implode(',', $options);
-
-			ClientsCustomField::factory()->create([
-				'custom_field_type_id'		=>	$field_type->id,
-				'company_id'				=>	1,
-				'label'						=>	'client '.$field_type->input_type,
-				'default_value'				=>	$default_value,
-				'type_params'				=>	$options,
-				'required'					=>	1,
-				'order_on_add_edit_page'	=>	$order
-			]);
-			$order++;
-		}
+		
+		$this->addAllCustomFields($company_id, $c['headers']);
+		$this->setCustomFields();
 		
 		$post_data = [
 			'personal_info'	=>	[
@@ -1181,87 +1089,9 @@ class ClientsControllerStoreValidationTest extends TestCase{
 		$country = Country::inRandomOrder()->first();
 		$this->setCustomFieldTypes();
 
-		$custom_field_types = CustomFieldType::all();
-
-		/* add one field per type to test */
-		$order = 1;
-		foreach($custom_field_types as $field_type){
-
-			$default_value = '';
-			$options = [];
-
-			if($field_type->input_type === config('global.field_types')[0]){ /* text */
-				$default_value = '    ';
-			}else if($field_type->input_type === config('global.field_types')[1]){ /* textarea */
-				$default_value = '  ';
-			}else if($field_type->input_type === config('global.field_types')[2]){ /* email */
-				$default_value = 'thisisnotemail.com';
-			}else if($field_type->input_type === config('global.field_types')[3]){ /* select */
-				$default_value = 'something';
-				$options = ['one', 'two', 'three'];
-			}else if($field_type->input_type === config('global.field_types')[4]){ /* number */
-				$default_value = 'abc';
-			}else if($field_type->input_type === config('global.field_types')[5]){ /* date */
-				$default_value = 'this is not date';
-			}else if($field_type->input_type === config('global.field_types')[6]){ /* time */
-				$default_value = 'this is not time';
-			}else if($field_type->input_type === config('global.field_types')[7]){ /* datetime */
-				$default_value = 'this is not timestamp';
-			}else if($field_type->input_type === config('global.field_types')[8]){ /* telephone */
-				$default_value = 'this is not telephone';
-			}else if($field_type->input_type === config('global.field_types')[9]){ /* multiselect */
-				$default_value = 'something else';
-				$options = ['one', 'two', 'three'];
-			}
-
-			$options = implode(',', $options);
-
-			ClientsCustomField::factory()->create([
-				'id'						=>	$order,
-				'custom_field_type_id'		=>	$field_type->id,
-				'company_id'				=>	1,
-				'label'						=>	'client '.$field_type->input_type,
-				'default_value'				=>	$default_value,
-				'type_params'				=>	$options,
-				'required'					=>	1,
-				'order_on_add_edit_page'	=>	$order
-			]);
-			$order++;
-		}
-
-		/* create custom fields post values */
-		$custom_fields_post = [];
-		$custom_fields_db = ClientsCustomField::whereHas('customFieldType')->with('customFieldType')->get();
-
-		foreach($custom_fields_db as $db_field){
-
-			$temp_post = [];
-			$temp_post['id'] = $db_field->id;
-
-			if($db_field->customFieldType->input_type === config('global.field_types')[0]){ /* text */
-				$temp_post['value'] = 'text value';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[1]){ /* textarea */
-				$temp_post['value'] = '  ';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[2]){ /* email */
-				$temp_post['value'] = 'not an email@value.com';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[3]){ /* select */
-				$temp_post['value'] = 'one';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[4]){ /* number */
-				$temp_post['value'] = 1234678;
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[5]){ /* date */
-				$temp_post['value'] = '20 jan 2018 invalid';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[6]){ /* time */
-				$temp_post['value'] = 'invalid time';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[7]){ /* datetime */
-				$temp_post['value'] = '19 jan 2018 11:08:15 invalid';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[8]){ /* telephone */
-				$temp_post['value'] = '+123457890';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[9]){ /* multiselect */
-				$temp_post['value'] = ['one', 'two'];
-			}
-			$custom_fields_post[] = $temp_post;
-		}
-
+		$this->addAllCustomFields($company_id, $c['headers']);
+		$temp = $this->setCustomFields(true); /* setting true for invalid inputs */
+		$custom_fields_post = $temp['fields'];
 		
 		$post_data = [
 			'personal_info'	=>	[
@@ -1357,92 +1187,10 @@ class ClientsControllerStoreValidationTest extends TestCase{
 		$country = Country::inRandomOrder()->first();
 		$this->setCustomFieldTypes();
 
-		$custom_field_types = CustomFieldType::all();
+		$this->addAllCustomFields($company_id, $c['headers']);
+		$temp = $this->setCustomFields(true); /* setting true for invalid inputs */
+		$custom_fields_post = $temp['fields'];
 
-		/* add one field per type to test */
-		$order = 1;
-		foreach($custom_field_types as $field_type){
-
-			$default_value = '';
-			$options = [];
-
-			if($field_type->input_type === config('global.field_types')[0]){ /* text */
-				$default_value = '    ';
-			}else if($field_type->input_type === config('global.field_types')[1]){ /* textarea */
-				$default_value = '  ';
-			}else if($field_type->input_type === config('global.field_types')[2]){ /* email */
-				$default_value = 'thisisnotemail.com';
-			}else if($field_type->input_type === config('global.field_types')[3]){ /* select */
-				$default_value = 'something';
-				$options = ['one', 'two', 'three'];
-			}else if($field_type->input_type === config('global.field_types')[4]){ /* number */
-				$default_value = 'abc';
-			}else if($field_type->input_type === config('global.field_types')[5]){ /* date */
-				$default_value = 'this is not date';
-			}else if($field_type->input_type === config('global.field_types')[6]){ /* time */
-				$default_value = 'this is not time';
-			}else if($field_type->input_type === config('global.field_types')[7]){ /* datetime */
-				$default_value = 'this is not timestamp';
-			}else if($field_type->input_type === config('global.field_types')[8]){ /* telephone */
-				$default_value = 'this is not telephone';
-			}else if($field_type->input_type === config('global.field_types')[9]){ /* multiselect */
-				$default_value = 'something else';
-				$options = ['one', 'two', 'three'];
-			}
-
-			$options = implode(',', $options);
-
-			ClientsCustomField::factory()->create([
-				'id'						=>	$order,
-				'custom_field_type_id'		=>	$field_type->id,
-				'company_id'				=>	1,
-				'label'						=>	'client '.$field_type->input_type,
-				'default_value'				=>	$default_value,
-				'type_params'				=>	$options,
-				'required'					=>	1,
-				'order_on_add_edit_page'	=>	$order
-			]);
-			$order++;
-		}
-
-		/* create custom fields post values */
-		$custom_fields_post = [];
-		$custom_fields_db = ClientsCustomField::whereHas('customFieldType')->with('customFieldType')->get();
-
-		foreach($custom_fields_db as $db_field){
-
-			$temp_post = [];
-			$temp_post['id'] = $db_field->id;
-
-			if($db_field->customFieldType->input_type === config('global.field_types')[0]){ /* text */
-				$temp_post['value'] = '  ';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[1]){ /* textarea */
-				$temp_post['value'] = '  ';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[2]){ /* email */
-				$temp_post['value'] = 'not an email@value.com';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[3]){ /* select */
-				$temp_post['value'] = '  ';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[4]){ /* number */
-				$temp_post['value'] = 1234678;
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[5]){ /* date */
-				$temp_post['value'] = '20 jan 2018 invalid';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[6]){ /* time */
-				$temp_post['value'] = [
-					'hours'		=>	10,
-					'minutes'	=>	15,
-					'seconds'	=>	10
-				];
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[7]){ /* datetime */
-				$temp_post['value'] = '19 jan 2018 11:08:15 invalid';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[8]){ /* telephone */
-				$temp_post['value'] = '+123457890';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[9]){ /* multiselect */
-				$temp_post['value'] = [];
-			}
-			$custom_fields_post[] = $temp_post;
-		}
-
-		
 		$post_data = [
 			'personal_info'	=>	[
 				'first_name'	=>	[
@@ -1537,91 +1285,9 @@ class ClientsControllerStoreValidationTest extends TestCase{
 		$country = Country::inRandomOrder()->first();
 		$this->setCustomFieldTypes();
 
-		$custom_field_types = CustomFieldType::all();
-
-		/* add one field per type to test */
-		$order = 1;
-		foreach($custom_field_types as $field_type){
-
-			$default_value = '';
-			$options = [];
-
-			if($field_type->input_type === config('global.field_types')[0]){ /* text */
-				$default_value = '    ';
-			}else if($field_type->input_type === config('global.field_types')[1]){ /* textarea */
-				$default_value = '  ';
-			}else if($field_type->input_type === config('global.field_types')[2]){ /* email */
-				$default_value = 'thisisnotemail.com';
-			}else if($field_type->input_type === config('global.field_types')[3]){ /* select */
-				$default_value = 'something';
-				$options = ['one', 'two', 'three'];
-			}else if($field_type->input_type === config('global.field_types')[4]){ /* number */
-				$default_value = 'abc';
-			}else if($field_type->input_type === config('global.field_types')[5]){ /* date */
-				$default_value = 'this is not date';
-			}else if($field_type->input_type === config('global.field_types')[6]){ /* time */
-				$default_value = 'this is not time';
-			}else if($field_type->input_type === config('global.field_types')[7]){ /* datetime */
-				$default_value = 'this is not timestamp';
-			}else if($field_type->input_type === config('global.field_types')[8]){ /* telephone */
-				$default_value = 'this is not telephone';
-			}else if($field_type->input_type === config('global.field_types')[9]){ /* multiselect */
-				$default_value = 'something else';
-				$options = ['one', 'two', 'three'];
-			}
-
-			$options = implode(',', $options);
-
-			ClientsCustomField::factory()->create([
-				'id'						=>	$order,
-				'custom_field_type_id'		=>	$field_type->id,
-				'company_id'				=>	1,
-				'label'						=>	'client '.$field_type->input_type,
-				'default_value'				=>	$default_value,
-				'type_params'				=>	$options,
-				'required'					=>	1,
-				'order_on_add_edit_page'	=>	$order
-			]);
-			$order++;
-		}
-
-		/* create custom fields post values */
-		$custom_fields_post = [];
-		$custom_fields_db = ClientsCustomField::whereHas('customFieldType')->with('customFieldType')->get();
-
-		foreach($custom_fields_db as $db_field){
-
-			$temp_post = [];
-			$temp_post['id'] = $db_field->id;
-
-			if($db_field->customFieldType->input_type === config('global.field_types')[0]){ /* text */
-				$temp_post['value'] = 'text value';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[1]){ /* textarea */
-				$temp_post['value'] = 'textarea here';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[2]){ /* email */
-				$temp_post['value'] = 'email@value.com';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[3]){ /* select */
-				$temp_post['value'] = 'one';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[4]){ /* number */
-				$temp_post['value'] = 1234678;
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[5]){ /* date */
-				$temp_post['value'] = '20 jan 2018';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[6]){ /* time */
-				$temp_post['value'] = [
-					'hours'		=>	10,
-					'minutes'	=>	15,
-					'seconds'	=>	10
-				];
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[7]){ /* datetime */
-				$temp_post['value'] = '19 jan 2018 11:08:15';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[8]){ /* telephone */
-				$temp_post['value'] = '+123457890';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[9]){ /* multiselect */
-				$temp_post['value'] = ['one', 'two'];
-			}
-			$custom_fields_post[] = $temp_post;
-		}
-
+		$this->addAllCustomFields($company_id, $c['headers']);
+		$temp = $this->setCustomFields();
+		$custom_fields_post = $temp['fields'];
 		
 		$post_data = [
 			'personal_info'	=>	[
@@ -1717,91 +1383,9 @@ class ClientsControllerStoreValidationTest extends TestCase{
 		$country = Country::inRandomOrder()->first();
 		$this->setCustomFieldTypes();
 
-		$custom_field_types = CustomFieldType::all();
-
-		/* add one field per type to test */
-		$order = 1;
-		foreach($custom_field_types as $field_type){
-
-			$default_value = '';
-			$options = [];
-
-			if($field_type->input_type === config('global.field_types')[0]){ /* text */
-				$default_value = '    ';
-			}else if($field_type->input_type === config('global.field_types')[1]){ /* textarea */
-				$default_value = '  ';
-			}else if($field_type->input_type === config('global.field_types')[2]){ /* email */
-				$default_value = 'thisisnotemail.com';
-			}else if($field_type->input_type === config('global.field_types')[3]){ /* select */
-				$default_value = 'something';
-				$options = ['one', 'two', 'three'];
-			}else if($field_type->input_type === config('global.field_types')[4]){ /* number */
-				$default_value = 'abc';
-			}else if($field_type->input_type === config('global.field_types')[5]){ /* date */
-				$default_value = 'this is not date';
-			}else if($field_type->input_type === config('global.field_types')[6]){ /* time */
-				$default_value = 'this is not time';
-			}else if($field_type->input_type === config('global.field_types')[7]){ /* datetime */
-				$default_value = 'this is not timestamp';
-			}else if($field_type->input_type === config('global.field_types')[8]){ /* telephone */
-				$default_value = 'this is not telephone';
-			}else if($field_type->input_type === config('global.field_types')[9]){ /* multiselect */
-				$default_value = 'something else';
-				$options = ['one', 'two', 'three'];
-			}
-
-			$options = implode(',', $options);
-
-			ClientsCustomField::factory()->create([
-				'id'						=>	$order,
-				'custom_field_type_id'		=>	$field_type->id,
-				'company_id'				=>	1,
-				'label'						=>	'client '.$field_type->input_type,
-				'default_value'				=>	$default_value,
-				'type_params'				=>	$options,
-				'required'					=>	1,
-				'order_on_add_edit_page'	=>	$order
-			]);
-			$order++;
-		}
-
-		/* create custom fields post values */
-		$custom_fields_post = [];
-		$custom_fields_db = ClientsCustomField::whereHas('customFieldType')->with('customFieldType')->get();
-
-		foreach($custom_fields_db as $db_field){
-
-			$temp_post = [];
-			$temp_post['id'] = $db_field->id;
-
-			if($db_field->customFieldType->input_type === config('global.field_types')[0]){ /* text */
-				$temp_post['value'] = 'text value';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[1]){ /* textarea */
-				$temp_post['value'] = 'textarea here';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[2]){ /* email */
-				$temp_post['value'] = 'email@value.com';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[3]){ /* select */
-				$temp_post['value'] = 'one';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[4]){ /* number */
-				$temp_post['value'] = 1234678;
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[5]){ /* date */
-				$temp_post['value'] = '20 jan 2018';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[6]){ /* time */
-				$temp_post['value'] = [
-					'hours'		=>	10,
-					'minutes'	=>	15,
-					'seconds'	=>	10
-				];
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[7]){ /* datetime */
-				$temp_post['value'] = '19 jan 2018 11:08:15';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[8]){ /* telephone */
-				$temp_post['value'] = '+123457890';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[9]){ /* multiselect */
-				$temp_post['value'] = ['one', 'two'];
-			}
-			$custom_fields_post[] = $temp_post;
-		}
-
+		$this->addAllCustomFields($company_id, $c['headers']);
+		$temp = $this->setCustomFields();
+		$custom_fields_post = $temp['fields'];
 		
 		$post_data = [
 			'personal_info'	=>	[
@@ -1918,90 +1502,9 @@ class ClientsControllerStoreValidationTest extends TestCase{
 		$country = Country::inRandomOrder()->first();
 		$this->setCustomFieldTypes();
 
-		$custom_field_types = CustomFieldType::all();
-
-		/* add one field per type to test */
-		$order = 1;
-		foreach($custom_field_types as $field_type){
-
-			$default_value = '';
-			$options = [];
-
-			if($field_type->input_type === config('global.field_types')[0]){ /* text */
-				$default_value = '    ';
-			}else if($field_type->input_type === config('global.field_types')[1]){ /* textarea */
-				$default_value = '  ';
-			}else if($field_type->input_type === config('global.field_types')[2]){ /* email */
-				$default_value = 'thisisnotemail.com';
-			}else if($field_type->input_type === config('global.field_types')[3]){ /* select */
-				$default_value = 'something';
-				$options = ['one', 'two', 'three'];
-			}else if($field_type->input_type === config('global.field_types')[4]){ /* number */
-				$default_value = 'abc';
-			}else if($field_type->input_type === config('global.field_types')[5]){ /* date */
-				$default_value = 'this is not date';
-			}else if($field_type->input_type === config('global.field_types')[6]){ /* time */
-				$default_value = 'this is not time';
-			}else if($field_type->input_type === config('global.field_types')[7]){ /* datetime */
-				$default_value = 'this is not timestamp';
-			}else if($field_type->input_type === config('global.field_types')[8]){ /* telephone */
-				$default_value = 'this is not telephone';
-			}else if($field_type->input_type === config('global.field_types')[9]){ /* multiselect */
-				$default_value = 'something else';
-				$options = ['one', 'two', 'three'];
-			}
-
-			$options = implode(',', $options);
-
-			ClientsCustomField::factory()->create([
-				'id'						=>	$order,
-				'custom_field_type_id'		=>	$field_type->id,
-				'company_id'				=>	1,
-				'label'						=>	'client '.$field_type->input_type,
-				'default_value'				=>	$default_value,
-				'type_params'				=>	$options,
-				'required'					=>	1,
-				'order_on_add_edit_page'	=>	$order
-			]);
-			$order++;
-		}
-
-		/* create custom fields post values */
-		$custom_fields_post = [];
-		$custom_fields_db = ClientsCustomField::whereHas('customFieldType')->with('customFieldType')->get();
-
-		foreach($custom_fields_db as $db_field){
-
-			$temp_post = [];
-			$temp_post['id'] = $db_field->id;
-
-			if($db_field->customFieldType->input_type === config('global.field_types')[0]){ /* text */
-				$temp_post['value'] = 'text value';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[1]){ /* textarea */
-				$temp_post['value'] = 'textarea here';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[2]){ /* email */
-				$temp_post['value'] = 'email@value.com';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[3]){ /* select */
-				$temp_post['value'] = 'one';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[4]){ /* number */
-				$temp_post['value'] = 1234678;
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[5]){ /* date */
-				$temp_post['value'] = '20 jan 2018';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[6]){ /* time */
-				$temp_post['value'] = [
-					'hours'		=>	10,
-					'minutes'	=>	15,
-					'seconds'	=>	10
-				];
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[7]){ /* datetime */
-				$temp_post['value'] = '19 jan 2018 11:08:15';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[8]){ /* telephone */
-				$temp_post['value'] = '+123457890';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[9]){ /* multiselect */
-				$temp_post['value'] = ['one', 'two'];
-			}
-			$custom_fields_post[] = $temp_post;
-		}
+		$this->addAllCustomFields($company_id, $c['headers']);
+		$temp = $this->setCustomFields();
+		$custom_fields_post = $temp['fields'];
 
 		$currency = Currency::inRandomOrder()->first();
 		$industry = Industry::inRandomOrder()->first();

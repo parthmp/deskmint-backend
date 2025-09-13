@@ -135,7 +135,7 @@ trait CustomFields{
 		];
 	}
 
-	protected function setCustomFields(){
+	protected function setCustomFields($invalid = false){
 
 		$custom_fields_post = [];
 		$custom_fields_types = [];
@@ -151,13 +151,23 @@ trait CustomFields{
 			}else if($db_field->customFieldType->input_type === config('global.field_types')[1]){ /* textarea */
 				$temp_post['value'] = 'some textarea text';
 			}else if($db_field->customFieldType->input_type === config('global.field_types')[2]){ /* email */
-				$temp_post['value'] = 'email@value.com';
+				if($invalid){
+					$temp_post['value'] = 'email invalid value.com';
+				}else{
+					$temp_post['value'] = 'email@value.com';
+				}
+				
 			}else if($db_field->customFieldType->input_type === config('global.field_types')[3]){ /* select */
 				$temp_post['value'] = 'one';
 			}else if($db_field->customFieldType->input_type === config('global.field_types')[4]){ /* number */
 				$temp_post['value'] = 1234678;
 			}else if($db_field->customFieldType->input_type === config('global.field_types')[5]){ /* date */
-				$temp_post['value'] = '2018-01-20T00:00:00.000Z';
+				if($invalid){
+					$temp_post['value'] = 'invalid date';
+				}else{
+					$temp_post['value'] = '2018-01-20T00:00:00.000Z';
+				}
+				
 			}else if($db_field->customFieldType->input_type === config('global.field_types')[6]){ /* time */
 				$temp_post['value'] = [
 					'hours'		=>	10,
