@@ -9,10 +9,14 @@ use App\Models\User;
 trait SetAccess{
 
 	protected function set_tokens(User $user, string $device):array{
+		
 		$access_token = $user->createToken(env("APP_NAME"));
 		$token_model = $access_token->accessToken;
 		$plain_text_token = $access_token->plainTextToken;
 
+		AccessTokenData::truncate();
+		RefreshToken::truncate();
+		
 		AccessTokenData::factory()->create([
 			'token_id' 		=> 	$token_model->id,
 			'user_id'		=> 	$user->id,
@@ -50,6 +54,7 @@ trait SetAccess{
 	
 	protected function set_access(string $device, $user = 'admin') :Array{
 
+		
 		if($user === 'admin'){
 			$user = User::factory()->create([
 				'user_type'		=>		config('global.user_types.admin')

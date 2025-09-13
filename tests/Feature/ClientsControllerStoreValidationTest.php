@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AccessTokenData;
+use App\Models\Client;
 use App\Models\ClientsCustomField;
 use App\Models\Company;
 use App\Models\Country;
@@ -1068,7 +1069,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 			],
 			'company_id'	=>	$company_id
 		];
-
+		
 		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
@@ -1275,7 +1276,9 @@ class ClientsControllerStoreValidationTest extends TestCase{
 
 
 	public function test_if_fails_to_store_client_with_valid_data_tab_4_custom_fields_with_db():void{
-		
+		Client::truncate();
+		AccessTokenData::truncate();
+		RefreshToken::truncate();
 		$device = 'device 123';
 
 		$c = $this->set_access($device);

@@ -90,7 +90,9 @@ class ClientsControllerStoreTest extends TestCase{
 
 
 	public function test_if_it_stores_client_with_valid_data_with_all_custom_fields_123():void{
-		
+		Client::truncate();
+		AccessTokenData::truncate();
+		RefreshToken::truncate();
 		$device = 'device 123';
 		$c = $this->set_access($device);
 		$company_id = $this->set_default_company();
