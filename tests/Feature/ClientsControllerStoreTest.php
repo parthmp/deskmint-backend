@@ -96,82 +96,17 @@ class ClientsControllerStoreTest extends TestCase{
 		$company_id = $this->set_default_company();
 
 		$country = Country::inRandomOrder()->first();
-		$this->setCustomFieldTypes();
 		
 		$currency = Currency::inRandomOrder()->first();
 		$industry = Industry::inRandomOrder()->first();
 		
-		$field_types = CustomFieldType::all();
-		$order = 1;
-		foreach($field_types as $field_type){
+		$all_c_fields = $this->addAllCustomFields($company_id, $c['headers']);
+		$order = $all_c_fields['order'];
 
-			$options = '';
-			
-			if($field_type->input_type === config('global.field_types')[3]){
-				$options = "one,two,three";
-			}
+		$temp = $this->setCustomFields();
+		$custom_fields_types = $temp['types'];
 
-			if($field_type->input_type === config('global.field_types')[9]){
-				$options = "five,six,seven";
-			}
-
-			$label = 'client '.$field_type->input_type;
-
-			$response = $this->post('/api/clients-custom-fields', [
-				'input_field'			=>		$field_type->id,
-				'label'					=>		$label,
-				'is_required'			=>		'true',
-				'add_edit_page_order'	=>		$order,
-				'select_options'		=>		$options,
-				'company_id'			=>		$company_id
-			], $c['headers']);
-			
-			$order++;
-			$response->assertStatus(200);
-			$this->assertArrayHasKey('validity', $response);
-			$this->assertEquals('created_success', $response['validity']);
-
-		}
-
-		/* create custom fields post values */
-		$custom_fields_post = [];
-		$custom_fields_types = [];
-		$custom_fields_db = ClientsCustomField::whereHas('customFieldType')->with('customFieldType')->get();
-
-		foreach($custom_fields_db as $db_field){
-
-			$temp_post = [];
-			$temp_post['id'] = $db_field->id;
-			$custom_fields_types[] = $db_field->customFieldType->input_type;
-			if($db_field->customFieldType->input_type === config('global.field_types')[0]){ /* text */
-				$temp_post['value'] = 'some text';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[1]){ /* textarea */
-				$temp_post['value'] = 'some textarea text';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[2]){ /* email */
-				$temp_post['value'] = 'email@value.com';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[3]){ /* select */
-				$temp_post['value'] = 'one';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[4]){ /* number */
-				$temp_post['value'] = 1234678;
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[5]){ /* date */
-				$temp_post['value'] = '2018-01-20T00:00:00.000Z';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[6]){ /* time */
-				$temp_post['value'] = [
-					'hours'		=>	10,
-					'minutes'	=>	15,
-					'seconds'	=>	10
-				];
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[7]){ /* datetime */
-				$temp_post['value'] = '2018-01-19T11:08:15Z';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[8]){ /* telephone */
-				$temp_post['value'] = '+123457890';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[9]){ /* multiselect */
-				$temp_post['value'] = ['one'];
-			}
-			$custom_fields_post[] = $temp_post;
-		}
-
-		$response = $this->post('/api/manage-clients', $this->clientStoreData($currency, $country, $industry, $company_id, $custom_fields_post), $c['headers']);
+		$response = $this->post('/api/manage-clients', $this->clientStoreData($currency, $country, $industry, $company_id, $temp['fields']), $c['headers']);
 		
 		$response->assertStatus(200);
 
@@ -249,48 +184,16 @@ class ClientsControllerStoreTest extends TestCase{
 		$company_id = $this->set_default_company();
 
 		$country = Country::inRandomOrder()->first();
-		$this->setCustomFieldTypes();
 		
 		$currency = Currency::inRandomOrder()->first();
 		$industry = Industry::inRandomOrder()->first();
 		
-		$field_types = CustomFieldType::all();
-		$order = 1;
-		foreach($field_types as $field_type){
-
-			$options = '';
-			
-			if($field_type->input_type === config('global.field_types')[3]){
-				$options = "one,two,three";
-			}
-
-			if($field_type->input_type === config('global.field_types')[9]){
-				$options = "five,six,seven";
-			}
-
-			$label = 'client '.$field_type->input_type;
-
-			$response = $this->post('/api/clients-custom-fields', [
-				'input_field'			=>		$field_type->id,
-				'label'					=>		$label,
-				'is_required'			=>		'true',
-				'add_edit_page_order'	=>		$order,
-				'select_options'		=>		$options,
-				'company_id'			=>		$company_id
-			], $c['headers']);
-			
-			$order++;
-			$response->assertStatus(200);
-			$this->assertArrayHasKey('validity', $response);
-			$this->assertEquals('created_success', $response['validity']);
-
-		}
+		$all_c_fields = $this->addAllCustomFields($company_id, $c['headers']);
+		$order = $all_c_fields['order'];
 
 		/* create custom fields post values */
-		$custom_fields_post = [];
-		$custom_fields_types = [];
 		$custom_fields_db = ClientsCustomField::whereHas('customFieldType')->with('customFieldType')->get();
-
+		
 		/* delete first three */
 		$delete_ids = [];
 		for($z = 0 ; $z < count($custom_fields_db) ; $z++){
@@ -299,7 +202,7 @@ class ClientsControllerStoreTest extends TestCase{
 				break;
 			}
 		}
-
+		
 		$response = $this->delete('/api/clients-custom-fields', [
 			'ids' => $delete_ids,
 			'company_id' => $company_id
@@ -311,40 +214,9 @@ class ClientsControllerStoreTest extends TestCase{
 
 		$order = ($order-count($delete_ids));
 
-		$custom_fields_db = ClientsCustomField::whereHas('customFieldType')->with('customFieldType')->get();
-
-		foreach($custom_fields_db as $db_field){
-
-			$temp_post = [];
-			$temp_post['id'] = $db_field->id;
-			$custom_fields_types[] = $db_field->customFieldType->input_type;
-			if($db_field->customFieldType->input_type === config('global.field_types')[0]){ /* text */
-				$temp_post['value'] = 'some text';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[1]){ /* textarea */
-				$temp_post['value'] = 'some textarea text';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[2]){ /* email */
-				$temp_post['value'] = 'email@value.com';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[3]){ /* select */
-				$temp_post['value'] = 'one';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[4]){ /* number */
-				$temp_post['value'] = 1234678;
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[5]){ /* date */
-				$temp_post['value'] = '2018-01-20T00:00:00.000Z';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[6]){ /* time */
-				$temp_post['value'] = [
-					'hours'		=>	10,
-					'minutes'	=>	15,
-					'seconds'	=>	10
-				];
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[7]){ /* datetime */
-				$temp_post['value'] = '2018-01-19T11:08:15Z';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[8]){ /* telephone */
-				$temp_post['value'] = '+123457890';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[9]){ /* multiselect */
-				$temp_post['value'] = ['one'];
-			}
-			$custom_fields_post[] = $temp_post;
-		}
+		$temp = $this->setCustomFields();
+		$custom_fields_post = $temp['fields'];
+		$custom_fields_types = $temp['types'];
 
 		$response = $this->post('/api/manage-clients', $this->clientStoreData($currency, $country, $industry, $company_id, $custom_fields_post), $c['headers']);
 		
@@ -429,41 +301,10 @@ class ClientsControllerStoreTest extends TestCase{
 		$currency = Currency::inRandomOrder()->first();
 		$industry = Industry::inRandomOrder()->first();
 		
-		$field_types = CustomFieldType::all();
-		$order = 1;
-		foreach($field_types as $field_type){
-
-			$options = '';
-			
-			if($field_type->input_type === config('global.field_types')[3]){
-				$options = "one,two,three";
-			}
-
-			if($field_type->input_type === config('global.field_types')[9]){
-				$options = "five,six,seven";
-			}
-
-			$label = 'client '.$field_type->input_type;
-
-			$response = $this->post('/api/clients-custom-fields', [
-				'input_field'			=>		$field_type->id,
-				'label'					=>		$label,
-				'is_required'			=>		'true',
-				'add_edit_page_order'	=>		$order,
-				'select_options'		=>		$options,
-				'company_id'			=>		$company_id
-			], $c['headers']);
-			
-			$order++;
-			$response->assertStatus(200);
-			$this->assertArrayHasKey('validity', $response);
-			$this->assertEquals('created_success', $response['validity']);
-
-		}
+		$all_c_fields = $this->addAllCustomFields($company_id, $c['headers']);
+		$order = $all_c_fields['order'];
 
 		/* create custom fields post values */
-		$custom_fields_post = [];
-		$custom_fields_types = [];
 		$custom_fields_db = ClientsCustomField::whereHas('customFieldType')->with('customFieldType')->get();
 
 		/* delete first three */
@@ -483,40 +324,9 @@ class ClientsControllerStoreTest extends TestCase{
 
 		$order = ($order-count($delete_ids));
 
-		$custom_fields_db = ClientsCustomField::whereHas('customFieldType')->with('customFieldType')->get();
-
-		foreach($custom_fields_db as $db_field){
-
-			$temp_post = [];
-			$temp_post['id'] = $db_field->id;
-			$custom_fields_types[] = $db_field->customFieldType->input_type;
-			if($db_field->customFieldType->input_type === config('global.field_types')[0]){ /* text */
-				$temp_post['value'] = 'some text';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[1]){ /* textarea */
-				$temp_post['value'] = 'some textarea text';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[2]){ /* email */
-				$temp_post['value'] = 'email@value.com';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[3]){ /* select */
-				$temp_post['value'] = 'one';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[4]){ /* number */
-				$temp_post['value'] = 1234678;
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[5]){ /* date */
-				$temp_post['value'] = '2018-01-20T00:00:00.000Z';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[6]){ /* time */
-				$temp_post['value'] = [
-					'hours'		=>	10,
-					'minutes'	=>	15,
-					'seconds'	=>	10
-				];
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[7]){ /* datetime */
-				$temp_post['value'] = '2018-01-19T11:08:15Z';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[8]){ /* telephone */
-				$temp_post['value'] = '+123457890';
-			}else if($db_field->customFieldType->input_type === config('global.field_types')[9]){ /* multiselect */
-				$temp_post['value'] = ['one'];
-			}
-			$custom_fields_post[] = $temp_post;
-		}
+		$temp = $this->setCustomFields();
+		$custom_fields_post = $temp['fields'];
+		$custom_fields_types = $temp['types'];
 
 		$response = $this->post('/api/manage-clients', $this->clientStoreData($currency, $country, $industry, $company_id, $custom_fields_post), $c['headers']);
 		

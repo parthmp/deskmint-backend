@@ -2,6 +2,7 @@
 
 namespace Tests\Traits;
 
+use App\Models\ClientsCustomField;
 use App\Models\Country;
 use App\Models\Currency;
 use App\Models\CustomFieldType;
@@ -10,7 +11,7 @@ use App\Models\Industry;
 trait CustomFields{
 
 	protected function setCustomFieldTypes() : void{
-
+		CustomFieldType::truncate();
 		/* set custom field types */
 		foreach(config('global.field_types') as $field){
 
@@ -18,7 +19,7 @@ trait CustomFields{
 				'input_type'	=>	$field,
 				'input_name'	=>	'client '.$field
 			]);
-
+			
 		}
 
 	}
@@ -134,7 +135,85 @@ trait CustomFields{
 		];
 	}
 
-	protected function addAllCustomFields(){
+	protected function setCustomFields(){
+
+		$custom_fields_post = [];
+		$custom_fields_types = [];
+		$custom_fields_db = ClientsCustomField::whereHas('customFieldType')->with('customFieldType')->get();
 		
+		foreach($custom_fields_db as $db_field){
+
+			$temp_post = [];
+			$temp_post['id'] = $db_field->id;
+			$custom_fields_types[] = $db_field->customFieldType->input_type;
+			if($db_field->customFieldType->input_type === config('global.field_types')[0]){ /* text */
+				$temp_post['value'] = 'some text';
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[1]){ /* textarea */
+				$temp_post['value'] = 'some textarea text';
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[2]){ /* email */
+				$temp_post['value'] = 'email@value.com';
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[3]){ /* select */
+				$temp_post['value'] = 'one';
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[4]){ /* number */
+				$temp_post['value'] = 1234678;
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[5]){ /* date */
+				$temp_post['value'] = '2018-01-20T00:00:00.000Z';
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[6]){ /* time */
+				$temp_post['value'] = [
+					'hours'		=>	10,
+					'minutes'	=>	15,
+					'seconds'	=>	10
+				];
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[7]){ /* datetime */
+				$temp_post['value'] = '2018-01-19T11:08:15Z';
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[8]){ /* telephone */
+				$temp_post['value'] = '+123457890';
+			}else if($db_field->customFieldType->input_type === config('global.field_types')[9]){ /* multiselect */
+				$temp_post['value'] = ['one'];
+			}
+			$custom_fields_post[] = $temp_post;
+		}
+
+		return [
+			'fields'	=>	$custom_fields_post,
+			'types'		=>	$custom_fields_types
+		];
+
+	}
+
+	protected function addAllCustomFields(int $company_id, $headers):array{
+		$this->setCustomFieldTypes();
+		$field_types = CustomFieldType::all();
+		$order = 1;
+		foreach($field_types as $field_type){
+
+			$options = '';
+			
+			if($field_type->input_type === config('global.field_types')[3]){
+				$options = "one,two,three";
+			}
+
+			if($field_type->input_type === config('global.field_types')[9]){
+				$options = "five,six,seven";
+			}
+
+			$label = 'client '.$field_type->input_type;
+
+			$response = $this->post('/api/clients-custom-fields', [
+				'input_field'			=>		$field_type->id,
+				'label'					=>		$label,
+				'is_required'			=>		'true',
+				'add_edit_page_order'	=>		$order,
+				'select_options'		=>		$options,
+				'company_id'			=>		$company_id
+			], $headers);
+			
+			$order++;
+		}
+
+		return [
+			'order'	=>	$order
+		];
+
 	}
 }

@@ -541,19 +541,19 @@ class ClientsController extends Controller{
 		$validation_rules = [
 			'custom_fields'	 =>	'required|array'
 		];
-
+		
 		$custom_fields_validation_1 = Validator::make($request->all(), $validation_rules);
 		if($custom_fields_validation_1->fails()){
+			
 			return response($response, config('global.error_code'));
 		}
-
+		
 		$custom_fields_submitted = $request->input('custom_fields');
 
 		$validation_rules = [];
 
 		$required_count = 0;
-
-
+		
 		$found_and_valid = 0;
 		/* generate validation rules dynamically */
 		foreach($db_custom_fields as $field){
@@ -1153,14 +1153,14 @@ class ClientsController extends Controller{
 	}
 
 	public function destroy(Request $request){
-
+		
 		$ids = $request->input('ids');
-
-		if (!is_array($ids) || empty($ids)) {
+		
+		if(!is_array($ids) || empty($ids)){
 			return response(['message' => 'No valid IDs provided', 'validity' => 'invalid_ids'], config('global.error_code'));
 		}
 
-		foreach ($ids as $id){
+		foreach($ids as $id){
 			if(!is_numeric($id)){
 				return response(['message' => 'All IDs must be numeric', 'validity' => 'non_numeric'], config('global.error_code'));
 			}

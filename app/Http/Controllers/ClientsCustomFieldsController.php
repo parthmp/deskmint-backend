@@ -305,12 +305,12 @@ class ClientsCustomFieldsController extends Controller{
 	public function destroy(Request $request){
 
 		$ids = $request->input('ids');
-
-		if (!is_array($ids) || empty($ids)) {
+		
+		if(!is_array($ids) || empty($ids)){
 			return response(['message' => 'No valid IDs provided', 'validity' => 'invalid_ids'], config('global.error_code'));
 		}
 
-		foreach ($ids as $id){
+		foreach($ids as $id){
 			if (!is_numeric($id)) {
 				return response(['message' => 'All IDs must be numeric', 'validity' => 'non_numeric'], config('global.error_code'));
 			}
