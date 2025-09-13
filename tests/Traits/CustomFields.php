@@ -7,6 +7,7 @@ use App\Models\Country;
 use App\Models\Currency;
 use App\Models\CustomFieldType;
 use App\Models\Industry;
+use Illuminate\Support\Arr;
 
 trait CustomFields{
 
@@ -24,9 +25,9 @@ trait CustomFields{
 
 	}
 
-	protected function clientStoreData(Currency $currency, Country $country, Industry $industry, int $company_id, array $custom_fields_post = []):array{
+	protected function clientStoreData(Currency $currency, Country $country, Industry $industry, int $company_id, array $custom_fields_post = [], $updates = []):array{
 		
-		return [
+		$whole_data = [
 			'personal_info'	=>	[
 				'first_name'	=>	[
 					'value'		=>	'test firstname'
@@ -133,6 +134,31 @@ trait CustomFields{
 			],
 			'company_id'	=>	$company_id
 		];
+
+		foreach($updates as $ukey => $update){
+			Arr::set($whole_data, $ukey, $update);
+		}
+		
+
+		// if(!empty($updates)){
+
+		// 	foreach($updates as $ukey => $update){
+
+		// 		$keys = explode('.', $ukey);
+		// 		$temp = &$whole_data;
+
+		// 		foreach($keys as $key){
+		// 			if(!isset($temp[$key]) || !is_array($temp[$key])){
+		// 				$temp[$key] = [];
+		// 			}
+		// 			$temp = &$temp[$key];
+		// 		}
+
+		// 		$temp = $update;
+		// 	}
+		// }
+
+		return $whole_data;
 	}
 
 	protected function setCustomFields($invalid = false){

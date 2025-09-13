@@ -72,8 +72,6 @@ class ClientsControllerTest extends TestCase
 		
 		$device = 'device 123';
 
-	
-
 		$this->setCustomFieldTypes();
 		$this->set_default_company();
 

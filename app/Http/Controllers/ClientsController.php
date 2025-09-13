@@ -1249,7 +1249,7 @@ class ClientsController extends Controller{
 		if($settings_validation !== null){
 			return $settings_validation;
 		}
-
+		
 		try{
 
 			$company_id = Sanitize::input($request->input('company_id'));
