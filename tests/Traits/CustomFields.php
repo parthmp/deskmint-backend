@@ -138,25 +138,6 @@ trait CustomFields{
 		foreach($updates as $ukey => $update){
 			Arr::set($whole_data, $ukey, $update);
 		}
-		
-
-		// if(!empty($updates)){
-
-		// 	foreach($updates as $ukey => $update){
-
-		// 		$keys = explode('.', $ukey);
-		// 		$temp = &$whole_data;
-
-		// 		foreach($keys as $key){
-		// 			if(!isset($temp[$key]) || !is_array($temp[$key])){
-		// 				$temp[$key] = [];
-		// 			}
-		// 			$temp = &$temp[$key];
-		// 		}
-
-		// 		$temp = $update;
-		// 	}
-		// }
 
 		return $whole_data;
 	}
@@ -217,9 +198,16 @@ trait CustomFields{
 
 	}
 
-	protected function addAllCustomFields(int $company_id, $headers):array{
+	protected function addAllCustomFields(int $company_id, $headers, int $number_of_fields = -1):array{
 		$this->setCustomFieldTypes();
-		$field_types = CustomFieldType::all();
+
+		if($number_of_fields > 0){
+			$field_types = CustomFieldType::inRandomOrder()->limit($number_of_fields)->get();
+		}else{
+			$field_types = CustomFieldType::all();
+		}
+
+		
 		$order = 1;
 		foreach($field_types as $field_type){
 
@@ -251,5 +239,12 @@ trait CustomFields{
 			'order'	=>	$order
 		];
 
+	}
+
+	protected function deleteClientsCustomFields(array $ids, array $headers, int $company_id):void{
+		$this->delete('/api/clients-custom-fields', [
+			'ids' => $ids,
+			'company_id' => $company_id
+		], $headers);
 	}
 }
