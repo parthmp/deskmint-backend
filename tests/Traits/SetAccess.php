@@ -21,7 +21,7 @@ trait SetAccess{
 			'token_id' 		=> 	$token_model->id,
 			'user_id'		=> 	$user->id,
 			'device'		=>	$device,
-			'created_at'	=>	now()->subSeconds(3599)
+			'created_at'	=>	now()
 		]);
 
 		$refresh_token_plain_text = bin2hex(random_bytes(32));
@@ -33,7 +33,7 @@ trait SetAccess{
 			'device'		=>	$device,
 			'used'			=>	0,
 			'used_at'		=>	null,
-			'created_at'	=>	(now())->subSeconds(100)
+			'created_at'	=>	now()
 		]);
 
 		return [
@@ -54,7 +54,7 @@ trait SetAccess{
 	
 	protected function set_access(string $device, $user = 'admin') :Array{
 
-		
+		User::truncate();
 		if($user === 'admin'){
 			$user = User::factory()->create([
 				'user_type'		=>		config('global.user_types.admin')
@@ -66,10 +66,11 @@ trait SetAccess{
 		}
 		
 		$tokens = $this->set_tokens($user, $device);
-
+		$headers = $this->userHeaders($tokens, $device);
+		
 		return [
-			'headers' => $this->userHeaders($tokens, $device),
-			'user'	=>	$user
+			'headers' 	=> $headers,
+			'user'		=>	$user
 		];
 
 	}
