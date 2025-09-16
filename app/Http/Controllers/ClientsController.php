@@ -1125,7 +1125,9 @@ class ClientsController extends Controller{
 		$clients_custom_column_ids = ClientsCustomField::where('company_id', '=', $company_id)->pluck('id')->toArray();
 
 		for($z = 0 ; $z < count($columns) ; $z++){
-
+			if(!isset($columns[$z]['clients_custom_fields_id'])){
+				$columns[$z]['clients_custom_fields_id'] = '-';
+			}
 			if(!in_array($columns[$z]['label'], $clients_columns) && !in_array($columns[$z]['clients_custom_fields_id'], $clients_custom_column_ids)){
 				return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 			}
