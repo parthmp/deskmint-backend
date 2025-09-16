@@ -229,10 +229,6 @@ class ClientControllerIndexTest extends TestCase{
 		
 
 		$response = $this->withHeaders($c['headers'])->get('/api/manage-clients/fetch-arranged-columns?'. http_build_query($params));
-
-		$response->assertStatus(200);
-		$json = $response->json();
-		
 		$response->assertStatus(200);
 		
 		/* now test for true values */
@@ -337,6 +333,29 @@ class ClientControllerIndexTest extends TestCase{
 		$this->assertEquals('custom', $last['type']);
 		$this->assertTrue((bool)$last['searchable']);
 
+
+	}
+
+	public function test_if_index_loads_for_clients_with_no_settings_added():void{
+		
+		$c = $this->addNewClients(20);
+		
+		$params = [
+			'company_id'		=>	$c['company_id'],
+			'default_per_page'	=>	10
+		];
+		$response = $this->withHeaders($c['headers'])->get('/api/manage-clients?'. http_build_query($params));
+		
+		$response->assertStatus(200);
+		$json = $response->json();
+
+		$this->assertEquals('first_name', $json['table_data']['columns'][0]['label']);
+		$this->assertEquals('last_name', $json['table_data']['columns'][1]['label']);
+		$this->assertEquals('email', $json['table_data']['columns'][2]['label']);
+		$this->assertEquals('created_at', $json['table_data']['columns'][3]['label']);
+		$this->assertEquals('actions', $json['table_data']['columns'][4]['label']);
+
+		$this->assertEquals(10, (int)count($json['table_data']['rows']));
 
 	}
 
