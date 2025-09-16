@@ -671,7 +671,7 @@ class ClientsController extends Controller{
 		$date_only_columns = [];
 
 		if($user_data){
-
+			
 			$user_data =  json_decode($user_data->columns_json, true);
 			$clients_custom_columns = ClientsCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->with('customFieldType')->get()->toArray();
 

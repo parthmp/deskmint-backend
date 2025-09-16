@@ -140,6 +140,7 @@
 				$sorted_column = null;
 				if($request->filled('sorted_column')){
 					$sorted_column = $request->input('sorted_column');
+					
 					foreach($sorted_column as $key => $value){
 						$sorted_column[$key] = Sanitize::input($value);
 					}
@@ -244,7 +245,10 @@
 						$fields->orderByRaw("$case $direction");
 
 					}else{
-						$fields->orderBy($column, $direction);
+	
+    					$qualified_column = (strpos($column, '.') === false) ? "{$table}.{$column}" : $column;
+						$fields->orderBy($qualified_column, $direction);
+						
 					}
 				}
 
