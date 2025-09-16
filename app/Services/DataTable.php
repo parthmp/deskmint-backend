@@ -246,9 +246,16 @@
 
 					}else{
 	
-    					$qualified_column = (strpos($column, '.') === false) ? "{$table}.{$column}" : $column;
-						$fields->orderBy($qualified_column, $direction);
+    					
+						$database_type = DB::connection()->getConfig('driver');
+						if($database_type === 'mysql'){
+							$fields->orderBy($column, $direction);
+						}else{
+							$qualified_column = (strpos($column, '.') === false) ? "{$table}.{$column}" : $column;
+							$fields->orderBy($qualified_column, $direction);
+						}
 						
+
 					}
 				}
 
