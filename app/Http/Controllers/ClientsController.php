@@ -659,7 +659,7 @@ class ClientsController extends Controller{
 
 		/* check custom fields showing fallback */
 		$user_data = UserIndexColumn::where([['user_id', '=', Auth::user()->id], ['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->first();
-
+		
 		if(!$user_data){
 			$user_data = SettingsIndexColumn::where([['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->first();
 		}
