@@ -1,111 +1,111 @@
 <?php
 
-	namespace App\Traits;
+namespace App\Traits;
 
-	use App\Helpers\Sanitize;
-	use Illuminate\Http\Request;
-	use Illuminate\Support\Facades\Validator;
+use App\Helpers\Sanitize;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
-	trait CustomFieldsValidation{
+trait CustomFieldsValidation{
+	
+	protected function validateCustomFields(Request $request, string $model, string $validity, int $tab = 3){
+
+		$response = ['message' => 'Please fill in required fields', 'validity' => $validity, 'tab_switch' => $tab];
+
+		if(!$request->has('custom_fields')){
+			return response(['message' => 'no custom fields', 'validity' => $validity, 'tab_switch' => $tab], config('global.error_code'));
+		}
+
+		$company_id = Sanitize::input($request->input('company_id'));
+
+		$db_custom_fields = $model::where('company_id', '=', $company_id)->whereHas('customFieldType')->get();
 		
-		protected function validateCustomFields(Request $request, string $model, string $validity, int $tab = 3){
+		if($db_custom_fields->isEmpty()){
+			return null;
+		}
+		
+		$validation_rules = [
+			'custom_fields'	 =>	'required|array'
+		];
+		
+		$custom_fields_validation_1 = Validator::make($request->all(), $validation_rules);
+		if($custom_fields_validation_1->fails()){
+			return response($response, config('global.error_code'));
+		}
+		
+		$custom_fields_submitted = $request->input('custom_fields');
 
-			$response = ['message' => 'Please fill in required fields', 'validity' => $validity, 'tab_switch' => $tab];
+		$validation_rules = [];
 
-			if(!$request->has('custom_fields')){
-				return response(['message' => 'no custom fields', 'validity' => $validity, 'tab_switch' => $tab], config('global.error_code'));
-			}
+		$required_count = 0;
+		
+		$found_and_valid = 0;
+		/* generate validation rules dynamically */
+		foreach($db_custom_fields as $field){
 
-			$company_id = Sanitize::input($request->input('company_id'));
+			if($field->required == 1){
 
-			$db_custom_fields = $model::where('company_id', '=', $company_id)->whereHas('customFieldType')->get();
-			
-			if($db_custom_fields->isEmpty()){
-				return null;
-			}
-			
-			$validation_rules = [
-				'custom_fields'	 =>	'required|array'
-			];
-			
-			$custom_fields_validation_1 = Validator::make($request->all(), $validation_rules);
-			if($custom_fields_validation_1->fails()){
-				return response($response, config('global.error_code'));
-			}
-			
-			$custom_fields_submitted = $request->input('custom_fields');
+				$required_count++;
 
-			$validation_rules = [];
+				for($z = 0 ; $z < count($custom_fields_submitted) ; $z++){
 
-			$required_count = 0;
-			
-			$found_and_valid = 0;
-			/* generate validation rules dynamically */
-			foreach($db_custom_fields as $field){
+					if($custom_fields_submitted[$z]['id'] === $field->id){
 
-				if($field->required == 1){
+						$found_and_valid++;
 
-					$required_count++;
+						if($field->customFieldType->input_type === config('global.field_types')[0] || $field->customFieldType->input_type === config('global.field_types')[1] || $field->customFieldType->input_type === config('global.field_types')[3] || $field->customFieldType->input_type === config('global.field_types')[9]){
+							
+							$validation_rules['custom_fields.'.$z.'.value'] = 'required';
 
-					for($z = 0 ; $z < count($custom_fields_submitted) ; $z++){
+						}else{
 
-						if($custom_fields_submitted[$z]['id'] === $field->id){
-
-							$found_and_valid++;
-
-							if($field->customFieldType->input_type === config('global.field_types')[0] || $field->customFieldType->input_type === config('global.field_types')[1] || $field->customFieldType->input_type === config('global.field_types')[3] || $field->customFieldType->input_type === config('global.field_types')[9]){
+							if($field->customFieldType->input_type === config('global.field_types')[2]){ //email
 								
-								$validation_rules['custom_fields.'.$z.'.value'] = 'required';
+								$validation_rules['custom_fields.'.$z.'.value'] = 'required|email';
 
-							}else{
+							}else if($field->customFieldType->input_type === config('global.field_types')[4]){ //number
 
-								if($field->customFieldType->input_type === config('global.field_types')[2]){ //email
-									
-									$validation_rules['custom_fields.'.$z.'.value'] = 'required|email';
+								$validation_rules['custom_fields.'.$z.'.value'] = 'required|numeric';
 
-								}else if($field->customFieldType->input_type === config('global.field_types')[4]){ //number
+							}else if($field->customFieldType->input_type === config('global.field_types')[5] || $field->customFieldType->input_type === config('global.field_types')[7]){ //date and datetime
 
-									$validation_rules['custom_fields.'.$z.'.value'] = 'required|numeric';
+								$validation_rules['custom_fields.'.$z.'.value'] = 'required|date';
 
-								}else if($field->customFieldType->input_type === config('global.field_types')[5] || $field->customFieldType->input_type === config('global.field_types')[7]){ //date and datetime
+							}else if($field->customFieldType->input_type === config('global.field_types')[6]){ //time
 
-									$validation_rules['custom_fields.'.$z.'.value'] = 'required|date';
+								$validation_rules['custom_fields.'.$z.'.value'] = 'required|array';
+								$validation_rules['custom_fields.'.$z.'.value.hours'] = 'required|integer|between:0,23';
+								$validation_rules['custom_fields.'.$z.'.value.minutes'] = 'required|integer|between:0,59';
+								$validation_rules['custom_fields.'.$z.'.value.seconds'] = 'required|integer|between:0,59';
 
-								}else if($field->customFieldType->input_type === config('global.field_types')[6]){ //time
+							}else if($field->customFieldType->input_type === config('global.field_types')[8]){ //telephone
 
-									$validation_rules['custom_fields.'.$z.'.value'] = 'required|array';
-									$validation_rules['custom_fields.'.$z.'.value.hours'] = 'required|integer|between:0,23';
-									$validation_rules['custom_fields.'.$z.'.value.minutes'] = 'required|integer|between:0,59';
-									$validation_rules['custom_fields.'.$z.'.value.seconds'] = 'required|integer|between:0,59';
-
-								}else if($field->customFieldType->input_type === config('global.field_types')[8]){ //telephone
-
-									$validation_rules['custom_fields.'.$z.'.value'] = 'required|regex:/^\+?\d+$/';
-
-								}
+								$validation_rules['custom_fields.'.$z.'.value'] = 'required|regex:/^\+?\d+$/';
 
 							}
-							
 
 						}
+						
 
-					}
-
-					if(count($custom_fields_submitted) !== count($db_custom_fields) && $found_and_valid === $required_count){
-						return response($response, config('global.error_code'));
 					}
 
 				}
 
-			}
+				if(count($custom_fields_submitted) !== count($db_custom_fields) && $found_and_valid === $required_count){
+					return response($response, config('global.error_code'));
+				}
 
-			$custom_fields_validation_2 = Validator::make($request->all(), $validation_rules);
-			if($custom_fields_validation_2->fails()){
-				return response($response, config('global.error_code'));
 			}
-
-			return null;
 
 		}
 
+		$custom_fields_validation_2 = Validator::make($request->all(), $validation_rules);
+		if($custom_fields_validation_2->fails()){
+			return response($response, config('global.error_code'));
+		}
+
+		return null;
+
 	}
+
+}

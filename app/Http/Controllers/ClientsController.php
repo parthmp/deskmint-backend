@@ -12,6 +12,7 @@ use App\Models\SettingsIndexColumn;
 use App\Models\UserIndexColumn;
 use App\Services\DataTable;
 use App\Traits\CustomFieldsPrinting;
+use App\Traits\CustomFieldsUpsert;
 use App\Traits\CustomFieldsValidation;
 use Carbon\Carbon;
 use Exception;
@@ -23,7 +24,7 @@ use Illuminate\Support\Facades\Validator;
 
 class ClientsController extends Controller{
 
-	use CustomFieldsPrinting, CustomFieldsValidation;
+	use CustomFieldsPrinting, CustomFieldsValidation, CustomFieldsUpsert;
 
 	public function fetchClientsCustomFields(Request $request){
 
@@ -37,130 +38,6 @@ class ClientsController extends Controller{
 
 	public function store(Request $request){
 		return $this->saveOrUpdateClient($request, true);
-	}
-
-	private function upsertClientCustomFieldValues(Request $request, int $client_id, int $company_id, $add = true){
-
-		
-		if($add){
-			$db_custom_fields = ClientsCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->get();
-		}else{
-			$db_custom_fields = ClientsCustomField::where('company_id', $company_id)->whereHas('customFieldType')->whereHas('customFieldValue', function($query) use ($client_id){
-				$query->where('client_id', $client_id);
-			})->with(['customFieldValue' => function($query) use ($client_id) {
-    			$query->where('client_id', $client_id);
-			}])->get();
-		}
-		
-		$upsert = [];
-		$insert_flat = [];
-		$insert_flat['client_id'] = $client_id;
-
-		foreach($db_custom_fields as $field){
-
-			$custom_fields_submitted = $request->input('custom_fields');
-
-			$value = '';
-			$flat_value = '';
-
-			for($z = 0 ; $z < count($custom_fields_submitted) ; $z++){
-
-				if($custom_fields_submitted[$z]['id'] == $field->id){
-
-					if(!$add){
-						$field->value_id = $field->customFieldValue->id;
-					}
-
-					if($field->customFieldType->input_type === config('global.field_types')[0] || $field->customFieldType->input_type === config('global.field_types')[1] || $field->customFieldType->input_type === config('global.field_types')[3] || $field->customFieldType->input_type === config('global.field_types')[2] || $field->customFieldType->input_type === config('global.field_types')[4] || $field->customFieldType->input_type === config('global.field_types')[8]){ //text, textarea, select, email, number, telephone
-
-						$value = trim($custom_fields_submitted[$z]['value']);
-						$flat_value = $value;
-						if($field->customFieldType->input_type === config('global.field_types')[4] && trim($custom_fields_submitted[$z]['value']) == ''){
-							$flat_value = null;
-						}
-
-					}else{
-
-						if($field->customFieldType->input_type === config('global.field_types')[5] || $field->customFieldType->input_type === config('global.field_types')[7]){ //date and datetime
-
-							if($custom_fields_submitted[$z]['value'] === null || $custom_fields_submitted[$z]['value'] === ''){
-
-								$value = '';
-								$flat_value = null;
-
-							}else{
-								
-								
-								$datetime_string = trim($custom_fields_submitted[$z]['value']);
-								
-								if(General::isValidISODateTime($datetime_string)){
-									
-									$value = $datetime_string;
-									$flat_value = Carbon::parse($datetime_string)->format('Y-m-d H:i:s'); //for date and time
-									
-								}else{
-									$value = '';
-									$flat_value = null;
-								}
-
-							}
-							
-
-						}else if($field->customFieldType->input_type === config('global.field_types')[6]){ //time
-
-							if($field->required == 1){
-								$value = General::jsonTimeToAmPm(json_encode($custom_fields_submitted[$z]['value']));
-								$flat_value = $value;
-							}else{
-								if($custom_fields_submitted[$z]['value'] !== null){
-									$value = General::jsonTimeToAmPm(json_encode($custom_fields_submitted[$z]['value']));
-									$flat_value = $value;
-								}else{
-									$value = json_encode('');
-									$flat_value = '';
-								}
-							}
-
-						}else if($field->customFieldType->input_type === config('global.field_types')[9]){ //multiselect
-							$value = json_encode('');
-							if($custom_fields_submitted[$z]['value'] !== null){
-								$value = json_encode($custom_fields_submitted[$z]['value']);
-								$flat_value = $value;
-							}
-						}
-
-					}
-
-					if($custom_fields_submitted[$z]['id'] == $field->id){
-						$custom_column_name = General::replaceWithUnderscores($field->label);
-						$insert_flat[$custom_column_name] = $flat_value;
-					}
-
-				}
-			}
-			$temp_upsert = [];
-			if(!$add){
-				$temp_upsert['id'] = $field->value_id;
-			}
-			
-			$temp_upsert['client_id'] = $client_id;
-			$temp_upsert['clients_custom_field_id'] = $field->id;
-			$temp_upsert['field_value'] = $value;
-
-			$upsert[] = $temp_upsert;
-		}
-
-		if(!empty($upsert)){
-			ClientCustomFieldValue::upsert($upsert, ['id'], ['client_id', 'clients_custom_field_id', 'field_value']);
-		}
-
-		$insert_flat['created_at'] = now();
-		$insert_flat['updated_at'] = now();
-		if(!$add){
-			DB::table('clients_flat')->where('client_id', '=', $client_id)->delete();
-		}
-		DB::table('clients_flat')->insert($insert_flat);
-		
 	}
 
 	private function upsertContactInfoForClient(Request $request, int $client_id, bool $add = true){
@@ -998,7 +875,7 @@ class ClientsController extends Controller{
 			$saved = $client->save();
 
 			$this->upsertContactInfoForClient($request, $client->id, $add);
-			$this->upsertClientCustomFieldValues($request, $client->id, $company_id, $add);
+			$this->upsertCustomFieldValues($request, $client->id, ClientsCustomField::class, ClientCustomFieldValue::class, 'clients_flat', 'client', $add);
 
 			if($saved){
 				return response(['message' => 'Client saved successfully', 'validity' => 'client_saved'], 200);
