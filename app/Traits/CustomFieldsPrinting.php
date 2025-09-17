@@ -3,6 +3,7 @@
 	namespace App\Traits;
 
 	use App\Helpers\General;
+	use DateTime;
 	use Illuminate\Database\Eloquent\Collection;
 
 	trait CustomFieldsPrinting{
@@ -104,6 +105,115 @@
 			
 		}
 
+		private function emailField(string $value):string{
+
+			$return_value = $value;
+
+			if(!filter_var($return_value, FILTER_VALIDATE_EMAIL)){
+				$return_value = '';
+			}
+
+			return $return_value;
+
+		}
+
+		private function selectField(string $value, array $params):string{
+			$return_value = $value;
+			if(!in_array($return_value, $params)){
+				$return_value = '';
+			}
+			return $return_value;
+		}
+
+		private function numberField(string $value):string{
+			$return_value = $value;
+			if(filter_var($return_value, FILTER_VALIDATE_INT) === false){
+				$return_value = '';
+			}
+			return $return_value;
+		}
+
+		private function dateField(string $value, array $date_formats) : string{
+
+			$default_value = trim($value);
+			$parsed = false;
+			
+			foreach($date_formats as $format){
+				if((DateTime::createFromFormat($format, $default_value) !== false)){
+					
+					$default_value = DateTime::createFromFormat($format, $default_value)->format('Y-m-d');
+					$parsed = true;
+					break;
+					
+				}
+			}
+			
+			if(!$parsed){
+				$default_value = '';
+			}
+
+			return $default_value;
+
+		}
+
+		private function timeField(string $value) : string{
+
+			$return_value = '';
+			$default_value = trim($value);
+			if(General::isValidTime($default_value)){
+				$return_value = General::convertToStandardTime($default_value);
+			}
+			return $return_value;
+		}
+
+		private function datetimeField(string $value, array $datetime_formats) : string{
+
+			$return_value = '';
+
+			$default_value = General::fixMonthNames(trim($value));
+			$parsed = null;
+
+			foreach($datetime_formats as $format){
+
+				$date_obj = DateTime::createFromFormat($format, $default_value);
+				
+				if($date_obj !== false && $date_obj->format($format) === $default_value){
+					
+					$default_value = DateTime::createFromFormat($format, $default_value)->format('Y-m-d H:i:s');
+					$parsed = true;
+					break;
+				}
+				
+			}
+			
+			if($parsed){
+				$return_value = $default_value;
+			}
+
+			return $return_value;
+
+		}
+
+		private function phoneField(string $value) : string{
+			
+			$return_value = '';
+			$default_value = trim($value);
+			if(General::isValidPhoneNumber($default_value)){
+				$return_value = $default_value;
+			}
+			return $return_value;
+		}
+
+		private function multiselectField(string $value, array $params) : array{
+
+			$return_value = [];
+			if(in_array($value, $params)){
+				$default_value = trim($value);
+				$return_value = [$default_value];
+			}
+			return $return_value;
+		}
+
 		public function adjustRowsPrinting(Collection $fields):\Illuminate\Support\Collection{
 
 			$date_formats = $this->getDateFormats();
@@ -117,7 +227,9 @@
 			if(!empty($current_row)){
 				$rows[] = $current_row;
 			}
+
 			$index = 0;
+			
 			foreach($rows as $row){
 
 				$count = count($row);
@@ -150,117 +262,39 @@
 					$field->required = $required;
 
 					if($field->customFieldType->input_type === config('global.field_types')[2]){ /* email */
-
-						if(!filter_var($field->default_value, FILTER_VALIDATE_EMAIL)){
-							$field->value = '';
-						}
-
+						$field->value = $this->emailField($field->default_value);
 					}
 
 					if($field->customFieldType->input_type === config('global.field_types')[3]){ /* select */
-						
-						if(!in_array($field->default_value, $temp_params)){
-							$field->value = '';
-						}
-						
+						$field->value = $this->selectField($field->default_value, $temp_params);
 					}
 
 					if($field->customFieldType->input_type === config('global.field_types')[4]){
-						if(filter_var($field->default_value, FILTER_VALIDATE_INT) === false){
-							$field->value = '';
-						}
+						$field->value = $this->numberField($field->default_value);
 					}
 
 					if($field->customFieldType->input_type === config('global.field_types')[5]){ //date only
-						
-						$default_value = trim($field->default_value);
-						$parsed = false;
-						
-						foreach($date_formats as $format){
-							if((\DateTime::createFromFormat($format, $default_value) !== false)){
-								
-								$default_value = \DateTime::createFromFormat($format, $default_value)->format('Y-m-d');
-								$parsed = true;
-								break;
-								
-							}
-						}
-						
-						if($parsed){
-							$field->value = $default_value;
-						}else{
-							$field->value = '';
-						}
-
-						$field->default_value = '';
-						
+						$field->value = $this->dateField($field->default_value, $date_formats);
 					}
 
 					if($field->customFieldType->input_type === config('global.field_types')[6]){
-
-						$default_value = trim($field->default_value);
-
-						$field->value = '';
-						if(General::isValidTime($default_value)){
-							$field->value = General::convertToStandardTime($default_value);
-						}
-						
-						$field->default_value = '';
-
+						$field->value = $this->timeField($field->default_value);
 					}
 
 					if($field->customFieldType->input_type === config('global.field_types')[7]){ /* datetime */
-						
-						$default_value = General::fixMonthNames(trim($field->default_value));
-						$parsed = null;
-
-						foreach($datetime_formats as $format){
-
-							$date_obj = \DateTime::createFromFormat($format, $default_value);
-							
-							if($date_obj !== false && $date_obj->format($format) === $default_value){
-								
-								$default_value = \DateTime::createFromFormat($format, $default_value)->format('Y-m-d H:i:s');
-								$parsed = true;
-								break;
-							}
-							
-						}
-						
-						if($parsed){
-							$field->value = $default_value;
-						}else{
-							$field->value = '';
-						}
-
-						$field->default_value = '';
-						
+						$field->value = $this->datetimeField($field->default_value, $datetime_formats);
 					}
 
 					if($field->customFieldType->input_type === config('global.field_types')[8]){
-						
-						$default_value = trim($field->default_value);
-
-						$field->default_value = '';
-						$field->value = '';
-						if(General::isValidPhoneNumber($default_value)){
-							$field->value = $default_value;
-						}
-
+						$field->value = $this->phoneField($field->default_value);
 					}
 
 
 					if($field->customFieldType->input_type === config('global.field_types')[9]){
-
-						if(!in_array($field->default_value, $temp_params)){
-							$field->value = [];
-						}else{
-							$default_value = trim($field->default_value);
-							$field->value = [$default_value];
-						}
-						$field->default_value = '';
-						
+						$field->value = $this->multiselectField($field->default_value, $temp_params);
 					}
+
+					$field->default_value = '';
 
 					$field->ref = "cf_client_".$index."_".General::onlyLettersAndNumbers($field->label);
 					
