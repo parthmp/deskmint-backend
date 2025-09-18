@@ -561,7 +561,7 @@ class ClientsController extends Controller{
 			return $settings_validation;
 		}
 		
-		try{
+		//try{
 
 			$company_id = Sanitize::input($request->input('company_id'));
 			$personal_info_first_name = Sanitize::input($request->input('personal_info.first_name.value'));
@@ -646,9 +646,9 @@ class ClientsController extends Controller{
 			
 			
 
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
 
 	}
 	

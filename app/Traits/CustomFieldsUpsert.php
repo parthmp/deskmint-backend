@@ -11,17 +11,30 @@ use Illuminate\Support\Facades\DB;
 
 trait CustomFieldsUpsert{
 
+	private function getDBCustomFieldsForStore(string $custom_fields_model, int $company_id){
+		return $custom_fields_model::where('company_id', '=', $company_id)->whereHas('customFieldType')->get();
+	}
+
 	private function getDBCustomFields(int $db_id, string $custom_fields_model, int $company_id, bool $add, string $type) : Collection{
-		if($add){
-			$db_custom_fields = $custom_fields_model::where('company_id', '=', $company_id)->whereHas('customFieldType')->get();
-		}else{
+		
+		if(!$add){
+			
 			$db_custom_fields = $custom_fields_model::where('company_id', $company_id)->whereHas('customFieldType')->whereHas('customFieldValue', function($query) use ($db_id, $type){
 				$query->where($type.'_id', $db_id);
 			})->with(['customFieldValue' => function($query) use ($db_id, $type) {
 				$query->where($type.'_id', $db_id);
 			}])->get();
+
+			if($db_custom_fields->count() === 0){
+				$db_custom_fields = $this->getDBCustomFieldsForStore($custom_fields_model, $company_id);
+			}
+			
+		}else{
+			$db_custom_fields = $this->getDBCustomFieldsForStore($custom_fields_model, $company_id);
 		}
+
 		return $db_custom_fields;
+
 	}
 
 	private function generalFlatValue(string $value, string $input_type) : array{
@@ -78,7 +91,7 @@ trait CustomFieldsUpsert{
 		return ['flat_value' => $flat_value, 'value' => $value];
 	}
 
-	protected function upsertCustomFieldValues(Request $request, int $db_id, string $custom_fields_model, string $custom_fields_value_model, string $flat_table, string $type = 'client', bool $add = true) : void{
+	protected function upsertCustomFieldValues(Request $request, int $db_id, string $custom_fields_model, string $custom_fields_value_model, string $flat_table, string $type = 'client', bool $add = true){
 		
 		$company_id = Sanitize::input($request->input('company_id'));
 		$db_custom_fields = $this->getDBCustomFields($db_id, $custom_fields_model, $company_id, $add, $type);
@@ -98,7 +111,7 @@ trait CustomFieldsUpsert{
 
 				if($custom_fields_submitted[$z]['id'] == $field->id){
 
-					if(!$add){
+					if(!$add && isset($field->customFieldValue->id)){
 						$field->value_id = $field->customFieldValue->id;
 					}
 
@@ -141,7 +154,7 @@ trait CustomFieldsUpsert{
 				}
 			}
 			$temp_upsert = [];
-			if(!$add){
+			if(!$add && isset($field->value_id)){
 				$temp_upsert['id'] = $field->value_id;
 			}
 			
