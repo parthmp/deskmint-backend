@@ -17,27 +17,32 @@ trait CustomFieldsUpsert{
 
 	private function getDBCustomFields(int $db_id, string $custom_fields_model, int $company_id, bool $add, string $type) : Collection{
 		
-		if(!$add){
+		// if(!$add){
 			
-			$db_custom_fields = $custom_fields_model::where('company_id', $company_id)->whereHas('customFieldType')->whereHas('customFieldValue', function($query) use ($db_id, $type){
-				$query->where($type.'_id', $db_id);
-			})->with(['customFieldValue' => function($query) use ($db_id, $type) {
-				$query->where($type.'_id', $db_id);
-			}])->get();
+		// 	$db_custom_fields = $custom_fields_model::where('company_id', $company_id)->whereHas('customFieldType')->whereHas('customFieldValue', function($query) use ($db_id, $type){
+		// 		$query->where($type.'_id', $db_id);
+		// 	})->with(['customFieldValue' => function($query) use ($db_id, $type) {
+		// 		$query->where($type.'_id', $db_id);
+		// 	}])->get();
 
-			if($db_custom_fields->count() === 0){
-				$db_custom_fields = $this->getDBCustomFieldsForStore($custom_fields_model, $company_id);
-			}
-			
-		}else{
-			$db_custom_fields = $this->getDBCustomFieldsForStore($custom_fields_model, $company_id);
-		}
+		// 	if($db_custom_fields->count() === 0){
+		// 		$db_custom_fields = $this->getDBCustomFieldsForStore($custom_fields_model, $company_id);
+		// 	}
+
+		// }else{
+		// 	$db_custom_fields = $this->getDBCustomFieldsForStore($custom_fields_model, $company_id);
+		// }
+
+		$db_custom_fields = $custom_fields_model::where('company_id', $company_id)->whereHas('customFieldType')->with(['customFieldValue' => function($query) use ($db_id, $type) {
+        	$query->where($type . '_id', $db_id);
+    	}])->get();
+
 
 		return $db_custom_fields;
 
 	}
 
-	private function generalFlatValue(string $value, string $input_type) : array{
+	private function generalFlatValue(mixed $value, string $input_type) : array{
 
 		$value = trim($value);
 		$flat_value = $value;
@@ -47,7 +52,7 @@ trait CustomFieldsUpsert{
 		return ['flat_value' => $flat_value, 'value' => $value];
 	}
 
-	private function dateNdatetimeFlatValue(string $value) : array{
+	private function dateNdatetimeFlatValue(mixed $value) : array{
 
 		$r_value = '';
 		$r_flat_value = null;
@@ -73,7 +78,7 @@ trait CustomFieldsUpsert{
 
 	}
 
-	private function timeFlatValue(int $required, array $value){
+	private function timeFlatValue(int $required, mixed $value){
 
 		if($required === 1){
 			$value = General::jsonTimeToAmPm(json_encode($value));
@@ -95,7 +100,7 @@ trait CustomFieldsUpsert{
 		
 		$company_id = Sanitize::input($request->input('company_id'));
 		$db_custom_fields = $this->getDBCustomFields($db_id, $custom_fields_model, $company_id, $add, $type);
-		
+		//return $db_custom_fields;
 		$upsert = [];
 		$insert_flat = [];
 		$insert_flat[$type.'_id'] = $db_id;
@@ -116,6 +121,10 @@ trait CustomFieldsUpsert{
 					}
 
 					if($field->customFieldType->input_type === config('global.field_types')[0] || $field->customFieldType->input_type === config('global.field_types')[1] || $field->customFieldType->input_type === config('global.field_types')[3] || $field->customFieldType->input_type === config('global.field_types')[2] || $field->customFieldType->input_type === config('global.field_types')[4] || $field->customFieldType->input_type === config('global.field_types')[8]){ //text, textarea, select, email, number, telephone
+						
+						if(!isset($custom_fields_submitted[$z]['value']) || $custom_fields_submitted[$z]['value'] === null){
+							$custom_fields_submitted[$z]['value'] = '';
+						}
 
 						$temp_values = $this->generalFlatValue($custom_fields_submitted[$z]['value'], $field->customFieldType->input_type);
 						$flat_value = $temp_values['flat_value'];
@@ -156,6 +165,8 @@ trait CustomFieldsUpsert{
 			$temp_upsert = [];
 			if(!$add && isset($field->value_id)){
 				$temp_upsert['id'] = $field->value_id;
+			}else{
+				$temp_upsert['id'] = null;
 			}
 			
 			$temp_upsert[$type.'_id'] = $db_id;
