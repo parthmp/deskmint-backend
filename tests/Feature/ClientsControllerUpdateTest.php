@@ -166,7 +166,7 @@ class ClientsControllerUpdateTest extends TestCase{
 		$industry = Industry::inRandomOrder()->first();
 		
 		$fields = $this->setCustomFields();
-
+		
 		$post_data = $this->updatedData($currency, $country, $industry, $company_id, $fields['fields']);
 		
 		$response = $this->patch('/api/manage-clients/'.$client->id, $post_data, $c['headers']);
@@ -208,7 +208,7 @@ class ClientsControllerUpdateTest extends TestCase{
 
 		/* validate all inputs from clients_flat */
 		$field_values = ClientCustomFieldValue::where('client_id', '=', $client->id)->orderBy('id', 'asc')->get();
-		$this->assertEmpty($field_values);
+		$this->assertEquals(3, $field_values->count());
 
 
 
@@ -291,7 +291,7 @@ class ClientsControllerUpdateTest extends TestCase{
 
 		/* validate all inputs from clients_flat */
 		$field_values = ClientCustomFieldValue::where('client_id', '=', $client->id)->orderBy('id', 'asc')->get();
-		$this->assertEmpty($field_values);
+		$this->assertNotEmpty($field_values);
 
 
 
@@ -383,7 +383,7 @@ class ClientsControllerUpdateTest extends TestCase{
 
 		/* validate all inputs from clients_flat */
 		$field_values = ClientCustomFieldValue::where('client_id', '=', $client->id)->orderBy('id', 'asc')->get();
-		$this->assertEmpty($field_values);
+		$this->assertNotEmpty($field_values);
 
 
 
