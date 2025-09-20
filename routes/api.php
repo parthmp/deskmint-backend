@@ -10,6 +10,7 @@ use App\Http\Controllers\FieldTypesController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\IndustriesController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\ProductsController;
 use App\Http\Middleware\DefaultCompany;
 use App\Http\Middleware\IfUserHasAccessToFeature;
 use App\Http\Middleware\ValidateDeviceAndTokens;
@@ -55,6 +56,10 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::post('manage-clients/save-arranged-columns', [ClientsController::class, 'saveArrangedColumns']);
 	Route::resource('manage-clients', ClientsController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	Route::delete('manage-clients', [ClientsController::class, 'destroy']);
+
+	//Route::get('manage-products/fetch-field-types', [ClientsCustomFieldsController::class, 'fetchFieldTypes']);
+	Route::resource('manage-products', ProductsController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
+	Route::delete('manage-products', [ProductsController::class, 'destroy']);
 	
 });
 
