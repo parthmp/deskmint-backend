@@ -10,6 +10,16 @@ use Illuminate\Support\Facades\Validator;
 
 class ProductsController extends Controller{
 
+	private function ifProductExistsById(int $id) : mixed{
+
+		$product = Product::where('id', '=', $id)->first();
+		if(!$product){
+			return null;
+		}
+
+		return $product;
+	}
+
 	private function saveOrUpdateProduct(Request $request, int $product_id = 0, bool $add_new = true){
 
 		$v = Validator::make($request->all(), [
@@ -50,7 +60,7 @@ class ProductsController extends Controller{
 			$product = new Product();
 		}
 
-		//try{
+		try{
 
 			$product->company_id = $company_id;
 			$product->product_name = $product_name;
@@ -68,9 +78,9 @@ class ProductsController extends Controller{
 				return response(['message' => $msg, 'validity' => $validity], 200);
 			}
 
-		// }catch(Exception $e){
+		}catch(Exception $e){
 
-		// }
+		}
 
 	}
 
@@ -84,14 +94,28 @@ class ProductsController extends Controller{
 		
 	}
 
-	public function show(Request $request){
+	public function show(Request $request, int $id){
 
-		//return return $this->saveOrUpdateProduct($request);
+		$product = $this->ifProductExistsById($id);
+
+		if($product === null){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code')); 
+		}
+
+		return $product;
+
 	}
 
 	public function update(Request $request, int $id){
-		return $id;
-		return 'inside update method';
+		
+		$product = $this->ifProductExistsById($id);
+		
+		if($product === null){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code')); 
+		}
+
+		return $this->saveOrUpdateProduct($request, $id, false);
+
 	}
 
 	public function destroy(Request $request){
