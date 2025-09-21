@@ -193,7 +193,7 @@ class FieldTypesController extends Controller{
 
 		try{
 
-			$response = $this->deleteByIds($request, CustomFieldType::class, 'Product');
+			$response = $this->deleteByIds($request, CustomFieldType::class, 'Field');
 			return response($response[0], $response[1]);
 
 		}catch(Exception $e){

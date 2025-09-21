@@ -176,7 +176,7 @@ class AdminController extends Controller{
 
 		try{
 
-			$response = $this->deleteByIds($request, User::class, 'Product');
+			$response = $this->deleteByIds($request, User::class, 'Admin');
 			return response($response[0], $response[1]);
 
 		}catch(Exception $e){
