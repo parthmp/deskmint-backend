@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\Product;
+use App\Services\DataTable;
+use App\Traits\GeneralDelete;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class ProductsController extends Controller{
+
+	use GeneralDelete;
 
 	private function ifProductExistsById(int $id) : mixed{
 
@@ -86,6 +91,58 @@ class ProductsController extends Controller{
 
 	public function index(Request $request){
 
+		$v = Validator::make($request->all(), [
+			'default_per_page'	=>	'required|integer|min:1'
+		]);
+
+		if($v->fails()){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}
+		
+		$fields = DataTable::sortNPaginate($request, Product::class, ['deleted_at', 'updated_at', 'created_at'], null, ['created_at']);
+		
+		$fields->each(function($ele){
+			$ele->input_type = ucfirst($ele->input_type);
+		});
+		
+		$table_data = [
+			'columns' => [
+				[
+					'label' => 	'id',
+					'text'	=>	'ID#'
+				],
+				[
+					'label' => 	'product_name',
+					'text'	=>	'Product name'
+				],
+				[
+					'label'	=>	'price',
+					'text'	=>	'Price'
+				],
+				[
+					'label'	=>	'sku',
+					'text'	=>	'SKU'
+				],
+				[
+					'label'	=>	'created_at',
+					'text'	=>	'Added on'
+				],
+				[
+					'label'	=> 'actions',
+					'text'	=> 'Actions'
+				]
+			],
+			'rows' => $fields->items()
+		];
+
+		$total_pages = $fields->lastPage();
+
+		return [
+			'table_data'	=>		$table_data,
+			'total_pages'	=>		$total_pages,
+			'current_page'	=>		$fields->currentPage()
+		];
+
 	}
 
 	public function store(Request $request){
@@ -120,6 +177,17 @@ class ProductsController extends Controller{
 
 	public function destroy(Request $request){
 		
+		try{
+
+			$response = $this->deleteByIds($request, Product::class, 'Product');
+			return response($response[0], $response[1]);
+
+		}catch(Exception $e){
+
+			return General::wentWrong();
+
+		}
+
 	}
     
 }

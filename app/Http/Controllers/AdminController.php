@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\User;
+use App\Traits\GeneralDelete;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
 class AdminController extends Controller{
+
+	use GeneralDelete;
     
 	public function index(Request $request){
 
@@ -170,26 +174,15 @@ class AdminController extends Controller{
 
 	public function destroy(Request $request){
 
-		$ids = $request->input('ids');
-
-		if (!is_array($ids) || empty($ids)) {
-			return response(['message' => 'No valid IDs provided', 'validity' => 'invalid_ids'], config('global.error_code'));
-		}
-
-		foreach ($ids as $id){
-			if (!is_numeric($id)) {
-				return response(['message' => 'All IDs must be numeric', 'validity' => 'non_numeric'], config('global.error_code'));
-			}
-		}
-
 		try{
-			
-			User::whereIn('id', $ids)->delete();
 
-			return response(['message' => 'Admin(s) deleted successfully'], 200);
+			$response = $this->deleteByIds($request, User::class, 'Product');
+			return response($response[0], $response[1]);
 
 		}catch(Exception $e){
-			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], 500);
+
+			return General::wentWrong();
+
 		}
 
 	}
