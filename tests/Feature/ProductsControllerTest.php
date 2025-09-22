@@ -352,4 +352,54 @@ class ProductsControllerTest extends TestCase{
 		
 	}
 
+	public function test_if_it_fails_to_fetch_the_product_with_invalid_id() : void{
+
+		$device = 'device 123';
+
+		$company_id = $this->set_default_company();
+
+		$params = http_build_query([
+			'company_id' 		=> $company_id
+		]);
+
+		$response = $this->getQuery($device, $params, '/api/manage-products/100?');
+		$json = $response->json();
+		
+		$response->assertStatus((int)config('global.error_code'));
+
+		$json = $response->json();
+
+		$this->arrayHasKey('validity', $json);
+		$this->assertEquals('invalid_request', $json['validity']);
+		
+	}
+
+	public function test_if_it_fetchs_the_product_with_valid_id() : void{
+
+		$device = 'device 123';
+
+		$company_id = $this->set_default_company();
+		$product = $this->addNewProduct($company_id);
+
+		$params = http_build_query([
+			'company_id' 		=> $company_id
+		]);
+
+		$response = $this->getQuery($device, $params, '/api/manage-products/'.$product->id.'?');
+		$json = $response->json();
+		
+		$response->assertStatus(200);
+
+		$json = $response->json();
+
+		$this->arrayHasKey('id', $json);
+		$this->arrayHasKey('product_name', $json);
+		$this->arrayHasKey('price', $json);
+		$this->arrayHasKey('sku', $json);
+		$this->arrayHasKey('description', $json);
+		
+		
+	}
+
+
 }
