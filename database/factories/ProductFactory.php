@@ -19,7 +19,7 @@ class ProductFactory extends Factory
     {
         return [
 			'company_id'			=>	Company::factory(),
-            'product_name'			=>	$this->faker->words(5),
+            'product_name'			=>	implode(' ', $this->faker->words(5)),
             'price'					=>	$this->faker->randomFloat(2, 0.50, 500),
 			'sku'					=>	$this->faker->word(),
 			'description'			=>	$this->faker->paragraph()

@@ -402,4 +402,162 @@ class ProductsControllerTest extends TestCase{
 	}
 
 
+	public function test_if_table_loads_products_index(){
+
+	
+		$device = 'device 123';
+
+		$company_id = $this->set_default_company();
+
+		/* add fake data */
+		for($z = 0 ; $z < 10 ; $z++){
+			Product::factory()->create();
+		}
+
+		
+		$params = http_build_query([
+			'company_id' 		=> $company_id,
+			'default_per_page'	=>	15
+		]);
+
+		$response = $this->getQuery($device, $params, '/api/manage-products?');
+
+		$response->assertStatus(200);
+
+		$response = $response->json();
+		
+		$this->assertArrayHasKey('table_data', $response);
+		$this->assertArrayHasKey('total_pages', $response);
+		$this->assertNotEmpty($response['table_data']['rows']);
+		$this->assertNotEmpty($response['table_data']['columns']);
+		
+	}
+
+	public function test_if_table_filters_for_searched_term_for_product(){
+
+		$device = 'device 123';
+
+		$company_id = $this->set_default_company();
+
+		
+		/* add fake data */
+		for($z = 0 ; $z < 10 ; $z++){
+			Product::factory()->create();
+		}
+
+		Product::factory()->create([
+			'product_name'	=>	'some abc'
+		]);
+
+		
+		$params = http_build_query([
+			'company_id' 		=> $company_id,
+			'default_per_page'	=>	15,
+			'searched_term'		=>	'abc'
+		]);
+
+		$response = $this->getQuery($device, $params, '/api/manage-products?');
+
+		$response->assertStatus(200);
+
+		$response = $response->json();
+		
+		$this->assertArrayHasKey('table_data', $response);
+		$this->assertArrayHasKey('total_pages', $response);
+		$this->assertNotEmpty($response['table_data']['rows']);
+		$this->assertNotEmpty($response['table_data']['columns']);
+		
+	}
+
+	public function test_if_product_delete_fails_with_invalid_data(){
+		
+		$device = 'device 123';
+
+		$c = $this->set_access($device);
+
+		$company_id = $this->set_default_company();
+
+		$response = $this->delete('/api/manage-products', [
+			'ids'			=>	'',
+			'company_id'	=>	$company_id
+		], $c['headers']);
+
+		$response->assertStatus((int)config('global.error_code'));
+
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('invalid_ids', $response['validity']);
+
+	}
+	
+	public function test_if_delete_fails_with_non_numeric_data(){
+		
+		$device = 'device 123';
+
+		$c = $this->set_access($device);
+
+		$company_id = $this->set_default_company();
+
+		Product::truncate();
+
+		$response = $this->delete('/api/manage-products', [
+			'ids'			=>	[
+				'bla', 'whatever'
+			],
+			'company_id'	=>	$company_id
+		], $c['headers']);
+
+		$response->assertStatus((int)config('global.error_code'));
+
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('non_numeric', $response['validity']);
+
+	}
+
+	public function test_if_delete_succeeded_with_valid_data(){
+		
+		$device = 'device 123';
+
+		$c = $this->set_access($device);
+		
+		$company_id = $this->set_default_company();
+
+		Product::truncate();
+
+		$to_be_deleted_ids = [];
+		$to_not_to_be_deleted_ids = [];
+
+		for($z = 0 ; $z < 10 ; $z++){
+
+			$temp_field = Product::factory()->create([
+				'id'	=>	$z
+			]);
+
+			if($z < 6){
+				$to_be_deleted_ids[] = $temp_field->id;
+			}else{
+				$to_not_to_be_deleted_ids[] = $temp_field->id;
+			}
+
+		}
+		
+		/* delete ids */
+		$response = $this->delete('/api/manage-products', [
+			'ids'			=>	$to_be_deleted_ids,
+			'company_id'	=>	$company_id
+		], $c['headers']);
+
+		$response->assertStatus(200);
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('delete_success', $response['validity']);
+
+		/* verify deletion */
+		$deleted_ones = Product::whereIn('id', $to_be_deleted_ids)->get();
+		$this->assertEmpty($deleted_ones);
+
+		$not_deleted_ones = Product::whereIn('id', $to_not_to_be_deleted_ids)->get();
+		$this->assertNotEmpty($not_deleted_ones);
+
+	}
+
+
 }
