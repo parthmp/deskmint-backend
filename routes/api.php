@@ -9,6 +9,7 @@ use App\Http\Controllers\CurrenciesControlller;
 use App\Http\Controllers\FieldTypesController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\IndustriesController;
+use App\Http\Controllers\InvoicesCustomFieldsController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProductsController;
 use App\Http\Middleware\DefaultCompany;
@@ -59,6 +60,10 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 
 	Route::resource('manage-products', ProductsController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	Route::delete('manage-products', [ProductsController::class, 'destroy']);
+
+	Route::get('invoices-custom-fields/fetch-field-types', [InvoicesCustomFieldsController::class, 'fetchFieldTypes']);
+	Route::resource('invoices-custom-fields', InvoicesCustomFieldsController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
+	Route::delete('invoices-custom-fields', [InvoicesCustomFieldsController::class, 'destroy']);
 	
 });
 
