@@ -99,7 +99,7 @@ class ProductsController extends Controller{
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}
 		
-		$fields = DataTable::sortNPaginate($request, Product::class, ['deleted_at', 'updated_at', 'created_at'], null, ['created_at']);
+		$fields = DataTable::sortNPaginate($request, Product::class, ['deleted_at', 'updated_at'], null, ['created_at']);
 		
 		$fields->each(function($ele){
 			$ele->input_type = ucfirst($ele->input_type);
