@@ -9,12 +9,11 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('clients_flat', function (Blueprint $table) {
-           	$table->id();
-			$table->unsignedBigInteger('client_id');
-			$table->foreign('client_id')->references('id')->on('clients')->onDelete('cascade');
+    public function up(): void {
+        Schema::create('invoices_flat', function (Blueprint $table) {
+            $table->id();
+			$table->unsignedBigInteger('invoice_id');
+			$table->foreign('invoice_id')->references('id')->on('invoices')->onDelete('cascade');
 			$table->timestamps();
         });
     }
@@ -24,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('clients_flat');
+        Schema::dropIfExists('invoices_flat');
     }
 };
