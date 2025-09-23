@@ -4,6 +4,7 @@ namespace App\Traits;
 
 use App\Helpers\Sanitize;
 use App\Models\CustomFieldType;
+use App\Services\DataTable;
 use App\Services\ManageFlatTable;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -26,7 +27,9 @@ trait FeatureCustomFields{
 
 	}
 
-	public function saveOrUpdateCustomField(Request $request, string $feature_custom_fields_model, int $company_id, string $slug, bool $add, mixed $object = null) : Response{
+	public function saveOrUpdateCustomField(Request $request, string $feature_custom_fields_model, string $slug, bool $add, mixed $object = null) : Response{
+		
+		$company_id = Sanitize::input($request->input('company_id'));
 
 		$v = Validator::make($request->all(), [
 			'input_field'			=>		'required',
@@ -165,6 +168,169 @@ trait FeatureCustomFields{
 		}catch(Exception $e){
 			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], config('global.error_code'));
 		}
+	}
+
+	public function indexData(Request $request, string $feature_custom_fields_model, string $slug) : mixed{
+
+		$v = Validator::make($request->all(), [
+			'default_per_page'	=>	'required|integer|min:1'
+		]);
+
+		if($v->fails()){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}
+		
+		$company_id = Sanitize::input($request->input('company_id'));
+
+		$fields = DataTable::sortNPaginate(
+			$request,
+			$feature_custom_fields_model,
+			['deleted_at', 'updated_at'],
+			$company_id,
+			[$slug.'s_custom_fields.created_at'],
+			[
+				[
+					'table' => 'custom_field_types',
+					'first' => $slug.'s_custom_fields.custom_field_type_id',
+					'operator' => '=',
+					'second' => 'custom_field_types.id',
+					'columns' => ['custom_field_types.input_type as input_type']
+				]
+			], [
+				$slug.'s_custom_fields.required' => [
+					0	=>	'No',
+					1	=>	"Yes"
+				]
+			]
+		);
+		
+		$fields->each(function($ele){
+
+			$ele->input_type = ucfirst($ele->input_type);
+
+			if((int)$ele->required === 0){
+				$ele->required = [
+					'type'		=>	'label',
+					'highlight'	=>	'error',
+					'text'		=>	'No'
+				];
+			}else{
+				$ele->required = [
+					'type'		=>	'label',
+					'highlight'	=>	'success',
+					'text'		=>	'Yes'
+				];
+			}
+
+		});
+		
+		$table_data = [
+			'columns' => [
+				[
+					'label' => 	'id',
+					'text'	=>	'ID#'
+				],
+				[
+					'label' => 	'input_type',
+					'text'	=>	'Field type'
+				],
+				[
+					'label' => 	'label',
+					'text'	=>	'Label'
+				],
+				[
+					'label' => 	'required',
+					'text'	=>	'Required'
+				],
+				[
+					'label' => 	'created_at',
+					'text'	=>	'Added on'
+				],
+				[
+					'label'	=> 'actions',
+					'text'	=> 'Actions'
+				]
+			],
+			'rows' => $fields->items()
+		];
+
+		$total_pages = $fields->lastPage();
+
+		return [
+			'table_data'	=>		$table_data,
+			'total_pages'	=>		$total_pages,
+			'current_page'	=>		$fields->currentPage()
+		];
+
+	}
+
+	public function showData(string $feature_custom_fields_model, int $company_id, int $id) : mixed{
+
+		$id = Sanitize::input($id);
+		
+		$custom_field = $feature_custom_fields_model::select('custom_field_type_id', 'label', 'placeholder', 'required', 'default_value', 'order_on_add_edit_page', 'type_params')->where([['id', '=', $id], ['company_id','=', $company_id]])->with('customFieldType')->first();
+		if(!$custom_field){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}
+
+		return $custom_field;
+
+	}
+
+	
+	public function updateData(Request $request, string $feature_custom_fields_model, string $slug, int $id) : mixed{
+		
+		$company_id = Sanitize::input($request->input('company_id'));
+
+		$custom_field = $feature_custom_fields_model::where([['id', '=', $id], ['company_id','=', $company_id]])->first();
+		
+		if(!$custom_field){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}
+		
+		return $this->saveOrUpdateCustomField($request, $feature_custom_fields_model, $slug, false, $custom_field);	
+
+	}
+
+	public function destroyData(Request $request, string $feature_custom_fields_model, string $slug) : Response{
+
+		$ids = $request->input('ids');
+		
+		if(!is_array($ids) || empty($ids)){
+			return response(['message' => 'No valid IDs provided', 'validity' => 'invalid_ids'], config('global.error_code'));
+		}
+
+		foreach($ids as $id){
+			if (!is_numeric($id)) {
+				return response(['message' => 'All IDs must be numeric', 'validity' => 'non_numeric'], config('global.error_code'));
+			}
+		}
+
+		try{
+			
+			$flat_table = new ManageFlatTable($slug.'s_flat', $slug.'s', $slug.'_id');
+
+			$column_names = $feature_custom_fields_model::whereIn('id', $ids)->get();
+
+			$column_names_arranged = [];
+
+			foreach($column_names as $column){
+				$column_names_arranged[] = $column->label;
+			}
+
+			$flat_table->dropColumns($column_names_arranged);
+			$column_names_arranged = null;
+			
+
+			$feature_custom_fields_model::whereIn('id', $ids)->delete();
+			
+
+			return response(['message' => 'Custom field(s) deleted successfully', 'validity' => 'delete_success'], 200);
+
+		}catch(Exception $e){
+			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], 500);
+		}
+
 	}
 
 }
