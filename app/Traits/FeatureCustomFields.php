@@ -26,7 +26,7 @@ trait FeatureCustomFields{
 
 	}
 
-	public function saveOrUpdateCustomField(Request $request, string $feature_custom_fields_model, int $company_id, string $slug, bool $add, mixed $object) : Response{
+	public function saveOrUpdateCustomField(Request $request, string $feature_custom_fields_model, int $company_id, string $slug, bool $add, mixed $object = null) : Response{
 
 		$v = Validator::make($request->all(), [
 			'input_field'			=>		'required',
