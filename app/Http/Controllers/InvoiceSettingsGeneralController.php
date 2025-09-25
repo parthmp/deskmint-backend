@@ -80,32 +80,36 @@ class InvoiceSettingsGeneralController extends Controller{
 
 		$e_invoice = $request->boolean('e_invoice');
 
-		$json = json_encode([
-				'template'				=>	$template,
-				'font_size'				=>	$font_size,
-				'logo_size'				=>	$logo_size,
-				'primary_color'			=>	$primary_color,
-				'secondary_color'		=>	$secondary_color,
-				'e_invoice_on'			=>	$e_invoice
-			]);
-		
-		$setting = SettingsSection::where([['type', '=', 'invoice_general'], ['company_id', '=', $company_id]])->first();
+		try{
 
-		if($setting){
-			$obj = $setting;
-		}else{
-			$obj = new SettingsSection();
-			$obj->company_id = $company_id;
-			$obj->type = 'invoice_general';
+			$json = json_encode([
+									'template'				=>	$template,
+									'font_size'				=>	$font_size,
+									'logo_size'				=>	$logo_size,
+									'primary_color'			=>	$primary_color,
+									'secondary_color'		=>	$secondary_color,
+									'e_invoice_on'			=>	$e_invoice
+								]);
+			
+			$setting = SettingsSection::where([['type', '=', 'invoice_general'], ['company_id', '=', $company_id]])->first();
+
+			if($setting){
+				$obj = $setting;
+			}else{
+				$obj = new SettingsSection();
+				$obj->company_id = $company_id;
+				$obj->type = 'invoice_general';
+			}
+
+			$obj->settings_json = $json;
+
+			if($obj->save()){
+				return response(['message' => 'Settings saved successfully', 'validity' => 'saved_success'], 200);
+			}
+
+		}catch(Exception $e){
+			return General::wentWrong();
 		}
-
-		$obj->settings_json = $json;
-
-		if($obj->save()){
-			return response(['message' => 'Settings saved successfully', 'validity' => 'saved_success'], 200);
-		}
-
-
 
 	}
     
