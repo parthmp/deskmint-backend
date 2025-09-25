@@ -22,7 +22,7 @@ class InvoiceSettingsGeneralController extends Controller{
 		$files = Storage::disk('invoice_templates')->files();
 
 		return array_map(function($file){
-			return pathinfo($file, PATHINFO_FILENAME);
+			return pathinfo(strtolower($file), PATHINFO_FILENAME);
 		}, $files);
 
 	}
