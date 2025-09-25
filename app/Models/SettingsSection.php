@@ -5,10 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class SettingsInvoice extends Model{
+class SettingsSection extends Model{
     
 	use HasFactory;
 
-	protected $table = 'settings_invoice';
+	protected $table = 'settings_section';
 
 }
