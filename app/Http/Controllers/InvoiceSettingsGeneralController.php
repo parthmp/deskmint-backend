@@ -10,6 +10,7 @@ use App\Traits\SettingsDefault;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class InvoiceSettingsGeneralController extends Controller{
@@ -18,16 +19,12 @@ class InvoiceSettingsGeneralController extends Controller{
 
 	private function fetchTemplates() : array{
 
-		$path = resource_path('../resources/invoice_templates');
+		$files = Storage::disk('invoice_templates')->files();
 
-		$files = File::files($path);
-
-		$fileArray = array_map(function($file){
-			$file_name = $file->getFilename();
-			return pathinfo($file_name, PATHINFO_FILENAME);
+		return array_map(function($file){
+			return pathinfo($file, PATHINFO_FILENAME);
 		}, $files);
 
-		return $fileArray;
 	}
 
 	public function show(Request $request){

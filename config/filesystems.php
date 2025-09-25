@@ -46,6 +46,13 @@ return [
             'throw' => false,
             'report' => false,
         ],
+		
+		'invoice_templates' => [
+			'driver' => 'local',
+			'root' => storage_path('invoice_templates'),
+			'visibility' => 'private',
+			'throw' => false,
+		],
 
         's3' => [
             'driver' => 's3',
