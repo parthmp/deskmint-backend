@@ -64,12 +64,19 @@ class InvoiceSettingsGeneralController extends Controller{
 		]);
 		
 		if($v->fails()){
-			return response(['message' => 'Please fill in required fields', 'errors' => $request->all(),'validity' => 'invalid_data'], config('global.error_code'));
+			return response(['message' => 'Please fill in required fields','validity' => 'invalid_data'], config('global.error_code'));
 		}
 
 		$company_id = Sanitize::input($request->input('company_id'));
 
 		$template = Sanitize::input($request->input('template'));
+
+		$all_templates = $this->fetchTemplates();
+
+		if(!in_array($template, $all_templates)){
+			return response(['message' => 'Invalid template','validity' => 'invalid_template'], config('global.error_code'));
+		}
+
 		$font_size = (int)Sanitize::input($request->input('font_size'));
 		$logo_size = (int)Sanitize::input($request->input('logo_size'));
 		$primary_color = Sanitize::input($request->input('primary_color'));
