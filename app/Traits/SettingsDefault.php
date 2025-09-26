@@ -17,4 +17,14 @@
 
 		}
 
+		public function getDefaultInvoiceNumbersSettings() : array{
+
+			return [
+				'number_padding' 	=> '1',
+				'reset_counter' 	=> 'never',
+				'number_pattern'	=>	''
+			];
+
+		}
+
 	}
