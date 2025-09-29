@@ -39,12 +39,12 @@ use App\Models\ClientsCustomField;
 			foreach($fields as $field){
 
 				$formatted[] = [
-					'id'					=>	$index,
-					'text'					=>	$field->label,
-					'value'					=>	General::replaceWithUnderscores($field->label),
-					'mapped'				=>	'',
-					'type'					=>	'custom',
-					'clients_custom_fields'	=>	$field->id
+					'id'						=>	$index,
+					'text'						=>	$field->label,
+					'value'						=>	General::replaceWithUnderscores($field->label),
+					'mapped'					=>	'',
+					'type'						=>	'custom',
+					'clients_custom_fields_id'	=>	$field->id
 				];
 
 				$index++;

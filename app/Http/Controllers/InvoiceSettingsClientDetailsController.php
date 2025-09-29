@@ -20,15 +20,58 @@ class InvoiceSettingsClientDetailsController extends Controller{
 
 		try{
 
+			$default_data = $this->getDefaultInvoiceClientDetailsSettings();
+
 			$company_id = Sanitize::input($request->input('company_id'));
 
 			$settings = SettingsSection::where([['type', '=', 'invoice_client_details'], ['company_id', '=', $company_id]])->first();
 
 			if($settings){
-				return json_decode($settings->settings_json);
+				
+				$dropdown_fields = [];
+
+				$saved_rows = json_decode($settings->settings_json, true);
+				$default_merged = array_merge($default_data['rows'], $default_data['dropdown']);
+
+				/* check for normal fields */
+				for($z = 0 ; $z < count($default_merged) ; $z++){
+					
+					$found = false;
+
+					for($x = 0 ; $x < count($saved_rows) ; $x++){
+
+						if($default_merged[$z]['type'] === 'normal' || $saved_rows[$x]['type'] === 'normal'){
+							
+							if($default_merged[$z]['mapped'] == $saved_rows[$x]['mapped']){
+								$found = true;
+								break;
+							}
+
+						}else{
+							
+							if($saved_rows[$x]['clients_custom_fields_id'] === $default_merged[$z]['clients_custom_fields_id']){
+								$found = true;
+								break;
+							}
+
+						}
+
+					}
+
+					if(!$found){
+						$dropdown_fields[] = $default_merged[$z];
+					}
+					
+				}
+
+				return [
+					'dropdown'	=>	$dropdown_fields,
+					'rows'		=>	$saved_rows
+				];
+
 			}
 
-			return $this->getDefaultInvoiceClientDetailsSettings();
+			return $default_data;
 					
 		}catch(Exception $e){
 			return General::wentWrong();
@@ -60,7 +103,7 @@ class InvoiceSettingsClientDetailsController extends Controller{
 				
 				/* if custom fields / columns added */
 				$custom_fields_ids = ClientsCustomField::pluck('id')->toArray();
-				if(!in_array($row['clients_custom_fields'], $custom_fields_ids)){
+				if(!in_array($row['clients_custom_fields_id'], $custom_fields_ids)){
 					return false;
 				}
 				
