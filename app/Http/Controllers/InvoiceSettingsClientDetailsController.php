@@ -18,7 +18,7 @@ class InvoiceSettingsClientDetailsController extends Controller{
 
 	public function show(Request $request) : mixed{
 
-		//try{
+		try{
 
 			$default_data = $this->getDefaultInvoiceClientDetailsSettings();
 
@@ -73,9 +73,9 @@ class InvoiceSettingsClientDetailsController extends Controller{
 
 			return $default_data;
 					
-		// }catch(Exception $e){
-		// 	return General::wentWrong();
-		// }
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 	}
 
