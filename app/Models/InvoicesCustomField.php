@@ -16,8 +16,8 @@ class InvoicesCustomField extends Model{
 		return $this->belongsTo(CustomFieldType::class, 'custom_field_type_id');
 	}
 
-	// public function customFieldValue(){
-	// 	return $this->hasOne(ClientCustomFieldValue::class);
-	// }
+	public function customFieldValue(){
+		return $this->hasOne(InvoiceCustomFieldValue::class);
+	}
 
 }

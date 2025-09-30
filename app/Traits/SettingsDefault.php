@@ -34,7 +34,7 @@ use App\Models\ClientsCustomField;
 			
 			$formatted = [];
 
-			$fields =  $model::with(['customFieldType', 'customFieldValue'])->whereHas('customFieldType')->whereHas('customFieldValue')->get();
+			$fields =  $model::with(['customFieldType', 'customFieldValue'])->whereHas('customFieldType')->get();
 
 			foreach($fields as $field){
 

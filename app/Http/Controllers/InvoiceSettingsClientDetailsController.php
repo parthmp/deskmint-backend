@@ -18,7 +18,7 @@ class InvoiceSettingsClientDetailsController extends Controller{
 
 	public function show(Request $request) : mixed{
 
-		try{
+		//try{
 
 			$default_data = $this->getDefaultInvoiceClientDetailsSettings();
 
@@ -73,9 +73,9 @@ class InvoiceSettingsClientDetailsController extends Controller{
 
 			return $default_data;
 					
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
 
 	}
 
@@ -88,6 +88,10 @@ class InvoiceSettingsClientDetailsController extends Controller{
 
 			if($row['type'] === 'normal'){
 				
+				if(!isset($row['mapped'])){
+					return false;
+				}
+
 				if(!is_array($row['mapped'])){
 					return false;
 				}
@@ -100,6 +104,10 @@ class InvoiceSettingsClientDetailsController extends Controller{
 				}
 
 			}else{
+
+				if(!isset($row['clients_custom_fields_id'])){
+					return false;
+				}
 				
 				/* if custom fields / columns added */
 				$custom_fields_ids = ClientsCustomField::pluck('id')->toArray();
