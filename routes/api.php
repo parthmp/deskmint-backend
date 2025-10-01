@@ -81,6 +81,6 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::post('manage-invoice-settings-client-details', [InvoiceSettingsClientDetailsController::class, 'saveOrUpdate']);
 
 	Route::get('manage-company-settings-details', [CompanySettingsDetailsController::class, 'show']);
-	//Route::post('manage-company-settings-details', [InvoiceSettingsClientDetailsController::class, 'saveOrUpdate']);
+	Route::post('manage-company-settings-details', [CompanySettingsDetailsController::class, 'saveOrUpdate']);
 
 });
