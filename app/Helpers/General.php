@@ -2,10 +2,14 @@
 
 	namespace App\Helpers;
 
-	use Carbon\Carbon;
+use App\Models\Company;
+use App\Models\Country;
+use Carbon\Carbon;
 use DateTime;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Collection as SupportCollection;
 
 	class General{
 
@@ -292,6 +296,24 @@ use Illuminate\Http\Response;
                'sep' => 'Sep', 'oct' => 'Oct', 'nov' => 'Nov', 'dec' => 'Dec'];
     
     		return str_ireplace(array_keys($months), array_values($months), $date_string);
+		}
+
+		public static function fetchCoutries() : SupportCollection{
+
+			$countries = Country::orderBy('country_name', 'asc')->get()->map(function($country){
+				return [
+					'value'	=>	$country->id,
+					'text'	=>	$country->country_name,
+				];
+			});
+			
+			return $countries;
+
+		}
+
+		public static function fetchDefaultCompanyById(int $company_id) : mixed{
+			$company = Company::where([['id', '=', $company_id], ['default', '=', 1]])->first();
+			return $company;
 		}
 
 	}

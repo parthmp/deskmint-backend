@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\ClientsCustomFieldsController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CompanySettingsAddressController;
 use App\Http\Controllers\CompanySettingsDetailsController;
 use App\Http\Controllers\CountriesController;
 use App\Http\Controllers\CurrenciesControlller;
@@ -82,5 +83,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 
 	Route::get('manage-company-settings-details', [CompanySettingsDetailsController::class, 'show']);
 	Route::post('manage-company-settings-details', [CompanySettingsDetailsController::class, 'saveOrUpdate']);
+
+	Route::get('manage-company-settings-address', [CompanySettingsAddressController::class, 'show']);
+	//Route::post('manage-company-settings-address', [CompanySettingsDetailsController::class, 'saveOrUpdate']);
 
 });

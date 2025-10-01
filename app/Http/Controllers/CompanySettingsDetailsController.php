@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\Company;
 use Illuminate\Http\Request;
@@ -13,7 +14,7 @@ class CompanySettingsDetailsController extends Controller{
 
 		$company_id = Sanitize::input($request->input('company_id'));
 
-		$company = Company::where([['id', '=', $company_id], ['default', '=', 1]])->first();
+		$company = General::fetchDefaultCompanyById($company_id);
 
 		if(!$company){
 			return response(['message' => 'invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
