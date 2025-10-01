@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\Company;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -30,57 +31,67 @@ class CompanySettingsDetailsController extends Controller{
 			'company_name'	=>	'required'
 		]);
 
+		if($v->fails()){
+			return response(['message' => 'invalid request', 'validity' => 'invalid_data'], config('global.error_code'));
+		}
+
 		$company_id = Sanitize::input($request->input('company_id'));
 		$company_name = Sanitize::input($request->input('company_name'));
 
-		$size = '';
-		if($request->filled('size')){
-			$size = Sanitize::input($request->input('size'));
-		}
-		
-		$id_number = '';
-		if($request->filled('id_number')){
-			$id_number = Sanitize::input($request->input('id_number'));
-		}
+		try{
 
-		$gst = '';
-		if($request->filled('gst')){
-			$gst = Sanitize::input($request->input('gst'));
-		}
+			$size = '';
+			if($request->filled('size')){
+				$size = Sanitize::input($request->input('size'));
+			}
+			
+			$id_number = '';
+			if($request->filled('id_number')){
+				$id_number = Sanitize::input($request->input('id_number'));
+			}
 
-		$classification = '';
-		if($request->filled('classification')){
-			$classification = Sanitize::input($request->input('classification'));
-		}
+			$gst = '';
+			if($request->filled('gst')){
+				$gst = Sanitize::input($request->input('gst'));
+			}
 
-		$website = '';
-		if($request->filled('website')){
-			$website = Sanitize::input($request->input('website'));
-		}
+			$classification = '';
+			if($request->filled('classification')){
+				$classification = Sanitize::input($request->input('classification'));
+			}
 
-		$email = '';
-		if($request->filled('email')){
-			$email = Sanitize::input($request->input('email'));
-		}
+			$website = '';
+			if($request->filled('website')){
+				$website = Sanitize::input($request->input('website'));
+			}
 
-		$phone = '';
-		if($request->filled('phone')){
-			$phone = Sanitize::input($request->input('phone'));
-		}
+			$email = '';
+			if($request->filled('email')){
+				$email = Sanitize::input($request->input('email'));
+			}
 
-		$company = Company::where([['id', '=', $company_id], ['default', '=', 1]])->first();
+			$phone = '';
+			if($request->filled('phone')){
+				$phone = Sanitize::input($request->input('phone'));
+			}
 
-		$company->company_name = $company_name;
-		$company->size = $size;
-		$company->id_number = $id_number;
-		$company->gst_vat_number = $gst;
-		$company->classification = $classification;
-		$company->website = $website;
-		$company->email = $email;
-		$company->phone = $phone;
-		
-		if($company->save()){
-			return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
+			$company = Company::where([['id', '=', $company_id], ['default', '=', 1]])->first();
+
+			$company->company_name = $company_name;
+			$company->size = $size;
+			$company->id_number = $id_number;
+			$company->gst_vat_number = $gst;
+			$company->classification = $classification;
+			$company->website = $website;
+			$company->email = $email;
+			$company->phone = $phone;
+			
+			if($company->save()){
+				return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
+			}
+
+		}catch(Exception $e){
+			return General::wentWrong();
 		}
 
 
