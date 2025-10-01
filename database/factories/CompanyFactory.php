@@ -38,6 +38,7 @@ class CompanyFactory extends Factory
 			'logo'					=>	$this->faker->url(),
 			'invoice_terms'			=>	$this->faker->sentence(),
 			'invoice_footer'		=>	$this->faker->sentence(),
+			'size'					=>	$this->faker->randomElement(['1-3', '4-10', '11-50', '101-500', '500+']),
 			'default'				=>	$this->faker->boolean()
         ];
     }
