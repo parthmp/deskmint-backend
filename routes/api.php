@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\ClientsCustomFieldsController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CompanySettingsDetailsController;
 use App\Http\Controllers\CountriesController;
 use App\Http\Controllers\CurrenciesControlller;
 use App\Http\Controllers\FieldTypesController;
@@ -78,5 +79,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 
 	Route::get('manage-invoice-settings-client-details', [InvoiceSettingsClientDetailsController::class, 'show']);
 	Route::post('manage-invoice-settings-client-details', [InvoiceSettingsClientDetailsController::class, 'saveOrUpdate']);
+
+	Route::get('manage-company-settings-details', [CompanySettingsDetailsController::class, 'show']);
+	//Route::post('manage-company-settings-details', [InvoiceSettingsClientDetailsController::class, 'saveOrUpdate']);
 
 });
