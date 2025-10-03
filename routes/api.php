@@ -88,7 +88,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-company-settings-address', [CompanySettingsAddressController::class, 'show']);
 	Route::post('manage-company-settings-address', [CompanySettingsAddressController::class, 'saveOrUpdate']);
 
-	//Route::get('manage-company-settings-address', [CompanySettingsAddressController::class, 'show']);
+	Route::get('manage-company-settings-logo', [CompanySettingsLogoController::class, 'show']);
 	Route::post('manage-company-settings-logo', [CompanySettingsLogoController::class, 'saveOrUpdate']);
 
 });

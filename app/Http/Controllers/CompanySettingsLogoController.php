@@ -10,6 +10,23 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class CompanySettingsLogoController extends Controller{
+
+	public function show(Request $request){
+
+		$company_id = Sanitize::input($request->input('company_id'));
+		$path = 'logos/'.$company_id;
+
+		$company = General::fetchDefaultCompanyById($company_id);
+
+		$logo_file = $path.'/'.$company->logo;
+
+		if(!Storage::disk('public')->exists($logo_file)){
+			return response(['message' => 'Unable to get the logo file', 'validity' => 'unable_to_fetch'], config('global.error_code'));
+		}
+
+		return ['url' => Storage::disk('public')->url($logo_file)];
+
+	}
     
 	public function saveOrUpdate(Request $request){
 
