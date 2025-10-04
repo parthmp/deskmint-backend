@@ -5,6 +5,7 @@ use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\ClientsCustomFieldsController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanySettingsAddressController;
+use App\Http\Controllers\CompanySettingsDefaultsController;
 use App\Http\Controllers\CompanySettingsDetailsController;
 use App\Http\Controllers\CompanySettingsLogoController;
 use App\Http\Controllers\CountriesController;
@@ -90,5 +91,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 
 	Route::get('manage-company-settings-logo', [CompanySettingsLogoController::class, 'show']);
 	Route::post('manage-company-settings-logo', [CompanySettingsLogoController::class, 'saveOrUpdate']);
+
+	Route::get('manage-company-settings-defaults', [CompanySettingsDefaultsController::class, 'show']);
+	Route::post('manage-company-settings-defaults', [CompanySettingsDefaultsController::class, 'saveOrUpdate']);
 
 });
