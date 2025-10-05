@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\ClientsCustomFieldsController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CompanySettingsAdditionalFieldsController;
 use App\Http\Controllers\CompanySettingsAddressController;
 use App\Http\Controllers\CompanySettingsDefaultsController;
 use App\Http\Controllers\CompanySettingsDetailsController;
@@ -95,5 +96,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 
 	Route::get('manage-company-settings-defaults', [CompanySettingsDefaultsController::class, 'show']);
 	Route::post('manage-company-settings-defaults', [CompanySettingsDefaultsController::class, 'saveOrUpdate']);
+
+	//Route::get('manage-company-settings-defaults', [CompanySettingsDefaultsController::class, 'show']);
+	Route::post('manage-company-settings-additional-fields', [CompanySettingsAdditionalFieldsController::class, 'saveOrUpdate']);
 
 });
