@@ -10,6 +10,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class CompanySettingsAdditionalFieldsController extends Controller{
+
+	public function show(Request $request){
+
+		$company_id = Sanitize::input($request->input('company_id'));
+		$company = General::fetchDefaultCompanyById($company_id);
+
+		$fields = $company->additional_fields->toArray() ? $company->additional_fields->toArray() : [];
+
+		return array_reverse($fields);
+
+	}
+
     
 	public function saveOrUpdate(Request $request){
 
@@ -41,6 +53,8 @@ class CompanySettingsAdditionalFieldsController extends Controller{
 						$element['id'] = $field_id;
 					}
 
+				}else{
+					$element['id'] = null;
 				}
 
 				$element['company_id'] = $company_id;
@@ -56,10 +70,43 @@ class CompanySettingsAdditionalFieldsController extends Controller{
 			AdditionalCompanyField::upsert($upsert, ['id'], ['label', 'value']);
 
 			return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
-			
+
 		}catch(Exception $e){
 			return General::wentWrong();
 		}
+
+	}
+
+	public function destroy(Request $request){
+
+		$v = Validator::make($request->all(), [
+			'id'			=>	'required'
+		]);
+
+		if($v->fails()){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}
+
+		try{
+
+			$company_id = Sanitize::input($request->input('company_id'));
+			$id = Sanitize::input($request->input('id'));
+			$additonal_field = AdditionalCompanyField::where([['id', '=', $id], ['company_id', '=', $company_id]])->first();
+
+			if(!$additonal_field){
+				return response(['message' => 'Invalid data', 'validity' => 'invalid_data'], config('global.error_code'));
+			}
+
+			if($additonal_field->delete()){
+				return response(['message' => 'Deleted successfully', 'validity' => 'deleted_success'], 200);
+			}else{
+				return General::wentWrong();
+			}
+
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+		
 
 	}
 

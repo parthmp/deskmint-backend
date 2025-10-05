@@ -10,4 +10,9 @@ class Company extends Model
 {
 	use SoftDeletes, HasFactory;
     protected $table = 'companies';
+
+	public function additional_fields(){
+		return $this->hasMany(AdditionalCompanyField::class, 'company_id', 'id');
+	}
+
 }

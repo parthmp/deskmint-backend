@@ -97,7 +97,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-company-settings-defaults', [CompanySettingsDefaultsController::class, 'show']);
 	Route::post('manage-company-settings-defaults', [CompanySettingsDefaultsController::class, 'saveOrUpdate']);
 
-	//Route::get('manage-company-settings-defaults', [CompanySettingsDefaultsController::class, 'show']);
+	Route::get('manage-company-settings-additional-fields', [CompanySettingsAdditionalFieldsController::class, 'show']);
 	Route::post('manage-company-settings-additional-fields', [CompanySettingsAdditionalFieldsController::class, 'saveOrUpdate']);
+	Route::delete('manage-company-settings-additional-fields', [CompanySettingsAdditionalFieldsController::class, 'destroy']);
 
 });
