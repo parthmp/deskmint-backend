@@ -20,11 +20,13 @@ class CompanySettingsLogoController extends Controller{
 
 		$logo_file = $path.'/'.$company->logo;
 
-		if(!Storage::disk('public')->exists($logo_file)){
-			return response(['message' => 'Unable to get the logo file', 'validity' => 'unable_to_fetch'], config('global.error_code'));
+		$image_url = '';
+
+		if(Storage::disk('public')->exists($logo_file)){
+			$image_url = Storage::disk('public')->url($logo_file);
 		}
 
-		return ['url' => Storage::disk('public')->url($logo_file)];
+		return ['url' => $image_url];
 
 	}
     
@@ -66,9 +68,32 @@ class CompanySettingsLogoController extends Controller{
 			}
 
 		}catch(Exception $e){
-
 			return General::wentWrong();
+		}
 
+	}
+
+	public function destroy(Request $request){
+		
+		$company_id = Sanitize::input($request->input('company_id'));
+
+		try{
+
+			$path = 'logos/'.$company_id;
+
+			if(Storage::disk('public')->exists($path)){
+				Storage::disk('public')->deleteDirectory($path);
+			}
+
+			$company = General::fetchDefaultCompanyById($company_id);
+			$company->logo = '';
+
+			if($company->save()){
+				return response(['message' => 'Logo removed successfully', 'validity' => 'remove_success'], 200);
+			}
+
+		}catch(Exception $e){
+			return General::wentWrong();
 		}
 
 	}

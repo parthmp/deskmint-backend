@@ -91,6 +91,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 
 	Route::get('manage-company-settings-logo', [CompanySettingsLogoController::class, 'show']);
 	Route::post('manage-company-settings-logo', [CompanySettingsLogoController::class, 'saveOrUpdate']);
+	Route::delete('manage-company-settings-logo', [CompanySettingsLogoController::class, 'destroy']);
 
 	Route::get('manage-company-settings-defaults', [CompanySettingsDefaultsController::class, 'show']);
 	Route::post('manage-company-settings-defaults', [CompanySettingsDefaultsController::class, 'saveOrUpdate']);
