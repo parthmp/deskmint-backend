@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\Company;
-use App\Models\Country;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -34,7 +33,7 @@ class CompanyFactory extends Factory
 			'city'					=>	$this->faker->word(),
 			'state'					=>	$this->faker->word(),
 			'postal_code'			=>	$this->faker->word(),
-			'country_id'			=>	Country::factory(),
+			'country_id'			=>	$this->faker->numberBetween(1, 200),
 			'logo'					=>	$this->faker->url(),
 			'invoice_terms'			=>	$this->faker->sentence(),
 			'invoice_footer'		=>	$this->faker->sentence(),
