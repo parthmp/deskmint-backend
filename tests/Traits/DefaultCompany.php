@@ -19,4 +19,12 @@ trait DefaultCompany{
 		return $company->id;
 
 	}
+
+	private function createTemporaryCompany() : int {
+		$company = new Company();
+		$company->company_name = 'Bla company';
+		$company->default = 1;
+		$company->save();
+		return $company->id;
+	}
 }

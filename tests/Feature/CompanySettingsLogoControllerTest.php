@@ -10,22 +10,12 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
+use Tests\Traits\DefaultCompany;
 use Tests\Traits\SetAccess;
 
 class CompanySettingsLogoControllerTest extends TestCase{
 
-	use RefreshDatabase, SetAccess;
-
-	private function createTemporaryCompany() : int {
-		
-		$company = new Company();
-		$company->company_name = 'Bla company';
-		$company->default = 1;
-		$company->save();
-		
-		return $company->id;
-
-	}
+	use RefreshDatabase, SetAccess, DefaultCompany;
 	
 	public function test_to_see_if_it_fetches_no_company_logo_successfully_without_adding_logo() : void {
 		

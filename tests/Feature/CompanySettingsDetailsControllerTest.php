@@ -23,14 +23,6 @@ class CompanySettingsDetailsControllerTest extends TestCase{
 
 	}
 
-	private function createTemporaryCompany() : int {
-		$company = new Company();
-		$company->company_name = 'Bla company';
-		$company->default = 1;
-		$company->save();
-		return $company->id;
-	}
-
 	public function test_to_see_if_it_fetches_no_company_details_data_successfully_without_adding_data() : void {
 		
 		$device = 'device 123';

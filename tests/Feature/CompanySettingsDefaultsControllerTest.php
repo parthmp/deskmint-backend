@@ -6,22 +6,12 @@ use App\Models\Company;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
+use Tests\Traits\DefaultCompany;
 use Tests\Traits\SetAccess;
 
 class CompanySettingsDefaultsControllerTest extends TestCase{
 	
-	use RefreshDatabase, SetAccess;
-
-	private function createTemporaryCompany() : int {
-		
-		$company = new Company();
-		$company->company_name = 'Bla company';
-		$company->default = 1;
-		$company->save();
-		
-		return $company->id;
-
-	}
+	use RefreshDatabase, SetAccess, DefaultCompany;
 
 	public function test_to_see_if_it_fetches_no_company_default_settings_data_without_having_any_added() : void {
 		
