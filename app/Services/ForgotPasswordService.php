@@ -4,10 +4,10 @@
 
 	use App\Helpers\General;
 	use App\Mail\SendResetPasswordEmail;
-use App\Models\AccessTokenData;
-use App\Models\CustomPasswordReset;
-use App\Models\RefreshToken;
-use App\Models\User;
+	use App\Models\AccessTokenData;
+	use App\Models\CustomPasswordReset;
+	use App\Models\RefreshToken;
+	use App\Models\User;
 	use Illuminate\Support\Facades\Hash;
 	use Illuminate\Support\Facades\Mail;
 

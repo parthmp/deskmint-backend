@@ -2,8 +2,10 @@
 
 	namespace App\Traits;
 
-use App\Helpers\General;
-use App\Models\ClientsCustomField;
+	use App\Helpers\General;
+	use App\Models\AdditionalCompanyField;
+	use App\Models\ClientsCustomField;
+	use Illuminate\Support\Collection;
 
 	trait SettingsDefault{
 
@@ -144,6 +146,114 @@ use App\Models\ClientsCustomField;
 			];
 
 			foreach($custom_fields as $field){
+				array_push($data['dropdown'], $field);
+			}
+
+			return $data;
+
+		}
+
+		public function getCompanyAdditionalFields(int $company_id, int $index = 1) : array{
+
+			$structure = [];
+
+			$fields = AdditionalCompanyField::select('id', 'label', 'value')->where('company_id', '=', $company_id)->get();
+
+			foreach($fields as $field){
+
+				$temp = [];
+
+				$temp['id'] = $index;
+				$temp['text'] = $field->label;
+				$temp['value'] = $field->label;
+				$temp['mapped'] = '';
+				$temp['type'] = 'custom';
+				$temp['id_column'] = $field->id; /* this maps to the "id" column in additional_company_fields table */
+
+				$structure[] = $temp;
+
+				$index++;
+
+			}
+
+			return $structure;
+		}
+
+		public function getDefaultInvoiceCompanyDetailsSettings(int $company_id) : array{
+
+			$additional_fields = $this->getCompanyAdditionalFields($company_id, 4);
+			/* mapped to columns from companies table */
+			$data = [
+				'rows' => [
+					[
+						'id'		=>	1,
+						'text'		=>	'Company name',
+						'value'		=>	General::replaceWithUnderscores('company name'),
+						'mapped'	=>	['company_name'], /* from db */
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	2,
+						'text'		=>	'Company id',
+						'value'		=>	General::replaceWithUnderscores('Company id'),
+						'mapped'	=>	['id_number'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	3,
+						'text'		=>	'GST - VAT number',
+						'value'		=>	General::replaceWithUnderscores('GST - VAT number'),
+						'mapped'	=>	['gst_vat_number'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	4,
+						'text'		=>	'Website',
+						'value'		=>	General::replaceWithUnderscores('Website'),
+						'mapped'	=>	['website'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	5,
+						'text'		=>	'Email',
+						'value'		=>	General::replaceWithUnderscores('email'),
+						'mapped'	=>	['email'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	6,
+						'text'		=>	'Phone',
+						'value'		=>	General::replaceWithUnderscores('phone'),
+						'mapped'	=>	['email'],
+						'type'		=>	'normal'
+					]
+				],
+				'dropdown' => [
+					[
+						'id'		=>	1,
+						'text'		=>	'Apt - Suite',
+						'value'		=>	General::replaceWithUnderscores('Apt - Suite'),
+						'mapped'	=>	['apt'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	2,
+						'text'		=>	'City/State/Postal',
+						'value'		=>	General::replaceWithUnderscores('City/State/Postal'),
+						'mapped'	=>	['city', 'state', 'postal_code'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	3,
+						'text'		=>	'Street',
+						'value'		=>	General::replaceWithUnderscores('Street'),
+						'mapped'	=>	['address_street'],
+						'type'		=>	'normal'
+					]
+				]
+			];
+
+			foreach($additional_fields as $field){
 				array_push($data['dropdown'], $field);
 			}
 
