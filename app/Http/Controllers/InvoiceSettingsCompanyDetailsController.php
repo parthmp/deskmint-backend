@@ -17,16 +17,27 @@ use Illuminate\Support\Facades\Validator;
 
 class InvoiceSettingsCompanyDetailsController extends Controller{
 
+	private function getCompanyDetailFields() : CompanyDetailsFields {
+		return new CompanyDetailsFields('invoice_company_details', 'id', 'id_column');
+	}
+
 	public function show(Request $request) : mixed{
+
 		$company_id = Sanitize::input($request->input('company_id'));
-		return (new SettingsArrangedFields(new CompanyDetailsFields('invoice_company_details', 'id', 'id_column'), $request, $company_id))->fetchArrangedFieldsData();
+
+		return (new SettingsArrangedFields($this->getCompanyDetailFields(), $request, $company_id))->fetchArrangedFieldsData();
+		
 	}
 
 	
 	public function saveOrUpdate(Request $request) : mixed{
+
 		$company_id = Sanitize::input($request->input('company_id'));
-		$settings_arranged_fields = new SettingsArrangedFields(new CompanyDetailsFields('invoice_company_details', 'id', 'id_column'), $request, $company_id);
+
+		$settings_arranged_fields = new SettingsArrangedFields($this->getCompanyDetailFields(), $request, $company_id);
+
 		return $settings_arranged_fields->saveOrUpdate(AdditionalCompanyField::class, 'companies');
+
 	}
 
 }

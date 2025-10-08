@@ -44,7 +44,7 @@ class SettingsArrangedFields{
 
 				$saved_rows = json_decode($settings->settings_json, true);
 				$default_merged = array_merge($default_data['rows'], $default_data['dropdown']);
-
+				
 				/* check for normal fields */
 				for($z = 0 ; $z < count($default_merged) ; $z++){
 					
@@ -60,8 +60,8 @@ class SettingsArrangedFields{
 							}
 
 						}else{
-							
-							if($saved_rows[$x][$this->arranged_object->getIdColumn()] === $default_merged[$z][$this->arranged_object->getIdColumn()]){
+
+							if($saved_rows[$x][$this->arranged_object->getJsonColumn()] === $default_merged[$z][$this->arranged_object->getJsonColumn()]){
 								$found = true;
 								break;
 							}
