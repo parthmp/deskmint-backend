@@ -261,4 +261,107 @@
 
 		}
 
+		public function getDefaultInvoiceCompanyAddressSettings(int $company_id){
+
+			$additional_fields = $this->getCompanyAdditionalFields($company_id, 4);
+			/* mapped to columns from companies table */
+			$data = [
+				'rows' => [
+					[
+						'id'		=>	1,
+						'text'		=>	'Street',
+						'value'		=>	General::replaceWithUnderscores('Street'),
+						'mapped'	=>	['address_street'], /* from db */
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	2,
+						'text'		=>	'Apt - Suite',
+						'value'		=>	General::replaceWithUnderscores('Apt - Suite'),
+						'mapped'	=>	['apt'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	3,
+						'text'		=>	'City/State/Postal',
+						'value'		=>	General::replaceWithUnderscores('City/State/Postal'),
+						'mapped'	=>	['city', 'state', 'postal_code'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	4,
+						'text'		=>	'Country',
+						'value'		=>	General::replaceWithUnderscores('Country'),
+						'mapped'	=>	['country_id'],
+						'type'		=>	'normal'
+					]
+				],
+				'dropdown' => [
+					[
+						'id'		=>	1,
+						'text'		=>	'Email',
+						'value'		=>	General::replaceWithUnderscores('Email'),
+						'mapped'	=>	['email'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	2,
+						'text'		=>	'ID number',
+						'value'		=>	General::replaceWithUnderscores('ID number'),
+						'mapped'	=>	['id_number'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	3,
+						'text'		=>	'Name',
+						'value'		=>	General::replaceWithUnderscores('Name'),
+						'mapped'	=>	['company_name'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	4,
+						'text'		=>	'Phone',
+						'value'		=>	General::replaceWithUnderscores('Phone'),
+						'mapped'	=>	['phone'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	5,
+						'text'		=>	'Postal/City/State',
+						'value'		=>	General::replaceWithUnderscores('Postal/City/State'),
+						'mapped'	=>	['postal_code', 'city', 'state'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	6,
+						'text'		=>	'Postal/City',
+						'value'		=>	General::replaceWithUnderscores('Postal/City'),
+						'mapped'	=>	['postal_code', 'city'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	7,
+						'text'		=>	'GST - VAT number',
+						'value'		=>	General::replaceWithUnderscores('GST - VAT number'),
+						'mapped'	=>	['gst_vat_number'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	8,
+						'text'		=>	'Website',
+						'value'		=>	General::replaceWithUnderscores('Website'),
+						'mapped'	=>	['website'],
+						'type'		=>	'normal'
+					]
+				]
+			];
+
+			foreach($additional_fields as $field){
+				array_push($data['dropdown'], $field);
+			}
+
+			return $data;
+
+		}
+
 	}
