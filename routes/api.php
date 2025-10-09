@@ -19,6 +19,7 @@ use App\Http\Controllers\InvoiceSettingsClientDetailsController;
 use App\Http\Controllers\InvoiceSettingsCompanyAddressController;
 use App\Http\Controllers\InvoiceSettingsCompanyDetailsController;
 use App\Http\Controllers\InvoiceSettingsGeneralController;
+use App\Http\Controllers\InvoiceSettingsInvoiceDetailsController;
 use App\Http\Controllers\InvoiceSettingsNumbersController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProductsController;
@@ -109,5 +110,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 
 	Route::get('manage-invoice-settings-company-address', [InvoiceSettingsCompanyAddressController::class, 'show']);
 	Route::post('manage-invoice-settings-company-address', [InvoiceSettingsCompanyAddressController::class, 'saveOrUpdate']);
+
+	Route::get('manage-invoice-settings-invoice-details', [InvoiceSettingsInvoiceDetailsController::class, 'show']);
+	Route::post('manage-invoice-settings-invoice-details', [InvoiceSettingsInvoiceDetailsController::class, 'saveOrUpdate']);
 
 });

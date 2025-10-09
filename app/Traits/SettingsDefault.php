@@ -5,7 +5,8 @@
 	use App\Helpers\General;
 	use App\Models\AdditionalCompanyField;
 	use App\Models\ClientsCustomField;
-	use Illuminate\Support\Collection;
+use App\Models\InvoicesCustomField;
+use Illuminate\Support\Collection;
 
 	trait SettingsDefault{
 
@@ -32,7 +33,7 @@
 
 		}
 
-		public function getCustomFields(string $model, int $index = 1) : array{
+		public function getCustomFields(string $model, int $index = 1, $column = 'clients_custom_field_id') : array{
 			
 			$formatted = [];
 
@@ -46,7 +47,7 @@
 					'value'						=>	General::replaceWithUnderscores($field->label),
 					'mapped'					=>	'',
 					'type'						=>	'custom',
-					'clients_custom_fields_id'	=>	$field->id
+					$column						=>	$field->id
 				];
 
 				$index++;
@@ -362,6 +363,74 @@
 
 			return $data;
 
+		}
+
+		public function getDefaultInvoiceDetailsSettings(int $company_id) : array{
+
+			$custom_fields = $this->getCustomFields(InvoicesCustomField::class, 3, 'invoices_custom_field_id');
+
+			$data = [
+				'rows' => [
+					[
+						'id'		=>	1,
+						'text'		=>	'Number',
+						'value'		=>	General::replaceWithUnderscores('Number'),
+						'mapped'	=>	['invoice_number'], /* from db */
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	2,
+						'text'		=>	'date',
+						'value'		=>	General::replaceWithUnderscores('date'),
+						'mapped'	=>	['invoice_date'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	3,
+						'text'		=>	'Due Date',
+						'value'		=>	General::replaceWithUnderscores('due_date'),
+						'mapped'	=>	['due_date'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	4,
+						'text'		=>	'Total',
+						'value'		=>	General::replaceWithUnderscores('Total'),
+						'mapped'	=>	['total'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	5,
+						'text'		=>	'Balance Due',
+						'value'		=>	General::replaceWithUnderscores('Balance Due'),
+						'mapped'	=>	['balance_due'],
+						'type'		=>	'normal'
+					]
+				],
+				'dropdown' => [
+					[
+						'id'		=>	1,
+						'text'		=>	'Amount',
+						'value'		=>	General::replaceWithUnderscores('Amount'),
+						'mapped'	=>	['amount'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	2,
+						'text'		=>	'PO Number',
+						'value'		=>	General::replaceWithUnderscores('PO Number'),
+						'mapped'	=>	['po_number'],
+						'type'		=>	'normal'
+					]
+				]
+			];
+
+			foreach($custom_fields as $field){
+				array_push($data['dropdown'], $field);
+			}
+
+			return $data;
+			
 		}
 
 	}
