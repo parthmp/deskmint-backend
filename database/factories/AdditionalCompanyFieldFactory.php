@@ -18,9 +18,9 @@ class AdditionalCompanyFieldFactory extends Factory
     public function definition(): array
     {
         return [
-            'company'	=>	Company::factory(),
-            'label'		=>	implode(' ', $this->faker->words(2)),
-			'value'		=>	implode(' ', $this->faker->words(2))
+            'company_id'	=>	Company::factory(),
+            'label'			=>	implode(' ', $this->faker->words(2)),
+			'value'			=>	implode(' ', $this->faker->words(2))
         ];
     }
 }

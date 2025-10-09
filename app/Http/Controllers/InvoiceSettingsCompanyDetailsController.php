@@ -4,16 +4,10 @@ namespace App\Http\Controllers;
 
 use App\DiClasses\ArrangedFields\CompanyDetailsFields;
 use App\DiClasses\ArrangedFields\SettingsArrangedFields;
-use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\AdditionalCompanyField;
-use App\Models\SettingsSection;
-use App\Services\SettingsArrangedFieldsService;
-use App\Traits\SettingsDefault;
-use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Validator;
+
 
 class InvoiceSettingsCompanyDetailsController extends Controller{
 
