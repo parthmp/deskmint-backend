@@ -15,6 +15,7 @@ use App\Http\Controllers\FieldTypesController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\IndustriesController;
 use App\Http\Controllers\InvoicesCustomFieldsController;
+use App\Http\Controllers\InvoiceSettingsAPFController;
 use App\Http\Controllers\InvoiceSettingsClientDetailsController;
 use App\Http\Controllers\InvoiceSettingsCompanyAddressController;
 use App\Http\Controllers\InvoiceSettingsCompanyDetailsController;
@@ -113,5 +114,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 
 	Route::get('manage-invoice-settings-invoice-details', [InvoiceSettingsInvoiceDetailsController::class, 'show']);
 	Route::post('manage-invoice-settings-invoice-details', [InvoiceSettingsInvoiceDetailsController::class, 'saveOrUpdate']);
+
+	Route::post('manage-invoice-settings-additional-product-fields', [InvoiceSettingsAPFController::class, 'saveOrUpdate']);
 
 });
