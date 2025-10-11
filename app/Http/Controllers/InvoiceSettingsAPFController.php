@@ -10,6 +10,52 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class InvoiceSettingsAPFController extends Controller{
+
+	public function show(Request $request){
+
+		$company_id = Sanitize::input($request->input('company_id'));
+
+		try{
+
+			$fields = AdditionalProductColumnsField::where('company_id', '=', $company_id)->get();
+
+			$labels = [];
+			$types = [];
+			$taxes = [];
+
+			foreach($fields as $field){
+
+				$labels[] = [
+					'id'			=>		$field->id,
+					'value'			=>		$field->label,
+					'error'			=>		'',
+					'show_errors'	=>		false
+				];
+
+				$types[] = [
+					'id'			=>		$field->id,
+					'value'			=>		$field->type,
+					'error'			=>		''
+				];
+
+				$taxes[] = [
+					'id'			=>		$field->id,
+					'value'			=>		$field->tax_rate
+				];
+
+			}
+
+			return [
+				'labels'	=>		$labels,
+				'types'		=>		$types,
+				'taxes'		=>		$taxes
+			];
+
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
+	}
     
 	public function saveOrUpdate(Request $request){
 
@@ -59,6 +105,22 @@ class InvoiceSettingsAPFController extends Controller{
 			AdditionalProductColumnsField::upsert($upsert, ['id'], ['label', 'type', 'tax_rate']);
 
 			return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
+
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
+	}
+
+	public function destroy(Request $request, int $id){
+
+		try{
+
+			$id = Sanitize::input($id);
+
+			AdditionalProductColumnsField::where('id', '=', $id)->delete();
+
+			return response(['message' => 'Removed successfully', 'validity' => 'delete_success'], 200);
 
 		}catch(Exception $e){
 			return General::wentWrong();
