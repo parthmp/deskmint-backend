@@ -185,7 +185,7 @@ class InvoiceSettingsClientDetailsControllerTest extends TestCase{
 													'text'						=>	'bla',
 													'value'						=>	'bla',
 													'type'						=>	'custom',
-													'clients_custom_fields_id'	=>	100
+													'clients_custom_field_id'	=>	100
 												]
 											]
 		], $c['headers']);
@@ -255,7 +255,7 @@ class InvoiceSettingsClientDetailsControllerTest extends TestCase{
 													'text'											=>	'bla',
 													'value'											=>	'bla',
 													'type'											=>	'custom',
-													'clients_custom_fields_id'						=>	100
+													'clients_custom_field_id'						=>	100
 												]
 											]
 		], $c['headers']);
@@ -273,7 +273,7 @@ class InvoiceSettingsClientDetailsControllerTest extends TestCase{
 								'text'						=>	'bla',
 								'value'						=>	'bla',
 								'type'						=>	'custom',
-								'clients_custom_fields_id'	=>	100
+								'clients_custom_field_id'	=>	100
 							]], $settings);
 	}
 
@@ -315,7 +315,7 @@ class InvoiceSettingsClientDetailsControllerTest extends TestCase{
 													'value'											=>	'bla',
 													'type'											=>	'custom',
 													'mapped'										=>	'',
-													'clients_custom_fields_id'						=>	100
+													'clients_custom_field_id'						=>	100
 												]
 											]
 		], $c['headers']);

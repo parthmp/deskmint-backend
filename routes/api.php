@@ -22,6 +22,7 @@ use App\Http\Controllers\InvoiceSettingsCompanyDetailsController;
 use App\Http\Controllers\InvoiceSettingsGeneralController;
 use App\Http\Controllers\InvoiceSettingsInvoiceDetailsController;
 use App\Http\Controllers\InvoiceSettingsNumbersController;
+use App\Http\Controllers\InvoiceSettingsProductColumnsController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProductsController;
 use App\Http\Middleware\DefaultCompany;
@@ -118,5 +119,9 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-invoice-settings-additional-product-fields', [InvoiceSettingsAPFController::class, 'show']);
 	Route::post('manage-invoice-settings-additional-product-fields', [InvoiceSettingsAPFController::class, 'saveOrUpdate']);
 	Route::delete('manage-invoice-settings-additional-product-fields/{id}', [InvoiceSettingsAPFController::class, 'destroy']);
+
+	
+	Route::get('manage-invoice-settings-product-columns', [InvoiceSettingsProductColumnsController::class, 'show']);
+	Route::post('manage-invoice-settings-product-columns', [InvoiceSettingsProductColumnsController::class, 'saveOrUpdate']);
 
 });

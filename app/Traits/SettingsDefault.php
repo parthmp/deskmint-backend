@@ -4,9 +4,10 @@
 
 	use App\Helpers\General;
 	use App\Models\AdditionalCompanyField;
+	use App\Models\AdditionalProductColumnsField;
 	use App\Models\ClientsCustomField;
-use App\Models\InvoicesCustomField;
-use Illuminate\Support\Collection;
+	use App\Models\InvoicesCustomField;
+	use Illuminate\Support\Collection;
 
 	trait SettingsDefault{
 
@@ -431,6 +432,117 @@ use Illuminate\Support\Collection;
 
 			return $data;
 			
+		}
+
+		
+		public function getProductColumnsAdditionalFields(int $company_id, int $index = 1) : array{
+
+			$structure = [];
+
+			$fields = AdditionalProductColumnsField::select('id', 'label', 'type', 'tax_rate')->where('company_id', '=', $company_id)->get();
+
+			foreach($fields as $field){
+
+				$label = $field->label.' - '.$field->type;
+
+				if($field->type === 'tax'){
+					$label .= ' - '.$field->tax_rate.'%';
+				}
+				
+
+				$temp = [];
+
+				$temp['id'] = $index;
+				$temp['text'] = $label;
+				$temp['value'] = $label;
+				$temp['mapped'] = '';
+				$temp['type'] = 'custom';
+				$temp['id_column'] = $field->id; /* this maps to the "id" column in additional_product_columns_fields table */
+
+				$structure[] = $temp;
+
+				$index++;
+
+			}
+
+			return $structure;
+		}
+
+		public function getDefaulProductColumnsSettings(int $company_id){
+			
+			$additional_fields = $this->getProductColumnsAdditionalFields($company_id, 2);
+
+			/* normal fields maps to invoice_items db fields */
+			/* additional fields maps to additional_product_columns_fields db fields */
+			$data = [
+				'rows' => [
+					[
+						'id'		=>	1,
+						'text'		=>	'Item',
+						'value'		=>	General::replaceWithUnderscores('Item'),
+						'mapped'	=>	['product_id'], /* from db */
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	2,
+						'text'		=>	'Description',
+						'value'		=>	General::replaceWithUnderscores('Description'),
+						'mapped'	=>	['description'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	3,
+						'text'		=>	'Unit cost',
+						'value'		=>	General::replaceWithUnderscores('Unit cost'),
+						'mapped'	=>	['unit_price'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	4,
+						'text'		=>	'Quantity',
+						'value'		=>	General::replaceWithUnderscores('Quantity'),
+						'mapped'	=>	['quantity'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	5,
+						'text'		=>	'Discount',
+						'value'		=>	General::replaceWithUnderscores('discount'),
+						'mapped'	=>	['discount'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	6,
+						'text'		=>	'Tax',
+						'value'		=>	General::replaceWithUnderscores('Tax'),
+						'mapped'	=>	['tax'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	7,
+						'text'		=>	'Line total',
+						'value'		=>	General::replaceWithUnderscores('Line total'),
+						'mapped'	=>	['line_total'],
+						'type'		=>	'normal'
+					]
+				],
+				'dropdown' => [
+					[
+						'id'		=>	1,
+						'text'		=>	'Gross line total',
+						'value'		=>	General::replaceWithUnderscores('gross_line_total'),
+						'mapped'	=>	['gross_line_total'],
+						'type'		=>	'normal'
+					]
+				]
+			];
+
+			foreach($additional_fields as $field){
+				array_push($data['dropdown'], $field);
+			}
+
+			return $data;
+
 		}
 
 	}

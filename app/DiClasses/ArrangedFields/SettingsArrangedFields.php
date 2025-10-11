@@ -28,7 +28,7 @@ class SettingsArrangedFields{
 
 	public function fetchArrangedFieldsData(){
 
-		try{
+		//try{
 
 			$company_id = Sanitize::input($this->company_id);
 
@@ -85,9 +85,9 @@ class SettingsArrangedFields{
 
 			return $default_data;
 					
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
 
 	}
 
@@ -110,10 +110,12 @@ class SettingsArrangedFields{
 				if(!is_array($row['mapped'])){
 					return false;
 				}
-
+				
 				$client_table_columns = Schema::getColumnListing($table);
+				
 				foreach($row['mapped'] as $mapped_col){
 					if(!in_array($mapped_col, $client_table_columns)){
+
 						return false;
 					}
 				}

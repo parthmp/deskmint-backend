@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\AdditionalProductColumnsField;
+use App\Models\SettingsSection;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -117,8 +118,34 @@ class InvoiceSettingsAPFController extends Controller{
 		try{
 
 			$id = Sanitize::input($id);
+			$company_id = Sanitize::input($request->input('company_id'));
 
 			AdditionalProductColumnsField::where('id', '=', $id)->delete();
+
+			/* modify json here for sorting */
+			$settings = SettingsSection::where([['company_id', '=', $company_id], ['type', '=', 'invoice_product_columns']])->first();
+			
+			if($settings){
+
+				$modified = [];
+
+				$json = json_decode($settings->settings_json, true);
+				
+				for($z = 0 ; $z < count($json) ; $z++){
+					if($json[$z]['type'] === 'custom'){
+						
+						if($json[$z]['id_column'] !== (int) $id){
+							$modified[] = $json[$z];
+						}
+					}else{
+						$modified[] = $json[$z];
+					}
+				}
+				
+				$settings->settings_json = json_encode($modified);
+				$settings->save();
+
+			}
 
 			return response(['message' => 'Removed successfully', 'validity' => 'delete_success'], 200);
 

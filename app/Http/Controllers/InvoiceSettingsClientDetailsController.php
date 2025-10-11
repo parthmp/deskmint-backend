@@ -19,7 +19,7 @@ class InvoiceSettingsClientDetailsController extends Controller{
 	use SettingsDefault;
 
 	private function getClientDetailFields() : ClientsDetailsFields {
-		return new ClientsDetailsFields('invoice_client_details', 'id', 'clients_custom_fields_id');
+		return new ClientsDetailsFields('invoice_client_details', 'id', 'clients_custom_field_id');
 	}
 	
 	public function show(Request $request) : mixed{
