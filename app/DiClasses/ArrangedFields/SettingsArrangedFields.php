@@ -28,7 +28,7 @@ class SettingsArrangedFields{
 
 	public function fetchArrangedFieldsData(){
 
-		//try{
+		try{
 
 			$company_id = Sanitize::input($this->company_id);
 
@@ -85,9 +85,9 @@ class SettingsArrangedFields{
 
 			return $default_data;
 					
-		// }catch(Exception $e){
-		// 	return General::wentWrong();
-		// }
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 	}
 
