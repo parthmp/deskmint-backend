@@ -14,7 +14,7 @@ class InvoiceSettingsProductColumnsController extends Controller{
     use SettingsDefault;
 
 	private function getProductColumnFields() : ProductColumnsFields {
-		return new ProductColumnsFields('invoice_product_columns', 'id', 'id_column');
+		return new ProductColumnsFields(ISC_PRODUCT_COLUMNS_TYPE, 'id', 'id_column');
 	}
 	
 	public function show(Request $request) : mixed{

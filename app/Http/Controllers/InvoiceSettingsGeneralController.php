@@ -33,7 +33,7 @@ class InvoiceSettingsGeneralController extends Controller{
 
 			$company_id = Sanitize::input($request->input('company_id'));
 
-			$settings = SettingsSection::where([['type', '=', 'invoice_general'], ['company_id', '=', $company_id]])->first();
+			$settings = SettingsSection::where([['type', '=', ISC_INVOICE_GENERAL_DETAILS_TYPE], ['company_id', '=', $company_id]])->first();
 
 			if($settings){
 				return 	[
@@ -95,14 +95,14 @@ class InvoiceSettingsGeneralController extends Controller{
 									'e_invoice_on'			=>	$e_invoice
 								]);
 			
-			$setting = SettingsSection::where([['type', '=', 'invoice_general'], ['company_id', '=', $company_id]])->first();
+			$setting = SettingsSection::where([['type', '=', ISC_INVOICE_GENERAL_DETAILS_TYPE], ['company_id', '=', $company_id]])->first();
 
 			if($setting){
 				$obj = $setting;
 			}else{
 				$obj = new SettingsSection();
 				$obj->company_id = $company_id;
-				$obj->type = 'invoice_general';
+				$obj->type = ISC_INVOICE_GENERAL_DETAILS_TYPE;
 			}
 
 			$obj->settings_json = $json;

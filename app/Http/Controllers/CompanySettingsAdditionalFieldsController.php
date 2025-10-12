@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\AdditionalCompanyField;
+use App\Models\SettingsSection;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -95,6 +96,37 @@ class CompanySettingsAdditionalFieldsController extends Controller{
 
 			if(!$additonal_field){
 				return response(['message' => 'Invalid data', 'validity' => 'invalid_data'], config('global.error_code'));
+			}
+
+			/* modify json here for sorting */
+			$settings = SettingsSection::where('company_id', $company_id)->where(function ($query){
+        		$query->where('type', ISC_INVOICE_COMPANY_ADDRESS_TYPE)->orWhere('type', ISC_INVOICE_COMPANY_DETAILS_TYPE);
+			})->get();
+			
+			if($settings){
+
+				for($x = 0 ; $x < count($settings) ; $x++){
+
+					$modified = [];
+
+					$json = json_decode($settings[$x]->settings_json, true);
+					
+					for($z = 0 ; $z < count($json) ; $z++){
+						if($json[$z]['type'] === 'custom'){
+							
+							if($json[$z]['id_column'] !== (int) $id){
+								$modified[] = $json[$z];
+							}
+						}else{
+							$modified[] = $json[$z];
+						}
+					}
+					
+					$settings[$x]->settings_json = json_encode($modified);
+					$settings[$x]->save();
+
+				}
+
 			}
 
 			if($additonal_field->delete()){

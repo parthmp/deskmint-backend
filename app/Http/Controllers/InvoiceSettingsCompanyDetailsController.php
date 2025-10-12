@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 class InvoiceSettingsCompanyDetailsController extends Controller{
 
 	private function getCompanyDetailFields() : CompanyDetailsFields {
-		return new CompanyDetailsFields('invoice_company_details', 'id', 'id_column');
+		return new CompanyDetailsFields(ISC_INVOICE_COMPANY_DETAILS_TYPE, 'id', 'id_column');
 	}
 
 	public function show(Request $request) : mixed{

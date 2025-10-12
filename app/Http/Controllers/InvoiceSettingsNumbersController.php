@@ -21,7 +21,7 @@ class InvoiceSettingsNumbersController extends Controller{
 
 			$company_id = Sanitize::input($request->input('company_id'));
 
-			$settings = SettingsSection::where([['type', '=', 'invoice_numbers'], ['company_id', '=', $company_id]])->first();
+			$settings = SettingsSection::where([['type', '=', ISC_INVOICE_NUMBERS_TYPE], ['company_id', '=', $company_id]])->first();
 
 			if($settings){
 				return json_decode($settings->settings_json);
@@ -75,14 +75,14 @@ class InvoiceSettingsNumbersController extends Controller{
 						'number_pattern'	=>	$number_pattern
 					]);
 
-			$setting = SettingsSection::where([['type', '=', 'invoice_numbers'], ['company_id', '=', $company_id]])->first();
+			$setting = SettingsSection::where([['type', '=', ISC_INVOICE_NUMBERS_TYPE], ['company_id', '=', $company_id]])->first();
 
 			if($setting){
 				$obj = $setting;
 			}else{
 				$obj = new SettingsSection();
 				$obj->company_id = $company_id;
-				$obj->type = 'invoice_numbers';
+				$obj->type = ISC_INVOICE_NUMBERS_TYPE;
 			}
 
 			$obj->settings_json = $json;

@@ -111,7 +111,7 @@ class InvoiceSettingsCompanyDetailsControllerTest extends TestCase{
 		$this->assertEquals('save_success', $response['validity']);
 
 		/* now check if it was saved */
-		$settings = SettingsSection::where([['type', '=', 'invoice_company_details'], ['company_id', '=', $company_id]])->first();
+		$settings = SettingsSection::where([['type', '=', ISC_INVOICE_COMPANY_DETAILS_TYPE], ['company_id', '=', $company_id]])->first();
 		$settings = json_decode($settings->settings_json, true);
 		
 		$this->assertEquals([[
@@ -156,7 +156,7 @@ class InvoiceSettingsCompanyDetailsControllerTest extends TestCase{
 		$this->assertEquals('save_success', $response['validity']);
 
 		/* now check if it was saved */
-		$settings = SettingsSection::where([['type', '=', 'invoice_company_details'], ['company_id', '=', $company_id]])->first();
+		$settings = SettingsSection::where([['type', '=', ISC_INVOICE_COMPANY_DETAILS_TYPE], ['company_id', '=', $company_id]])->first();
 		$settings = json_decode($settings->settings_json, true);
 		
 		$this->assertEquals([[

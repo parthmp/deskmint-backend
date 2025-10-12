@@ -14,7 +14,7 @@ class InvoiceSettingsInvoiceDetailsController extends Controller{
 	use SettingsDefault;
 
 	private function getInvoiceDetailFields() : InvoiceDetailsFields {
-		return new InvoiceDetailsFields('invoice_invoice_details', 'id', 'invoices_custom_field_id');
+		return new InvoiceDetailsFields(ISC_INVOICE_DETAILS_TYPE, 'id', 'invoices_custom_field_id');
 	}
 	
 	public function show(Request $request) : mixed{

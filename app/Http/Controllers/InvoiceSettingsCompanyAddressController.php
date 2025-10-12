@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 class InvoiceSettingsCompanyAddressController extends Controller{
 
     private function getCompanyAddressFields() : CompanyAddressFields {
-		return new CompanyAddressFields('invoice_company_address', 'id', 'id_column');
+		return new CompanyAddressFields(ISC_INVOICE_COMPANY_ADDRESS_TYPE, 'id', 'id_column');
 	}
 
 	public function show(Request $request) : mixed{

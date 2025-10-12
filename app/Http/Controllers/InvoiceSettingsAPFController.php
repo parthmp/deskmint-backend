@@ -123,7 +123,7 @@ class InvoiceSettingsAPFController extends Controller{
 			AdditionalProductColumnsField::where('id', '=', $id)->delete();
 
 			/* modify json here for sorting */
-			$settings = SettingsSection::where([['company_id', '=', $company_id], ['type', '=', 'invoice_product_columns']])->first();
+			$settings = SettingsSection::where([['company_id', '=', $company_id], ['type', '=', ISC_PRODUCT_COLUMNS_TYPE]])->first();
 			
 			if($settings){
 
