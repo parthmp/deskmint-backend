@@ -294,7 +294,8 @@ class InvoiceSettingsClientDetailsControllerTest extends TestCase{
 			ClientsCustomField::factory()->create([
 				'id'						=>	(100+$z),
 				'label'						=>	'custom field here '.$z,
-				'custom_field_type_id'		=>	$fields[$z]->id
+				'custom_field_type_id'		=>	$fields[$z]->id,
+				'company_id'				=>	$company_id
 			]);
 
 		}
@@ -324,6 +325,7 @@ class InvoiceSettingsClientDetailsControllerTest extends TestCase{
 		$this->assertArrayHasKey('validity', $response);
 		$this->assertEquals('save_success', $response['validity']);
 
+		
 		$params = http_build_query([
 			'company_id' 		=> $company_id
 		]);

@@ -15,3 +15,5 @@
 	
 	if(!defined('ISC_INVOICE_CLIENT_DETAILS_TYPE')) define('ISC_INVOICE_CLIENT_DETAILS_TYPE', 'invoice_client_details');
 
+	if(!defined('ISC_INVOICE_TOTAL_FIELDS_TYPE')) define('ISC_INVOICE_TOTAL_FIELDS_TYPE', 'invoice_total_fields');
+

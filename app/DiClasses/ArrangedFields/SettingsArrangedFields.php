@@ -28,7 +28,7 @@ class SettingsArrangedFields{
 
 	public function fetchArrangedFieldsData(string $model = ''){
 
-		//try{
+		try{
 
 			$company_id = Sanitize::input($this->company_id);
 
@@ -43,7 +43,7 @@ class SettingsArrangedFields{
 				$dropdown_fields = [];
 
 				$saved_rows = json_decode($settings->settings_json, true);
-
+				
 				/* filter rows here start */
 
 				if($model !== ''){
@@ -54,6 +54,7 @@ class SettingsArrangedFields{
 					for($z = 0 ; $z < count($saved_rows) ; $z++){
 
 						if(isset($saved_rows[$z][$this->arranged_object->getJsonColumn()])){
+							
 							if(in_array($saved_rows[$z][$this->arranged_object->getJsonColumn()], $ids) && $saved_rows[$z]['type'] === 'custom'){
 								$temp_saved_rows[] = $saved_rows[$z];
 							}
@@ -112,9 +113,9 @@ class SettingsArrangedFields{
 
 			return $default_data;
 					
-		// }catch(Exception $e){
-		// 	return General::wentWrong();
-		// }
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 	}
 
@@ -187,8 +188,12 @@ class SettingsArrangedFields{
 			$rows = $this->request->input('rows');
 			
 			/* now validate before moving forward */
-			if(!$this->validateSettingsPost($rows, $model, $table)){
-				return response(['message' => 'invalid request','validity' => 'bad_request'], config('global.error_code'));
+			if($model !== '' && $table !== ''){
+
+				if(!$this->validateSettingsPost($rows, $model, $table)){
+					return response(['message' => 'invalid request','validity' => 'bad_request'], config('global.error_code'));
+				}
+
 			}
 
 			$settings = SettingsSection::where([['type', '=', $this->arranged_object->getType()], ['company_id', '=', $this->company_id]])->first();

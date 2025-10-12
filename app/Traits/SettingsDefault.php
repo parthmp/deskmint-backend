@@ -545,4 +545,69 @@
 
 		}
 
+		public function getDefaultTotalFieldsSettings() : array {
+
+			/* none of these fields are mapped with db table columns, all fields will be generated on the fly while generating invoices */
+
+			$data = [
+				'rows' => [
+					[
+						'id'		=>	1,
+						'text'		=>	'Net Subtotal',
+						'value'		=>	General::replaceWithUnderscores('Net Subtotal'),
+						'mapped'	=>	['net_subtotal'], /* these are not db columns like others, these added as indicators to differentiate */
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	2,
+						'text'		=>	'Subtotal',
+						'value'		=>	General::replaceWithUnderscores('Subtotal'),
+						'mapped'	=>	['sub_total'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	3,
+						'text'		=>	'Discount',
+						'value'		=>	General::replaceWithUnderscores('Discount'),
+						'mapped'	=>	['discount'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	4,
+						'text'		=>	'Total Taxes',
+						'value'		=>	General::replaceWithUnderscores('Total Taxes'),
+						'mapped'	=>	['total_taxes'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	5,
+						'text'		=>	'Total',
+						'value'		=>	General::replaceWithUnderscores('Total'),
+						'mapped'	=>	['total'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	6,
+						'text'		=>	'Paid to Date',
+						'value'		=>	General::replaceWithUnderscores('Paid to Date'),
+						'mapped'	=>	['paid_to_date'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	7,
+						'text'		=>	'Balance Due',
+						'value'		=>	General::replaceWithUnderscores('Balance Due'),
+						'mapped'	=>	['balance_due'],
+						'type'		=>	'normal'
+					],
+				],
+				'dropdown' => [
+					
+				]
+			];
+
+			return $data;
+
+		}
+
 	}
