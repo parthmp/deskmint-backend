@@ -26,7 +26,7 @@ class InvoiceSettingsClientDetailsController extends Controller{
 		
 		$company_id = Sanitize::input($request->input('company_id'));
 		
-		return (new SettingsArrangedFields($this->getClientDetailFields(), $request, $company_id))->fetchArrangedFieldsData();
+		return (new SettingsArrangedFields($this->getClientDetailFields(), $request, $company_id))->fetchArrangedFieldsData(ClientsCustomField::class);
 
 	}
 

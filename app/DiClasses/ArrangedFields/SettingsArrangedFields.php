@@ -26,9 +26,9 @@ class SettingsArrangedFields{
 		$this->request = $request;
 	}
 
-	public function fetchArrangedFieldsData(){
+	public function fetchArrangedFieldsData(string $model = ''){
 
-		try{
+		//try{
 
 			$company_id = Sanitize::input($this->company_id);
 
@@ -43,6 +43,33 @@ class SettingsArrangedFields{
 				$dropdown_fields = [];
 
 				$saved_rows = json_decode($settings->settings_json, true);
+
+				/* filter rows here start */
+
+				if($model !== ''){
+
+					$temp_saved_rows = [];
+
+					$ids = $model::where('company_id', '=', $company_id)->pluck('id')->toArray();
+					for($z = 0 ; $z < count($saved_rows) ; $z++){
+
+						if(isset($saved_rows[$z][$this->arranged_object->getJsonColumn()])){
+							if(in_array($saved_rows[$z][$this->arranged_object->getJsonColumn()], $ids) && $saved_rows[$z]['type'] === 'custom'){
+								$temp_saved_rows[] = $saved_rows[$z];
+							}
+						}else if($saved_rows[$z]['type'] === 'normal'){
+							$temp_saved_rows[] = $saved_rows[$z];
+						}
+					}
+
+					$saved_rows = $temp_saved_rows;
+					$temp_saved_rows = null;
+
+				}
+
+
+				/* filter rows here end */
+
 				$default_merged = array_merge($default_data['rows'], $default_data['dropdown']);
 				
 				/* check for normal fields */
@@ -85,9 +112,9 @@ class SettingsArrangedFields{
 
 			return $default_data;
 					
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
 
 	}
 
