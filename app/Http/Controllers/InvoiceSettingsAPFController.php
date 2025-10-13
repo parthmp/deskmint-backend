@@ -64,7 +64,9 @@ class InvoiceSettingsAPFController extends Controller{
 			'labels'			=>	'required|array',
 			'types'				=>	'required|array',
 			'taxes'				=>	'required|array',
-			'labels.*.value'	=>	'required'
+			'labels.*.value'	=>	'required',
+			'types.*.value'		=>	'required',
+			'taxes.*.value'		=>	'required'
 		]);
 
 		if($v->fails()){
@@ -92,8 +94,8 @@ class InvoiceSettingsAPFController extends Controller{
 				$upsert[] = [
 					'id'				=>	$labels[$z]['id'],
 					'company_id'		=>	$company_id,
-					'label'				=>	 Sanitize::input($labels[$z]['value']),
-					'type'				=>	 Sanitize::input($types[$z]['value']),
+					'label'				=>	 Sanitize::input($labels[$z]['value'].''),
+					'type'				=>	 Sanitize::input($types[$z]['value'].''),
 					'tax_rate'			=>	 (float) Sanitize::input($taxes[$z]['value']),
 				];
 
