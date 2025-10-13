@@ -168,7 +168,7 @@ class InvoiceSettingsCompanyDetailsControllerTest extends TestCase{
 							]], $settings);
 	}
 
-	public function test_if_it_fetches_data_for_company_details_invoice_settings_with_both_field_types() : void{
+	public function test_if_it_saves_data_for_company_details_invoice_settings_with_both_field_types() : void{
 		
 		$device = 'device 123';
 		$c = $this->set_access($device);
