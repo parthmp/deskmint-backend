@@ -31,7 +31,7 @@ class ClientsControllerTest extends TestCase
 
 	}
 
-	public function test_if_it_fetches_clientS_custom_fields_without_testing_default_values(): void{
+	public function test_if_it_fetches_clients_custom_fields_without_testing_default_values(): void{
 
 		$device = 'device 123';
 
@@ -63,7 +63,10 @@ class ClientsControllerTest extends TestCase
 		$response = $this->getQuery($device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
 		$response = $response->json();
 		
-		$this->assertEquals($added_custom_fields, count($response));
+		$this->assertEquals($added_custom_fields, count($response['data_fields']));
+		$this->assertArrayHasKey('countries', $response);
+		$this->assertArrayHasKey('currencies', $response);
+		$this->assertArrayHasKey('industries', $response);
 
 	}
 
@@ -131,9 +134,9 @@ class ClientsControllerTest extends TestCase
 		$response = $this->getQuery($device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
 		$response = $response->json();
 		
-		$this->assertEquals($added_custom_fields, count($response));
+		$this->assertEquals($added_custom_fields, count($response['data_fields']));
 
-		foreach($response as $r_field){
+		foreach($response['data_fields'] as $r_field){
 			
 			if($r_field['custom_field_type']['input_type'] === config('global.field_types')[0]){ /* text */
 				$this->assertEquals('this is example text field', $r_field['value']);
@@ -224,9 +227,9 @@ class ClientsControllerTest extends TestCase
 		$response = $this->getQuery($device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
 		$response = $response->json();
 		
-		$this->assertEquals($added_custom_fields, count($response));
+		$this->assertEquals($added_custom_fields, count($response['data_fields']));
 
-		foreach($response as $r_field){
+		foreach($response['data_fields'] as $r_field){
 			
 			$this->assertEmpty($r_field['value']);
 
@@ -298,6 +301,7 @@ class ClientsControllerTest extends TestCase
 
 		$response = $this->getQuery($device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
 		$response = $response->json();
+		$response = $response['data_fields'];
 		
 		for($z = 0 ; $z < count($dates_to_check); $z++){
 
@@ -425,7 +429,8 @@ class ClientsControllerTest extends TestCase
 
 		$response = $this->getQuery($device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
 		$response = $response->json();
-		
+		$response = $response['data_fields'];
+
 		for($z = 0 ; $z < count($dates_to_check); $z++){
 
         	$this->assertEmpty($response[$z]['value']);
@@ -507,6 +512,7 @@ class ClientsControllerTest extends TestCase
 
 		$response = $this->getQuery($device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
 		$response = $response->json();
+		$response = $response['data_fields'];
 		
 		for($z = 0 ; $z < count($dates_to_check); $z++){
 
@@ -626,6 +632,7 @@ class ClientsControllerTest extends TestCase
 
 		$response = $this->getQuery($device, $params, '/api/manage-clients/fetch-clients-custom-fields?');
 		$response = $response->json();
+		$response = $response['data_fields'];
 		
 		for($z = 0 ; $z < count($dates_to_check); $z++){
 			

@@ -8,6 +8,8 @@ use App\Models\Client;
 use App\Models\ClientContactInfo;
 use App\Models\ClientCustomFieldValue;
 use App\Models\ClientsCustomField;
+use App\Models\Currency;
+use App\Models\Industry;
 use App\Models\SettingsIndexColumn;
 use App\Models\UserIndexColumn;
 use App\Services\DataTable;
@@ -33,7 +35,26 @@ class ClientsController extends Controller{
 
 		$fields = ClientsCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->orderBy('order_on_add_edit_page', 'asc')->with('customFieldType')->get();
 
-		return $this->adjustRowsPrinting($fields);
+		$currencies = Currency::orderBy('currency', 'asc')->get()->map(function($currency){
+			return [
+				'value'	=>	$currency->id,
+				'text'	=>	$currency->currency.' - '.$currency->code
+			];
+		});
+
+		$industries = Industry::orderBy('industry_name', 'asc')->get()->map(function($ind){
+			return [
+				'value'	=>	$ind->id,
+				'text'	=>	$ind->industry_name
+			];
+		});
+
+		return [
+					'data_fields' 	=> $this->adjustRowsPrinting($fields),
+					'countries'		=>	General::fetchCoutries(),
+					'currencies'	=>	$currencies,
+					'industries'	=>	$industries,
+				];
 
 	}
 

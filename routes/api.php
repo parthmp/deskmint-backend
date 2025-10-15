@@ -14,6 +14,7 @@ use App\Http\Controllers\CurrenciesControlller;
 use App\Http\Controllers\FieldTypesController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\IndustriesController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoicesCustomFieldsController;
 use App\Http\Controllers\InvoiceSettingsAPFController;
 use App\Http\Controllers\InvoiceSettingsClientDetailsController;
@@ -127,4 +128,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 
 	Route::get('manage-invoice-settings-total-fields', [InvoiceSettingsTotalFieldsController::class, 'show']);
 	Route::post('manage-invoice-settings-total-fields', [InvoiceSettingsTotalFieldsController::class, 'saveOrUpdate']);
+
+	Route::get('manage-invoices/fetch-clients', [InvoiceController::class, 'searchClients']);
+
 });

@@ -20,8 +20,8 @@ class ClientFactory extends Factory
     public function definition(): array{
 
         return [
-            'first_name'					=>	$this->faker->text(10),
-            'last_name'						=>	$this->faker->text(10),
+            'first_name'					=>	$this->faker->firstName(),
+            'last_name'						=>	$this->faker->lastName(),
             'tax_number'					=>	$this->faker->text(15),
             'website'						=>	$this->faker->url(),
             'email'							=>	$this->faker->email(),
