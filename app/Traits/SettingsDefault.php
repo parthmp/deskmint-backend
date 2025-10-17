@@ -468,7 +468,7 @@
 			return $structure;
 		}
 
-		public function getDefaulProductColumnsSettings(int $company_id){
+		public function getDefaultProductColumnsSettings(int $company_id){
 			
 			$additional_fields = $this->getProductColumnsAdditionalFields($company_id, 2);
 

@@ -2,12 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\Client;
+use App\Services\InvoiceSettingsService;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class InvoiceController extends Controller{
     
+	/**
+	 * searchClients function
+	 *
+	 * @param Request $request
+	 * @return Collection
+	 */
 	public function searchClients(Request $request){
 
 		$company_id = Sanitize::input($request->input('company_id'));
@@ -24,6 +34,32 @@ class InvoiceController extends Controller{
 		})->toArray();
 
 		return $clients;
+
+	}
+
+	/**
+	 * fetchInitialData function
+	 *
+	 * @param Request $request
+	 * @return array
+	 */
+	public function fetchInitialData(Request $request){
+
+		$company_id = Sanitize::input($request->input('company_id'));
+
+		//try{
+
+			$invoice_settings = new InvoiceSettingsService($company_id);
+
+			return [
+				'numbers' 			=> $invoice_settings->getInvoiceNumbers(),
+				'product_columns' 	=> $invoice_settings->getProductColumns(),
+				'total_fields' 		=> $invoice_settings->getTotalFields(),
+			];
+
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
 
 	}
 
