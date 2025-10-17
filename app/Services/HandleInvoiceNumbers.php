@@ -232,23 +232,10 @@ class HandleInvoiceNumbers{
 	 */
 	private function incrementInvoiceNumber(Invoice $invoice, string $padding) : string {
 
-		$reversed = (string) strrev($invoice->invoice_number);
 		$scan = (int) $invoice->scan_chars;
-
-		$filtered_num = ''; /* keeping this as string */
-
-		/* hit either 0 or non digit */
-		for($z = 0 ; $z < $scan ; $z++){
-
-			if((int) $reversed[$z] === 0 || !is_numeric($reversed[$z])){
-				break;
-			}
-
-			$filtered_num .= ''.$reversed[$z];
-
-		}
-
-		$filtered_num = (int) $filtered_num;
+		
+		$filtered_num = (int) substr((string) $invoice->invoice_number, $scan * -1);
+		
 		$filtered_num++;
 
 		$padding_length = strlen($padding);
