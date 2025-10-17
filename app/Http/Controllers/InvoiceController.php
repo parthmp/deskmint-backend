@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\Client;
+use App\Services\HandleInvoiceNumbers;
 use App\Services\InvoiceSettingsService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Validator;
 
 class InvoiceController extends Controller{
     
@@ -45,17 +47,32 @@ class InvoiceController extends Controller{
 	 */
 	public function fetchInitialData(Request $request){
 
+		$v = Validator::make($request->all(), [
+			'timezone_offset_minutes'	=>	'required'
+		]);
+
+		if($v->fails()){
+			return response(['message' => 'Invalid request', 'validator' => 'invalid_timezone'], config('global.error_code'));
+		}
+
 		$company_id = Sanitize::input($request->input('company_id'));
+		$timezone_offset_minutes = Sanitize::input($request->input('timezone_offset_minutes'));
 
-		//try{
+		$invoice_settings = new InvoiceSettingsService($company_id);
+		
+		return [
+			'num'	=>	(new HandleInvoiceNumbers($company_id, $invoice_settings->getInvoiceNumbers(), $timezone_offset_minutes))->getNextInvoiceNumber()
+		];
 
-			$invoice_settings = new InvoiceSettingsService($company_id);
+		// try{
 
-			return [
-				'numbers' 			=> $invoice_settings->getInvoiceNumbers(),
-				'product_columns' 	=> $invoice_settings->getProductColumns(),
-				'total_fields' 		=> $invoice_settings->getTotalFields(),
-			];
+		// 	$invoice_settings = new InvoiceSettingsService($company_id);
+
+		// 	return [
+		// 		'numbers' 			=> $invoice_settings->getInvoiceNumbers(),
+		// 		'product_columns' 	=> $invoice_settings->getProductColumns(),
+		// 		'total_fields' 		=> $invoice_settings->getTotalFields(),
+		// 	];
 
 		// }catch(Exception $e){
 		// 	return General::wentWrong();
