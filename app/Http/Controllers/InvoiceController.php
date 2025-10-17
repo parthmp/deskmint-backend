@@ -58,25 +58,19 @@ class InvoiceController extends Controller{
 		$company_id = Sanitize::input($request->input('company_id'));
 		$timezone_offset_minutes = Sanitize::input($request->input('timezone_offset_minutes'));
 
-		$invoice_settings = new InvoiceSettingsService($company_id);
-		
-		return [
-			'num'	=>	(new HandleInvoiceNumbers($company_id, $invoice_settings->getInvoiceNumbers(), $timezone_offset_minutes))->getNextInvoiceNumber()
-		];
+		try{
+			
+			$invoice_settings = new InvoiceSettingsService($company_id);
 
-		// try{
+			return [
+				'invoice_number'	=>	(new HandleInvoiceNumbers($company_id, $invoice_settings->getInvoiceNumbers(), $timezone_offset_minutes))->getNextInvoiceNumber(),
+				'product_columns' 	=> 	$invoice_settings->getProductColumns(),
+				'total_fields' 		=> 	$invoice_settings->getTotalFields(),
+			];
 
-		// 	$invoice_settings = new InvoiceSettingsService($company_id);
-
-		// 	return [
-		// 		'numbers' 			=> $invoice_settings->getInvoiceNumbers(),
-		// 		'product_columns' 	=> $invoice_settings->getProductColumns(),
-		// 		'total_fields' 		=> $invoice_settings->getTotalFields(),
-		// 	];
-
-		// }catch(Exception $e){
-		// 	return General::wentWrong();
-		// }
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 	}
 
