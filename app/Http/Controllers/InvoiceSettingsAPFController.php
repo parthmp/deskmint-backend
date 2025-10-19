@@ -78,6 +78,10 @@ class InvoiceSettingsAPFController extends Controller{
 		$taxes = $request->input('taxes');
 		$company_id = Sanitize::input($request->input('company_id'));
 		
+		if(count($labels) > 3 || count($types) > 3 || count($taxes) > 3){
+			return response(['message' => 'Only 3 additional fields are allowed', 'validity' => 'fields_limit_reached'], config('global.error_code'));
+		}
+
 		try{
 
 			$invalid_ids = false;

@@ -443,11 +443,11 @@
 
 			foreach($fields as $field){
 
-				$label = $field->label.' - '.$field->type;
+				$label = $field->label;
 
-				if($field->type === 'tax'){
-					$label .= ' - '.$field->tax_rate.'%';
-				}
+				// if($field->type === 'tax'){
+				// 	$label .= ' - '.$field->tax_rate.'%';
+				// }
 				
 
 				$temp = [];
@@ -504,13 +504,13 @@
 						'mapped'	=>	['quantity'],
 						'type'		=>	'normal'
 					],
-					[
-						'id'		=>	5,
-						'text'		=>	'Discount',
-						'value'		=>	General::replaceWithUnderscores('discount'),
-						'mapped'	=>	['discount'],
-						'type'		=>	'normal'
-					],
+					// [
+					// 	'id'		=>	5,
+					// 	'text'		=>	'Discount',
+					// 	'value'		=>	General::replaceWithUnderscores('discount'),
+					// 	'mapped'	=>	['discount'],
+					// 	'type'		=>	'normal'
+					// ],
 					[
 						'id'		=>	6,
 						'text'		=>	'Tax',
@@ -527,13 +527,13 @@
 					]
 				],
 				'dropdown' => [
-					[
-						'id'		=>	1,
-						'text'		=>	'Gross line total',
-						'value'		=>	General::replaceWithUnderscores('gross_line_total'),
-						'mapped'	=>	['gross_line_total'],
-						'type'		=>	'normal'
-					]
+					// [
+					// 	'id'		=>	1,
+					// 	'text'		=>	'Gross line total',
+					// 	'value'		=>	General::replaceWithUnderscores('gross_line_total'),
+					// 	'mapped'	=>	['gross_line_total'],
+					// 	'type'		=>	'normal'
+					// ]
 				]
 			];
 
