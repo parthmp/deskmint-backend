@@ -47,7 +47,7 @@ class InvoiceSettingsService{
 
         return match($type) {
             ISC_INVOICE_NUMBERS_TYPE     	=> $this->getDefaultInvoiceNumbersSettings(),
-            ISC_PRODUCT_COLUMNS_TYPE     	=> $this->getDefaultProductColumnsSettings($this->company_id),
+            ISC_PRODUCT_COLUMNS_TYPE     	=> $this->getDefaultProductColumnsSettings($this->company_id)['rows'],
             ISC_INVOICE_TOTAL_FIELDS_TYPE 	=> $this->getDefaultTotalFieldsSettings(),
         };
 

@@ -449,6 +449,11 @@
 				// 	$label .= ' - '.$field->tax_rate.'%';
 				// }
 				
+				$tax = false;
+				if($field->type === 'tax'){
+					$tax = true;
+				}
+				
 
 				$temp = [];
 
@@ -456,6 +461,8 @@
 				$temp['text'] = $label;
 				$temp['value'] = $label;
 				$temp['mapped'] = '';
+				$temp['tax'] = $tax;
+				$temp['tax_rate'] = $field->tax_rate;
 				$temp['type'] = 'custom';
 				$temp['id_column'] = $field->id; /* this maps to the "id" column in additional_product_columns_fields table */
 
@@ -481,6 +488,7 @@
 						'text'		=>	'Item',
 						'value'		=>	General::replaceWithUnderscores('Item'),
 						'mapped'	=>	['product_id'], /* from db */
+						'tax'		=>	false,
 						'type'		=>	'normal'
 					],
 					[
@@ -488,6 +496,7 @@
 						'text'		=>	'Description',
 						'value'		=>	General::replaceWithUnderscores('Description'),
 						'mapped'	=>	['description'],
+						'tax'		=>	false,
 						'type'		=>	'normal'
 					],
 					[
@@ -495,6 +504,7 @@
 						'text'		=>	'Unit cost',
 						'value'		=>	General::replaceWithUnderscores('Unit cost'),
 						'mapped'	=>	['unit_price'],
+						'tax'		=>	false,
 						'type'		=>	'normal'
 					],
 					[
@@ -502,6 +512,7 @@
 						'text'		=>	'Quantity',
 						'value'		=>	General::replaceWithUnderscores('Quantity'),
 						'mapped'	=>	['quantity'],
+						'tax'		=>	false,
 						'type'		=>	'normal'
 					],
 					// [
@@ -516,6 +527,8 @@
 						'text'		=>	'Tax',
 						'value'		=>	General::replaceWithUnderscores('Tax'),
 						'mapped'	=>	['tax'],
+						'tax'		=>	true,
+						'tax_rate'	=>	0,
 						'type'		=>	'normal'
 					],
 					[
@@ -523,6 +536,7 @@
 						'text'		=>	'Line total',
 						'value'		=>	General::replaceWithUnderscores('Line total'),
 						'mapped'	=>	['line_total'],
+						'tax'		=>	false,
 						'type'		=>	'normal'
 					]
 				],
