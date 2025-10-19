@@ -339,7 +339,7 @@ class HandleInvoiceNumbers{
 	 * match invoice number pattern and detrmine and save if pattern was matched or not.
 	 * do not allow any special chars while saving
 	 * check if padding overflows for example if padding is set 001 but next invoice number would be 1000, increase scan_chars by 1
-	 * override the reset counter setting while saving
+	 * override the reset counter to 0 setting while saving
 	 */
 
 }
