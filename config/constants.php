@@ -17,3 +17,5 @@
 
 	if(!defined('ISC_INVOICE_TOTAL_FIELDS_TYPE')) define('ISC_INVOICE_TOTAL_FIELDS_TYPE', 'invoice_total_fields');
 
+	if(!defined('ISC_INVOICE_NUMBER_RESET_TYPE')) define('ISC_INVOICE_NUMBER_RESET_TYPE', 'invoice_number_reset');
+

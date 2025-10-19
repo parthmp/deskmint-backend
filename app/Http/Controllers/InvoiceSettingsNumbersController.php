@@ -99,4 +99,36 @@ class InvoiceSettingsNumbersController extends Controller{
 
 	}
 
+	public function resetInvoiceNumber(Request $request){
+
+		$json = json_encode([
+			'reset'	=>	"1"
+		]);
+		
+		$company_id = Sanitize::input($request->input('company_id'));
+
+
+		try{
+
+			$reset = SettingsSection::where([['company_id', '=', $company_id], ['type', '=', ISC_INVOICE_NUMBER_RESET_TYPE]])->first();
+
+			if(!$reset){
+				$reset = new SettingsSection();
+				$reset->company_id = $company_id;
+				$reset->type = ISC_INVOICE_NUMBER_RESET_TYPE;
+			}
+			
+			$reset->settings_json = $json;
+			
+			if($reset->save()){
+				return response(['message' => 'Invoice number has been reset successfully', 'validity' => 'reset_success'], 200);
+			}
+
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
+		
+	}
+
 }

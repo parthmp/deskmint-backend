@@ -3,10 +3,14 @@
 namespace App\Services;
 
 use App\Models\Invoice;
+use App\Models\SettingsSection;
+use App\Traits\SettingsDefault;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class HandleInvoiceNumbers{
+
+	use SettingsDefault;
 
 	private int $company_id;
 	private array $settings;
@@ -231,11 +235,11 @@ class HandleInvoiceNumbers{
 	 * @return string
 	 */
 	private function incrementInvoiceNumber(Invoice $invoice, string $padding) : string {
-
+		/* check if invoice number overflows from 001 to 1000 */
 		$scan = (int) $invoice->scan_chars;
 		
 		$filtered_num = (int) substr((string) $invoice->invoice_number, $scan * -1);
-		
+
 		$filtered_num++;
 
 		$padding_length = strlen($padding);
@@ -301,7 +305,16 @@ class HandleInvoiceNumbers{
 
 		$increment = $this->settings['number_padding'];
 
-		if($last_invoice){
+		/* implement for manual reset */
+		$manual_reset = SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_INVOICE_NUMBER_RESET_TYPE]])->first();
+		$manual_reset_settings = $this->getInvoiceResetSettings();
+		if($manual_reset){
+			$manual_reset_settings = json_decode($manual_reset->settings_json, true);
+		}
+
+		$manual_reset = (int) $manual_reset_settings['reset'];
+
+		if($last_invoice && $manual_reset !== 1){
 			$increment = $this->incrementInvoiceNumber($last_invoice, $this->settings['number_padding']);
 		}
 		
@@ -325,6 +338,8 @@ class HandleInvoiceNumbers{
 	 * save scan_chars value, this value must me same as number_padding string length.
 	 * match invoice number pattern and detrmine and save if pattern was matched or not.
 	 * do not allow any special chars while saving
+	 * check if padding overflows for example if padding is set 001 but next invoice number would be 1000, increase scan_chars by 1
+	 * override the reset counter setting while saving
 	 */
 
 }

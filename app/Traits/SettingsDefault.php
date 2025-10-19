@@ -610,4 +610,12 @@
 
 		}
 
+		public function getInvoiceResetSettings() : array{
+
+			return [
+				'reset' 	=> '0'
+			];
+
+		}
+
 	}

@@ -20,7 +20,7 @@ class ProductColumnsFields implements ArrangedFieldsInterface{
 	}
 
 	public function fetchDefaultArrangedFieldsData(int $company_id){
-		return $this->getDefaulProductColumnsSettings($company_id);
+		return $this->getDefaultProductColumnsSettings($company_id);
 	}
 
 	public function getType(): string {
