@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\Client;
+use App\Models\Product;
 use App\Services\HandleInvoiceNumbers;
 use App\Services\InvoiceSettingsService;
 use Exception;
@@ -65,12 +66,31 @@ class InvoiceController extends Controller{
 			return [
 				'invoice_number'	=>	(new HandleInvoiceNumbers($company_id, $invoice_settings->getInvoiceNumbers(), $timezone_offset_minutes))->getNextInvoiceNumber(),
 				'product_columns' 	=> 	$invoice_settings->getProductColumns(),
-				'total_fields' 		=> 	$invoice_settings->getTotalFields(),
+				'total_fields' 		=> 	$invoice_settings->getTotalFields()
 			];
 
 		}catch(Exception $e){
 			return General::wentWrong();
 		}
+
+	}
+
+	public function fetchProducts(Request $request){
+		
+		$company_id = Sanitize::input($request->input('company_id'));
+		$searched = Sanitize::input($request->input('searched'));
+
+		$products = Product::select('id', 'product_name')->where('company_id', '=', $company_id)->where(function($query) use($searched){
+			$query->where('product_name', 'LIKE', '%'.$searched.'%');
+		})->orderBy('product_name', 'ASC')->limit(50)->get()->map(function($product){
+			return [
+				'text'		=>	$product->product_name,
+				'value'		=>	$product->id
+			];
+		})->toArray();
+
+		return $products;
+
 
 	}
 
