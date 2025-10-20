@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\DiClasses\ArrangedFields\ProductColumnsFields;
+use App\DiClasses\ArrangedFields\SettingsArrangedFields;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\AdditionalProductColumnsField;
 use App\Models\SettingsSection;
+use App\Traits\SettingsDefault;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class InvoiceSettingsAPFController extends Controller{
+
+	use SettingsDefault;
 
 	public function show(Request $request){
 
@@ -57,7 +62,72 @@ class InvoiceSettingsAPFController extends Controller{
 		}
 
 	}
-    
+
+	/**
+	 * regenerateSettings function
+	 *
+	 * @param Request $request
+	 * @param integer $company_id
+	 * @return bool
+	 */
+	private function regenerateSettings(int $company_id) : bool {
+		
+		/* ADD TESTS FOR THIS AND REMOVE THIS COMMENT AFTER IT */
+		$fields = AdditionalProductColumnsField::where('company_id', '=', $company_id)->get();
+
+		$saved_setting = SettingsSection::where([['company_id', '=', $company_id], ['type', '=', ISC_PRODUCT_COLUMNS_TYPE]])->first();
+
+		$changes_made = false;
+
+		$old_json = [];
+
+		if($saved_setting){
+
+			$old_json = json_decode($saved_setting->settings_json, true);
+			
+			for($z = 0 ; $z < count($fields) ; $z++){
+
+				
+
+				for($x = 0 ; $x < count($old_json) ; $x++){
+
+					if(($old_json[$x]['type'] === 'custom' && (int) $old_json[$x]['id_column'] === (int) $fields[$z]['id']) && ($old_json[$x]['text'] !== $fields[$z]['label'] || $old_json[$x]['type'] !== $fields[$z]['type'] || (int) $old_json[$x]['tax_rate'] !== (int) $fields[$z]['tax_rate'])){
+						
+						$old_json[$x] = [
+							'id'		=>	$old_json[$x]['id'],
+							'tax'		=>	$fields[$z]['type'] === 'tax' ? true : false,
+							'text'		=>	$fields[$z]['label'],
+							'type'		=>	'custom',
+							'value'		=>	$fields[$z]['label'],
+							'mapped'	=>	null,
+							'tax_rate'	=>	$fields[$z]['tax_rate'],
+							'id_column'	=>	$fields[$z]['id']
+						];
+
+						$changes_made = true;
+					}
+
+				}
+
+			}
+
+		}
+
+		if($changes_made){
+			$saved_setting->settings_json = json_encode($old_json);
+			$saved_setting->save();
+		}
+
+		return $changes_made;
+
+	}
+	
+	/**
+	 * saveOrUpdate function
+	 *
+	 * @param Request $request
+	 * @return void
+	 */
 	public function saveOrUpdate(Request $request){
 
 		$v = Validator::make($request->all(), [
@@ -110,6 +180,8 @@ class InvoiceSettingsAPFController extends Controller{
 			}
 
 			AdditionalProductColumnsField::upsert($upsert, ['id'], ['label', 'type', 'tax_rate']);
+
+			$this->regenerateSettings($company_id);
 
 			return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
 
