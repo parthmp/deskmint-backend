@@ -2,8 +2,10 @@
 
 namespace App\Traits;
 
+use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\CustomFieldType;
+use App\Models\SettingsSection;
 use App\Services\DataTable;
 use App\Services\ManageFlatTable;
 use Exception;
@@ -27,7 +29,7 @@ trait FeatureCustomFields{
 
 	}
 
-	public function saveOrUpdateCustomField(Request $request, string $feature_custom_fields_model, string $slug, bool $add, mixed $object = null) : Response{
+	public function saveOrUpdateCustomField(Request $request, string $feature_custom_fields_model, string $slug, bool $add, string $type, string $custom_id , mixed $object = null) : Response{
 		
 		$company_id = Sanitize::input($request->input('company_id'));
 
@@ -159,6 +161,9 @@ trait FeatureCustomFields{
 			/**/
 
 			if($ccf->save()){
+
+				$this->modifyArrangedFieldsSettings($type, $company_id, $custom_id, $feature_custom_fields_model);
+
 				return response(['message' => $success_message, 'validity' => $validity_message], 200);
 			}else{
 				return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], config('global.error_code'));
@@ -278,7 +283,7 @@ trait FeatureCustomFields{
 	}
 
 	
-	public function updateData(Request $request, string $feature_custom_fields_model, string $slug, int $id) : mixed{
+	public function updateData(Request $request, string $feature_custom_fields_model, string $slug, int $id, string $type, string $custom_id) : mixed{
 		
 		$company_id = Sanitize::input($request->input('company_id'));
 
@@ -288,11 +293,86 @@ trait FeatureCustomFields{
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}
 		
-		return $this->saveOrUpdateCustomField($request, $feature_custom_fields_model, $slug, false, $custom_field);	
+		return $this->saveOrUpdateCustomField($request, $feature_custom_fields_model, $slug, false, $type, $custom_id, $custom_field);	
 
 	}
 
-	public function destroyData(Request $request, string $feature_custom_fields_model, string $slug) : Response{
+	/**
+	 * modifyArrangedFieldsSettings function
+	 *
+	 * @param string $type
+	 * @param integer $company_id
+	 * @param string $custom_id
+	 * @param string $custom_fields_table_modal
+	 * @return void
+	 */
+	public function modifyArrangedFieldsSettings(string $type, int $company_id, string $custom_id, string $custom_fields_table_modal) : void{
+
+		$field = SettingsSection::where([['company_id', '=', $company_id], ['type', '=', $type]])->first();
+
+		if($field){
+
+			$new_json = [];
+
+			$json = json_decode($field->settings_json, true);
+
+			$custom_fields = $custom_fields_table_modal::where('company_id', '=', $company_id)->get()->toArray();
+
+			$ids = [];
+
+			foreach($custom_fields as $c_field){
+				$ids[] = $c_field['id'];
+			}
+
+			for($z = 0 ; $z < count($json) ; $z++){
+
+				$fine_to_push = true;
+
+				if(isset($json[$z][$custom_id]) && !in_array($json[$z][$custom_id], $ids)){
+					$fine_to_push = false;
+				}
+
+				for($x = 0 ; $x < count($custom_fields) ; $x++){
+
+					if(isset($json[$z][$custom_id])){
+
+						if((int) $json[$z][$custom_id] === (int) $custom_fields[$x]['id'] && $json[$z]['type'] === 'custom'){
+							
+							$json[$z]['text'] = $custom_fields[$x]['label'];
+							$json[$z]['type'] = 'custom';
+							$json[$z]['value'] = General::replaceWithUnderscores($custom_fields[$x]['label']);
+							$json[$z]['mapped'] = null;
+							$json[$z][$custom_id] = $custom_fields[$x]['id'];
+
+						}
+
+					}
+
+				}
+
+				if($fine_to_push){
+					$new_json[] = $json[$z];
+				}
+
+			}
+
+			$new_json = json_encode($new_json);
+			$field->settings_json = $new_json;
+			$field->save();
+
+		}
+
+	}
+
+	/**
+	 * destroyData function
+	 *
+	 * @param Request $request
+	 * @param string $feature_custom_fields_model
+	 * @param string $slug
+	 * @return Response
+	 */
+	public function destroyData(Request $request, string $feature_custom_fields_model, string $slug, string $type, int $company_id, string $custom_id) : Response{
 
 		$ids = $request->input('ids');
 		
@@ -324,6 +404,7 @@ trait FeatureCustomFields{
 
 			$feature_custom_fields_model::whereIn('id', $ids)->delete();
 			
+			$this->modifyArrangedFieldsSettings($type, $company_id, $custom_id, $feature_custom_fields_model);
 
 			return response(['message' => 'Custom field(s) deleted successfully', 'validity' => 'delete_success'], 200);
 

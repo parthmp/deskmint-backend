@@ -14,12 +14,14 @@ class ClientsCustomFieldsController extends Controller{
 	
 	use FeatureCustomFields;
 
+	private string $custom_id_flag = 'clients_custom_field_id';
+
 	public function fetchFieldTypes(Request $request){
 		return $this->fetchFieldTypesData(CustomFieldType::class);
 	}
 
 	public function store(Request $request){
-		return $this->saveOrUpdateCustomField($request, ClientsCustomField::class, 'client', true);
+		return $this->saveOrUpdateCustomField($request, ClientsCustomField::class, 'client', true, ISC_INVOICE_CLIENT_DETAILS_TYPE, $this->custom_id_flag);
 	}
 
 	public function index(Request $request){
@@ -32,10 +34,11 @@ class ClientsCustomFieldsController extends Controller{
 	}
 
 	public function update(Request $request, int $id){
-		return $this->updateData($request, ClientsCustomField::class, 'client', $id);
+		return $this->updateData($request, ClientsCustomField::class, 'client', $id, ISC_INVOICE_CLIENT_DETAILS_TYPE, $this->custom_id_flag);
 	}
 
 	public function destroy(Request $request): Response{
-		return $this->destroyData($request, ClientsCustomField::class, 'client');
+		$company_id = Sanitize::input($request->input('company_id'));
+		return $this->destroyData($request, ClientsCustomField::class, 'client', ISC_INVOICE_CLIENT_DETAILS_TYPE, $company_id, $this->custom_id_flag);
 	}
 }
