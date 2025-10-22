@@ -72,7 +72,6 @@ class InvoiceSettingsAPFController extends Controller{
 	 */
 	private function regenerateSettings(int $company_id) : bool {
 		
-		/* ADD TESTS FOR THIS AND REMOVE THIS COMMENT AFTER IT */
 		$fields = AdditionalProductColumnsField::where('company_id', '=', $company_id)->get();
 
 		$saved_setting = SettingsSection::where([['company_id', '=', $company_id], ['type', '=', ISC_PRODUCT_COLUMNS_TYPE]])->first();
@@ -86,8 +85,6 @@ class InvoiceSettingsAPFController extends Controller{
 			$old_json = json_decode($saved_setting->settings_json, true);
 			
 			for($z = 0 ; $z < count($fields) ; $z++){
-
-				
 
 				for($x = 0 ; $x < count($old_json) ; $x++){
 
