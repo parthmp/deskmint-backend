@@ -255,4 +255,86 @@ class InvoicesCustomFieldsControllerTest extends TestCase{
 
 	}
 
+	public function test_if_removing_invoice_custom_fields_also_removes_field_from_invoice_details_settings(){
+
+		// $device = 'device 123';
+
+		// $c = $this->set_access($device);
+
+		// $company_id = $this->set_default_company();
+
+		// Schema::dropIfExists('invoices_flat');
+
+		// CustomFieldType::truncate();
+		// CustomFieldType::factory()->create([
+		// 	'input_type'	=>		'email'
+		// ]);
+
+		// CustomFieldType::factory()->create([
+		// 	'input_type'	=>		'date'
+		// ]);
+
+		// CustomFieldType::factory()->create([
+		// 	'input_type'	=>		'datetime'
+		// ]);
+
+		// CustomFieldType::factory()->create([
+		// 	'input_type'	=>		'textarea'
+		// ]);
+		
+		// InvoicesCustomField::truncate();
+
+		// $custom_field_types = CustomFieldType::all();
+
+		// $labels = [];
+
+		// foreach($custom_field_types as $c_field_type){
+
+		// 	$label = 'test invoice '.$c_field_type->input_type;
+
+		// 	$labels[] = $label;
+
+		// 	$response = $this->post('/api/invoices-custom-fields', [
+		// 		'input_field'			=>		$c_field_type->id,
+		// 		'label'					=>		$label,
+		// 		'is_required'			=>		'true',
+		// 		'add_edit_page_order'	=>		'5',
+		// 		'company_id'			=>		$company_id
+		// 	], $c['headers']);
+		// 	$response->assertStatus(200);
+		// 	$this->assertArrayHasKey('validity', $response);
+		// 	$this->assertEquals('created_success', $response['validity']);
+		// 	$this->assertTrue(Schema::hasColumn('invoices_flat', General::replaceWithUnderscores($label)));
+		// }
+
+		
+		
+		// $custom_fields = InvoicesCustomField::all();
+
+		// $ids = [];
+		// foreach($custom_fields as $c_field){
+		// 	array_push($ids, $c_field->id);
+		// }
+
+
+
+		// $response = $this->delete('/api/invoices-custom-fields', [
+		// 	'ids' => $ids,
+		// 	'company_id' => $company_id
+		// ], $c['headers']);
+		
+		// $response->assertStatus(200);
+		// $this->assertArrayHasKey('validity', $response);
+		// $this->assertEquals('delete_success', $response['validity']);
+
+		// $deleted_fields = InvoicesCustomField::whereIn('ids', $ids)->get();
+
+		// $this->assertEmpty($deleted_fields);
+		
+		// foreach($labels as $label){
+		// 	$this->assertFalse(Schema::hasColumn('invoices_flat', General::replaceWithUnderscores($label)));
+		// }
+
+	}
+
 }

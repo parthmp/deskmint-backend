@@ -527,7 +527,7 @@ class InvoiceSettingsAPFControllerTest extends TestCase{
 
 	}
 
-	public function test_if_it_affects_product_columns_if_additional_fields_are_overwritten(){
+	public function test_if_it_affects_product_columns_if_additional_fields_are_overwritten_for_default_data(){
 
 		$device = 'device 123';
 		$c = $this->set_access($device);
@@ -600,7 +600,102 @@ class InvoiceSettingsAPFControllerTest extends TestCase{
 
 	}
 
-	public function test_if_it_affects_product_columns_if_additional_field_is_deleted(){
+	public function test_if_it_affects_product_columns_if_additional_fields_are_overwritten_for_saved_data(){
+
+		$device = 'device 123';
+		$c = $this->set_access($device);
+		$company_id = $this->set_default_company();
+
+		$response = $this->post('/api/manage-invoice-settings-additional-product-fields', [
+			'company_id'			=>		$company_id,
+			'labels'				=>		[
+												[
+													'id'	=>	1,
+													'value'	=>	'abc123'
+												]
+											],
+			'types'					=>		[
+												[
+													'id'	=>	1,
+													'value'	=>	'normal'
+												]
+			],
+			'taxes'					=>		[
+												[
+													'id'	=>	1,
+													'value'	=>	'0.25'
+												]
+											]
+		], $c['headers']);
+
+		$response->assertStatus(200);
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('saved_success', $response['validity']);
+
+		$params = http_build_query([
+			'company_id' 		=> $company_id
+		]);
+
+		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-product-columns?'. $params);
+		
+		$json = $response->json();
+
+		$rows = array_merge($json['rows'], $json['dropdown']);
+		
+		/* save settings - not default */
+		$response = $this->post('/api/manage-invoice-settings-product-columns', [
+			'company_id'			=>		$company_id,
+			'rows'					=>		$rows
+		], $c['headers']);
+
+		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-product-columns?'. $params);
+		
+		$json = $response->json();
+		
+		$last_row = last($json['rows']);
+		$this->assertEmpty($json['dropdown']);
+		$this->assertEquals('abc123', $last_row['text']);
+		$this->assertEquals('abc123', $last_row['value']);
+		$this->assertEquals('custom', $last_row['type']);
+		$this->assertEquals(0.25, $last_row['tax_rate']);
+		/* overwrite */
+		$response = $this->post('/api/manage-invoice-settings-additional-product-fields', [
+			'company_id'			=>		$company_id,
+			'labels'				=>		[
+												[
+													'id'	=>	1,
+													'value'	=>	'abc123 edited'
+												]
+											],
+			'types'					=>		[
+												[
+													'id'	=>	1,
+													'value'	=>	'custom'
+												]
+			],
+			'taxes'					=>		[
+												[
+													'id'	=>	1,
+													'value'	=>	'0.65'
+												]
+											]
+		], $c['headers']);
+
+		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-product-columns?'. $params);
+		
+		$json = $response->json();
+		
+		$last_row = last($json['rows']);
+		$this->assertEmpty($json['dropdown']);
+		$this->assertEquals('abc123 edited', $last_row['text']);
+		$this->assertEquals('abc123 edited', $last_row['value']);
+		$this->assertEquals('custom', $last_row['type']);
+		$this->assertEquals(0.65, $last_row['tax_rate']);
+
+	}
+
+
+	public function test_if_it_affects_product_columns_if_additional_field_is_deleted_for_default_data(){
 
 		$device = 'device 123';
 		$c = $this->set_access($device);
@@ -676,6 +771,110 @@ class InvoiceSettingsAPFControllerTest extends TestCase{
 		$json = $response->json();
 		$this->assertArrayHasKey('dropdown', $json);
 		$this->assertEmpty($json['dropdown']);
+
+	}
+
+	public function test_if_it_affects_product_columns_if_additional_field_is_deleted_for_saved_data(){
+
+		SettingsSection::truncate();
+
+		$device = 'device 123';
+		$c = $this->set_access($device);
+		$company_id = $this->set_default_company();
+
+		$response = $this->post('/api/manage-invoice-settings-additional-product-fields', [
+			'company_id'			=>		$company_id,
+			'labels'				=>		[
+												[
+													'id'	=>	1,
+													'value'	=>	'abc123'
+												],
+												[
+													'id'	=>	2,
+													'value'	=>	'some'
+												]
+											],
+			'types'					=>		[
+												[
+													'id'	=>	1,
+													'value'	=>	'normal'
+												],
+												[
+													'id'	=>	2,
+													'value'	=>	'custom'
+												]
+			],
+			'taxes'					=>		[
+												[
+													'id'	=>	1,
+													'value'	=>	'0.25'
+												],
+												[
+													'id'	=>	2,
+													'value'	=>	'0'
+												]
+											]
+		], $c['headers']);
+
+		$response->assertStatus(200);
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('saved_success', $response['validity']);
+
+		$params = http_build_query([
+			'company_id' 		=> $company_id
+		]);
+		
+		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-product-columns?'. $params);
+		
+		$json = $response->json();
+
+		$rows = array_merge($json['rows'], $json['dropdown']);
+		
+		/* save settings - not default */
+		$response = $this->post('/api/manage-invoice-settings-product-columns', [
+			'company_id'			=>		$company_id,
+			'rows'					=>		$rows
+		], $c['headers']);
+
+		
+
+		/* delete one field */
+		$response = $this->delete('/api/manage-invoice-settings-additional-product-fields/2', [
+			'ids'				=>	'',
+			'company_id'		=>	$company_id
+		], $c['headers']);
+		
+		
+		$params = http_build_query([
+			'company_id' 		=> $company_id
+		]);
+
+		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-product-columns?'. $params);
+		
+		$json = $response->json();
+		
+		$last_row = last($json['rows']);
+
+		$this->assertEmpty($json['dropdown']);
+		$this->assertEquals('abc123', $last_row['text']);
+		$this->assertEquals('abc123', $last_row['value']);
+		$this->assertEquals('custom', $last_row['type']);
+		$this->assertEquals(0.25, $last_row['tax_rate']);
+
+		/* delete one more field */
+		$response = $this->delete('/api/manage-invoice-settings-additional-product-fields/1', [
+			'ids'				=>	'',
+			'company_id'		=>	$company_id
+		], $c['headers']);
+		
+		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-product-columns?'. $params);
+		
+		$json = $response->json();
+		
+		$last_row = last($json['rows']);
+		$this->assertArrayHasKey('dropdown', $json);
+		$this->assertEmpty($json['dropdown']);
+		$this->assertNotEquals('abc123', $last_row['text']);
 
 	}
 
