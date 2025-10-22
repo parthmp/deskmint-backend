@@ -255,7 +255,16 @@ class ClientControllerIndexTest extends TestCase{
 		$json = $response->json();
 		
 		$last = $json[count($json)-1];
-		$this->assertEquals('custom', $last['type']);
+		
+		$temp = ClientsCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->with('customFieldType')->first()->toArray();
+		
+		if($temp['custom_field_type']['input_type'] === config('global.field_types')[9] || $temp['custom_field_type']['input_type'] === config('global.field_types')[3]){
+			$this->assertEquals('normal', $last['type']);
+		}else{
+			$this->assertEquals('custom', $last['type']);
+		}
+		
+		
 		
 	}
 

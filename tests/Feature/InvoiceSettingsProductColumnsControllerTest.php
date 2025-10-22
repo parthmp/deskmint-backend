@@ -135,7 +135,7 @@ class InvoiceSettingsProductColumnsControllerTest extends TestCase{
 		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-product-columns?'. $params);
 		$json = $response->json();
 		
-		$this->assertEquals(7, count($json['dropdown']));
+		$this->assertEquals(5, count($json['dropdown']));
 		$this->assertEquals(3, count($json['rows']));
 	}
 
