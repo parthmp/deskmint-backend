@@ -255,85 +255,203 @@ class InvoicesCustomFieldsControllerTest extends TestCase{
 
 	}
 
-	public function test_if_removing_invoice_custom_fields_also_removes_field_from_invoice_details_settings(){
+	public function test_if_removing_invoice_custom_field_also_removes_field_from_invoice_details_settings_default_data(){
 
-		// $device = 'device 123';
+		$device = 'device 123';
 
-		// $c = $this->set_access($device);
+		$c = $this->set_access($device);
 
-		// $company_id = $this->set_default_company();
+		$company_id = $this->set_default_company();
 
-		// Schema::dropIfExists('invoices_flat');
+		Schema::dropIfExists('invoices_flat');
 
-		// CustomFieldType::truncate();
-		// CustomFieldType::factory()->create([
-		// 	'input_type'	=>		'email'
-		// ]);
+		CustomFieldType::truncate();
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'email'
+		]);
 
-		// CustomFieldType::factory()->create([
-		// 	'input_type'	=>		'date'
-		// ]);
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'date'
+		]);
 
-		// CustomFieldType::factory()->create([
-		// 	'input_type'	=>		'datetime'
-		// ]);
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'datetime'
+		]);
 
-		// CustomFieldType::factory()->create([
-		// 	'input_type'	=>		'textarea'
-		// ]);
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'textarea'
+		]);
 		
-		// InvoicesCustomField::truncate();
+		InvoicesCustomField::truncate();
 
-		// $custom_field_types = CustomFieldType::all();
+		$custom_field_types = CustomFieldType::all();
 
-		// $labels = [];
+		$labels = [];
 
-		// foreach($custom_field_types as $c_field_type){
+		foreach($custom_field_types as $c_field_type){
 
-		// 	$label = 'test invoice '.$c_field_type->input_type;
+			$label = 'test invoice '.$c_field_type->input_type;
 
-		// 	$labels[] = $label;
+			$labels[] = $label;
 
-		// 	$response = $this->post('/api/invoices-custom-fields', [
-		// 		'input_field'			=>		$c_field_type->id,
-		// 		'label'					=>		$label,
-		// 		'is_required'			=>		'true',
-		// 		'add_edit_page_order'	=>		'5',
-		// 		'company_id'			=>		$company_id
-		// 	], $c['headers']);
-		// 	$response->assertStatus(200);
-		// 	$this->assertArrayHasKey('validity', $response);
-		// 	$this->assertEquals('created_success', $response['validity']);
-		// 	$this->assertTrue(Schema::hasColumn('invoices_flat', General::replaceWithUnderscores($label)));
-		// }
+			$response = $this->post('/api/invoices-custom-fields', [
+				'input_field'			=>		$c_field_type->id,
+				'label'					=>		$label,
+				'is_required'			=>		'true',
+				'add_edit_page_order'	=>		'5',
+				'company_id'			=>		$company_id
+			], $c['headers']);
+			$response->assertStatus(200);
+			$this->assertArrayHasKey('validity', $response);
+			$this->assertEquals('created_success', $response['validity']);
+			$this->assertTrue(Schema::hasColumn('invoices_flat', General::replaceWithUnderscores($label)));
+		}
 
 		
 		
-		// $custom_fields = InvoicesCustomField::all();
+		$custom_fields = InvoicesCustomField::all();
 
-		// $ids = [];
-		// foreach($custom_fields as $c_field){
-		// 	array_push($ids, $c_field->id);
-		// }
+		$ids = [];
+		foreach($custom_fields as $c_field){
+			array_push($ids, $c_field->id);
+		}
 
-
-
-		// $response = $this->delete('/api/invoices-custom-fields', [
-		// 	'ids' => $ids,
-		// 	'company_id' => $company_id
-		// ], $c['headers']);
 		
-		// $response->assertStatus(200);
-		// $this->assertArrayHasKey('validity', $response);
-		// $this->assertEquals('delete_success', $response['validity']);
+		$params = http_build_query([
+			'company_id' 		=> $company_id
+		]);
 
-		// $deleted_fields = InvoicesCustomField::whereIn('ids', $ids)->get();
-
-		// $this->assertEmpty($deleted_fields);
+		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-invoice-details?'. $params);
+		$json = $response->json();
 		
-		// foreach($labels as $label){
-		// 	$this->assertFalse(Schema::hasColumn('invoices_flat', General::replaceWithUnderscores($label)));
-		// }
+		$this->assertArrayHasKey('dropdown', $json);
+		$this->assertEquals(6, count($json['dropdown']));
+
+		$response = $this->delete('/api/invoices-custom-fields', [
+			'ids' => $ids,
+			'company_id' => $company_id
+		], $c['headers']);
+
+		$response->assertStatus(200);
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('delete_success', $response['validity']);
+
+		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-invoice-details?'. $params);
+		$json = $response->json();
+		
+		$this->assertArrayHasKey('dropdown', $json);
+		$this->assertEquals(2, count($json['dropdown']));
+
+	}
+
+	public function test_if_removing_invoice_custom_field_also_removes_field_from_invoice_details_settings_saved_data(){
+
+		$device = 'device 123';
+
+		$c = $this->set_access($device);
+
+		$company_id = $this->set_default_company();
+
+		Schema::dropIfExists('invoices_flat');
+
+		CustomFieldType::truncate();
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'email'
+		]);
+
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'date'
+		]);
+
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'datetime'
+		]);
+
+		CustomFieldType::factory()->create([
+			'input_type'	=>		'textarea'
+		]);
+		
+		InvoicesCustomField::truncate();
+
+		$custom_field_types = CustomFieldType::all();
+
+		$labels = [];
+
+		foreach($custom_field_types as $c_field_type){
+
+			$label = 'test invoice '.$c_field_type->input_type;
+
+			$labels[] = $label;
+
+			$response = $this->post('/api/invoices-custom-fields', [
+				'input_field'			=>		$c_field_type->id,
+				'label'					=>		$label,
+				'is_required'			=>		'true',
+				'add_edit_page_order'	=>		'5',
+				'company_id'			=>		$company_id
+			], $c['headers']);
+			$response->assertStatus(200);
+			$this->assertArrayHasKey('validity', $response);
+			$this->assertEquals('created_success', $response['validity']);
+			$this->assertTrue(Schema::hasColumn('invoices_flat', General::replaceWithUnderscores($label)));
+		}
+
+		
+		
+		$custom_fields = InvoicesCustomField::all();
+
+		$ids = [];
+		foreach($custom_fields as $c_field){
+			array_push($ids, $c_field->id);
+		}
+		
+		/* save field settings */
+		$response = $this->post('/api/manage-invoice-settings-invoice-details', [
+			'company_id'			=>		$company_id,
+			'rows'					=>		[
+												[
+													'id'						=>	1,
+													'text'						=>	'test label',
+													'value'						=>	General::replaceWithUnderscores('test label'),
+													'mapped'					=>	'',
+													'type'						=>	'custom',
+													'invoices_custom_field_id'	=>	2
+												],
+												[
+													'id'						=>	1,
+													'text'						=>	'test label',
+													'value'						=>	General::replaceWithUnderscores('test label'),
+													'mapped'					=>	'',
+													'type'						=>	'custom',
+													'invoices_custom_field_id'	=>	3
+												]
+											]
+		], $c['headers']);
+		
+		$params = http_build_query([
+			'company_id' 		=> $company_id
+		]);
+
+		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-invoice-details?'. $params);
+		$json = $response->json();
+		
+		$this->assertArrayHasKey('rows', $json);
+		$this->assertEquals(2, count($json['rows']));
+
+		$response = $this->delete('/api/invoices-custom-fields', [
+			'ids' => [2],
+			'company_id' => $company_id
+		], $c['headers']);
+
+		$response->assertStatus(200);
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('delete_success', $response['validity']);
+
+		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-invoice-details?'. $params);
+		$json = $response->json();
+		
+		$this->assertArrayHasKey('rows', $json);
+		$this->assertEquals(1, count($json['rows']));
 
 	}
 
