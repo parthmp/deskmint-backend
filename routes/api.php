@@ -133,5 +133,6 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-invoices/fetch-clients', [InvoiceController::class, 'searchClients']);
 	Route::get('manage-invoices/fetch-initial-data', [InvoiceController::class, 'fetchInitialData']);
 	Route::get('manage-invoices/fetch-products', [InvoiceController::class, 'fetchProducts']);
+	Route::get('manage-invoices/fetch-invoice-custom-fields', [InvoiceController::class, 'fetchInvoiceCustomFields']);
 
 });

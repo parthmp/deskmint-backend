@@ -5,15 +5,19 @@ namespace App\Http\Controllers;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\Client;
+use App\Models\InvoicesCustomField;
 use App\Models\Product;
 use App\Services\HandleInvoiceNumbers;
 use App\Services\InvoiceSettingsService;
+use App\Traits\CustomFieldsPrinting;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
 
 class InvoiceController extends Controller{
+
+	use CustomFieldsPrinting;
     
 	/**
 	 * searchClients function
@@ -98,6 +102,23 @@ class InvoiceController extends Controller{
 		return $products;
 
 
+	}
+
+	/**
+	 * fetchInvoiceCustomFields function
+	 *
+	 * @param Request $request
+	 * @return void
+	 */
+	public function fetchInvoiceCustomFields(Request $request){
+
+		$company_id = Sanitize::input($request->input('company_id'));
+
+		$fields = InvoicesCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->orderBy('order_on_add_edit_page', 'asc')->with('customFieldType')->get();
+
+		return 	[
+					'data_fields' 	=> $this->adjustRowsPrinting($fields),
+				];
 	}
 
 }
