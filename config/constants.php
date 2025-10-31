@@ -19,3 +19,5 @@
 
 	if(!defined('ISC_INVOICE_NUMBER_RESET_TYPE')) define('ISC_INVOICE_NUMBER_RESET_TYPE', 'invoice_number_reset');
 
+	if(!defined('ESC_EMAIL_CONTENT_TYPE')) define('ESC_EMAIL_CONTENT_TYPE', 'email_content');
+

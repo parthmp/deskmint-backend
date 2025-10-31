@@ -11,6 +11,7 @@ use App\Http\Controllers\CompanySettingsDetailsController;
 use App\Http\Controllers\CompanySettingsLogoController;
 use App\Http\Controllers\CountriesController;
 use App\Http\Controllers\CurrenciesControlller;
+use App\Http\Controllers\EmailSettingsContentController;
 use App\Http\Controllers\FieldTypesController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\IndustriesController;
@@ -134,5 +135,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-invoices/fetch-initial-data', [InvoiceController::class, 'fetchInitialData']);
 	Route::get('manage-invoices/fetch-products', [InvoiceController::class, 'fetchProducts']);
 	Route::get('manage-invoices/fetch-invoice-custom-fields', [InvoiceController::class, 'fetchInvoiceCustomFields']);
+
+	Route::get('manage-email-settings-content', [EmailSettingsContentController::class, 'show']);
+	Route::post('manage-email-settings-content', [EmailSettingsContentController::class, 'saveOrUpdate']);
 
 });

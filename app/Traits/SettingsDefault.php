@@ -624,10 +624,20 @@
 
 		}
 
-		public function getInvoiceResetSettings() : array{
+		public function getInvoiceResetSettings() : array {
 
 			return [
 				'reset' 	=> '0'
+			];
+
+		}
+
+		public function getDefaultEmailContentSettings() : array {
+
+			return [
+				'email_content_invoice'		=>	'',
+				'email_content_reminder'	=>	'',
+				'payment_details'			=>	'',
 			];
 
 		}
