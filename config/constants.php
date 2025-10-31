@@ -23,3 +23,5 @@
 
 	if(!defined('ESC_EMAIL_REMINDERS_TYPE')) define('ESC_EMAIL_REMINDERS_TYPE', 'email_reminders');
 
+	if(!defined('ESC_EMAIL_SMTP_TYPE')) define('ESC_EMAIL_SMTP_TYPE', 'email_smtp');
+

@@ -13,6 +13,7 @@ use App\Http\Controllers\CountriesController;
 use App\Http\Controllers\CurrenciesControlller;
 use App\Http\Controllers\EmailSettingsContentController;
 use App\Http\Controllers\EmailSettingsRemindersController;
+use App\Http\Controllers\EmailSettingsSMTPController;
 use App\Http\Controllers\FieldTypesController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\IndustriesController;
@@ -142,5 +143,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 
 	Route::get('manage-email-settings-reminders', [EmailSettingsRemindersController::class, 'show']);
 	Route::post('manage-email-settings-reminders', [EmailSettingsRemindersController::class, 'saveOrUpdate']);
+
+	Route::get('manage-email-settings-smtp', [EmailSettingsSMTPController::class, 'show']);
+	Route::post('manage-email-settings-smtp', [EmailSettingsSMTPController::class, 'saveOrUpdate']);
 
 });

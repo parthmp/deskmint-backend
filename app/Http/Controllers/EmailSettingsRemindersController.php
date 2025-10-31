@@ -13,12 +13,6 @@ class EmailSettingsRemindersController extends Controller{
     
 	use SettingsDefault;
 
-	/**
-	 * show function
-	 *
-	 * @param Request $request
-	 * @return void
-	 */
 	public function show(Request $request){
 
 		$company_id = Sanitize::input($request->input('company_id'));
@@ -32,13 +26,7 @@ class EmailSettingsRemindersController extends Controller{
 		return json_decode($email_rem->settings_json);
 
 	}
-
-	/**
-	 * saveOrUpdate function
-	 *
-	 * @param Request $request
-	 * @return void
-	 */
+	
 	public function saveOrUpdate(Request $request){
 
 		$company_id = Sanitize::input($request->input('company_id'));

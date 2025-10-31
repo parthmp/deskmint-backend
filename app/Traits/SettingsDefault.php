@@ -666,4 +666,29 @@
 
 		}
 
+		/**
+		 * getDefaultEmailSMTPSettings function
+		 *
+		 * @return array
+		 */
+		public function getDefaultEmailSMTPSettings() : array {
+
+			$encryption = env('MAIL_ENCRYPTION') ?? 'tls';
+
+			$encryption = strtolower($encryption);
+
+			return [
+				'host'					=>	env('MAIL_HOST'),
+				'port'					=>	env('MAIL_PORT'),
+				'username'				=>	env('MAIL_USERNAME'),
+				'password'				=>	env('MAIL_PASSWORD'),
+				'mail_from_address'		=>	env('MAIL_FROM_ADDRESS'),
+				'mail_from_name'		=>	env('MAIL_FROM_NAME'),
+				'reply_to_address'		=>	env('MAIL_REPLYTO_ADDRESS'),
+				'encryption'			=>	$encryption,
+				'test_email_address'	=>	'',
+			];
+
+		}
+
 	}
