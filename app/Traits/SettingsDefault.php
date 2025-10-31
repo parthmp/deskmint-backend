@@ -624,6 +624,11 @@
 
 		}
 
+		/**
+		 * getInvoiceResetSettings function
+		 *
+		 * @return array
+		 */
 		public function getInvoiceResetSettings() : array {
 
 			return [
@@ -632,12 +637,31 @@
 
 		}
 
+		/**
+		 * getDefaultEmailContentSettings function
+		 *
+		 * @return array
+		 */
 		public function getDefaultEmailContentSettings() : array {
 
 			return [
 				'email_content_invoice'		=>	'',
 				'email_content_reminder'	=>	'',
 				'payment_details'			=>	'',
+			];
+
+		}
+
+		/**
+		 * getDefaultEmailRemindersSettings function
+		 *
+		 * @return array
+		 */
+		public function getDefaultEmailRemindersSettings() : array {
+
+			return [
+				'send_n_times'	=>	'3',
+				'days_gap'		=>	'2',
 			];
 
 		}

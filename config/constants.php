@@ -21,3 +21,5 @@
 
 	if(!defined('ESC_EMAIL_CONTENT_TYPE')) define('ESC_EMAIL_CONTENT_TYPE', 'email_content');
 
+	if(!defined('ESC_EMAIL_REMINDERS_TYPE')) define('ESC_EMAIL_REMINDERS_TYPE', 'email_reminders');
+
