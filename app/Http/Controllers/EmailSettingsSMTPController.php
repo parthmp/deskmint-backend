@@ -42,8 +42,6 @@ class EmailSettingsSMTPController extends Controller{
 
 	public function saveOrUpdate(Request $request){
 
-		$company_id = Sanitize::input($request->input('company_id'));
-
 		$v = Validator::make($request->all(), [
 			'host'					=>		'required',
 			'port'					=>		'required',
@@ -56,8 +54,10 @@ class EmailSettingsSMTPController extends Controller{
 		]);
 
 		if($v->fails()){
-			return response(['message' => 'Please fill the required fields', 'validity' => 'invalid_data'], config('global.error_type'));
+			return response(['message' => 'Please fill the required fields', 'validity' => 'invalid_data'], config('global.error_code'));
 		}
+
+		$company_id = Sanitize::input($request->input('company_id'));
 
 		$host = Sanitize::input($request->input('host'));
 		$port = Sanitize::input($request->input('port'));
