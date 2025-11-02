@@ -31,8 +31,16 @@ class EmailSettingsRemindersController extends Controller{
 
 		$company_id = Sanitize::input($request->input('company_id'));
 
-		$send_n_times = Sanitize::input($request->input('send_n_times'));
-		$days_gap = Sanitize::input($request->input('days_gap'));
+		$send_n_times = 0;
+		if($request->filled('send_n_times')){
+			$send_n_times = Sanitize::input($request->input('send_n_times'));
+		}
+
+		$days_gap = 0;
+
+		if($request->filled('days_gap')){
+			$days_gap = Sanitize::input($request->input('days_gap'));
+		}
 		
 		$email_rem = SettingsSection::where([['type', '=', ESC_EMAIL_REMINDERS_TYPE], ['company_id', '=', $company_id]])->first();
 

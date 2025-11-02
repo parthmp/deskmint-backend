@@ -43,9 +43,24 @@ class EmailSettingsContentController extends Controller{
 
 		$company_id = Sanitize::input($request->input('company_id'));
 
-		$email_content_invoice = Sanitize::input($request->input('email_content_invoice'));
-		$email_content_reminder = Sanitize::input($request->input('email_content_reminder'));
-		$payment_details = Sanitize::input($request->input('payment_details'));
+		$email_content_invoice = '';
+
+		if($request->filled('email_content_invoice')){
+			$email_content_invoice = Sanitize::input($request->input('email_content_invoice'));
+		}
+
+		$email_content_reminder = '';
+
+		if($request->filled('email_content_reminder')){
+			$email_content_reminder = Sanitize::input($request->input('email_content_reminder'));
+		}
+		
+		$payment_details = '';
+
+		if($request->filled('payment_details')){
+			$payment_details = Sanitize::input($request->input('payment_details'));
+		}
+		
 
 		$email_content = SettingsSection::where([['type', '=', ESC_EMAIL_CONTENT_TYPE], ['company_id', '=', $company_id]])->first();
 
