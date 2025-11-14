@@ -691,4 +691,19 @@
 
 		}
 
+		/**
+		 * getDefaultPayPalSettings function
+		 *
+		 * @return array
+		 */
+		public function getDefaultPayPalSettings() : array {
+
+			return [
+				'client_id' => 	'',
+				'secret'	=>	'',
+				'mode'		=>	''
+			];
+
+		}
+
 	}

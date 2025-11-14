@@ -25,3 +25,5 @@
 
 	if(!defined('ESC_EMAIL_SMTP_TYPE')) define('ESC_EMAIL_SMTP_TYPE', 'email_smtp');
 
+	if(!defined('PAYMENTS_PAYPAL_TYPE')) define('PAYMENTS_PAYPAL_TYPE', 'payments_paypal');
+
