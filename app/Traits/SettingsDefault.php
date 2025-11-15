@@ -706,4 +706,17 @@
 
 		}
 
+		/**
+		 * getDefaultStripeSettings function
+		 *
+		 * @return array
+		 */
+		public function getDefaultStripeSettings() : array {
+
+			return [
+				'secret'	=>	''
+			];
+
+		}
+
 	}

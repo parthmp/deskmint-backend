@@ -30,6 +30,7 @@ use App\Http\Controllers\InvoiceSettingsProductColumnsController;
 use App\Http\Controllers\InvoiceSettingsTotalFieldsController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\PaymentSettingsPaypalController;
+use App\Http\Controllers\PaymentSettingsStripeController;
 use App\Http\Controllers\ProductsController;
 use App\Http\Middleware\DefaultCompany;
 use App\Http\Middleware\IfUserHasAccessToFeature;
@@ -152,5 +153,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 
 	Route::get('manage-paypal-settings', [PaymentSettingsPaypalController::class, 'show']);
 	Route::post('manage-paypal-settings', [PaymentSettingsPaypalController::class, 'saveOrUpdate']);
+
+	Route::get('manage-stripe-settings', [PaymentSettingsStripeController::class, 'show']);
+	Route::post('manage-stripe-settings', [PaymentSettingsStripeController::class, 'saveOrUpdate']);
 
 });

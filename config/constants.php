@@ -27,3 +27,5 @@
 
 	if(!defined('PAYMENTS_PAYPAL_TYPE')) define('PAYMENTS_PAYPAL_TYPE', 'payments_paypal');
 
+	if(!defined('PAYMENTS_STRIPE_TYPE')) define('PAYMENTS_STRIPE_TYPE', 'payments_stripe');
+
