@@ -29,6 +29,7 @@ use App\Http\Controllers\InvoiceSettingsNumbersController;
 use App\Http\Controllers\InvoiceSettingsProductColumnsController;
 use App\Http\Controllers\InvoiceSettingsTotalFieldsController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\PaymentSettings;
 use App\Http\Controllers\PaymentSettingsPaypalController;
 use App\Http\Controllers\PaymentSettingsStripeController;
 use App\Http\Controllers\ProductsController;
@@ -151,6 +152,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::post('manage-email-settings-smtp', [EmailSettingsSMTPController::class, 'saveOrUpdate']);
 
 
+	Route::get('manage-payments-settings', [PaymentSettings::class, 'show']);
 	Route::get('manage-paypal-settings', [PaymentSettingsPaypalController::class, 'show']);
 	Route::post('manage-paypal-settings', [PaymentSettingsPaypalController::class, 'saveOrUpdate']);
 
