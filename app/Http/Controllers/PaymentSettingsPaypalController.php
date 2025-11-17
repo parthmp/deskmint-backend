@@ -77,4 +77,14 @@ class PaymentSettingsPaypalController extends Controller{
 
 	}
 
+	public function destroy(Request $request){
+
+		$company_id = Sanitize::input($request->input('company_id'));
+
+		SettingsSection::where([['company_id', '=', $company_id], ['type', '=', PAYMENTS_PAYPAL_TYPE]])->delete();
+
+		return response(['message' => 'Removed successfully', 'validity' => 'removed_success'], 200);
+
+	}
+
 }
