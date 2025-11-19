@@ -38,7 +38,7 @@ class PaymentSettingsPaypalController extends Controller{
 		$v = Validator::make($request->all(), [
 			'client_id'	=>	'required',
 			'secret'	=>	'required',
-			'mode'	=>	'required',
+			'mode'		=>	'required|in:sandbox,live',
 		]);
 
 		if($v->fails()){
