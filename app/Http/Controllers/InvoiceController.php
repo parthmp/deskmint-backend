@@ -7,9 +7,11 @@ use App\Helpers\Sanitize;
 use App\Models\Client;
 use App\Models\InvoicesCustomField;
 use App\Models\Product;
+use App\Models\SettingsSection;
 use App\Services\HandleInvoiceNumbers;
 use App\Services\InvoiceSettingsService;
 use App\Traits\CustomFieldsPrinting;
+use App\Traits\PaymentGatewayDetails;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -17,7 +19,7 @@ use Illuminate\Support\Facades\Validator;
 
 class InvoiceController extends Controller{
 
-	use CustomFieldsPrinting;
+	use CustomFieldsPrinting, PaymentGatewayDetails;
     
 	/**
 	 * searchClients function
@@ -68,12 +70,20 @@ class InvoiceController extends Controller{
 
 		try{
 			
-			$invoice_settings = new InvoiceSettingsService($company_id);
+			$invoice_settings = new InvoiceSettingsService((int) $company_id);
+
+			$custom_fields = $this->fetchInvoiceCustomFields($request);
+
+			/* get payment integration data */
+			$gateways = $this->getGateWayNames((int) $company_id);
+
 
 			return [
-				'invoice_number'	=>	(new HandleInvoiceNumbers($company_id, $invoice_settings->getInvoiceNumbers(), $timezone_offset_minutes))->getNextInvoiceNumber(),
+				'invoice_number'	=>	(new HandleInvoiceNumbers((int) $company_id, $invoice_settings->getInvoiceNumbers(), (int) $timezone_offset_minutes))->getNextInvoiceNumber(),
 				'product_columns' 	=> 	$invoice_settings->getProductColumns(),
-				'total_fields' 		=> 	$invoice_settings->getTotalFields()
+				'total_fields' 		=> 	$invoice_settings->getTotalFields(),
+				'custom_fields'		=>	$custom_fields['data_fields'],
+				'gateways'			=>	$gateways
 			];
 
 		}catch(Exception $e){
