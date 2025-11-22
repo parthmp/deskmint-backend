@@ -120,7 +120,7 @@ class InvoiceController extends Controller{
 	 * @param Request $request
 	 * @return void
 	 */
-	public function fetchInvoiceCustomFields(Request $request){
+	private function fetchInvoiceCustomFields(Request $request){
 
 		$company_id = Sanitize::input($request->input('company_id'));
 
@@ -129,6 +129,29 @@ class InvoiceController extends Controller{
 		return 	[
 					'data_fields' 	=> $this->adjustRowsPrinting($fields),
 				];
+	}
+
+	/**
+	 * store function
+	 *
+	 * @param Request $request
+	 * @return void
+	 */
+	public function store(Request $request){
+
+		$v = Validator::make($request->all(), [
+			'invoice_details.client.client_id'		=>	'required|exists:clients,id',
+			'invoice_details.invoice_date.value'	=>	'required',
+			'invoice_details.invoice_number.value'	=>	'required',
+			'invoice_details.due_date.value'		=>	'required',
+		]);
+		
+		if($v->fails()){
+			return response(['message' => 'Please fill in the required fields', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
+		}
+
+		
+
 	}
 
 }
