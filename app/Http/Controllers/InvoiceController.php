@@ -11,6 +11,7 @@ use App\Models\SettingsSection;
 use App\Services\HandleInvoiceNumbers;
 use App\Services\InvoiceSettingsService;
 use App\Traits\CustomFieldsPrinting;
+use App\Traits\CustomFieldsValidation;
 use App\Traits\PaymentGatewayDetails;
 use Exception;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ use Illuminate\Support\Facades\Validator;
 
 class InvoiceController extends Controller{
 
-	use CustomFieldsPrinting, PaymentGatewayDetails;
+	use CustomFieldsPrinting, PaymentGatewayDetails, CustomFieldsValidation;
     
 	/**
 	 * searchClients function
@@ -131,6 +132,51 @@ class InvoiceController extends Controller{
 				];
 	}
 
+	
+	/**
+	 * validateInvoiceDetails function
+	 *
+	 * @param Request $request
+	 * @return boolean
+	 */
+	private function validateInvoiceDetails(Request $request) : bool {
+		
+		$v = Validator::make($request->all(), [
+			'data.invoice_details.client.client_id'		=>	'required|exists:clients,id',
+			'data.invoice_details.invoice_date.value'	=>	'required',
+			'data.invoice_details.invoice_number.value'	=>	'required',
+			'data.invoice_details.due_date.value'		=>	'required',
+			'data.product_rows'							=>	'required'
+		]);
+
+		return (bool) !$v->fails();
+	}
+
+	/**
+	 * validateSettings function
+	 *
+	 * @param Request $request
+	 * @return boolean
+	 */
+	private function validateSettings(Request $request) : bool {
+
+		$v = Validator::make($request->all(), [
+			'settings.payment_method'				=>	'required',
+			'settings.send_invoice_in_email'		=>	'required|boolean',
+		]);
+
+		return (bool) !$v->fails();
+
+	}
+
+	private function validateCustomProductColumns(Request $request, int $company_id) : mixed {
+
+		$invoice_settings = new InvoiceSettingsService((int) $company_id);
+
+		$product_columns = $invoice_settings->getProductColumns();
+
+	}
+
 	/**
 	 * store function
 	 *
@@ -139,18 +185,45 @@ class InvoiceController extends Controller{
 	 */
 	public function store(Request $request){
 
-		$v = Validator::make($request->all(), [
-			'invoice_details.client.client_id'		=>	'required|exists:clients,id',
-			'invoice_details.invoice_date.value'	=>	'required',
-			'invoice_details.invoice_number.value'	=>	'required',
-			'invoice_details.due_date.value'		=>	'required',
-		]);
+		$tab0_valid = $this->validateInvoiceDetails($request);
 		
-		if($v->fails()){
-			return response(['message' => 'Please fill in the required fields', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
+		if(!$tab0_valid){
+			return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
 		}
 
-		
+
+		$tab1_valid = $this->validateCustomFields($request, InvoicesCustomField::class, 'invalid_data_tab1', 1);
+		if($tab1_valid !== null){
+			return $tab1_valid;
+		}
+
+		$tab2_valid = $this->validateSettings($request);
+
+		if(!$tab2_valid){
+			return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_request', 'tab_switch' => 2], config('global.error_code'));
+		}
+
+		$discount_number = 0;
+
+		if($request->filled('data.invoice_details.global_discount')){
+			$discount_number = (float) Sanitize::input($request->input('data.invoice_details.global_discount'));
+		}
+
+		$discount_type = 'percentage';
+
+		if($request->filled('data.invoice_details.global_discount_type')){
+			$discount_type = Sanitize::input($request->input('data.invoice_details.global_discount_type'));
+			if($discount_type !== 'percentage'){
+				$discount_type = 'amount';
+			}
+		}
+
+		$this->validateCustomProductColumns($request);
+
+		/**
+		 * check for discount field
+		 * check for discount type field
+		 */
 
 	}
 
