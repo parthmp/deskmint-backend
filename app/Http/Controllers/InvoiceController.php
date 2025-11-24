@@ -170,6 +170,13 @@ class InvoiceController extends Controller{
 
 	}
 
+	/**
+	 * ifSubmittedFieldsAreSameAsDefined function
+	 *
+	 * @param Request $request
+	 * @param integer $company_id
+	 * @return mixed
+	 */
 	private function ifSubmittedFieldsAreSameAsDefined(Request $request, int $company_id) : mixed {
 
 		$invoice_settings = new InvoiceSettingsService((int) $company_id);
@@ -179,16 +186,13 @@ class InvoiceController extends Controller{
 		$product_rows = $request->input('data.product_rows');
 
 		/* now check if all fields exist */
-		// [{"id": 13, "tax": false, "text": "BLA", "type": "custom", "value": "BLA", "mapped": null, "tax_rate": 0, "id_column": 78}, {"id": 6, "tax": false, "text": "Item", "type": "normal", "value": "item", "mapped": ["product_id"]}, {"id": 7, "tax": false, "text": "Unit cost", "type": "normal", "value": "unit_cost", "mapped": ["unit_price"]}, {"id": 8, "tax": false, "text": "Description", "type": "normal", "value": "description", "mapped": ["description"]}, {"id": 9, "tax": true, "text": "Tax", "type": "normal", "value": "tax", "mapped": ["tax"], "tax_rate": 0}, {"id": 10, "tax": false, "text": "Quantity", "type": "normal", "value": "quantity", "mapped": ["quantity"]}, {"id": 11, "tax": false, "text": "wad ed", "type": "custom", "value": "wad ed", "mapped": null, "tax_rate": 0, "id_column": 76}, {"id": 12, "tax": true, "text": "tax 15%", "type": "custom", "value": "tax 15%", "mapped": null, "tax_rate": 15, "id_column": 77}, {"id": 13, "tax": false, "text": "Line total", "type": "normal", "value": "line_total", "mapped": ["line_total"]}]
 
 		$fields_same = true;
 
 		$product_row_fields_names = [];
-		foreach($product_rows as $submitted_row){
-			foreach($submitted_row as $key => $submitted_col){
-				$product_row_fields_names[] = $key;
-			}
-
+		
+		foreach($product_rows[0] as $key => $submitted_col){
+			$product_row_fields_names[] = $key;
 		}
 
 		$custom_tax_ids = AdditionalProductColumnsField::where([['company_id', '=', $company_id], ['type', '=', 'tax']])->pluck('id')->toArray();
@@ -197,8 +201,7 @@ class InvoiceController extends Controller{
 			
 			/* this "normal is for normal fields from DB, not for taxes" */
 			if($user_defined_column['mapped'] !== null && $user_defined_column['type'] === 'normal' && !in_array($user_defined_column['mapped'][0], $product_row_fields_names)){
-				return json_encode($product_row_fields_names);
-				return $user_defined_column['mapped'][0];
+				
 				$fields_same = false;
 				break;
 			}
@@ -207,6 +210,7 @@ class InvoiceController extends Controller{
 			if($user_defined_column['mapped'] === null && $user_defined_column['type'] === 'custom'){
 				
 				if(!isset($user_defined_column['id_column'])){
+					
 					$fields_same = false;
 					break;
 				}
@@ -285,13 +289,25 @@ class InvoiceController extends Controller{
 		if(count($product_rows) === 0){
 			return response(['message' => 'Please have at least product to create invoice', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
 		}
-		return $this->ifSubmittedFieldsAreSameAsDefined($request, $company_id);
-		// if($this->ifSubmittedFieldsAreSameAsDefined($request, $company_id)){
-		// 	return 'works';
-		// }else{
-		// 	return 'does not work';
-		// }
+		
+		if(!$this->ifSubmittedFieldsAreSameAsDefined($request, $company_id)){
+			return response(['message' => 'Invalid request, fields do not match', 'validity' => 'mismatch_fields', 'tab_switch' => 2], config('global.error_code'));
+		}
 
+
+		$rows = [];
+
+		foreach($product_rows as $product_row){
+
+			$line_tax_amount = 0;
+			$line_subtotal = 0;
+			$line_total = 0;
+			
+			
+		}
+
+
+		/* now calculate per line */
 
 
 

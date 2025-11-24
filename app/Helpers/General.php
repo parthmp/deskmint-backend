@@ -248,7 +248,20 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 		}
 
 		public static function replaceWithUnderscores(string $input): string{
-			return strtolower(preg_replace('/[^a-zA-Z0-9]/', '_', $input));
+			// return strtolower(preg_replace('/[^a-zA-Z0-9]/', '_', $input));
+			// lowercase
+			$str = strtolower($input);
+
+			// replace non-alphanumerics with _
+			$str = preg_replace('/[^a-z0-9]/', '_', $str);
+
+			// trim leading/trailing _
+			$str = preg_replace('/^_+|_+$/', '', $str);
+
+			// if starts with a digit, prefix with 'c'
+			$str = preg_replace('/^(\d)/', 'c$1', $str);
+
+			return $str;
 		}
 
 		public static function isValidISODateTime($datetime){
