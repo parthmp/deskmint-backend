@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\General;
 use App\Helpers\Sanitize;
+use App\Models\AdditionalProductColumnsField;
 use App\Models\Client;
 use App\Models\InvoicesCustomField;
 use App\Models\Product;
@@ -169,11 +170,66 @@ class InvoiceController extends Controller{
 
 	}
 
-	private function validateCustomProductColumns(Request $request, int $company_id) : mixed {
+	private function ifSubmittedFieldsAreSameAsDefined(Request $request, int $company_id) : mixed {
 
 		$invoice_settings = new InvoiceSettingsService((int) $company_id);
 
 		$product_columns = $invoice_settings->getProductColumns();
+
+		$product_rows = $request->input('data.product_rows');
+
+		/* now check if all fields exist */
+		// [{"id": 13, "tax": false, "text": "BLA", "type": "custom", "value": "BLA", "mapped": null, "tax_rate": 0, "id_column": 78}, {"id": 6, "tax": false, "text": "Item", "type": "normal", "value": "item", "mapped": ["product_id"]}, {"id": 7, "tax": false, "text": "Unit cost", "type": "normal", "value": "unit_cost", "mapped": ["unit_price"]}, {"id": 8, "tax": false, "text": "Description", "type": "normal", "value": "description", "mapped": ["description"]}, {"id": 9, "tax": true, "text": "Tax", "type": "normal", "value": "tax", "mapped": ["tax"], "tax_rate": 0}, {"id": 10, "tax": false, "text": "Quantity", "type": "normal", "value": "quantity", "mapped": ["quantity"]}, {"id": 11, "tax": false, "text": "wad ed", "type": "custom", "value": "wad ed", "mapped": null, "tax_rate": 0, "id_column": 76}, {"id": 12, "tax": true, "text": "tax 15%", "type": "custom", "value": "tax 15%", "mapped": null, "tax_rate": 15, "id_column": 77}, {"id": 13, "tax": false, "text": "Line total", "type": "normal", "value": "line_total", "mapped": ["line_total"]}]
+
+		$fields_same = true;
+
+		$product_row_fields_names = [];
+		foreach($product_rows as $submitted_row){
+			foreach($submitted_row as $key => $submitted_col){
+				$product_row_fields_names[] = $key;
+			}
+
+		}
+
+		$custom_tax_ids = AdditionalProductColumnsField::where([['company_id', '=', $company_id], ['type', '=', 'tax']])->pluck('id')->toArray();
+
+		foreach($product_columns as $user_defined_column){
+			
+			/* this "normal is for normal fields from DB, not for taxes" */
+			if($user_defined_column['mapped'] !== null && $user_defined_column['type'] === 'normal' && !in_array($user_defined_column['mapped'][0], $product_row_fields_names)){
+				return json_encode($product_row_fields_names);
+				return $user_defined_column['mapped'][0];
+				$fields_same = false;
+				break;
+			}
+
+			
+			if($user_defined_column['mapped'] === null && $user_defined_column['type'] === 'custom'){
+				
+				if(!isset($user_defined_column['id_column'])){
+					$fields_same = false;
+					break;
+				}
+
+				$with_underscores = General::replaceWithUnderscores($user_defined_column['text']);
+
+				if(in_array($user_defined_column['id_column'], $custom_tax_ids)){
+					$custom_field_name = 'custom_tax_'.$with_underscores;
+				}else{
+					$custom_field_name = 'normal_'.$with_underscores; /* this "normal" indicates non tax custom field */
+				}
+				
+				if(!in_array($custom_field_name, $product_row_fields_names)){
+					$fields_same = false;
+					break;
+				}
+
+			}
+
+			
+		}
+
+		return $fields_same;
 
 	}
 
@@ -185,23 +241,23 @@ class InvoiceController extends Controller{
 	 */
 	public function store(Request $request){
 
-		$tab0_valid = $this->validateInvoiceDetails($request);
+		// $tab0_valid = $this->validateInvoiceDetails($request);
 		
-		if(!$tab0_valid){
-			return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
-		}
+		// if(!$tab0_valid){
+		// 	return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
+		// }
 
 
-		$tab1_valid = $this->validateCustomFields($request, InvoicesCustomField::class, 'invalid_data_tab1', 1);
-		if($tab1_valid !== null){
-			return $tab1_valid;
-		}
+		// $tab1_valid = $this->validateCustomFields($request, InvoicesCustomField::class, 'invalid_data_tab1', 1);
+		// if($tab1_valid !== null){
+		// 	return $tab1_valid;
+		// }
 
-		$tab2_valid = $this->validateSettings($request);
+		// $tab2_valid = $this->validateSettings($request);
 
-		if(!$tab2_valid){
-			return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_request', 'tab_switch' => 2], config('global.error_code'));
-		}
+		// if(!$tab2_valid){
+		// 	return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_request', 'tab_switch' => 2], config('global.error_code'));
+		// }
 
 		$discount_number = 0;
 
@@ -218,11 +274,33 @@ class InvoiceController extends Controller{
 			}
 		}
 
-		$this->validateCustomProductColumns($request);
+		$company_id = (int) Sanitize::input($request->input('company_id'));
+
+		
+		if(!$request->filled('data.product_rows')){
+			return response(['message' => 'Please have at least product to create invoice', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
+		}
+
+		$product_rows = $request->input('data.product_rows');
+		if(count($product_rows) === 0){
+			return response(['message' => 'Please have at least product to create invoice', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
+		}
+		return $this->ifSubmittedFieldsAreSameAsDefined($request, $company_id);
+		// if($this->ifSubmittedFieldsAreSameAsDefined($request, $company_id)){
+		// 	return 'works';
+		// }else{
+		// 	return 'does not work';
+		// }
+
+
+
 
 		/**
 		 * check for discount field
 		 * check for discount type field
+		 * fetch the defined fields from db
+		 * compare if frontend sent same fields.
+		 * 
 		 */
 
 	}

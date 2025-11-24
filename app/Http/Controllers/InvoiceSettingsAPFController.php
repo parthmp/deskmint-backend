@@ -178,7 +178,7 @@ class InvoiceSettingsAPFController extends Controller{
 
 			AdditionalProductColumnsField::upsert($upsert, ['id'], ['label', 'type', 'tax_rate']);
 
-			$this->regenerateSettings($company_id);
+			$this->regenerateSettings((int) $company_id);
 
 			return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
 
