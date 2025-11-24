@@ -14,10 +14,13 @@ use App\Services\InvoiceSettingsService;
 use App\Traits\CustomFieldsPrinting;
 use App\Traits\CustomFieldsValidation;
 use App\Traits\PaymentGatewayDetails;
+use Brick\Math\BigDecimal;
+use Brick\Math\BigInteger;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
+use Brick\Math\RoundingMode;
 
 class InvoiceController extends Controller{
 
@@ -275,6 +278,8 @@ class InvoiceController extends Controller{
 			$discount_type = Sanitize::input($request->input('data.invoice_details.global_discount_type'));
 			if($discount_type !== 'percentage'){
 				$discount_type = 'amount';
+			}else{
+				$discount_number = max(0, min(100, (double) $discount_number));
 			}
 		}
 
@@ -294,30 +299,102 @@ class InvoiceController extends Controller{
 			return response(['message' => 'Invalid request, fields do not match', 'validity' => 'mismatch_fields', 'tab_switch' => 2], config('global.error_code'));
 		}
 
+		$ignore_keys = [
+			'tax_amount',
+			'line_subtotal',
+			'line_total',
+			'unit_price',
+			'quantity'
+		];
+
+		$global_subtotal = BigDecimal::of(0);
+		$global_tax_amount = BigDecimal::of(0);
+		$global_total = BigDecimal::of(0);
+		$global_discount_amount = BigDecimal::of(0);
 
 		$rows = [];
 
 		foreach($product_rows as $product_row){
 
-			$line_tax_amount = 0;
-			$line_subtotal = 0;
-			$line_total = 0;
+			$line_tax_amount = BigDecimal::of(0);
+			$line_subtotal = BigDecimal::of(0);
+			$line_total = BigDecimal::of(0);
+
+			$raw_unit = Sanitize::input($product_row['unit_price']);
+			$unit_price = is_numeric($raw_unit) ? $raw_unit : "0";
 			
+			$raw_qty = Sanitize::input($product_row['quantity']);
+			$quantity = ctype_digit((string) $raw_qty) ? (int) $raw_qty : 1;
+
 			
+			if($quantity < 1){
+				$quantity = 1;
+			}
+
+			$unit_price = BigDecimal::of($unit_price);
+			$quantity = BigInteger::of($quantity);
+
+			$line_subtotal = $unit_price->multipliedBy($quantity);
+			$line_total = $line_subtotal;
+
+			$cols = [];
+			
+			foreach($product_row as $key => $product_column){
+				
+				if(preg_match('/^custom_tax_/', $key) || $key === 'tax'){
+
+					$product_column = max(0, min(100, (double) $product_column));
+
+					/* tax */
+					$rate = BigDecimal::of($product_column)->dividedBy(100, 4, RoundingMode::HALF_UP);
+					$tax  = $rate->multipliedBy($line_subtotal)->toScale(4, RoundingMode::HALF_UP);
+
+					$line_tax_amount = $line_tax_amount->plus($tax);
+
+				}
+				
+				if(!in_array($key, $ignore_keys)){
+					$cols[$key] = $product_column;
+				}
+
+			}
+			
+			$line_total = $line_total->plus($line_tax_amount);
+
+			$global_subtotal = $global_subtotal->plus($line_subtotal);
+			$global_tax_amount = $global_tax_amount->plus($line_tax_amount);
+			$global_total = $global_total->plus($line_total);
+
+			$cols['unit_price'] = $unit_price->toScale(2, RoundingMode::HALF_UP)->__toString();
+			$cols['quantity'] = $quantity->toInt();
+			$cols['tax_amount'] = $line_tax_amount->toScale(2, RoundingMode::HALF_UP)->__toString();
+			$cols['line_subtotal'] = $line_subtotal->toScale(2, RoundingMode::HALF_UP)->__toString();
+			$cols['line_total'] = $line_total->toScale(2, RoundingMode::HALF_UP)->__toString();
+			
+			$rows[] = $cols;
+
 		}
 
+		if($discount_type === 'amount'){
+			$global_discount_amount = BigDecimal::of($discount_number);
+		}else{
+			$global_discount_rate = BigDecimal::of($discount_number)->dividedBy(100, 4, RoundingMode::HALF_UP);
+			$global_discount_amount  = $global_discount_rate->multipliedBy($global_total)->toScale(4, RoundingMode::HALF_UP);
+		}
 
-		/* now calculate per line */
+		$global_total = $global_total->minus($global_discount_amount);
 
-
-
-		/**
-		 * check for discount field
-		 * check for discount type field
-		 * fetch the defined fields from db
-		 * compare if frontend sent same fields.
-		 * 
-		 */
+		$global_subtotal = $global_subtotal->toScale(2, RoundingMode::HALF_UP)->__toString();
+		$global_tax_amount = $global_tax_amount->toScale(2, RoundingMode::HALF_UP)->__toString();
+		$global_total = $global_total->toScale(2, RoundingMode::HALF_UP)->__toString();
+		$global_discount_amount = $global_discount_amount->toScale(2, RoundingMode::HALF_UP)->__toString();
+		//return $rows;
+		// return [
+		// 	'global_subtotal'	=>	$global_subtotal,
+		// 	'global_tax_amount'	=>	$global_tax_amount,
+		// 	'global_total'	=>	$global_total,
+		// 	'global_discount_amount'	=>	$global_discount_amount
+		// ];
 
 	}
 

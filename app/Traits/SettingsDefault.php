@@ -565,18 +565,18 @@
 
 			$data = [
 				'rows' => [
-					[
-						'id'		=>	1,
-						'text'		=>	'Net Subtotal',
-						'value'		=>	General::replaceWithUnderscores('Net Subtotal'),
-						'mapped'	=>	['net_subtotal'], /* these are not db columns like others, these added as indicators to differentiate */
-						'type'		=>	'normal'
-					],
+					// [
+					// 	'id'		=>	1,
+					// 	'text'		=>	'Net Subtotal',
+					// 	'value'		=>	General::replaceWithUnderscores('Net Subtotal'),
+					// 	'mapped'	=>	['net_subtotal'], /* these are not db columns like others, these added as indicators to differentiate */
+					// 	'type'		=>	'normal'
+					// ],
 					[
 						'id'		=>	2,
 						'text'		=>	'Subtotal',
 						'value'		=>	General::replaceWithUnderscores('Subtotal'),
-						'mapped'	=>	['sub_total'],
+						'mapped'	=>	['sub_total'],  /* these are not db columns like others, these added as indicators to differentiate */
 						'type'		=>	'normal'
 					],
 					[
