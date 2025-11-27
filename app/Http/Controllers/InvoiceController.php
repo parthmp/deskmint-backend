@@ -388,6 +388,10 @@ class InvoiceController extends Controller{
 		$global_tax_amount = $global_tax_amount->toScale(2, RoundingMode::HALF_UP)->__toString();
 		$global_total = $global_total->toScale(2, RoundingMode::HALF_UP)->__toString();
 		$global_discount_amount = $global_discount_amount->toScale(2, RoundingMode::HALF_UP)->__toString();
+
+		
+
+		// [{"id": 13, "tax": false, "text": "BLA ed", "type": "custom", "value": "BLA ed", "mapped": null, "tax_rate": 0, "id_column": 78}, {"id": 6, "tax": false, "text": "Item", "type": "normal", "value": "item", "mapped": ["product_id"]}, {"id": 7, "tax": false, "text": "Unit cost", "type": "normal", "value": "unit_cost", "mapped": ["unit_price"]}, {"id": 8, "tax": false, "text": "Description", "type": "normal", "value": "description", "mapped": ["description"]}, {"id": 9, "tax": true, "text": "Tax", "type": "normal", "value": "tax", "mapped": ["tax"], "tax_rate": 0}, {"id": 10, "tax": false, "text": "Quantity", "type": "normal", "value": "quantity", "mapped": ["quantity"]}, {"id": 11, "tax": false, "text": "wad ed", "type": "custom", "value": "wad ed", "mapped": null, "tax_rate": 0, "id_column": 76}, {"id": 12, "tax": true, "text": "tax 15%", "type": "custom", "value": "tax 15%", "mapped": null, "tax_rate": 15, "id_column": 77}, {"id": 13, "tax": false, "text": "Line total", "type": "normal", "value": "line_total", "mapped": ["line_total"]}]
 		//return $rows;
 		// return [
 		// 	'global_subtotal'	=>	$global_subtotal,
