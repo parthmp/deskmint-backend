@@ -6,6 +6,7 @@ use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\AdditionalProductColumnsField;
 use App\Models\Client;
+use App\Models\Invoice;
 use App\Models\InvoicesCustomField;
 use App\Models\Product;
 use App\Models\SettingsSection;
@@ -21,6 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
 use Brick\Math\RoundingMode;
+use Carbon\Carbon;
 
 class InvoiceController extends Controller{
 
@@ -248,23 +250,23 @@ class InvoiceController extends Controller{
 	 */
 	public function store(Request $request){
 
-		// $tab0_valid = $this->validateInvoiceDetails($request);
+		$tab0_valid = $this->validateInvoiceDetails($request);
 		
-		// if(!$tab0_valid){
-		// 	return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
-		// }
+		if(!$tab0_valid){
+			return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
+		}
 
 
-		// $tab1_valid = $this->validateCustomFields($request, InvoicesCustomField::class, 'invalid_data_tab1', 1);
-		// if($tab1_valid !== null){
-		// 	return $tab1_valid;
-		// }
+		$tab1_valid = $this->validateCustomFields($request, InvoicesCustomField::class, 'invalid_data_tab1', 1);
+		if($tab1_valid !== null){
+			return $tab1_valid;
+		}
 
-		// $tab2_valid = $this->validateSettings($request);
+		$tab2_valid = $this->validateSettings($request);
 
-		// if(!$tab2_valid){
-		// 	return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_request', 'tab_switch' => 2], config('global.error_code'));
-		// }
+		if(!$tab2_valid){
+			return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_request', 'tab_switch' => 2], config('global.error_code'));
+		}
 
 		$discount_number = 0;
 
@@ -287,12 +289,12 @@ class InvoiceController extends Controller{
 
 		
 		if(!$request->filled('data.product_rows')){
-			return response(['message' => 'Please have at least product to create invoice', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
+			return response(['message' => 'Please have at least one product to create invoice', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
 		}
 
 		$product_rows = $request->input('data.product_rows');
 		if(count($product_rows) === 0){
-			return response(['message' => 'Please have at least product to create invoice', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
+			return response(['message' => 'Please have at least one product to create invoice', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
 		}
 		
 		if(!$this->ifSubmittedFieldsAreSameAsDefined($request, $company_id)){
@@ -389,7 +391,58 @@ class InvoiceController extends Controller{
 		$global_total = $global_total->toScale(2, RoundingMode::HALF_UP)->__toString();
 		$global_discount_amount = $global_discount_amount->toScale(2, RoundingMode::HALF_UP)->__toString();
 
-		
+		$client_id = Sanitize::input($request->input('data.invoice_details.client.client_id'));
+		$invoice_number = Sanitize::input($request->input('data.invoice_details.invoice_number.value'));
+		$invoice_date = Sanitize::input($request->input('data.invoice_details.invoice_date.value'));
+		$due_date = Sanitize::input($request->input('data.invoice_details.due_date.value'));
+
+		$po_number = '';
+		if($request->filled('data.invoice_details.po_number')){
+			$po_number = Sanitize::input($request->input('data.invoice_details.po_number'));
+		}
+
+		$invoice_terms = '';
+		if($request->filled('data.invoice_details.po_number')){
+			$invoice_terms = Sanitize::input($request->input('data.invoice_terms'));
+		}
+
+		$send_email = false;
+		if($request->filled('settings.send_invoice_in_email')){
+			if($request->input('settings.send_invoice_in_email')){
+				$send_email = true;
+			}
+		}
+
+		$payment_method = Sanitize::input($request->input('settings.payment_method'));
+
+		$patten_matched = 1; /* TODO: need logic for this */
+		$scan_chars = 1; /* TODO: need logic for this */
+
+		$settings = new InvoiceSettingsService((int) $company_id);
+		$settings_snapshot = $settings->getProductColumns(); /* json text for product_columns settings from SettingsSection table */
+
+		$invoice = new Invoice();
+		$invoice->client_id = $client_id;
+		$invoice->company_id = $company_id;
+		$invoice->invoice_number = $invoice_number;
+		$invoice->invoice_date = Carbon::parse($invoice_date);
+		$invoice->due_date = Carbon::parse($due_date);
+		$invoice->po_number = $po_number;
+		$invoice->discount = $discount_number;
+		$invoice->discount_type = ($discount_type === 'percentage') ? DISCOUNT_TYPE_PERCENTAGE : DISCOUNT_TYPE_AMOUNT;
+		$invoice->discount_amount = $global_discount_amount;
+		$invoice->subtotal = $global_subtotal;
+		$invoice->tax_amount = $global_tax_amount;
+		$invoice->balance_due = $global_total;
+		$invoice->total = $global_total;
+		$invoice->invoice_terms = $invoice_terms;
+		$invoice->send_email = $send_email;
+		$invoice->payment_method = $payment_method;
+		$invoice->pattern_matched = $patten_matched;
+		$invoice->scan_chars = $scan_chars;
+		$invoice->settings_snapshot = json_encode($settings_snapshot);
+		$invoice->save();
+
 
 		// [{"id": 13, "tax": false, "text": "BLA ed", "type": "custom", "value": "BLA ed", "mapped": null, "tax_rate": 0, "id_column": 78}, {"id": 6, "tax": false, "text": "Item", "type": "normal", "value": "item", "mapped": ["product_id"]}, {"id": 7, "tax": false, "text": "Unit cost", "type": "normal", "value": "unit_cost", "mapped": ["unit_price"]}, {"id": 8, "tax": false, "text": "Description", "type": "normal", "value": "description", "mapped": ["description"]}, {"id": 9, "tax": true, "text": "Tax", "type": "normal", "value": "tax", "mapped": ["tax"], "tax_rate": 0}, {"id": 10, "tax": false, "text": "Quantity", "type": "normal", "value": "quantity", "mapped": ["quantity"]}, {"id": 11, "tax": false, "text": "wad ed", "type": "custom", "value": "wad ed", "mapped": null, "tax_rate": 0, "id_column": 76}, {"id": 12, "tax": true, "text": "tax 15%", "type": "custom", "value": "tax 15%", "mapped": null, "tax_rate": 15, "id_column": 77}, {"id": 13, "tax": false, "text": "Line total", "type": "normal", "value": "line_total", "mapped": ["line_total"]}]
 		//return $rows;
