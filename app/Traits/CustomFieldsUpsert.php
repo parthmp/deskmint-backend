@@ -99,8 +99,8 @@ trait CustomFieldsUpsert{
 	protected function upsertCustomFieldValues(Request $request, int $db_id, string $custom_fields_model, string $custom_fields_value_model, string $flat_table, string $type = 'client', bool $add = true){
 		
 		$company_id = Sanitize::input($request->input('company_id'));
-		$db_custom_fields = $this->getDBCustomFields($db_id, $custom_fields_model, $company_id, $add, $type);
-		//return $db_custom_fields;
+		$db_custom_fields = $this->getDBCustomFields($db_id, $custom_fields_model, (int) $company_id, $add, $type);
+		
 		$upsert = [];
 		$insert_flat = [];
 		$insert_flat[$type.'_id'] = $db_id;

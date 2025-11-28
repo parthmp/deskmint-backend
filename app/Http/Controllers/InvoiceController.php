@@ -5,14 +5,18 @@ namespace App\Http\Controllers;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\AdditionalProductColumnsField;
+use App\Models\AdditionalProductColumnsFieldValue;
 use App\Models\Client;
 use App\Models\Invoice;
+use App\Models\InvoiceCustomFieldValue;
+use App\Models\InvoiceItem;
 use App\Models\InvoicesCustomField;
 use App\Models\Product;
 use App\Models\SettingsSection;
 use App\Services\HandleInvoiceNumbers;
 use App\Services\InvoiceSettingsService;
 use App\Traits\CustomFieldsPrinting;
+use App\Traits\CustomFieldsUpsert;
 use App\Traits\CustomFieldsValidation;
 use App\Traits\PaymentGatewayDetails;
 use Brick\Math\BigDecimal;
@@ -26,7 +30,7 @@ use Carbon\Carbon;
 
 class InvoiceController extends Controller{
 
-	use CustomFieldsPrinting, PaymentGatewayDetails, CustomFieldsValidation;
+	use CustomFieldsPrinting, PaymentGatewayDetails, CustomFieldsValidation, CustomFieldsUpsert;
     
 	/**
 	 * searchClients function
@@ -182,7 +186,7 @@ class InvoiceController extends Controller{
 	 * @param integer $company_id
 	 * @return mixed
 	 */
-	private function ifSubmittedFieldsAreSameAsDefined(Request $request, int $company_id) : mixed {
+	private function ifSubmittedFieldsAreSameAsDefined(Request $request, int $company_id) : bool {
 
 		$invoice_settings = new InvoiceSettingsService((int) $company_id);
 
@@ -206,7 +210,6 @@ class InvoiceController extends Controller{
 			
 			/* this "normal is for normal fields from DB, not for taxes" */
 			if($user_defined_column['mapped'] !== null && $user_defined_column['type'] === 'normal' && !in_array($user_defined_column['mapped'][0], $product_row_fields_names)){
-				
 				$fields_same = false;
 				break;
 			}
@@ -215,7 +218,6 @@ class InvoiceController extends Controller{
 			if($user_defined_column['mapped'] === null && $user_defined_column['type'] === 'custom'){
 				
 				if(!isset($user_defined_column['id_column'])){
-					
 					$fields_same = false;
 					break;
 				}
@@ -242,6 +244,52 @@ class InvoiceController extends Controller{
 
 	}
 
+	private function insertProductRows(Request $request, int $invoice_id, int $company_id){
+
+		$invoice = Invoice::where('id', '=', $invoice_id)->first();
+		$snapshot = json_decode($invoice->settings_snapshot, true);
+
+		$product_rows_path = 'data.product_rows';
+
+		$product_rows = $request->input($product_rows_path);
+
+		$insert = [];
+
+		/* now check if all fields exist */
+
+		$custom_tax_ids = AdditionalProductColumnsField::where([['company_id', '=', $company_id], ['type', '=', 'tax']])->pluck('id')->toArray();
+
+		foreach($snapshot as $user_defined_column){
+
+			$temp = [];
+			
+			if($user_defined_column['mapped'] === null && $user_defined_column['type'] === 'custom'){
+				
+				$with_underscores = General::replaceWithUnderscores($user_defined_column['text']);
+
+				if(in_array($user_defined_column['id_column'], $custom_tax_ids)){
+					$custom_field_name = 'custom_tax_'.$with_underscores;
+				}else{
+					$custom_field_name = 'normal_'.$with_underscores; /* this "normal" indicates non tax custom field */
+				}
+
+				foreach($product_rows as $row){
+					$temp['apc_field_id'] = $user_defined_column['id_column'];
+					$value = $row[$custom_field_name] ?? '';
+					$temp['value'] = Sanitize::input($value);
+				}
+
+				$insert[] = $temp;
+
+			}
+			
+			
+		}
+
+		AdditionalProductColumnsFieldValue::insert($insert);
+
+	}
+
 	/**
 	 * store function
 	 *
@@ -249,7 +297,7 @@ class InvoiceController extends Controller{
 	 * @return void
 	 */
 	public function store(Request $request){
-
+		/* once this works, split and refactor */
 		$tab0_valid = $this->validateInvoiceDetails($request);
 		
 		if(!$tab0_valid){
@@ -419,7 +467,7 @@ class InvoiceController extends Controller{
 		$scan_chars = 1; /* TODO: need logic for this */
 
 		$settings = new InvoiceSettingsService((int) $company_id);
-		$settings_snapshot = $settings->getProductColumns(); /* json text for product_columns settings from SettingsSection table */
+		$settings_snapshot = $settings->getProductColumns(); /* json text for product_columns settings from SettingsSection table, if it does not exist, it falls back to the default values */
 
 		$invoice = new Invoice();
 		$invoice->client_id = $client_id;
@@ -456,20 +504,21 @@ class InvoiceController extends Controller{
 			$temp['tax'] = Sanitize::input($row['tax']);
 			$temp['tax_amount'] = Sanitize::input($row['tax_amount']);
 			$temp['line_subtotal'] = Sanitize::input($row['line_subtotal']);
-			$temp['total'] = Sanitize::input($row['line_total']);
+			$temp['line_total'] = Sanitize::input($row['line_total']);
 
+			$invoice_items[] = $temp;
+			
 		}
 
-		
+		InvoiceItem::insert($invoice_items);
 
-		// [{"id": 13, "tax": false, "text": "BLA ed", "type": "custom", "value": "BLA ed", "mapped": null, "tax_rate": 0, "id_column": 78}, {"id": 6, "tax": false, "text": "Item", "type": "normal", "value": "item", "mapped": ["product_id"]}, {"id": 7, "tax": false, "text": "Unit cost", "type": "normal", "value": "unit_cost", "mapped": ["unit_price"]}, {"id": 8, "tax": false, "text": "Description", "type": "normal", "value": "description", "mapped": ["description"]}, {"id": 9, "tax": true, "text": "Tax", "type": "normal", "value": "tax", "mapped": ["tax"], "tax_rate": 0}, {"id": 10, "tax": false, "text": "Quantity", "type": "normal", "value": "quantity", "mapped": ["quantity"]}, {"id": 11, "tax": false, "text": "wad ed", "type": "custom", "value": "wad ed", "mapped": null, "tax_rate": 0, "id_column": 76}, {"id": 12, "tax": true, "text": "tax 15%", "type": "custom", "value": "tax 15%", "mapped": null, "tax_rate": 15, "id_column": 77}, {"id": 13, "tax": false, "text": "Line total", "type": "normal", "value": "line_total", "mapped": ["line_total"]}]
-		//return $rows;
-		// return [
-		// 	'global_subtotal'	=>	$global_subtotal,
-		// 	'global_tax_amount'	=>	$global_tax_amount,
-		// 	'global_total'	=>	$global_total,
-		// 	'global_discount_amount'	=>	$global_discount_amount
-		// ];
+		$invoice_items = null;
+
+		/* custom fields insertion */
+		$this->upsertCustomFieldValues($request, $invoice->id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', true);
+
+		$this->insertProductRows($request, $invoice->id, $company_id);
+
 
 	}
 
