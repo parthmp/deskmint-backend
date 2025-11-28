@@ -443,6 +443,24 @@ class InvoiceController extends Controller{
 		$invoice->settings_snapshot = json_encode($settings_snapshot);
 		$invoice->save();
 
+		/* now for invoice items */
+		$invoice_items = [];
+		foreach($rows as $row){
+
+			$temp = [];
+
+			$temp['product_id'] = Sanitize::input($row['product_id']);
+			$temp['description'] = Sanitize::input($row['description']);
+			$temp['unit_price'] = Sanitize::input($row['unit_price']);
+			$temp['quantity'] = Sanitize::input($row['quantity']);
+			$temp['tax'] = Sanitize::input($row['tax']);
+			$temp['tax_amount'] = Sanitize::input($row['tax_amount']);
+			$temp['line_subtotal'] = Sanitize::input($row['line_subtotal']);
+			$temp['total'] = Sanitize::input($row['line_total']);
+
+		}
+
+		
 
 		// [{"id": 13, "tax": false, "text": "BLA ed", "type": "custom", "value": "BLA ed", "mapped": null, "tax_rate": 0, "id_column": 78}, {"id": 6, "tax": false, "text": "Item", "type": "normal", "value": "item", "mapped": ["product_id"]}, {"id": 7, "tax": false, "text": "Unit cost", "type": "normal", "value": "unit_cost", "mapped": ["unit_price"]}, {"id": 8, "tax": false, "text": "Description", "type": "normal", "value": "description", "mapped": ["description"]}, {"id": 9, "tax": true, "text": "Tax", "type": "normal", "value": "tax", "mapped": ["tax"], "tax_rate": 0}, {"id": 10, "tax": false, "text": "Quantity", "type": "normal", "value": "quantity", "mapped": ["quantity"]}, {"id": 11, "tax": false, "text": "wad ed", "type": "custom", "value": "wad ed", "mapped": null, "tax_rate": 0, "id_column": 76}, {"id": 12, "tax": true, "text": "tax 15%", "type": "custom", "value": "tax 15%", "mapped": null, "tax_rate": 15, "id_column": 77}, {"id": 13, "tax": false, "text": "Line total", "type": "normal", "value": "line_total", "mapped": ["line_total"]}]
 		//return $rows;
