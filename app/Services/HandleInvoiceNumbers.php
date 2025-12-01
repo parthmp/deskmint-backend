@@ -379,11 +379,12 @@ class HandleInvoiceNumbers{
 	 */
 
 	/**
+	 * keeping this for the future reference.
 	 * handle while saving
 	 * check if same invoice number added last, if yes increment it by 1 and save it - use getNextInvoiceNumber - done
 	 * save scan_chars value, this value must me same as number_padding string length. - done
 	 * match invoice number pattern and detrmine and save if pattern was matched or not. - done
-	 * do not allow any special chars while saving
+	 * do not allow any special chars while saving - done
 	 * check if padding overflows for example if padding is set 001 but next invoice number would be 1000, increase scan_chars by 1 - done
 	 * override the reset counter to 0 setting while saving - done
 	 */

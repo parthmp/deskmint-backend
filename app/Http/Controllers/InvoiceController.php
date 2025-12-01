@@ -309,17 +309,53 @@ class InvoiceController extends Controller{
 
 	}
 
+	/**
+	 * getInvoiceNumber function
+	 *
+	 * @param string $invoice_number
+	 * @param integer $company_id
+	 * @param integer $timezone_offset_minutes
+	 * @return string
+	 */
 	private function getInvoiceNumber(string $invoice_number, int $company_id, int $timezone_offset_minutes) : string {
 
-		$invoice = Invoice::where([['company_id', '=', $company_id], ['invoice_number', '=', $invoice_number]])->first();
+		$invoice = Invoice::where([['company_id', '=', $company_id], ['invoice_number', '=', $invoice_number]])->orderBy('id', 'desc')->first();
 
 		if(!$invoice){
 			return $invoice_number;
+		}
+
+		if($invoice->pattern_matched === 0){
+			return 'copy - '.$invoice->invoice_number.' original '.$invoice->id;
 		}
 		
 		$settings = new InvoiceSettingsService((int) $company_id);
 
 		return (new HandleInvoiceNumbers((int) $company_id, $settings->getInvoiceNumbers(), (int) $timezone_offset_minutes))->getNextInvoiceNumber();
+
+	}
+
+	/**
+	 * sanitizeInvoiceNumber function
+	 *
+	 * @param string $invoice_number
+	 * @return string
+	 */
+	public function sanitizeInvoiceNumber(string $invoice_number): string {
+
+		$invoice_number = preg_replace('/[\x00-\x1F\x7F]/', '', $invoice_number);
+
+		$problematic_chars = [
+			'/', '\\', '#', '?', '&', '%', "'", '"', ';', '`',
+			'$', '^', '*', '+', '=', '|', '<', '>', '[', ']',
+			'{', '}', '~', '!'
+		];
+		
+		$invoice_number = str_replace($problematic_chars, '', $invoice_number);
+		
+		$invoice_number = trim($invoice_number);
+	
+		return $invoice_number;
 
 	}
 	
@@ -474,6 +510,9 @@ class InvoiceController extends Controller{
 
 		$client_id = Sanitize::input($request->input('data.invoice_details.client.client_id'));
 		$invoice_number = Sanitize::input($request->input('data.invoice_details.invoice_number.value')) ?? '';
+
+		$invoice_number = $this->sanitizeInvoiceNumber($invoice_number);
+
 		$invoice_date = Sanitize::input($request->input('data.invoice_details.invoice_date.value'));
 		$due_date = Sanitize::input($request->input('data.invoice_details.due_date.value'));
 
