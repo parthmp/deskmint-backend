@@ -17,7 +17,7 @@ class HandleInvoiceNumbers{
 	private int $timezone_offset_minutes;
 	private Carbon $user_time;
 
-	public function __construct(int $company_id, array $settings, int $timezone_offset_minutes){
+	public function __construct(int $company_id, array $settings, int $timezone_offset_minutes = 0){
 		
 		$this->company_id = $company_id;
 		$this->settings = $settings;
@@ -321,6 +321,45 @@ class HandleInvoiceNumbers{
 		return $this->parsePattern().$increment;
 	}
 
+	/**
+	 * ifPatternMatched function
+	 *
+	 * @param string $invoice_number
+	 * @return boolean
+	 */
+	public function ifPatternMatched(string $invoice_number): bool {
+		
+		$pattern_string = $this->settings['number_pattern'];
+		
+		/* define regex patterns for each variable */
+		$patterns = [
+			'{$year}' => '\d{4}',
+			'{$day_number}' => '(0[1-9]|[12][0-9]|3[01])',
+			'{$day_name}' => '(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun)',
+			'{$month_number}' => '(0[1-9]|1[0-2])',
+			'{$month_short_name}' => '(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)',
+			'{$month_full_name}' => '(January|February|March|April|May|June|July|August|September|October|November|December)',
+		];
+		
+		/* build the base pattern regex */
+		$base_regex = '';
+		$parts = preg_split('/(\{\$[^}]+\})/', $pattern_string, -1, PREG_SPLIT_DELIM_CAPTURE);
+		
+		foreach ($parts as $part) {
+			if (isset($patterns[$part])) {
+				$base_regex .= $patterns[$part];
+			} elseif ($part !== '') {
+				$base_regex .= preg_quote($part, '/');
+			}
+		}
+		
+		/* add mandatory numeric suffix, make it case-insensitive */
+		$full_regex = '/^' . $base_regex . '(\d+)$/i'; /* 'i' flag for case-insensitive */
+		
+		return (bool) preg_match($full_regex, $invoice_number);
+
+	}
+
 
 
 	/* {"reset_counter": "never", "number_padding": "000001", "number_pattern": "{$year}{$day_number}{$day_name}{$month_number}{$month_short_name}{$month_full_name}"} */
@@ -334,7 +373,7 @@ class HandleInvoiceNumbers{
 
 	/**
 	 * handle while saving
-	 * check if same invoice number added last, if yes increment it by 1 and save it
+	 * check if same invoice number added last, if yes increment it by 1 and save it - use getNextInvoiceNumber
 	 * save scan_chars value, this value must me same as number_padding string length.
 	 * match invoice number pattern and detrmine and save if pattern was matched or not.
 	 * do not allow any special chars while saving

@@ -289,7 +289,7 @@ class InvoiceController extends Controller{
 		AdditionalProductColumnsFieldValue::insert($insert);
 
 	}
-
+	
 	/**
 	 * store function
 	 *
@@ -440,7 +440,7 @@ class InvoiceController extends Controller{
 		$global_discount_amount = $global_discount_amount->toScale(2, RoundingMode::HALF_UP)->__toString();
 
 		$client_id = Sanitize::input($request->input('data.invoice_details.client.client_id'));
-		$invoice_number = Sanitize::input($request->input('data.invoice_details.invoice_number.value'));
+		$invoice_number = Sanitize::input($request->input('data.invoice_details.invoice_number.value')) ?? '';
 		$invoice_date = Sanitize::input($request->input('data.invoice_details.invoice_date.value'));
 		$due_date = Sanitize::input($request->input('data.invoice_details.due_date.value'));
 
@@ -451,7 +451,7 @@ class InvoiceController extends Controller{
 
 		$invoice_terms = '';
 		if($request->filled('data.invoice_details.po_number')){
-			$invoice_terms = Sanitize::input($request->input('data.invoice_terms'));
+			$invoice_terms = Sanitize::input($request->input('data.invoice_terms') ?? '');
 		}
 
 		$send_email = false;
@@ -463,7 +463,10 @@ class InvoiceController extends Controller{
 
 		$payment_method = Sanitize::input($request->input('settings.payment_method'));
 
-		$patten_matched = 1; /* TODO: need logic for this */
+		
+		$invoice_settings = new InvoiceSettingsService((int) $company_id);
+		$patten_matched = (new HandleInvoiceNumbers((int) $company_id, $invoice_settings->getInvoiceNumbers()))->ifPatternMatched($invoice_number);
+		// return 'matched : '.($patten_matched ? 'YES' : 'NO').'';
 		$scan_chars = 1; /* TODO: need logic for this */
 
 		$settings = new InvoiceSettingsService((int) $company_id);
@@ -498,7 +501,7 @@ class InvoiceController extends Controller{
 			$temp = [];
 
 			$temp['product_id'] = Sanitize::input($row['product_id']);
-			$temp['description'] = Sanitize::input($row['description']);
+			$temp['description'] = Sanitize::input($row['description'] ?? '');
 			$temp['unit_price'] = Sanitize::input($row['unit_price']);
 			$temp['quantity'] = Sanitize::input($row['quantity']);
 			$temp['tax'] = Sanitize::input($row['tax']);
