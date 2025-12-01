@@ -289,6 +289,19 @@ class InvoiceController extends Controller{
 		AdditionalProductColumnsFieldValue::insert($insert);
 
 	}
+
+	private function resetManualInvoieNumberResetFlag(int $company_id){
+
+		$setting = SettingsSection::where([['company_id', '=', $company_id], ['type', '=', ISC_INVOICE_NUMBER_RESET_TYPE]])->first();
+
+		if($setting){
+			$json = json_decode($setting->settings_json, true);
+			$json['reset'] = 0;
+			$setting->settings_json = json_encode($json);
+			$setting->save();
+		}
+
+	}
 	
 	/**
 	 * store function
@@ -464,12 +477,16 @@ class InvoiceController extends Controller{
 		$payment_method = Sanitize::input($request->input('settings.payment_method'));
 
 		
-		$invoice_settings = new InvoiceSettingsService((int) $company_id);
-		$patten_matched = (new HandleInvoiceNumbers((int) $company_id, $invoice_settings->getInvoiceNumbers()))->ifPatternMatched($invoice_number);
-		// return 'matched : '.($patten_matched ? 'YES' : 'NO').'';
-		$scan_chars = 1; /* TODO: need logic for this */
-
 		$settings = new InvoiceSettingsService((int) $company_id);
+		$patten_result = (new HandleInvoiceNumbers((int) $company_id, $settings->getInvoiceNumbers()))->checkPatternWithSuffix($invoice_number);
+		$patten_matched = $patten_result['matched'];
+		
+		if($patten_matched){
+			$scan_chars = strlen((string) $patten_result['suffix']);
+		}else{
+			$scan_chars = 0; /* no pattern match means user edited invoice number manually */
+		}
+		
 		$settings_snapshot = $settings->getProductColumns(); /* json text for product_columns settings from SettingsSection table, if it does not exist, it falls back to the default values */
 
 		$invoice = new Invoice();
@@ -521,6 +538,10 @@ class InvoiceController extends Controller{
 		$this->upsertCustomFieldValues($request, $invoice->id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', true);
 
 		$this->insertProductRows($request, $invoice->id, $company_id);
+
+		/* override manual reset here */
+		$this->resetManualInvoieNumberResetFlag($company_id);
+
 
 
 	}
