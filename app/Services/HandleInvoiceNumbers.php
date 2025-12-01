@@ -35,9 +35,9 @@ class HandleInvoiceNumbers{
 	private function setUserTime() : void {
 
 		if($this->timezone_offset_minutes < 0){
-			$this->user_time = Carbon::now()->subMinutes($this->timezone_offset_minutes);
+			$this->user_time = Carbon::now()->subMinutes(abs($this->timezone_offset_minutes));
 		}else{
-			$this->user_time = Carbon::now()->addMinutes($this->timezone_offset_minutes);
+			$this->user_time = Carbon::now()->addMinutes(abs($this->timezone_offset_minutes));
 		}
 
 	}
