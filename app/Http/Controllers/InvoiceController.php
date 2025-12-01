@@ -290,6 +290,12 @@ class InvoiceController extends Controller{
 
 	}
 
+	/**
+	 * resetManualInvoieNumberResetFlag function
+	 *
+	 * @param integer $company_id
+	 * @return void
+	 */
 	private function resetManualInvoieNumberResetFlag(int $company_id){
 
 		$setting = SettingsSection::where([['company_id', '=', $company_id], ['type', '=', ISC_INVOICE_NUMBER_RESET_TYPE]])->first();
@@ -300,6 +306,20 @@ class InvoiceController extends Controller{
 			$setting->settings_json = json_encode($json);
 			$setting->save();
 		}
+
+	}
+
+	private function getInvoiceNumber(string $invoice_number, int $company_id, int $timezone_offset_minutes) : string {
+
+		$invoice = Invoice::where([['company_id', '=', $company_id], ['invoice_number', '=', $invoice_number]])->first();
+
+		if(!$invoice){
+			return $invoice_number;
+		}
+		
+		$settings = new InvoiceSettingsService((int) $company_id);
+
+		return (new HandleInvoiceNumbers((int) $company_id, $settings->getInvoiceNumbers(), (int) $timezone_offset_minutes))->getNextInvoiceNumber();
 
 	}
 	
@@ -476,9 +496,12 @@ class InvoiceController extends Controller{
 
 		$payment_method = Sanitize::input($request->input('settings.payment_method'));
 
+		$timezone_offset_minutes = Sanitize::input($request->input('timezone_offset_minutes'));
+
+		$invoice_number = $this->getInvoiceNumber($invoice_number, $company_id, (int) $timezone_offset_minutes);
 		
 		$settings = new InvoiceSettingsService((int) $company_id);
-		$patten_result = (new HandleInvoiceNumbers((int) $company_id, $settings->getInvoiceNumbers()))->checkPatternWithSuffix($invoice_number);
+		$patten_result = (new HandleInvoiceNumbers((int) $company_id, $settings->getInvoiceNumbers(), (int) $timezone_offset_minutes))->checkPatternWithSuffix($invoice_number);
 		$patten_matched = $patten_result['matched'];
 		
 		if($patten_matched){

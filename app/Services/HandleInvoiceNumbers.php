@@ -322,44 +322,11 @@ class HandleInvoiceNumbers{
 	}
 
 	/**
-	 * ifPatternMatched function
+	 * checkPatternWithSuffix function
 	 *
 	 * @param string $invoice_number
-	 * @return boolean
+	 * @return array
 	 */
-	// public function ifPatternMatched(string $invoice_number): bool {
-		
-	// 	$pattern_string = $this->settings['number_pattern'];
-		
-	// 	/* define regex patterns for each variable */
-	// 	$patterns = [
-	// 		'{$year}' => '\d{4}',
-	// 		'{$day_number}' => '(0[1-9]|[12][0-9]|3[01])',
-	// 		'{$day_name}' => '(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun)',
-	// 		'{$month_number}' => '(0[1-9]|1[0-2])',
-	// 		'{$month_short_name}' => '(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)',
-	// 		'{$month_full_name}' => '(January|February|March|April|May|June|July|August|September|October|November|December)',
-	// 	];
-		
-	// 	/* build the base pattern regex */
-	// 	$base_regex = '';
-	// 	$parts = preg_split('/(\{\$[^}]+\})/', $pattern_string, -1, PREG_SPLIT_DELIM_CAPTURE);
-		
-	// 	foreach($parts as $part){
-	// 		if(isset($patterns[$part])){
-	// 			$base_regex .= $patterns[$part];
-	// 		}else if($part !== ''){
-	// 			$base_regex .= preg_quote($part, '/');
-	// 		}
-	// 	}
-		
-	// 	/* add mandatory numeric suffix, make it case-insensitive */
-	// 	$full_regex = '/^'.$base_regex.'(\d+)$/i'; /* 'i' flag for case-insensitive */
-		
-	// 	return (bool) preg_match($full_regex, $invoice_number);
-
-	// }
-
 	public function checkPatternWithSuffix(string $invoice_number): array {
 
 		$pattern_string = $this->settings['number_pattern'];
@@ -413,11 +380,11 @@ class HandleInvoiceNumbers{
 
 	/**
 	 * handle while saving
-	 * check if same invoice number added last, if yes increment it by 1 and save it - use getNextInvoiceNumber
-	 * save scan_chars value, this value must me same as number_padding string length.
+	 * check if same invoice number added last, if yes increment it by 1 and save it - use getNextInvoiceNumber - done
+	 * save scan_chars value, this value must me same as number_padding string length. - done
 	 * match invoice number pattern and detrmine and save if pattern was matched or not. - done
 	 * do not allow any special chars while saving
-	 * check if padding overflows for example if padding is set 001 but next invoice number would be 1000, increase scan_chars by 1
+	 * check if padding overflows for example if padding is set 001 but next invoice number would be 1000, increase scan_chars by 1 - done
 	 * override the reset counter to 0 setting while saving - done
 	 */
 

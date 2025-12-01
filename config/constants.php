@@ -30,5 +30,6 @@
 	if(!defined('PAYMENTS_STRIPE_TYPE')) define('PAYMENTS_STRIPE_TYPE', 'payments_stripe');
 
 	if(!defined('DISCOUNT_TYPE_PERCENTAGE')) define('DISCOUNT_TYPE_PERCENTAGE', 1);
+	
 	if(!defined('DISCOUNT_TYPE_AMOUNT')) define('DISCOUNT_TYPE_AMOUNT', 2); /* avoiding 0 and 1 and using 1 and 2 to avoid boolean confusion. */
 
