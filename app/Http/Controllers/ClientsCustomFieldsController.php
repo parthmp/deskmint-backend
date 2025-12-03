@@ -29,7 +29,7 @@ class ClientsCustomFieldsController extends Controller{
 	}
 
 	public function show(Request $request, int $id){
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 		return $this->showData(ClientsCustomField::class, $company_id, $id);
 	}
 
@@ -38,7 +38,7 @@ class ClientsCustomFieldsController extends Controller{
 	}
 
 	public function destroy(Request $request): Response{
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 		return $this->destroyData($request, ClientsCustomField::class, 'client', ISC_INVOICE_CLIENT_DETAILS_TYPE, $company_id, $this->custom_id_flag);
 	}
 }

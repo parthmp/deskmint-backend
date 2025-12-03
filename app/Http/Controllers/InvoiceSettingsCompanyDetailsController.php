@@ -15,18 +15,18 @@ class InvoiceSettingsCompanyDetailsController extends Controller{
 		return new CompanyDetailsFields(ISC_INVOICE_COMPANY_DETAILS_TYPE, 'id', 'id_column');
 	}
 
-	public function show(Request $request) : mixed{
+	public function show(Request $request) : mixed {
 
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 
 		return (new SettingsArrangedFields($this->getCompanyDetailFields(), $request, $company_id))->fetchArrangedFieldsData();
 		
 	}
 
 	
-	public function saveOrUpdate(Request $request) : mixed{
+	public function saveOrUpdate(Request $request) : mixed {
 
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 
 		$settings_arranged_fields = new SettingsArrangedFields($this->getCompanyDetailFields(), $request, $company_id);
 

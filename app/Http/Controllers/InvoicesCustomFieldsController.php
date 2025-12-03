@@ -28,7 +28,7 @@ class InvoicesCustomFieldsController extends Controller{
 	}
 
 	public function show(Request $request, int $id){
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 		return $this->showData(InvoicesCustomField::class, $company_id, $id);
 	}
 
@@ -37,7 +37,7 @@ class InvoicesCustomFieldsController extends Controller{
 	}
 
 	public function destroy(Request $request): Response{
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 		return $this->destroyData($request, InvoicesCustomField::class, 'invoice', ISC_INVOICE_DETAILS_TYPE, $company_id, $this->custom_id_flag);
 	}
 

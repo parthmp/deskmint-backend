@@ -19,7 +19,7 @@ class InvoiceSettingsInvoiceDetailsController extends Controller{
 	
 	public function show(Request $request) : mixed{
 		
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 		
 		return (new SettingsArrangedFields($this->getInvoiceDetailFields(), $request, $company_id))->fetchArrangedFieldsData(InvoicesCustomField::class);
 
@@ -28,7 +28,7 @@ class InvoiceSettingsInvoiceDetailsController extends Controller{
 	
 	public function saveOrUpdate(Request $request) : mixed{
 
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 
 		$settings_arranged_fields = new SettingsArrangedFields($this->getInvoiceDetailFields(), $request, $company_id);
 

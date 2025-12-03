@@ -137,7 +137,7 @@ class InvoiceValidationService extends ProductFieldService {
 			return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_request', 'tab_switch' => 2], config('global.error_code'));
 		}
 		
-		if(!$request->filled('data.product_rows')){
+		if(!$request->filled('data.product_rows')){ /* TODO: make sure the data exists else throw error */
 			return response(['message' => 'Please have at least one product to create invoice', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
 		}
 

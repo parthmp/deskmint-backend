@@ -7,6 +7,8 @@ use App\Helpers\Sanitize;
 use App\Models\AdditionalProductColumnsField;
 use App\Models\AdditionalProductColumnsFieldValue;
 use App\Models\Invoice;
+use App\Services\HandleInvoiceNumbers;
+use App\Services\InvoiceSettingsService;
 use App\Services\Product\ProductFieldService;
 use Illuminate\Http\Request;
 
@@ -142,7 +144,100 @@ class InvoiceService{
 		return $this->invoice_validation_service->validateAllForInvoice($request, $company_id);
 	}
 	
+	/**
+	 * calculateInvoice function
+	 *
+	 * @param array $product_rows
+	 * @param string $discount_type
+	 * @param integer $discount_number
+	 * @return array
+	 */
 	public function calculateInvoice(array $product_rows, string $discount_type, int $discount_number) : array {
 		return $this->invoice_calculation_service->calculateInvoice($product_rows, $discount_type, $discount_number);
+	}
+
+	/**
+	 * getInvoiceInsertData function
+	 *
+	 * @param Request $request
+	 * @return array
+	 */
+	public function getInvoiceInsertData(Request $request) : array {
+
+		$company_id = (int) Sanitize::input($request->input('company_id'));
+
+		$client_id = Sanitize::input($request->input('data.invoice_details.client.client_id'));
+		$invoice_number = Sanitize::input($request->input('data.invoice_details.invoice_number.value')) ?? '';
+
+		$invoice_number = $this->sanitizeInvoiceNumber($invoice_number);
+
+		$invoice_date = Sanitize::input($request->input('data.invoice_details.invoice_date.value'));
+		$due_date = Sanitize::input($request->input('data.invoice_details.due_date.value'));
+
+		$po_number = '';
+		if($request->filled('data.invoice_details.po_number')){
+			$po_number = Sanitize::input($request->input('data.invoice_details.po_number'));
+		}
+
+		$invoice_terms = '';
+		if($request->filled('data.invoice_details.po_number')){
+			$invoice_terms = Sanitize::input($request->input('data.invoice_terms') ?? '');
+		}
+
+		$send_email = false;
+		if($request->filled('settings.send_invoice_in_email')){
+			if($request->input('settings.send_invoice_in_email')){
+				$send_email = true;
+			}
+		}
+
+		$payment_method = Sanitize::input($request->input('settings.payment_method'));
+		$product_rows = $request->input('data.product_rows');
+
+		$timezone_offset_minutes = Sanitize::input($request->input('timezone_offset_minutes'));
+
+		$invoice_number = $this->getInvoiceNumber($invoice_number, $company_id, (int) $timezone_offset_minutes);
+		
+		$settings = new InvoiceSettingsService((int) $company_id);
+		$patten_result = (new HandleInvoiceNumbers((int) $company_id, $settings->getInvoiceNumbers(), (int) $timezone_offset_minutes))->checkPatternWithSuffix($invoice_number);
+		$patten_matched = $patten_result['matched'];
+		
+		if($patten_matched){
+			$scan_chars = strlen((string) $patten_result['suffix']);
+		}else{
+			$scan_chars = 0; /* no pattern match means user edited invoice number manually */
+		}
+
+		$discount_array = $this->getDiscountNumberAndType($request);
+
+		$discount_type = $discount_array['discount_type'];
+		$discount_number = $discount_array['discount_number'];
+		$totals = $this->calculateInvoice($product_rows, $discount_type, $discount_number);
+		$global_total = $totals['global_total'];
+		$global_subtotal = $totals['global_subtotal'];
+		$global_tax_amount = $totals['global_tax_amount'];
+		$global_discount_amount = $totals['global_discount_amount'];
+
+		return [
+			'settings' 					=> $settings,
+			'client_id'					=>	$client_id,
+			'company_id'				=>	$company_id,
+			'invoice_number'			=>	$invoice_number,
+			'invoice_date'				=>	$invoice_date,
+			'due_date'					=>	$due_date,
+			'po_number'					=>	$po_number,
+			'discount_number'			=>	$discount_number,
+			'discount_type'				=>	$discount_type,
+			'global_discount_amount'	=>	$global_discount_amount,
+			'global_subtotal'			=>	$global_subtotal,
+			'global_tax_amount'			=>	$global_tax_amount,
+			'global_total'				=>	$global_total,
+			'invoice_terms'				=>	$invoice_terms,
+			'send_email'				=>	$send_email,
+			'payment_method'			=>	$payment_method,
+			'patten_matched'			=>	$patten_matched,
+			'scan_chars'				=>	$scan_chars,
+		];
+
 	}
 }

@@ -16,7 +16,7 @@ class InvoiceSettingsCompanyAddressController extends Controller{
 
 	public function show(Request $request) : mixed{
 
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 
 		return (new SettingsArrangedFields($this->getCompanyAddressFields(), $request, $company_id))->fetchArrangedFieldsData();
 		
@@ -25,7 +25,7 @@ class InvoiceSettingsCompanyAddressController extends Controller{
 	
 	public function saveOrUpdate(Request $request) : mixed{
 
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 
 		$settings_arranged_fields = new SettingsArrangedFields($this->getCompanyAddressFields(), $request, $company_id);
 
