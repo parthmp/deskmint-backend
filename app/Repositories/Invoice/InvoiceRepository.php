@@ -15,7 +15,15 @@ class InvoiceRepository{
 
 	use PaymentGatewayDetails, CustomFieldsPrinting;
 
-	public function getInitialData(Request $request, int $company_id, int $timezone_offset_minutes){
+	/**
+	 * getInitialData function
+	 *
+	 * @param Request $request
+	 * @param integer $company_id
+	 * @param integer $timezone_offset_minutes
+	 * @return array
+	 */
+	public function getInitialData(Request $request, int $company_id, int $timezone_offset_minutes) : array {
 		
 		$invoice_settings = new InvoiceSettingsService((int) $company_id);
 
@@ -35,7 +43,13 @@ class InvoiceRepository{
 		
 	}
 
-	private function fetchInvoiceCustomFields(Request $request){
+	/**
+	 * fetchInvoiceCustomFields function
+	 *
+	 * @param Request $request
+	 * @return array
+	 */
+	private function fetchInvoiceCustomFields(Request $request) : array{
 
 		$company_id = Sanitize::input($request->input('company_id'));
 
