@@ -14,16 +14,13 @@ use Illuminate\Http\Request;
 
 class InvoiceService{
 
-	private InvoiceValidationService $invoice_validation_service;
-	private ProductFieldService $product_field_service;
-	private InvoiceNumberService $invoice_number_service;
-	private InvoiceCalculationService $invoice_calculation_service;
+	public function __construct(
+		private InvoiceValidationService $invoice_validation_service,
+		private ProductFieldService $product_field_service,
+		private InvoiceNumberService $invoice_number_service,
+		private InvoiceCalculationService $invoice_calculation_service
+	){
 
-	public function __construct(InvoiceValidationService $invoice_validation_service, ProductFieldService $product_field_service, InvoiceNumberService $invoice_number_service, InvoiceCalculationService $invoice_calculation_service){
-		$this->invoice_validation_service = $invoice_validation_service;
-		$this->product_field_service = $product_field_service;
-		$this->invoice_number_service = $invoice_number_service;
-		$this->invoice_calculation_service = $invoice_calculation_service;
 	}
 
 	/**
@@ -237,6 +234,7 @@ class InvoiceService{
 			'payment_method'			=>	$payment_method,
 			'patten_matched'			=>	$patten_matched,
 			'scan_chars'				=>	$scan_chars,
+			'rows'						=>	$totals['rows']
 		];
 
 	}

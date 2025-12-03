@@ -5,6 +5,7 @@ namespace App\Repositories\Invoice;
 use App\Helpers\Sanitize;
 use App\Models\Client;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\InvoicesCustomField;
 use App\Services\HandleInvoiceNumbers;
 use App\Services\Invoice\InvoiceService;
@@ -69,7 +70,7 @@ class InvoiceRepository{
 				];
 	}
 
-	public function insertInvoice(Request $request) : Invoice {
+	public function insertInvoiceData(Request $request) : array {
 
 		$data = $this->invoice_service->getInvoiceInsertData($request);
 
@@ -91,6 +92,7 @@ class InvoiceRepository{
 		$payment_method = $data['payment_method'];
 		$patten_matched = $data['patten_matched'];
 		$scan_chars = $data['scan_chars'];
+		$rows = $data['rows'];
 		
 		$settings_snapshot = $settings->getProductColumns(); /* json text for product_columns settings from SettingsSection table, if it does not exist, it falls back to the default values */
 
@@ -116,8 +118,44 @@ class InvoiceRepository{
 		$invoice->settings_snapshot = json_encode($settings_snapshot);
 		$invoice->save();
 
-		return $invoice;
+		return [
+			'invoice'	=>	$invoice,
+			'rows'		=>	$rows
+		];
 		
+	}
+
+	public function insertInvoice(Request $request) : int {
+
+		$data = $this->insertInvoiceData($request);
+		$invoice = $data['invoice'];
+		$rows = $data['rows'];
+
+		$invoice_items = [];
+		foreach($rows as $row){
+
+			$temp = [];
+
+			$temp['invoice_id'] = $invoice->id;
+			$temp['product_id'] = Sanitize::input($row['product_id']);
+			$temp['description'] = Sanitize::input($row['description'] ?? '');
+			$temp['unit_price'] = Sanitize::input($row['unit_price']);
+			$temp['quantity'] = Sanitize::input($row['quantity']);
+			$temp['tax'] = Sanitize::input($row['tax']);
+			$temp['tax_amount'] = Sanitize::input($row['tax_amount']);
+			$temp['line_subtotal'] = Sanitize::input($row['line_subtotal']);
+			$temp['line_total'] = Sanitize::input($row['line_total']);
+
+			$invoice_items[] = $temp;
+			
+		}
+
+		InvoiceItem::insert($invoice_items);
+
+		$invoice_items = null;
+
+		return $invoice->id;
+
 	}
 
 }
