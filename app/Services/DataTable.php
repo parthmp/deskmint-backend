@@ -153,8 +153,8 @@
 
 					if(is_array($date_range) && count($date_range) === 2){
 						
-						$from_date = Sanitize::input($date_range[0]);
-						$to_date = Sanitize::input($date_range[1]);
+						$from_date = (string) Sanitize::input($date_range[0]);
+						$to_date = (string) Sanitize::input($date_range[1]);
 						
 						if(strtotime($from_date) !== false && strtotime($to_date) !== false){
 

@@ -6,13 +6,14 @@ use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\AdditionalProductColumnsField;
 use App\Models\AdditionalProductColumnsFieldValue;
-use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoiceItem;
 use App\Models\InvoicesCustomField;
 use App\Models\Product;
 use App\Models\SettingsSection;
+use App\Repositories\Client\ClientRepository;
+use App\Repositories\Invoice\InvoiceRepository;
 use App\Services\HandleInvoiceNumbers;
 use App\Services\InvoiceSettingsService;
 use App\Traits\CustomFieldsPrinting;
@@ -31,6 +32,14 @@ use Carbon\Carbon;
 class InvoiceController extends Controller{
 
 	use CustomFieldsPrinting, PaymentGatewayDetails, CustomFieldsValidation, CustomFieldsUpsert;
+
+	private ClientRepository $client_repository;
+	private InvoiceRepository $invoice_repository;
+
+	public function __construct(ClientRepository $client_repository, InvoiceRepository $invoice_repository){
+		$this->client_repository = $client_repository;
+		$this->invoice_repository = $invoice_repository;
+	}
     
 	/**
 	 * searchClients function
@@ -40,24 +49,18 @@ class InvoiceController extends Controller{
 	 */
 	public function searchClients(Request $request){
 
-		$company_id = Sanitize::input($request->input('company_id'));
-		$searched = Sanitize::input($request->input('searched'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$searched = (string) Sanitize::input($request->input('searched'));
 
-		$clients = Client::select('id', 'first_name', 'last_name', 'currency_id')->where('company_id', '=', $company_id)->where(function($query) use($searched){
-			$query->where('first_name', 'LIKE', '%'.$searched.'%');
-			$query->orwhere('last_name', 'LIKE', '%'.$searched.'%');
-		})->with('currency')->orderBy('first_name', 'ASC')->limit(50)->get()->map(function($client){
-			return [
-				'text'		=>	$client->first_name.' '.$client->last_name,
-				'value'		=>	$client->id,
-				'data'		=>	[
-					'currency'	=>	$client->currency
-				]
-			];
-		})->toArray();
+		try{
 
-		return $clients;
+			return $this->client_repository->searchByName($company_id, $searched);
 
+		}catch(Exception $e){
+
+			return General::wentWrong();
+			
+		}
 	}
 
 	/**
@@ -76,26 +79,12 @@ class InvoiceController extends Controller{
 			return response(['message' => 'Invalid request', 'validator' => 'invalid_timezone'], config('global.error_code'));
 		}
 
-		$company_id = Sanitize::input($request->input('company_id'));
-		$timezone_offset_minutes = Sanitize::input($request->input('timezone_offset_minutes'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$timezone_offset_minutes = (int) Sanitize::input($request->input('timezone_offset_minutes'));
 
 		try{
 			
-			$invoice_settings = new InvoiceSettingsService((int) $company_id);
-
-			$custom_fields = $this->fetchInvoiceCustomFields($request);
-
-			/* get payment integration data */
-			$gateways = $this->getGateWayNames((int) $company_id);
-
-
-			return [
-				'invoice_number'	=>	(new HandleInvoiceNumbers((int) $company_id, $invoice_settings->getInvoiceNumbers(), (int) $timezone_offset_minutes))->getNextInvoiceNumber(),
-				'product_columns' 	=> 	$invoice_settings->getProductColumns(),
-				'total_fields' 		=> 	$invoice_settings->getTotalFields(),
-				'custom_fields'		=>	$custom_fields['data_fields'],
-				'gateways'			=>	$gateways
-			];
+			return $this->invoice_repository->getInitialData($request, $company_id, $timezone_offset_minutes);
 
 		}catch(Exception $e){
 			return General::wentWrong();
@@ -131,16 +120,16 @@ class InvoiceController extends Controller{
 	 * @param Request $request
 	 * @return void
 	 */
-	private function fetchInvoiceCustomFields(Request $request){
+	// private function fetchInvoiceCustomFields(Request $request){
 
-		$company_id = Sanitize::input($request->input('company_id'));
+	// 	$company_id = Sanitize::input($request->input('company_id'));
 
-		$fields = InvoicesCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->orderBy('order_on_add_edit_page', 'asc')->with('customFieldType')->get();
+	// 	$fields = InvoicesCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->orderBy('order_on_add_edit_page', 'asc')->with('customFieldType')->get();
 
-		return 	[
-					'data_fields' 	=> $this->adjustRowsPrinting($fields),
-				];
-	}
+	// 	return 	[
+	// 				'data_fields' 	=> $this->adjustRowsPrinting($fields),
+	// 			];
+	// }
 
 	
 	/**

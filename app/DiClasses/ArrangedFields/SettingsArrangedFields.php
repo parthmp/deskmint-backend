@@ -30,7 +30,7 @@ class SettingsArrangedFields{
 
 		try{
 
-			$company_id = Sanitize::input($this->company_id);
+			$company_id = (int) Sanitize::input($this->company_id);
 
 			
 			$default_data = $this->arranged_object->fetchDefaultArrangedFieldsData($company_id);
@@ -121,7 +121,7 @@ class SettingsArrangedFields{
 
 	private function validateSettingsPost(array $rows, string $model, string $table) : bool {
 		
-		$company_id = Sanitize::input($this->company_id);
+		$company_id = (int) Sanitize::input($this->company_id);
 			
 		$default = $this->arranged_object->fetchDefaultArrangedFieldsData($company_id);
 

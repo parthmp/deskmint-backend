@@ -31,7 +31,7 @@ trait FeatureCustomFields{
 
 	public function saveOrUpdateCustomField(Request $request, string $feature_custom_fields_model, string $slug, bool $add, string $type, string $custom_id , mixed $object = null) : Response{
 		
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 
 		$v = Validator::make($request->all(), [
 			'input_field'			=>		'required',
@@ -82,7 +82,7 @@ trait FeatureCustomFields{
 
 		}
 
-		$label = Sanitize::input($request->input('label'));
+		$label = (string) Sanitize::input($request->input('label'));
 		if(strlen($label) > 50){
 			return response(['message' => 'Label must not have more than 50 characters', 'validity' => 'invalid_label'], config('global.error_code'));
 		}
@@ -155,7 +155,7 @@ trait FeatureCustomFields{
 			if($add){
 				$flat_table->addFlatTableColumn($label, $field->input_type);
 			}else{
-				$past_label = Sanitize::input($request->input('past_label'));
+				$past_label = (string) Sanitize::input($request->input('past_label'));
 				$flat_table->editFlatTableColumn($past_label, $label, $field->input_type);
 			}
 			/**/

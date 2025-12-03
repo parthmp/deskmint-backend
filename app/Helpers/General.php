@@ -1,6 +1,6 @@
 <?php
 
-	namespace App\Helpers;
+namespace App\Helpers;
 
 use App\Models\Company;
 use App\Models\Country;

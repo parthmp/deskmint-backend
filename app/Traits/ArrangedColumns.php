@@ -219,7 +219,7 @@ trait ArrangedColumns{
 
 	protected function fetchArrangedColumnsData(Request $request, string $feature_name, string $original_table, string $custom_fields_model, string $type) : array{
 		
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 
 		/* check if user has any data */
 		$user_data = $this->getSavedColumnData($company_id, $feature_name);
