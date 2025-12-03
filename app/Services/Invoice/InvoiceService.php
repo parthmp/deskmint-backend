@@ -7,6 +7,7 @@ use App\Helpers\Sanitize;
 use App\Models\AdditionalProductColumnsField;
 use App\Models\AdditionalProductColumnsFieldValue;
 use App\Models\Invoice;
+use App\Models\Product;
 use App\Services\HandleInvoiceNumbers;
 use App\Services\InvoiceSettingsService;
 use App\Services\Product\ProductFieldService;
@@ -153,6 +154,38 @@ class InvoiceService{
 		return $this->invoice_calculation_service->calculateInvoice($product_rows, $discount_type, $discount_number);
 	}
 
+	private function filterValidProductRows(array $product_rows, int $company_id): array {
+
+		if(empty($product_rows)){
+			return [];
+		}
+		
+		// Extract all product IDs from request
+		$product_ids = [];
+		foreach($product_rows as $index => $row){
+			if(!empty($row['product_id'])){
+				$product_ids[$index] = (int) $row['product_id'];
+			}
+		}
+		
+		if(empty($product_ids)){
+			return [];
+		}
+		
+		// Check which product IDs exist in database
+		$valid_product_ids = Product::where('company_id', $company_id)->whereIn('id', array_values($product_ids))->pluck('id')->toArray();
+		
+		// Filter rows - keep only those with valid product IDs
+		$filtered_rows = [];
+		foreach($product_ids as $index => $product_id){
+			if(in_array($product_id, $valid_product_ids, true)){
+				$filtered_rows[] = $product_rows[$index];
+			}
+		}
+		
+		return $filtered_rows;
+	}
+
 	/**
 	 * getInvoiceInsertData function
 	 *
@@ -189,7 +222,7 @@ class InvoiceService{
 		}
 
 		$payment_method = Sanitize::input($request->input('settings.payment_method'));
-		$product_rows = $request->input('data.product_rows');
+		$product_rows = $this->filterValidProductRows($request->input('data.product_rows'), $company_id);
 
 		$timezone_offset_minutes = Sanitize::input($request->input('timezone_offset_minutes'));
 

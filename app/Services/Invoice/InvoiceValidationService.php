@@ -5,6 +5,7 @@ namespace App\Services\Invoice;
 use App\Helpers\Sanitize;
 use App\Models\AdditionalProductColumnsField;
 use App\Models\InvoicesCustomField;
+use App\Models\Product;
 use App\Services\InvoiceSettingsService;
 use App\Services\Product\ProductFieldService;
 use App\Traits\CustomFieldsValidation;
@@ -28,8 +29,7 @@ class InvoiceValidationService extends ProductFieldService {
 			'data.invoice_details.client.client_id'		=>	'required|exists:clients,id',
 			'data.invoice_details.invoice_date.value'	=>	'required',
 			'data.invoice_details.invoice_number.value'	=>	'required',
-			'data.invoice_details.due_date.value'		=>	'required',
-			'data.product_rows'							=>	'required'
+			'data.invoice_details.due_date.value'		=>	'required'
 		]);
 
 		return (bool) !$v->fails();
@@ -111,6 +111,29 @@ class InvoiceValidationService extends ProductFieldService {
 
 	}
 
+	private function shouldHaveAtLeastOneRow(array $product_rows, int $company_id){
+
+		if(empty($product_rows)){
+			return false;
+		}
+
+		// Extract all product IDs
+		$product_ids = [];
+		foreach($product_rows as $row){
+			if(!empty($row['product_id'])){
+				$product_ids[] = (int) $row['product_id'];
+			}
+		}
+
+		if(empty($product_ids)){
+			return false;
+		}
+
+		// Check if at least one exists in database for this company
+		return Product::where('company_id', $company_id)->whereIn('id', $product_ids)->exists();
+
+	}
+	
 	/**
 	 * validateAllForInvoice function
 	 *
@@ -137,12 +160,13 @@ class InvoiceValidationService extends ProductFieldService {
 			return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_request', 'tab_switch' => 2], config('global.error_code'));
 		}
 		
-		if(!$request->filled('data.product_rows')){ /* TODO: make sure the data exists else throw error */
+		if(!$request->filled('data.product_rows')){
 			return response(['message' => 'Please have at least one product to create invoice', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
 		}
 
 		$product_rows = $request->input('data.product_rows');
-		if(count($product_rows) === 0){
+
+		if(!$this->shouldHaveAtLeastOneRow($product_rows, $company_id)){
 			return response(['message' => 'Please have at least one product to create invoice', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
 		}
 		
