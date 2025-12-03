@@ -17,7 +17,7 @@ class ProductFieldService{
 	 * @param integer $company_id
 	 * @return array
 	 */
-	private function getCustomTaxIds(int $company_id) : array{
+	protected function getCustomTaxIds(int $company_id) : array{
 		return AdditionalProductColumnsField::where([['company_id', '=', $company_id], ['type', '=', 'tax']])->pluck('id')->toArray();
 	}
 
@@ -27,7 +27,7 @@ class ProductFieldService{
 	 * @param array $column
 	 * @return boolean
 	 */
-	private function isCustomColumn(array $column): bool {
+	protected function isCustomColumn(array $column): bool {
         return $column['mapped'] === null && $column['type'] === 'custom';
     }
 
@@ -38,7 +38,7 @@ class ProductFieldService{
 	 * @param array $customTaxIds
 	 * @return string
 	 */
-	private function generateFieldName(array $column, array $custom_tax_ids): string {
+	protected function generateFieldName(array $column, array $custom_tax_ids): string {
 
         $underscored = General::replaceWithUnderscores($column['text']);
         return in_array($column['id_column'], $custom_tax_ids) ? 'custom_tax_' . $underscored : 'normal_' . $underscored;
@@ -54,14 +54,12 @@ class ProductFieldService{
 	 * @param integer $invoiceId
 	 * @return array
 	 */
-	private function prepareInsertData(array $product_rows, int $company_id, int $invoice_id): array {
+	protected function prepareInsertData(array $product_rows, int $company_id, int $invoice_id): array {
 
 		$invoice = Invoice::where('id', '=', $invoice_id)->first();
 		$snapshot = json_decode($invoice->settings_snapshot, true);
 
 		$insert = [];
-
-		/* now check if all fields exist */
 
 		$custom_tax_ids = $this->getCustomTaxIds($company_id);
 
@@ -71,10 +69,7 @@ class ProductFieldService{
 			
 			if($this->isCustomColumn($user_defined_column)){
 				
-				$with_underscores = General::replaceWithUnderscores($user_defined_column['text']);
-
 				$custom_field_name = $this->generateFieldName($user_defined_column, $custom_tax_ids);
-				
 
 				foreach($product_rows as $row){
 					$temp['apc_field_id'] = $user_defined_column['id_column'];
@@ -93,8 +88,16 @@ class ProductFieldService{
 
 	}
 
-	private function insertProductRows(Request $request, int $invoice_id, int $company_id){
-		
+	/**
+	 * insertProductRows function
+	 *
+	 * @param Request $request
+	 * @param integer $invoice_id
+	 * @param integer $company_id
+	 * @return void
+	 */
+	public function insertProductRows(Request $request, int $invoice_id, int $company_id) : void {
+
 		$product_rows_path = 'data.product_rows';
 
 		$product_rows = $request->input($product_rows_path);

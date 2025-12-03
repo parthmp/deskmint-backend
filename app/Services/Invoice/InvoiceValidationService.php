@@ -2,15 +2,27 @@
 
 namespace App\Services\Invoice;
 
-use App\Helpers\General;
+use App\Helpers\Sanitize;
 use App\Models\AdditionalProductColumnsField;
+use App\Models\InvoicesCustomField;
 use App\Services\InvoiceSettingsService;
+use App\Services\Product\ProductFieldService;
+use App\Traits\CustomFieldsValidation;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
 
-class InvoiceValidationService{
+class InvoiceValidationService extends ProductFieldService {
 
-	private function validateInvoiceDetails(Request $request) : bool {
+	use CustomFieldsValidation;
+
+	/**
+	 * validateInvoiceDetails function
+	 *
+	 * @param Request $request
+	 * @return boolean
+	 */
+	public function validateInvoiceDetails(Request $request) : bool {
 		
 		$v = Validator::make($request->all(), [
 			'data.invoice_details.client.client_id'		=>	'required|exists:clients,id',
@@ -23,7 +35,13 @@ class InvoiceValidationService{
 		return (bool) !$v->fails();
 	}
 
-	private function validateInvoiceSettings(Request $request) : bool {
+	/**
+	 * validateInvoiceSettings function
+	 *
+	 * @param Request $request
+	 * @return boolean
+	 */
+	public function validateInvoiceSettings(Request $request) : bool {
 
 		$v = Validator::make($request->all(), [
 			'settings.payment_method'				=>	'required',
@@ -34,7 +52,14 @@ class InvoiceValidationService{
 
 	}
 
-	private function ifSubmittedFieldsAreSameAsDefined(Request $request, int $company_id) : bool {
+	/**
+	 * ifSubmittedFieldsAreSameAsDefined function
+	 *
+	 * @param Request $request
+	 * @param integer $company_id
+	 * @return boolean
+	 */
+	public function ifSubmittedFieldsAreSameAsDefined(Request $request, int $company_id) : bool {
 
 		$invoice_settings = new InvoiceSettingsService((int) $company_id);
 
@@ -52,7 +77,7 @@ class InvoiceValidationService{
 			$product_row_fields_names[] = $key;
 		}
 
-		$custom_tax_ids = AdditionalProductColumnsField::where([['company_id', '=', $company_id], ['type', '=', 'tax']])->pluck('id')->toArray();
+		$custom_tax_ids = $this->getCustomTaxIds($company_id);
 
 		foreach($product_columns as $user_defined_column){
 			
@@ -70,13 +95,7 @@ class InvoiceValidationService{
 					break;
 				}
 
-				$with_underscores = General::replaceWithUnderscores($user_defined_column['text']);
-
-				if(in_array($user_defined_column['id_column'], $custom_tax_ids)){
-					$custom_field_name = 'custom_tax_'.$with_underscores;
-				}else{
-					$custom_field_name = 'normal_'.$with_underscores; /* this "normal" indicates non tax custom field */
-				}
+				$custom_field_name = $this->generateFieldName($user_defined_column, $custom_tax_ids);
 				
 				if(!in_array($custom_field_name, $product_row_fields_names)){
 					$fields_same = false;
@@ -89,6 +108,49 @@ class InvoiceValidationService{
 		}
 
 		return $fields_same;
+
+	}
+
+	/**
+	 * validateAllForInvoice function
+	 *
+	 * @param Request $request
+	 * @param integer $company_id
+	 * @return mixed
+	 */
+	public function validateAllForInvoice(Request $request, int $company_id) : mixed{
+
+		$tab0_valid = $this->validateInvoiceDetails($request);
+		
+		if(!$tab0_valid){
+			return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
+		}
+
+		$tab1_valid = $this->validateCustomFields($request, InvoicesCustomField::class, 'invalid_data_tab1', 1);
+		if($tab1_valid !== null){
+			return $tab1_valid;
+		}
+
+		$tab2_valid = $this->validateInvoiceSettings($request);
+
+		if(!$tab2_valid){
+			return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_request', 'tab_switch' => 2], config('global.error_code'));
+		}
+		
+		if(!$request->filled('data.product_rows')){
+			return response(['message' => 'Please have at least one product to create invoice', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
+		}
+
+		$product_rows = $request->input('data.product_rows');
+		if(count($product_rows) === 0){
+			return response(['message' => 'Please have at least one product to create invoice', 'validity' => 'invalid_request', 'tab_switch' => 0], config('global.error_code'));
+		}
+		
+		if(!$this->ifSubmittedFieldsAreSameAsDefined($request, $company_id)){
+			return response(['message' => 'Invalid request, fields do not match', 'validity' => 'mismatch_fields', 'tab_switch' => 2], config('global.error_code'));
+		}
+
+		return null;
 
 	}
 
