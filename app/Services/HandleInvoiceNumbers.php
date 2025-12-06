@@ -333,12 +333,12 @@ class HandleInvoiceNumbers{
     
 		/* define regex patterns for each variable */
 		$patterns = [
-			'{$year}' => '\d{4}',
-			'{$day_number}' => '(0[1-9]|[12][0-9]|3[01])',
-			'{$day_name}' => '(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun)',
-			'{$month_number}' => '(0[1-9]|1[0-2])',
-			'{$month_short_name}' => '(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)',
-			'{$month_full_name}' => '(January|February|March|April|May|June|July|August|September|October|November|December)',
+			'{$year}' 				=> '\d{4}',
+			'{$day_number}' 		=> '(0[1-9]|[12][0-9]|3[01])',
+			'{$day_name}'		 	=> '(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun)',
+			'{$month_number}' 		=> '(0[1-9]|1[0-2])',
+			'{$month_short_name}' 	=> '(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)',
+			'{$month_full_name}' 	=> '(January|February|March|April|May|June|July|August|September|October|November|December)',
 		];
 		
 		/* build the base pattern regex */
@@ -358,8 +358,8 @@ class HandleInvoiceNumbers{
 		
 		if(preg_match($full_regex, $invoice_number, $matches)){
 			return [
-				'matched' => true,
-				'suffix' => (string) end($matches),
+				'matched'	 => true,
+				'suffix'	 => (string) end($matches),
 				'suffix_int' => (int) end($matches)
 			];
 		}
