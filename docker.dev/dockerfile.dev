@@ -1,6 +1,8 @@
 # Use PHP with FPM (FastCGI Process Manager)
 FROM php:8.3-fpm-alpine
 
+RUN apk add --no-cache linux-headers
+
 # Install system dependencies
 RUN apk add --no-cache \
     curl \
@@ -35,6 +37,8 @@ COPY --from=composer:2.9.2 /usr/bin/composer /usr/bin/composer
 
 # Set working directory
 WORKDIR /var/www/html
+
+RUN mkdir -p /var/www/html/vendor
 
 # Copy Laravel files
 COPY . .

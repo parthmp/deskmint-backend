@@ -7,18 +7,20 @@ volumes:
     driver: local
   redis-data:
     driver: local
+  vendor-dir:
 
 services:
   # PHP-FPM Service
   php:
     build:
-      context: .
+      context: ..
       dockerfile: docker.dev/dockerfile.dev
     container_name: laravel-php
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
       - ../:/var/www/html  # Bind mount ALL Laravel code
+      - vendor-dir:/var/www/html/vendor
       - ./php/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
     environment:
       - PHP_IDE_CONFIG=serverName=Docker
@@ -37,7 +39,7 @@ services:
       - "8000:80"  # Exposed for Vue and browser
     volumes:
       - ../:/var/www/html  # Same bind mount
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - deskmint-network
     depends_on:
@@ -52,12 +54,12 @@ services:
       - "3306:3306"  # Exposed for HeidiSQL
     environment:
       MYSQL_DATABASE: deskmint_backend
-      MYSQL_ROOT_PASSWORD: 
-      MYSQL_PASSWORD: 
-      MYSQL_USER: root
+      MYSQL_ROOT_PASSWORD: mysqlpass
+      # MYSQL_PASSWORD: mysqlpass
+      # MYSQL_USER: root
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
     networks:
       - deskmint-network
 
@@ -77,16 +79,16 @@ services:
   # Test Service (Separate)
   tests:
     build:
-      context: .
+      context: ..
       dockerfile: docker.dev/dockerfile.dev
     container_name: laravel-tests
     working_dir: /var/www/html
     volumes:
-      - ./:/var/www/html  # Bind mount for tests
+      - ../:/var/www/html  # Bind mount for tests
     environment:
       - APP_ENV=testing
       - DB_CONNECTION=sqlite
-      - DB_DATABASE=:memory:
+      - DB_DATABASE=":memory:"
     command: >
       sh -c "composer install --no-interaction &&
              php artisan test"
