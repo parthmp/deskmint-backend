@@ -1,0 +1,36 @@
+# docker/php/Dockerfile
+FROM php:8.3-fpm
+
+# system deps
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+     git unzip libonig-dev libxml2-dev libzip-dev libpng-dev libjpeg-dev libfreetype6-dev \
+     libssl-dev curl ca-certificates procps supervisor \
+  && rm -rf /var/lib/apt/lists/*
+
+# php extensions required by Laravel
+RUN docker-php-ext-install pdo_mysql mbstring zip bcmath exif pcntl opcache
+# gd (image)
+RUN docker-php-ext-configure gd --with-jpeg --with-freetype \
+  && docker-php-ext-install gd
+
+#custom php.ini
+COPY docker.dev/php/php.ini /usr/local/etc/php/conf.d/custom.ini
+
+#supervisor config
+COPY docker.dev/supervisor/laravel-worker.conf /etc/supervisor/conf.d/
+
+# install composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+COPY docker.dev/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
+# set working directory
+WORKDIR /var/www/html
+
+#USER www-data
+
+CMD ["/usr/local/bin/start.sh"]
+
+
