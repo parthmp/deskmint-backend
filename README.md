@@ -180,15 +180,20 @@ MAIL_MAILER=smtp
 MAIL_HOST=mailpit         # Built-in email testing
 MAIL_PORT=1025
 
-TURNSTILE_SECRET		  # should be set to your turnstile secret key
+TURNSTILE_SECRET=		  # should be set to your turnstile secret key
 ```
 
 ## Development
 
 ### Running Tests
+With docker
 ```bash
 docker compose exec app php artisan test #docker
 php artisan test #without docker
+```
+Without docker
+```bash
+php artisan test
 ```
 
 ### Checking Queue Worker Status
