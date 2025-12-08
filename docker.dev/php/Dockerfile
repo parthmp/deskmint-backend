@@ -37,4 +37,3 @@ WORKDIR /var/www/html
 
 CMD ["/usr/local/bin/start.sh"]
 
-
