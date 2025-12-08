@@ -188,8 +188,7 @@ TURNSTILE_SECRET=		  # should be set to your turnstile secret key
 ### Running Tests
 With docker
 ```bash
-docker compose exec app php artisan test #docker
-php artisan test #without docker
+docker compose exec app php artisan test
 ```
 Without docker
 ```bash
