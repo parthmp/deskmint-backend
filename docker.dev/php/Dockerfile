@@ -1,5 +1,5 @@
 # docker/php/Dockerfile
-FROM php:8.3-fpm
+FROM php:8.3-fpm-bookworm
 
 # system deps
 RUN apt-get update \

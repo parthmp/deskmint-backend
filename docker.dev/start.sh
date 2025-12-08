@@ -1,16 +1,17 @@
 #!/bin/bash
 set -e
 
-# Ensure directories exist
-mkdir -p /var/www/html/storage/logs
-mkdir -p /var/www/html/bootstrap/cache
+# Auto-install dependencies if vendor doesn't exist
+if [ ! -d "/var/www/html/vendor" ]; then
+    composer install --no-interaction
+fi
 
-# Fix permissions
-chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true
-chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true
+# Ensure Laravel directories are writable
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Start PHP-FPM in background
-php-fpm -D
+php-fpm &
 
 # Start supervisor in foreground
-exec /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
+/usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf

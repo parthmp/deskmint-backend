@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: secret_root_password
-      MYSQL_DATABASE: deskmint
+      MYSQL_DATABASE: deskmint_backend
       MYSQL_USER: deskmint
       MYSQL_PASSWORD: deskmint_password
     volumes:
