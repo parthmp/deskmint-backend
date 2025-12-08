@@ -21,8 +21,9 @@ docker compose exec app php artisan migrate
 
 # Fix file permissions on host
 echo "📁 Setting file permissions..."
-sudo setfacl -R -m u:$USER:rwx .
-sudo setfacl -R -d -m u:$USER:rwx .
+ACTUAL_USER=$(logname 2>/dev/null || echo $SUDO_USER)
+sudo setfacl -R -m u:${ACTUAL_USER}:rwx .
+sudo setfacl -R -d -m u:${ACTUAL_USER}:rwx .
 
 echo ""
 echo "✅ Setup complete!"
