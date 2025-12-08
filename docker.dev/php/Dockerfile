@@ -10,6 +10,10 @@ RUN apt-get update \
 
 # php extensions required by Laravel
 RUN docker-php-ext-install pdo_mysql mbstring zip bcmath exif pcntl opcache
+
+# Redis extension
+RUN pecl install redis && docker-php-ext-enable redis
+
 # gd (image)
 RUN docker-php-ext-configure gd --with-jpeg --with-freetype \
   && docker-php-ext-install gd

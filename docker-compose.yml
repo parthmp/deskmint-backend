@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   app:
     build:
@@ -13,8 +11,9 @@ services:
       - ./:/var/www/html:delegated
     environment:
       - COMPOSER_ALLOW_SUPERUSER=1
-    depends_on: []
-    #user: "${UID:-1000}:${GID:-1000}"
+    depends_on:
+      - db
+      - redis
     networks:
       - deskmint_net
 
@@ -34,6 +33,28 @@ services:
     networks:
       - deskmint_net
 
+  redis:
+    image: redis:7-alpine
+    container_name: deskmint_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - deskmint_net
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: deskmint_mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"  # Web UI
+      - "1025:1025"  # SMTP
+    networks:
+      - deskmint_net
+
   web:
     image: nginx:stable
     container_name: deskmint_nginx
@@ -49,6 +70,7 @@ services:
 
 volumes:
   db_data:
+  redis_data:
 
 networks:
   deskmint_net:
