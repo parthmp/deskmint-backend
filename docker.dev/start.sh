@@ -2,16 +2,14 @@
 set -e
 
 # Auto-install dependencies if vendor doesn't exist
-if [ ! -d "/var/www/html/vendor" ]; then
-    composer install --no-interaction
-fi
+# if [ ! -d "/var/www/html/vendor" ]; then
+#     composer install --no-interaction
+# fi
 
 # Ensure Laravel directories are writable
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Start PHP-FPM in background
-php-fpm &
+supervisord
 
-# Start supervisor in foreground
-/usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
+/usr/local/sbin/php-fpm -F
