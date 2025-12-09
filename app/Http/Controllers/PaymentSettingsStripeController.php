@@ -24,9 +24,13 @@ class PaymentSettingsStripeController extends Controller{
 		}
 
 		$json = json_decode($stripe_settings->settings_json, true);
-
-		$json['secret'] = decrypt($json['secret']);
-
+		
+		try{
+			$json['secret'] = decrypt($json['secret']);
+		}catch(Exception $e){
+			$json['secret'] = '';
+		}
+		
 		return $json;
 
 	}

@@ -29,7 +29,11 @@ class EmailSettingsSMTPController extends Controller{
 
 			$settings = json_decode($email_smtp->settings_json, true);
 
-			$settings['password'] = decrypt($settings['password']);
+			try{
+				$settings['password'] = decrypt($settings['password']);
+			}catch(Exception $e){
+				$settings['password'] = '';
+			}
 
 			return $settings;
 
