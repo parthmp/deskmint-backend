@@ -19,6 +19,10 @@ docker compose exec app php artisan key:generate
 echo "🗄️  Running migrations..."
 docker compose exec app php artisan migrate
 
+# Link public storage
+echo "🗄️  Running migrations..."
+docker compose exec app php artisan storage:link
+
 # Fix file permissions on host
 echo "📁 Setting file permissions..."
 ACTUAL_USER=$(logname 2>/dev/null || echo $SUDO_USER)
