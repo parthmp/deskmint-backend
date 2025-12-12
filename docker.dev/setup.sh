@@ -5,7 +5,7 @@ echo "🚀 Setting up Laravel environment..."
 
 # Setup .env
 echo "⚙️  Copying .env file..."
-docker compose exec app cp .env.example .env
+docker compose exec -u www-data app cp .env.example .env #wsl change added -u www-data to map uid and gid
 
 # Install dependencies
 echo "📦 Installing Composer dependencies..."
@@ -23,17 +23,17 @@ docker compose exec app php artisan migrate
 echo "🗄️  Running migrations..."
 docker compose exec app php artisan storage:link
 
-# Fix file permissions on host
-echo "📁 Setting file permissions..."
-ACTUAL_USER=$(logname 2>/dev/null || echo $SUDO_USER)
-sudo setfacl -R -m u:${ACTUAL_USER}:rwx .
-sudo setfacl -R -d -m u:${ACTUAL_USER}:rwx .
+# Fix file permissions on host (commented out for wsl)
+# echo "📁 Setting file permissions..."
+# ACTUAL_USER=$(logname 2>/dev/null || echo $SUDO_USER)
+# sudo setfacl -R -m u:${ACTUAL_USER}:rwx .
+# sudo setfacl -R -d -m u:${ACTUAL_USER}:rwx .
 
 echo ""
 echo "✅ Setup complete!"
 echo "🌐 App: http://localhost:8080"
 echo "📧 Mailpit: http://localhost:8025"
-echo "🗃️  Redis: localhost:6379"
+echo "🗃️ Redis: localhost:6379"
 echo "💾 MySQL: localhost:3306"
 
 #######################
