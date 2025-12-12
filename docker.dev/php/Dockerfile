@@ -1,6 +1,12 @@
 # docker/php/Dockerfile
 FROM php:8.3-fpm-bookworm
 
+# Handle user permissions for local development added for WSL start
+ARG UID=1000
+ARG GID=1000
+RUN usermod -u $UID www-data && groupmod -g $GID www-data
+# Handle user permissions for local development added for WSL end
+
 # system deps
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \

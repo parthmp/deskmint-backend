@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: docker.dev/php/Dockerfile
+      args: #added for wsl
+        UID: 1000
+        GID: 1000
     image: deskmint-app:1.0
     container_name: deskmint_app
     working_dir: /var/www/html
