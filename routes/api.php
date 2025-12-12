@@ -44,7 +44,7 @@ Route::middleware(['throttle:60,1'])->group(function () {
 	Route::post('send-reset-password-code', [ForgotPasswordController::class, 'sendResetPasswordCode']);
 });
 
-Route::middleware(['throttle:10,1'])->group(function () {
+Route::middleware(['throttle:20,1'])->group(function () {
 	Route::post('resend-otp', [LoginController::class, 'resendOTP']);
 	Route::post('validate-otp', [LoginController::class, 'validateOTP']);
 	Route::post('reset-password', [ForgotPasswordController::class, 'resetPassword']);
