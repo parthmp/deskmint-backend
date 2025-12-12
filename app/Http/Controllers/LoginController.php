@@ -35,7 +35,7 @@ class LoginController extends Controller{
 			return response(['message' 	=> 'Invalid request','validity'	=> 'invalid_turnstile'], config('global.error_code'));
 		}
 
-		$email = strtolower(Sanitize::input($request->input('email_address')));
+		$email = strtolower((string) Sanitize::input($request->input('email_address')));
 		$device = Sanitize::input($request->input('device'));
 		$password = $request->input('password');
 		
@@ -101,7 +101,7 @@ class LoginController extends Controller{
 		if($v->fails()){
 			return response(['message' 	=> 'Invalid request','validity'	=>	'invalid_data'], config('global.error_code'));
 		}
-
+		
 		$token = Sanitize::input($request->input('token'));
 		$device = Sanitize::input($request->input('device'));
 		
