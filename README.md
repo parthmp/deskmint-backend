@@ -66,6 +66,27 @@ This script will:
 
 **Once script finishes running, open .env file, and set value for TURNSTILE_SECRET, get your cloudflare turnstile secret key from cloudflare**
 
+### Shorter Artisan Command to avoid file permissions altogather! (Everything will be owned by www-data)
+
+To make artisan commands easier, add this alias to your shell:
+
+```bash
+nano ~/.bashrc
+```
+Scroll to the bottom and add below command
+```bash
+alias artisan='docker compose exec -u www-data app php artisan'
+```
+Then, press Ctrl + O -> Enter -> Ctrl + X,
+Reload your shell configuration
+```bash
+source ~/.bashrc
+```
+Test the alias
+```bash
+artisan list
+```
+
 #### 4. Access the Application
 
 Once setup is complete, you can access the following services:
