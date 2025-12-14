@@ -175,9 +175,9 @@ class SettingsArrangedFields{
 	 * @param array $rows
 	 * @param array $exceptions
 	 * @return string
-	 * return '' if nothing found, return row text if found.
+	 * return '' if nothing found, return text if found.
 	 */
-	private function validateExceptions(array $rows, array $exceptions) : mixed {
+	private function validateExceptions(array $rows, array $exceptions) : string {
 		
 		if(count($exceptions) == 0){
 			return '';
