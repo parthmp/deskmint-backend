@@ -169,7 +169,44 @@ class SettingsArrangedFields{
 		return true;
 	}
 
-	public function saveOrUpdate(string $model, string $table) {
+	/**
+	 * validateExceptions function
+	 *
+	 * @param array $rows
+	 * @param array $exceptions
+	 * @return string
+	 * return '' if nothing found, return row text if found.
+	 */
+	private function validateExceptions(array $rows, array $exceptions) : mixed {
+		
+		if(count($exceptions) == 0){
+			return '';
+		}
+
+		$mapped = [];
+		foreach($rows as $row){
+			foreach($row['mapped'] as $mapped_field){
+				$mapped[] = $mapped_field;
+			}
+		}
+		
+		foreach($exceptions as $key => $exception){
+			if(!in_array($key, $mapped)){
+				return $exception;
+			}
+		}
+		return '';
+	}
+
+	/**
+	 * saveOrUpdate function
+	 *
+	 * @param string $model
+	 * @param string $table
+	 * @param array $exceptions
+	 * @return void
+	 */
+	public function saveOrUpdate(string $model, string $table, array $exceptions = []) { /* exceptions text values are mapped to the mapped array for each row */
 		
 		$v = Validator::make($this->request->all(), [
 			'rows'              => 'required|array',
@@ -186,6 +223,12 @@ class SettingsArrangedFields{
 		try{
 
 			$rows = $this->request->input('rows');
+
+			$exception_col_name = $this->validateExceptions($rows, $exceptions);
+			
+			if($exception_col_name !== ''){
+				return response(['message' => 'You are not allowed to delete '.$exception_col_name,'validity' => 'deletion_not_allowed'], config('global.error_code'));
+			}
 			
 			/* now validate before moving forward */
 			if($model !== '' && $table !== ''){

@@ -19,7 +19,7 @@ class InvoiceSettingsProductColumnsController extends Controller{
 	
 	public function show(Request $request) : mixed{
 		
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 		
 		return (new SettingsArrangedFields($this->getProductColumnFields(), $request, $company_id))->fetchArrangedFieldsData();
 
@@ -28,11 +28,11 @@ class InvoiceSettingsProductColumnsController extends Controller{
 	
 	public function saveOrUpdate(Request $request) : mixed{
 
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 
 		$settings_arranged_fields = new SettingsArrangedFields($this->getProductColumnFields(), $request, $company_id);
 
-		return $settings_arranged_fields->saveOrUpdate(AdditionalProductColumnsField::class, 'invoice_items');
+		return $settings_arranged_fields->saveOrUpdate(AdditionalProductColumnsField::class, 'invoice_items',  ['product_id' => 'Item']);
 
 	}
 }
