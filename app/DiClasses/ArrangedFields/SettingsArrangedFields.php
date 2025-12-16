@@ -179,15 +179,18 @@ class SettingsArrangedFields{
 	 */
 	private function validateExceptions(array $rows, array $exceptions) : string {
 		
-		if(count($exceptions) == 0){
+		if(count($exceptions) === 0){
 			return '';
 		}
 
 		$mapped = [];
 		foreach($rows as $row){
-			foreach($row['mapped'] as $mapped_field){
-				$mapped[] = $mapped_field;
+			if(isset($row['mapped'])){
+				foreach($row['mapped'] as $mapped_field){
+					$mapped[] = $mapped_field;
+				}
 			}
+			
 		}
 		
 		foreach($exceptions as $key => $exception){

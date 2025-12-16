@@ -1,1 +1,90 @@
-test template
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 12px;
+            color: #000;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .meta td {
+            vertical-align: top;
+        }
+
+        .items th, .items td {
+            border: 1px solid #000;
+            padding: 6px;
+        }
+
+        .items th {
+            background: #f0f0f0;
+        }
+
+        .right {
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+<table class="meta">
+    <tr>
+        <td>
+            <strong>{{ $company['name'] }}</strong><br>
+            {{ $company['address'] }}<br>
+            GST: {{ $company['gst'] }}
+        </td>
+        <td class="right">
+            <h2>Invoice</h2>
+            Invoice #: {{ $invoice['number'] }}<br>
+            Date: {{ $invoice['date'] }}<br>
+            Due: {{ $invoice['due_date'] }}
+        </td>
+    </tr>
+</table>
+
+<br>
+
+<table class="items">
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th class="right">Qty</th>
+            <th class="right">Rate</th>
+            <th class="right">Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+       
+        <tr>
+            <td>123</td>
+            <td class="right">5</td>
+            <td class="right">25.99</td>
+            <td class="right">30.55</td>
+        </tr>
+      
+    </tbody>
+</table>
+
+<br>
+
+<table>
+    <tr>
+        <td></td>
+        <td class="right">
+            Subtotal: {{ $totals['subtotal'] }}<br>
+            Tax: {{ $totals['tax'] }}<br>
+            <strong>Total: {{ $totals['grand'] }}</strong>
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

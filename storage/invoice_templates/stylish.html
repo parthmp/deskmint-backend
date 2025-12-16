@@ -1,1 +1,99 @@
-stylish template
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 12px;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header {
+            background: #1f2937;
+            color: #fff;
+        }
+
+        .header td {
+            padding: 12px;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .items th {
+            background: #e5e7eb;
+            padding: 8px;
+            border-bottom: 2px solid #1f2937;
+        }
+
+        .items td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .total {
+            font-size: 14px;
+            font-weight: bold;
+            border-top: 2px solid #1f2937;
+        }
+    </style>
+</head>
+<body>
+
+<table class="header">
+    <tr>
+        <td>
+            <div class="title">{{ $company['name'] }}</div>
+            {{ $company['address'] }}
+        </td>
+        <td class="right">
+            <div class="title">INVOICE</div>
+            #{{ $invoice['number'] }}<br>
+            {{ $invoice['date'] }}
+        </td>
+    </tr>
+</table>
+
+<br>
+
+<table class="items">
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th class="right">Qty</th>
+            <th class="right">Rate</th>
+            <th class="right">Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($items as $item)
+        <tr>
+            <td>{{ $item['name'] }}</td>
+            <td class="right">{{ $item['qty'] }}</td>
+            <td class="right">{{ $item['rate'] }}</td>
+            <td class="right">{{ $item['total'] }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="3" class="right total">Total</td>
+            <td class="right total">{{ $totals['grand'] }}</td>
+        </tr>
+    </tfoot>
+</table>
+
+</body>
+</html>
