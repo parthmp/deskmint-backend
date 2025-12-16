@@ -46,4 +46,93 @@ class InvoiceSettingsResolver{
 
 	}
 
+	/**
+	 * fetchClientDetails function
+	 *
+	 * @return array
+	 */
+	public function fetchClientDetails() : array {
+
+		$settings = $this->invoice_db_operations->fetchClientDetailsSettings();
+
+		if(!$settings){
+			return $this->getDefaultInvoiceClientDetailsSettings();
+		}
+
+		return json_decode($settings->settings_json, true);
+
+	}
+
+	/**
+	 * fetchCompanyDetails function
+	 *
+	 * @return array
+	 */
+	public function fetchCompanyDetails() : array {
+
+		$settings = $this->invoice_db_operations->fetchCompanyDetailsSettings();
+
+		if(!$settings){
+			$default = $this->getDefaultInvoiceCompanyDetailsSettings($this->company_id);
+			return $default['rows'];
+		}
+
+		return json_decode($settings->settings_json, true);
+
+	}
+
+	/**
+	 * fetchCompanyAddressDetails function
+	 *
+	 * @return array
+	 */
+	public function fetchCompanyAddressDetails() : array {
+
+		$settings = $this->invoice_db_operations->fetchCompanyAddressSettings();
+
+		if(!$settings){
+			$default = $this->getDefaultInvoiceCompanyAddressSettings($this->company_id);
+			return $default['rows'];
+		}
+
+		return json_decode($settings->settings_json, true);
+
+	}
+
+	/**
+	 * fetchCompanyInvoiceDetails function
+	 *
+	 * @return array
+	 */
+	public function fetchInvoiceDetails() : array {
+
+		$settings = $this->invoice_db_operations->fetchInvoiceSettings();
+
+		if(!$settings){
+			$default = $this->getDefaultInvoiceDetailsSettings($this->company_id);
+			return $default['rows'];
+		}
+
+		return json_decode($settings->settings_json, true);
+
+	}
+
+	/**
+	 * fetchTotalFieldsDetails function
+	 *
+	 * @return array
+	 */
+	public function fetchTotalFieldsDetails() : array {
+
+		$settings = $this->invoice_db_operations->fetchTotalFieldsSettings();
+
+		if(!$settings){
+			$default = $this->getDefaultTotalFieldsSettings($this->company_id);
+			return $default['rows'];
+		}
+
+		return json_decode($settings->settings_json, true);
+
+	}
+
 }

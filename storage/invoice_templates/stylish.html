@@ -55,13 +55,15 @@
 <table class="header">
     <tr>
         <td>
-            <div class="title">{{ $company['name'] }}</div>
-            {{ $company['address'] }}
+			{{$render_client_details}}
+            <!-- <p style="font-size: 26px;">{{ $company['name'] }}</p>
+            <p style="font-size: 16px;">{{ $company['name'] }}</p> -->
         </td>
         <td class="right">
-            <div class="title">INVOICE</div>
+			{{$render_invoice_details}}
+            <!-- <div class="title">INVOICE</div>
             #{{ $invoice['number'] }}<br>
-            {{ $invoice['date'] }}
+            {{ $invoice['date'] }} -->
         </td>
     </tr>
 </table>

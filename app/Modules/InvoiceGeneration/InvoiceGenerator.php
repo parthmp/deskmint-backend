@@ -2,6 +2,7 @@
 
 namespace App\Modules\InvoiceGeneration;
 
+use App\Models\Invoice;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
@@ -48,16 +49,42 @@ class InvoiceGenerator{
 	/**
 	 * fetchInvoiceData function
 	 *
-	 * @return Collection
+	 * @return Invoice
 	 */
-	private function fetchInvoiceData() : Collection {
+	private function fetchInvoiceData() : Invoice {
 		return $this->invoice_db_operations->fetchInvoiceRow();
+	}
+
+	/**
+	 * generateContextArrayForRenderer function
+	 *
+	 * @return array
+	 */
+	private function generateContextArrayForRenderer() : array {
+		$context = [
+			'general'			=>	$this->invoice_settings_resolver->fetchGeneral(),
+			'client_details'	=>	$this->invoice_settings_resolver->fetchClientDetails(),
+			'company_details'	=>	$this->invoice_settings_resolver->fetchCompanyDetails(),
+			'company_address'	=>	$this->invoice_settings_resolver->fetchCompanyAddressDetails(),
+			'invoice_details'	=>	$this->invoice_settings_resolver->fetchInvoiceDetails(),
+			'invoice_data'		=>	$this->invoice_db_operations->fetchInvoiceRow(),
+			'total_fields'		=>	$this->invoice_settings_resolver->fetchTotalFieldsDetails(),
+		];
+
+		return $context;
+	}
+
+	private function modifyInvoiceTemplate(){
+		$contents = $this->fetchTemplateContents();
+		$renderer = new InvoiceRenderer($contents, $this->generateContextArrayForRenderer());
+		return $renderer->render();
 	}
 
 	public function generateInvoice(){
 
 		/* generate invoice here */
-		
+		//return $this->invoice_settings_resolver->fetchClientDetails();
+		return $this->modifyInvoiceTemplate();
 
 	}
 
