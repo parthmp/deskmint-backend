@@ -99,7 +99,7 @@ class InvoiceRenderer{
 					
 					if($field['clients_custom_field_id'] === $custom_field_value->clients_custom_field_id){
 						
-						$input_type = $custom_field_value->ClientsCustomField->customFieldType->input_type;
+						$input_type = $custom_field_value->clients_custom_field_wt->custom_field_type_wt->input_type;
 
 						$client_details_html .= match($input_type){
 							config('global.field_types')[5] => $this->formatDateTime($custom_field_value->field_value), /* date */

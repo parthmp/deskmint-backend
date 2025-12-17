@@ -98,7 +98,7 @@ class InvoiceDBOperations{
 	 * @return Collection|null
 	 */
 	public function fetchCustomFieldValuesOfClient(int $client_id) : Collection|null {
-		return ClientCustomFieldValue::where([['client_id', '=', $client_id]])->get();
+		return ClientCustomFieldValue::where([['client_id', '=', $client_id]])->withTrashed()->get();
 	}
 
 }

@@ -16,6 +16,10 @@ class ClientsCustomField extends Model{
 		return $this->belongsTo(CustomFieldType::class, 'custom_field_type_id');
 	}
 
+	public function custom_field_type_wt(){
+		return $this->belongsTo(CustomFieldType::class, 'custom_field_type_id')->withTrashed();
+	}
+
 	public function customFieldValue(){
 		return $this->hasOne(ClientCustomFieldValue::class);
 	}
