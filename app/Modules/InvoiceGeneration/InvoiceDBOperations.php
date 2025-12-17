@@ -43,7 +43,7 @@ class InvoiceDBOperations{
 	 * @return Invoice|null
 	 */
 	public function fetchInvoiceRow() : Invoice|null {
-		return Invoice::where('id', '=', $this->invoice_id)->first();
+		return Invoice::where('id', '=', $this->invoice_id)->withTrashed()->first();
 	}
 
 	/**
@@ -61,7 +61,7 @@ class InvoiceDBOperations{
 	 * @return SettingsSection|null
 	 */
 	public function fetchCompanyDetailsSettings() : SettingsSection|null {
-		return SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_INVOICE_COMPANY_ADDRESS_TYPE]])->first();
+		return SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_INVOICE_COMPANY_DETAILS_TYPE]])->first();
 	}
 
 	/**

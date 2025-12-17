@@ -63,13 +63,13 @@ class InvoiceGenerator{
 	private function generateContextArrayForRenderer() : array {
 
 		$context = [
-			'general'			=>	$this->invoice_settings_resolver->fetchGeneral(),
-			'client_details'	=>	$this->invoice_settings_resolver->fetchClientDetails(),
-			'company_details'	=>	$this->invoice_settings_resolver->fetchCompanyDetails(),
-			'company_address'	=>	$this->invoice_settings_resolver->fetchCompanyAddressDetails(),
-			'invoice_details'	=>	$this->invoice_settings_resolver->fetchInvoiceDetails(),
-			'invoice_data'		=>	$this->invoice_db_operations->fetchInvoiceRow(),
-			'total_fields'		=>	$this->invoice_settings_resolver->fetchTotalFieldsDetails(),
+			'general_settings'			=>	$this->invoice_settings_resolver->fetchGeneral(),
+			'client_details_settings'	=>	$this->invoice_settings_resolver->fetchClientDetails(),
+			'company_details_settings'	=>	$this->invoice_settings_resolver->fetchCompanyDetails(),
+			'company_address_settings'	=>	$this->invoice_settings_resolver->fetchCompanyAddressDetails(),
+			'invoice_details_settings'	=>	$this->invoice_settings_resolver->fetchInvoiceDetails(),
+			'invoice_data'				=>	$this->invoice_db_operations->fetchInvoiceRow(),
+			'total_fields_settings'		=>	$this->invoice_settings_resolver->fetchTotalFieldsDetails(),
 		];
 
 		$context['client_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfClient((int) $context['invoice_data']['client_id']);

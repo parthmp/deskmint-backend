@@ -50,21 +50,29 @@ class InvoiceRenderer{
 	 * @param string $values
 	 * @return string
 	 */
-	private function formatMultiSelectValues(string $values) : mixed{
+	private function formatMultiSelectValues(string $values) : string {
 		$json_values = json_decode($values, true);
 		return str_ireplace("\n", ', ', $json_values[0]);
 	}
 
-	public function renderClientDetails(){
+	
+	/**
+	 * renderClientDetails function
+	 *
+	 * @return InvoiceRenderer
+	 */
+	private function renderClientDetails() : InvoiceRenderer {
 
 		$client_details_html = '';
 
-		foreach($this->context['client_details'] as $field){
+		foreach($this->context['client_details_settings'] as $field){
 
 			$mapped = $field['mapped'];
 			
 			if($field['type'] === 'normal'){
+				
 				$client_details_html .= '<p>';
+
 				if(strtolower($field['text']) === 'phone' || strtolower($field['text']) === 'gst/tax #' || strtolower($field['text']) === 'website'){
 					$client_details_html .= $field['text'].' :';
 				}else{
@@ -72,32 +80,36 @@ class InvoiceRenderer{
 				}
 				
 				foreach($mapped as $mapped_field){
+					
 					if(strtolower($field['text']) === 'country'){
-						$client_details_html .= ' '.$this->context['invoice_data']->client->billing_country->country_name;
+						$client_details_html .= ' '.$this->context['invoice_data']->client_wt->billing_country->country_name;
 					}else{
-						$client_details_html .= ' '.$this->context['invoice_data']->client[$mapped_field];
+						$client_details_html .= ' '.$this->context['invoice_data']->client_wt[$mapped_field];
 					}
 					
 				}
+
 				$client_details_html .= '</p>';
+
 			}else{
+				
 				$client_details_html .= '<p>'.$field['text'].' :';
+
 				foreach($this->context['client_custom_fields_values'] as $custom_field_value){
+					
 					if($field['clients_custom_field_id'] === $custom_field_value->clients_custom_field_id){
 						
 						$input_type = $custom_field_value->ClientsCustomField->customFieldType->input_type;
-						
-						if($input_type === config('global.field_types')[5]){ /* date */
-							$client_details_html .= $this->formatDateTime($custom_field_value->field_value);
-						}else if($input_type === config('global.field_types')[7]){ /* datetime */
-							$client_details_html .= $this->formatDateTime($custom_field_value->field_value, true);
-						}else if($input_type === config('global.field_types')[9]){ /* multiselect */
-							$client_details_html .= $this->formatMultiSelectValues($custom_field_value->field_value);
-						}else{
-							$client_details_html .= $custom_field_value->field_value;
-						}
+
+						$client_details_html .= match($input_type){
+							config('global.field_types')[5] => $this->formatDateTime($custom_field_value->field_value), /* date */
+							config('global.field_types')[7] => $this->formatDateTime($custom_field_value->field_value, true), /* datetime */
+							config('global.field_types')[9] => $this->formatMultiSelectValues($custom_field_value->field_value), /* multiselect */
+							default							=> $custom_field_value->field_value
+						};
 
 					}
+
 				}
 				$client_details_html .= '</p>';
 			}
@@ -106,10 +118,40 @@ class InvoiceRenderer{
 
 		$this->contents = str_ireplace('{{$render_client_details}}', $client_details_html, $this->contents);
 
+		return $this;
+
+	}
+
+
+	private function renderCompanyDetails(){
+
+		$company_details_html = '';
+
+		foreach($this->context['company_details_settings'] as $field){
+			
+			$mapped = $field['mapped'];
+
+			$company_details_html .= '<p>';
+
+			if(strtolower($field['text']) === 'phone' || strtolower($field['text']) === 'GST - VAT number'){
+				$company_details_html .= $field['text'].' :';
+			}else{
+				$company_details_html .= ' ';
+			}
+			
+			foreach($mapped as $mapped_field){
+				$company_details_html .= ' '.$this->context['invoice_data']->company_wt[$mapped_field];
+			}
+
+			$company_details_html .= '</p>';
+
+		}
+
+		$this->contents = str_ireplace('{{$render_company_details}}', $company_details_html, $this->contents);
 	}
 
 	public function render(){
-		$this->renderClientDetails();
+		$this->renderClientDetails()->renderCompanyDetails();
 		return $this->contents;
 	}
 

@@ -15,4 +15,16 @@ class Invoice extends Model{
 		return $this->belongsTo(Client::class, 'id');
 	}
 
+	public function client_wt(){
+		return $this->belongsTo(Client::class, 'id')->withTrashed();
+	}
+
+	public function company(){
+		return $this->belongsTo(Company::class, 'id');
+	}
+
+	public function company_wt(){
+		return $this->belongsTo(Company::class, 'id')->withTrashed();
+	}
+
 }

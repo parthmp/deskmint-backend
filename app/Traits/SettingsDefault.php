@@ -226,7 +226,7 @@
 						'id'		=>	6,
 						'text'		=>	'Phone',
 						'value'		=>	General::replaceWithUnderscores('phone'),
-						'mapped'	=>	['email'],
+						'mapped'	=>	['phone'],
 						'type'		=>	'normal'
 					]
 				],
