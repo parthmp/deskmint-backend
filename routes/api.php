@@ -120,8 +120,11 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-invoice-settings-company-details', [InvoiceSettingsCompanyDetailsController::class, 'show']);
 	Route::post('manage-invoice-settings-company-details', [InvoiceSettingsCompanyDetailsController::class, 'saveOrUpdate']);
 
+	/*
+	Disabled as company details settings already have all fields and data / keeping this as if this may require or needed in the future.
 	Route::get('manage-invoice-settings-company-address', [InvoiceSettingsCompanyAddressController::class, 'show']);
 	Route::post('manage-invoice-settings-company-address', [InvoiceSettingsCompanyAddressController::class, 'saveOrUpdate']);
+	*/
 
 	Route::get('manage-invoice-settings-invoice-details', [InvoiceSettingsInvoiceDetailsController::class, 'show']);
 	Route::post('manage-invoice-settings-invoice-details', [InvoiceSettingsInvoiceDetailsController::class, 'saveOrUpdate']);
