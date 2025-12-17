@@ -61,6 +61,7 @@ class InvoiceGenerator{
 	 * @return array
 	 */
 	private function generateContextArrayForRenderer() : array {
+
 		$context = [
 			'general'			=>	$this->invoice_settings_resolver->fetchGeneral(),
 			'client_details'	=>	$this->invoice_settings_resolver->fetchClientDetails(),
@@ -70,6 +71,8 @@ class InvoiceGenerator{
 			'invoice_data'		=>	$this->invoice_db_operations->fetchInvoiceRow(),
 			'total_fields'		=>	$this->invoice_settings_resolver->fetchTotalFieldsDetails(),
 		];
+
+		$context['client_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfClient((int) $context['invoice_data']['client_id']);
 
 		return $context;
 	}

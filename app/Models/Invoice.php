@@ -11,4 +11,8 @@ class Invoice extends Model{
 
 	protected $table = 'invoices';
 
+	public function client(){
+		return $this->belongsTo(Client::class, 'id');
+	}
+
 }

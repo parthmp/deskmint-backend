@@ -2,6 +2,8 @@
 
 namespace App\Modules\InvoiceGeneration;
 
+use App\Models\ClientCustomFieldValue;
+use App\Models\ClientsCustomField;
 use App\Models\Invoice;
 use App\Models\SettingsSection;
 use Illuminate\Database\Eloquent\Collection;
@@ -50,7 +52,7 @@ class InvoiceDBOperations{
 	 * @return SettingsSection|null
 	 */
 	public function fetchClientDetailsSettings() : SettingsSection|null {
-		return SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_INVOICE_COMPANY_DETAILS_TYPE]])->first();
+		return SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_INVOICE_CLIENT_DETAILS_TYPE]])->first();
 	}
 
 	/**
@@ -80,8 +82,23 @@ class InvoiceDBOperations{
 		return SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_INVOICE_DETAILS_TYPE]])->first();
 	}
 
+	/**
+	 * fetchTotalFieldsSettings function
+	 *
+	 * @return SettingsSection|null
+	 */
 	public function fetchTotalFieldsSettings() : SettingsSection|null {
 		return SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_INVOICE_TOTAL_FIELDS_TYPE]])->first();
+	}
+
+	/**
+	 * fetchCustomFieldsOfClient function
+	 *
+	 * @param integer $client_id
+	 * @return Collection|null
+	 */
+	public function fetchCustomFieldValuesOfClient(int $client_id) : Collection|null {
+		return ClientCustomFieldValue::where([['client_id', '=', $client_id]])->get();
 	}
 
 }
