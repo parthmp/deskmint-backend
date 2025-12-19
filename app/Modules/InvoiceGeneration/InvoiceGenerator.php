@@ -74,6 +74,7 @@ class InvoiceGenerator{
 		];
 
 		$context['client_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfClient((int) $context['invoice_data']['client_id']);
+		$context['invoice_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfInvoice();
 
 		return $context;
 	}

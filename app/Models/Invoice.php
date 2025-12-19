@@ -12,19 +12,19 @@ class Invoice extends Model{
 	protected $table = 'invoices';
 
 	public function client(){
-		return $this->belongsTo(Client::class, 'id');
+		return $this->belongsTo(Client::class, 'client_id');
 	}
 
 	public function client_wt(){
-		return $this->belongsTo(Client::class, 'id')->withTrashed();
+		return $this->belongsTo(Client::class, 'client_id')->withTrashed();
 	}
 
 	public function company(){
-		return $this->belongsTo(Company::class, 'id');
+		return $this->belongsTo(Company::class, 'company_id');
 	}
 
 	public function company_wt(){
-		return $this->belongsTo(Company::class, 'id')->withTrashed();
+		return $this->belongsTo(Company::class, 'company_id')->withTrashed();
 	}
 
 }

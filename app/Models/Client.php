@@ -13,7 +13,7 @@ class Client extends Model{
 	protected $table = 'clients';
 
 	public function billing_country(){
-		return $this->belongsTo(Country::class, 'billing_country_id', 'id',);
+		return $this->belongsTo(Country::class, 'billing_country_id', 'id');
 	}
 
 	public function shipping_country(){

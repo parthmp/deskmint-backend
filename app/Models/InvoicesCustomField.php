@@ -20,4 +20,8 @@ class InvoicesCustomField extends Model{
 		return $this->hasOne(InvoiceCustomFieldValue::class);
 	}
 
+	public function custom_field_type_wt(){
+		return $this->belongsTo(CustomFieldType::class, 'custom_field_type_id')->withTrashed();
+	}
+
 }

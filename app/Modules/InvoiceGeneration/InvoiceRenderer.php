@@ -31,7 +31,7 @@ class InvoiceRenderer{
 	 * @return string
 	 */
 	private function formatDateTime(string $date, bool $show_time = false) : string {
-
+		
 		$date_obj = Carbon::parse($date);
 
 		if($this->time_offset_minutes < 0){
@@ -54,8 +54,40 @@ class InvoiceRenderer{
 		$json_values = json_decode($values, true);
 		return str_ireplace("\n", ', ', $json_values[0]);
 	}
-
 	
+	/**
+	 * renderCustomFields function
+	 *
+	 * @param array $field
+	 * @param string $type
+	 * @return string
+	 */
+	private function renderCustomFields(array $field, string $type) : string{
+
+		$content = '<p>'.$field['text'].' :';
+
+		foreach($this->context[$type.'_custom_fields_values'] as $custom_field_value){
+			
+			if($field[$type.'s_custom_field_id'] === $custom_field_value->{$type.'s_custom_field_id'}){
+				
+				$input_type = $custom_field_value->{$type.'s_custom_field_wt'}->custom_field_type_wt->input_type;
+
+				$content .= match($input_type){
+					config('global.field_types')[5] => $this->formatDateTime($custom_field_value->field_value), /* date */
+					config('global.field_types')[7] => $this->formatDateTime($custom_field_value->field_value, true), /* datetime */
+					config('global.field_types')[9] => $this->formatMultiSelectValues($custom_field_value->field_value), /* multiselect */
+					default							=> $custom_field_value->field_value
+				};
+
+			}
+
+		}
+		$content .= '</p>';
+
+		return $content;
+
+	}
+
 	/**
 	 * renderClientDetails function
 	 *
@@ -92,26 +124,9 @@ class InvoiceRenderer{
 				$client_details_html .= '</p>';
 
 			}else{
-				
-				$client_details_html .= '<p>'.$field['text'].' :';
 
-				foreach($this->context['client_custom_fields_values'] as $custom_field_value){
-					
-					if($field['clients_custom_field_id'] === $custom_field_value->clients_custom_field_id){
-						
-						$input_type = $custom_field_value->clients_custom_field_wt->custom_field_type_wt->input_type;
+				$client_details_html .= $this->renderCustomFields($field, 'client');
 
-						$client_details_html .= match($input_type){
-							config('global.field_types')[5] => $this->formatDateTime($custom_field_value->field_value), /* date */
-							config('global.field_types')[7] => $this->formatDateTime($custom_field_value->field_value, true), /* datetime */
-							config('global.field_types')[9] => $this->formatMultiSelectValues($custom_field_value->field_value), /* multiselect */
-							default							=> $custom_field_value->field_value
-						};
-
-					}
-
-				}
-				$client_details_html .= '</p>';
 			}
 
 		}
@@ -179,20 +194,54 @@ class InvoiceRenderer{
 
 	}
 
-	// private function renderInvoiceDetails(){
+	/**
+	 * renderInvoiceDetails function
+	 *
+	 * @return InvoiceRenderer
+	 */
+	private function renderInvoiceDetails() : InvoiceRenderer{
 
-	// 	$invoice_details_html = '';
+		$invoice_details_html = '';
+		
+		foreach($this->context['invoice_details_settings'] as $field){
 
-	// 	foreach($this->context['invoice_details_settings'] as $field){
+			$mapped = $field['mapped'];
+			
+			if($field['type'] === 'normal'){
+				
+				$invoice_details_html .= '<p>';
 
-	// 	}
+				if(strtolower($field['text']) === 'phone' || strtolower($field['text']) === 'gst/tax #' || strtolower($field['text']) === 'website'){
+					$invoice_details_html .= $field['text'].' :';
+				}else{
+					$invoice_details_html .= ' ';
+				}
+				
+				foreach($mapped as $mapped_field){
+					$invoice_details_html .= $field['text'].' : '.$this->context['invoice_data'][$mapped_field];
+				}
 
-	// 	$this->contents = str_ireplace('{{$render_invoice_details}}', $invoice_details_html, $this->contents);
+				$lowercase_field_text = trim(strtolower($field['text']));
+				if($lowercase_field_text === 'total' || $lowercase_field_text === 'balance due'){
+					$invoice_details_html .= ' '.$this->context['invoice_data']->client_wt->currency->code;
+				}
 
-	// }
+				$invoice_details_html .= '</p>';
+
+			}else{
+				$invoice_details_html .= $this->renderCustomFields($field, 'invoice');
+			}
+
+		}
+
+		$this->contents = str_ireplace('{{$render_invoice_details}}', $invoice_details_html, $this->contents);
+
+		return $this;
+
+	}
 
 	public function render(){
-		$this->renderClientDetails()->renderCompanyDetails();
+		$this->renderClientDetails()->renderCompanyDetails()->renderInvoiceDetails();
 		return $this->contents;
 	}
 

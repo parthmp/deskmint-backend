@@ -6,6 +6,7 @@ use App\Models\AdditionalCompanyField;
 use App\Models\ClientCustomFieldValue;
 use App\Models\ClientsCustomField;
 use App\Models\Invoice;
+use App\Models\InvoiceCustomFieldValue;
 use App\Models\SettingsSection;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -109,6 +110,15 @@ class InvoiceDBOperations{
 	 */
 	public function fetchAdditionalCompanyFields() : Collection|null{
 		return AdditionalCompanyField::where('company_id', '=', $this->company_id)->withTrashed()->get();
+	}
+
+	/**
+	 * fetchCustomFieldValuesOfInvoice function
+	 *
+	 * @return Collection|null
+	 */
+	public function fetchCustomFieldValuesOfInvoice() : Collection|null {
+		return InvoiceCustomFieldValue::where([['invoice_id', '=', $this->invoice_id]])->withTrashed()->get();
 	}
 
 }

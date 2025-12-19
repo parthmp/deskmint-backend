@@ -374,15 +374,15 @@
 				'rows' => [
 					[
 						'id'		=>	1,
-						'text'		=>	'Number',
-						'value'		=>	General::replaceWithUnderscores('Number'),
+						'text'		=>	'Invoice #',
+						'value'		=>	General::replaceWithUnderscores('Invoice #'),
 						'mapped'	=>	['invoice_number'], /* from db */
 						'type'		=>	'normal'
 					],
 					[
 						'id'		=>	2,
-						'text'		=>	'date',
-						'value'		=>	General::replaceWithUnderscores('date'),
+						'text'		=>	'Date',
+						'value'		=>	General::replaceWithUnderscores('Date'),
 						'mapped'	=>	['invoice_date'],
 						'type'		=>	'normal'
 					],
@@ -409,13 +409,6 @@
 					]
 				],
 				'dropdown' => [
-					[
-						'id'		=>	1,
-						'text'		=>	'Amount',
-						'value'		=>	General::replaceWithUnderscores('Amount'),
-						'mapped'	=>	['amount'],
-						'type'		=>	'normal'
-					],
 					[
 						'id'		=>	2,
 						'text'		=>	'PO Number',
