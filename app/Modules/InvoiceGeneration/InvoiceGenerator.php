@@ -66,10 +66,11 @@ class InvoiceGenerator{
 			'general_settings'			=>	$this->invoice_settings_resolver->fetchGeneral(),
 			'client_details_settings'	=>	$this->invoice_settings_resolver->fetchClientDetails(),
 			'company_details_settings'	=>	$this->invoice_settings_resolver->fetchCompanyDetails(),
+			'additional_company_fields'	=>	$this->invoice_db_operations->fetchAdditionalCompanyFields(),
 			'company_address_settings'	=>	$this->invoice_settings_resolver->fetchCompanyAddressDetails(),
 			'invoice_details_settings'	=>	$this->invoice_settings_resolver->fetchInvoiceDetails(),
 			'invoice_data'				=>	$this->invoice_db_operations->fetchInvoiceRow(),
-			'total_fields_settings'		=>	$this->invoice_settings_resolver->fetchTotalFieldsDetails(),
+			'total_fields_settings'		=>	$this->invoice_settings_resolver->fetchTotalFieldsDetails()
 		];
 
 		$context['client_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfClient((int) $context['invoice_data']['client_id']);

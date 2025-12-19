@@ -122,33 +122,74 @@ class InvoiceRenderer{
 
 	}
 
-
-	private function renderCompanyDetails(){
+	/**
+	 * renderCompanyDetails function
+	 *
+	 * @return InvoiceRenderer
+	 */
+	private function renderCompanyDetails() : InvoiceRenderer {
 
 		$company_details_html = '';
-
+		
 		foreach($this->context['company_details_settings'] as $field){
 			
 			$mapped = $field['mapped'];
 
-			$company_details_html .= '<p>';
+			if($field['type'] === 'normal'){
 
-			if(strtolower($field['text']) === 'phone' || strtolower($field['text']) === 'GST - VAT number'){
-				$company_details_html .= $field['text'].' :';
+				$company_details_html .= '<p>';
+
+				if(strtolower($field['text']) === 'phone' || strtolower($field['text']) === 'GST - VAT number'){
+					$company_details_html .= $field['text'].' :';
+				}else{
+					$company_details_html .= ' ';
+				}
+				
+				foreach($mapped as $mapped_field){
+					$company_details_html .= ' '.$this->context['invoice_data']->company_wt[$mapped_field];
+				}
+
+				$company_details_html .= '</p>';
+
 			}else{
-				$company_details_html .= ' ';
-			}
-			
-			foreach($mapped as $mapped_field){
-				$company_details_html .= ' '.$this->context['invoice_data']->company_wt[$mapped_field];
+				
+				/**
+				 * process additional custom company fields here.
+				 */
+				$company_details_html .= '<p>';
+
+				foreach($this->context['additional_company_fields'] as $additional_company_field){
+					if($field['id_column'] === $additional_company_field->id){
+						$company_details_html .= $field['text'].' : ';
+						$company_details_html .= $additional_company_field->value;
+					}
+				}
+
+				$company_details_html .= '</p>';
+
 			}
 
-			$company_details_html .= '</p>';
+			
 
 		}
 
 		$this->contents = str_ireplace('{{$render_company_details}}', $company_details_html, $this->contents);
+
+		return $this;
+
 	}
+
+	// private function renderInvoiceDetails(){
+
+	// 	$invoice_details_html = '';
+
+	// 	foreach($this->context['invoice_details_settings'] as $field){
+
+	// 	}
+
+	// 	$this->contents = str_ireplace('{{$render_invoice_details}}', $invoice_details_html, $this->contents);
+
+	// }
 
 	public function render(){
 		$this->renderClientDetails()->renderCompanyDetails();

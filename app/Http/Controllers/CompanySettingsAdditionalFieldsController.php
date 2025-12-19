@@ -14,7 +14,7 @@ class CompanySettingsAdditionalFieldsController extends Controller{
 
 	public function show(Request $request){
 
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 		$company = General::fetchDefaultCompanyById($company_id);
 
 		$fields = $company->additional_fields->toArray() ? $company->additional_fields->toArray() : [];

@@ -2,6 +2,7 @@
 
 namespace App\Modules\InvoiceGeneration;
 
+use App\Models\AdditionalCompanyField;
 use App\Models\ClientCustomFieldValue;
 use App\Models\ClientsCustomField;
 use App\Models\Invoice;
@@ -99,6 +100,15 @@ class InvoiceDBOperations{
 	 */
 	public function fetchCustomFieldValuesOfClient(int $client_id) : Collection|null {
 		return ClientCustomFieldValue::where([['client_id', '=', $client_id]])->withTrashed()->get();
+	}
+
+	/**
+	 * fetchAdditionalCompanyFields function
+	 *
+	 * @return Collection|null
+	 */
+	public function fetchAdditionalCompanyFields() : Collection|null{
+		return AdditionalCompanyField::where('company_id', '=', $this->company_id)->withTrashed()->get();
 	}
 
 }
