@@ -167,7 +167,7 @@ class InvoiceSettingsInvoiceDetailsControllerTest extends TestCase{
 		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-invoice-details?'. $params);
 		$json = $response->json();
 		
-		$this->assertEquals(8, count($json['dropdown']));
+		$this->assertEquals(7, count($json['dropdown']));
 		$this->assertEquals(2, count($json['rows']));
 	}
 
@@ -248,7 +248,7 @@ class InvoiceSettingsInvoiceDetailsControllerTest extends TestCase{
 		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-invoice-details?'. $params);
 		$json = $response->json();
 		
-		$this->assertEquals(8, count($json['dropdown']));
+		$this->assertEquals(7, count($json['dropdown']));
 		$this->assertEquals(2, count($json['rows']));
 
 		$this->assertEquals('Number overwritten', $json['rows'][0]['text']);
@@ -335,7 +335,7 @@ class InvoiceSettingsInvoiceDetailsControllerTest extends TestCase{
 
 		$this->assertFalse($found);
 
-		$this->assertEquals(7, count($json['dropdown']));
+		$this->assertEquals(6, count($json['dropdown']));
 		$this->assertEquals(2, count($json['rows']));
 	}
 

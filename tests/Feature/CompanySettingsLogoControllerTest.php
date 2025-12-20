@@ -24,6 +24,7 @@ class CompanySettingsLogoControllerTest extends TestCase{
 		$c = $this->set_access($device);
 
 		Company::truncate();
+		Storage::fake('public');
 
 		/* creating company this way instead of using factory for to check for default fields */
 		$company_id = $this->createTemporaryCompany();
@@ -37,7 +38,7 @@ class CompanySettingsLogoControllerTest extends TestCase{
 		$response->assertStatus(200);
 
 		$json = $response->json();
-
+		
 		$this->assertEmpty($json['url']);
 
 	}

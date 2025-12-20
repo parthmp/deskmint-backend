@@ -424,7 +424,7 @@ class ForgotPasswordControllerTest extends TestCase{
 
 	public function test_reset_code_throttle_limits_requests_per_ip(){
         
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < 20; $i++) {
             $response = $this->post('/api/reset-password', [
 				'reset_code' 			=> 	'RESETCODE123',
 				'password'				=>	'123456pass',

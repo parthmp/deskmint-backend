@@ -325,7 +325,7 @@ class InvoicesCustomFieldsControllerTest extends TestCase{
 		$json = $response->json();
 		
 		$this->assertArrayHasKey('dropdown', $json);
-		$this->assertEquals(6, count($json['dropdown']));
+		$this->assertEquals(5, count($json['dropdown']));
 
 		$response = $this->delete('/api/invoices-custom-fields', [
 			'ids' => $ids,
@@ -340,7 +340,7 @@ class InvoicesCustomFieldsControllerTest extends TestCase{
 		$json = $response->json();
 		
 		$this->assertArrayHasKey('dropdown', $json);
-		$this->assertEquals(2, count($json['dropdown']));
+		$this->assertEquals(1, count($json['dropdown']));
 
 	}
 

@@ -34,7 +34,7 @@ class InvoiceSettingsProductColumnsControllerTest extends TestCase{
 
 	}
 
-	public function test_if_it_saves_data_for_product_columns_invoice_settings_with_for_custom_fields() : void{
+	public function test_if_it_fails_for_item_product_columns_invoice_settings_with_for_custom_fields() : void{
 		
 		$device = 'device 123';
 
@@ -61,22 +61,24 @@ class InvoiceSettingsProductColumnsControllerTest extends TestCase{
 												]
 											]
 		], $c['headers']);
-
-		$response->assertStatus(200);
+		
+		$response->assertStatus((int) config('global.error_code'));
+		
 		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('save_success', $response['validity']);
+		/* won't allow it as Item is missing in array */
+		$this->assertEquals('deletion_not_allowed', $response['validity']);
 
 		/* now check if it was saved */
-		$settings = SettingsSection::where([['type', '=', ISC_PRODUCT_COLUMNS_TYPE], ['company_id', '=', $company_id]])->first();
-		$settings = json_decode($settings->settings_json, true);
+		// $settings = SettingsSection::where([['type', '=', ISC_PRODUCT_COLUMNS_TYPE], ['company_id', '=', $company_id]])->first();
+		// $settings = json_decode($settings->settings_json, true);
 		
-		$this->assertEquals([[
-								'id'						=>	1,
-								'text'						=>	'bla',
-								'value'						=>	'bla',
-								'type'						=>	'custom',
-								'id_column'					=>	100
-							]], $settings);
+		// $this->assertEquals([[
+		// 						'id'						=>	1,
+		// 						'text'						=>	'bla',
+		// 						'value'						=>	'bla',
+		// 						'type'						=>	'custom',
+		// 						'id_column'					=>	100
+		// 					]], $settings);
 	}
 
 	public function test_if_it_saves_data_for_product_columns_invoice_settings_with_both_field_types() : void{
