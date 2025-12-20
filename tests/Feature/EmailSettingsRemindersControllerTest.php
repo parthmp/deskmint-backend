@@ -74,7 +74,7 @@ class EmailSettingsRemindersControllerTest extends TestCase{
 		$this->assertEquals('saved_success', $json['validity']);
 		
 		$json = $this->fetch_data_for_email_reminders_settings($c, $company_id);
-
+		
 		$this->assertEquals(50, $json['send_n_times']);
 		$this->assertEquals(0, $json['days_gap']);
 

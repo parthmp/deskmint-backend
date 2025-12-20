@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\DiClasses\ArrangedFields\SettingsArrangedFields;
-use App\DiClasses\ArrangedFields\TotalFields;
+use App\FieldDefinitions\ArrangedFields\SettingsArrangedFields;
+use App\FieldDefinitions\ArrangedFields\TotalFields;
 use App\Helpers\Sanitize;
 use App\Traits\SettingsDefault;
 use Illuminate\Http\Request;

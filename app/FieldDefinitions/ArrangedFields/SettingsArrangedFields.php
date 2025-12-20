@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DiClasses\ArrangedFields;
+namespace App\FieldDefinitions\ArrangedFields;
 
 use App\Helpers\General;
 use App\Helpers\Sanitize;

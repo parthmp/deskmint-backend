@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\DiClasses\ArrangedFields\CompanyAddressFields;
-use App\DiClasses\ArrangedFields\SettingsArrangedFields;
+use App\FieldDefinitions\ArrangedFields\CompanyAddressFields;
+use App\FieldDefinitions\ArrangedFields\SettingsArrangedFields;
 use App\Helpers\Sanitize;
 use App\Models\AdditionalCompanyField;
 use Illuminate\Http\Request;

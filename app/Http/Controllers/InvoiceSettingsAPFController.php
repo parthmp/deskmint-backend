@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\DiClasses\ArrangedFields\ProductColumnsFields;
-use App\DiClasses\ArrangedFields\SettingsArrangedFields;
+use App\FieldDefinitions\ArrangedFields\ProductColumnsFields;
+use App\FieldDefinitions\ArrangedFields\SettingsArrangedFields;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\AdditionalProductColumnsField;

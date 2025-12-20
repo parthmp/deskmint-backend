@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\DiClasses\ArrangedFields\ClientsDetailsFields;
-use App\DiClasses\ArrangedFields\SettingsArrangedFields;
+use App\FieldDefinitions\ArrangedFields\ClientsDetailsFields;
+use App\FieldDefinitions\ArrangedFields\SettingsArrangedFields;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\ClientsCustomField;

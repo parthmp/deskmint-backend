@@ -3,186 +3,89 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\General;
-use App\Helpers\Sanitize;
+use App\Http\Requests\CreateAdminRequest;
+use App\Http\Requests\UpdateAdminRequest;
 use App\Models\User;
-use App\Traits\GeneralDelete;
+use App\Services\Admin\AdminService;
+use App\Services\DeleteService;
+use Doctrine\DBAL\Query\QueryException;
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Response;
 
 class AdminController extends Controller{
 
-	use GeneralDelete;
-    
-	public function index(Request $request){
-
-		$users = User::where('user_type', '=', config('global.user_types.admin'))->orderBy('name', 'asc')->get();
-
-		return [
-			'columns' => [
-				[
-					'label' => 	'name',
-					'text'	=>	'Name'
-				],
-				[
-					'label'	=>	'email',
-					'text'	=>	'Email'
-				],
-				[
-					'label'	=>	'created_at',
-					'text'	=>	'Added on'
-				],
-				[
-					'label'	=>	'actions',
-					'text'	=>	'Actions'
-				]
-			],
-			'rows' => $users
-		];
+	public function __construct(private AdminService $admin_service, private DeleteService $delete_service){
 
 	}
+    
+	/**
+	 * index function
+	 *
+	 * @param Request $request
+	 * @return Response|array
+	 */
+	public function index(Request $request) : Response|array {
+		return $this->admin_service->fetchIndex();
+	}
 
-	public function store(Request $request){
 
-		$v = Validator::make($request->all(), [
-			'name'				=>	'required',
-			'email'				=>	'required|email',
-			'password'			=>	'required|min:8',
-			'confirm_password'	=>	'required|min:8'
-		]);
-
-		if($v->fails()){
-			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
-		}
-
-		$name = Sanitize::input($request->input('name'));
-		$email = Sanitize::input($request->input('email'));
-		$password = $request->input('password');
-		$confirm_password = $request->input('confirm_password');
-
-		if($password !== $confirm_password){
-			return response(['message' => 'Password and confirm password do not match', 'validity' => 'passwords_not_matched'], config('global.error_code'));
-		}
-
-		$exists = User::where('email', '=', $email)->first();
-		if($exists){
-			return response(['message' => 'Email address already exists', 'validity' => 'email_exists'], config('global.error_code'));
-		}
+	public function store(CreateAdminRequest $request): mixed {
 
 		try{
-
-			$user = new User();
-			$user->name = $name;
-			$user->email = $email;
-			$user->password = Hash::make($password);
-			$user->user_type = config('global.user_types.admin');
-			$user->save();
-
+			
+			$this->admin_service->create($request->validated());
 			return response(['message' => 'Admin created successfully', 'validity' => 'admin_created'], 200);
 
-		}catch(Exception $e){
-			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], 500);
-		}
+		}catch(QueryException $e){
 
-	}
-
-	private function findUser(Request $request){
-
-		$admin_id = $request->segment(3);
-
-		$admin = User::where([['id', '=', $admin_id], ['user_type', '=', config('global.user_types.admin')]])->first();
-
-		if(!$admin){
-			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
-		}
-
-		return $admin;
-
-	}
-
-	public function	show(Request $request){
-
-		$admin = $this->findUser($request);
-
-		return $admin;
-
-	}
-
-	public function	update(Request $request){
-		
-		$admin = $this->findUser($request);
-
-		if($admin instanceof \Illuminate\Http\Response){
-        	return $admin;
-    	}
-
-		$required_array = [
-			'name'		=>		'required',
-			'email'		=>		'required|email'
-		];
-
-		
-		$update_password = false;
-
-		if($request->filled('password') || $request->filled('confirm_password')){
-			$required_array['password'] = 'required|min:8';
-			$required_array['confirm_password'] = 'required|min:8';
-			$update_password = true;
-		}
-
-		$v = Validator::make($request->all(), $required_array);
-
-		if($v->fails()){
-			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
-		}
-
-		$name = Sanitize::input($request->input('name'));
-		$email = Sanitize::input($request->input('email'));
-		$password = $request->input('password');
-		$confirm_password = $request->input('confirm_password');
-
-		if($update_password && $password !== $confirm_password){
-			return response(['message' => 'Password and confirm password do not match', 'validity' => 'passwords_not_matched'], config('global.error_code'));
-		}
-
-		$exists = User::where([['email', '=', $email], ['id', '<>', $admin->id]])->first();
-		if($exists){
-			return response(['message' => 'Email address already exists', 'validity' => 'email_exists'], config('global.error_code'));
-		}
-
-		try{
-
-			$admin->name = $name;
-			$admin->email = $email;
-			if($update_password){
-				$admin->password = Hash::make($password);
+			if(str_contains($e->getMessage(), 'Duplicate entry')){
+				return response(['message' => 'Email already exists', 'validity' => 'email_exists'], config('global.error_code'));
 			}
+
+			return General::wentWrong();
+
+		}catch(Exception $e){
+
+			return General::wentWrong();
 			
-			if(!$admin->save()){
-				return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], config('global.error_code'));
-			}
-
-			return response(['message' => 'Admin updated successfully', 'validity' => 'admin_updated'], 200);
-
-		}catch(Exception $e){
-			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], 500);
 		}
 
+		
+	}
 
+	public function update(UpdateAdminRequest $request, int $id): mixed {
+		try {
+			$this->admin_service->update($request->validated(), $id);
+			return response(['message' => 'Admin updated successfully', 'validity' => 'admin_updated'], 200);
+		}catch(ModelNotFoundException $e){
+			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+	}
+
+	/**
+	 * show function
+	 *
+	 * @param Request $request
+	 * @param integer $id
+	 * @return Response|User
+	 */
+	public function	show(Request $request, int $id) : Response|User {
+		return $this->admin_service->fetchById($id);
 	}
 
 	public function destroy(Request $request){
 
 		try{
 
-			$response = $this->deleteByIds($request, User::class, 'Admin');
+			$response = $this->delete_service->deleteByIds($request, User::class, 'Admin');
 			return response($response[0], $response[1]);
 
 		}catch(Exception $e){
-
 			return General::wentWrong();
-
 		}
 
 	}

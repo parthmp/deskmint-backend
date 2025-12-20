@@ -76,9 +76,16 @@ class AdminControllerTest extends TestCase{
 		], $headers);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_request', $response['validity']);
-
+		$response = $response->json();
+		
+		$this->assertArrayHasKey('errors', $response);
+		$this->assertArrayHasKey('email', $response['errors']);
+		$this->assertArrayHasKey('name', $response['errors']);
+		$this->assertArrayHasKey('password', $response['errors']);
+		$this->assertEquals(1, count($response['errors']['email']));
+		$this->assertEquals(1, count($response['errors']['name']));
+		$this->assertEquals(1, count($response['errors']['password']));
+		
 	}
 
 	public function test_if_authorized_admin_fails_to_create_admin_with_invalid_data_2(){
@@ -101,8 +108,11 @@ class AdminControllerTest extends TestCase{
 		], $headers);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_request', $response['validity']);
+		
+		$response = $response->json();
+		$this->assertArrayHasKey('errors', $response);
+		$this->assertArrayHasKey('email', $response['errors']);
+		$this->assertEquals(2, count($response['errors']['email']));
 
 	}
 
@@ -126,8 +136,9 @@ class AdminControllerTest extends TestCase{
 		], $headers);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('passwords_not_matched', $response['validity']);
+		
+		$this->assertArrayHasKey('message', $response);
+		$this->assertEquals('Password and confirm password do not match', $response['message']);
 
 	}
 
@@ -149,10 +160,10 @@ class AdminControllerTest extends TestCase{
 			'confirm_password'	=>	'password123',
 			'company_id'		=>	$company_id
 		], $this->headers($user, $device));
-
+		
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('email_exists', $response['validity']);
+		$this->assertArrayHasKey('message', $response);
+		$this->assertEquals('The email has already been taken.', $response['message']);
 
 	}
 
@@ -243,8 +254,10 @@ class AdminControllerTest extends TestCase{
 			'confirm_password'	=>	'password123',
 			'company_id'		=>	$company_id
 		], $c['headers']);
-
+		
 		$response->assertStatus((int)config('global.error_code'));
+		$response = $response->json();
+		
 		$this->assertArrayHasKey('validity', $response);
 		$this->assertEquals('invalid_request', $response['validity']);
 
@@ -278,8 +291,10 @@ class AdminControllerTest extends TestCase{
 		], $headers);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('email_exists', $response['validity']);
+		
+		$json = $response->json();
+		$this->assertArrayHasKey('email', $json['errors']);
+		$this->assertEquals(1, count($json['errors']['email']));
 
 	}
 
@@ -310,9 +325,14 @@ class AdminControllerTest extends TestCase{
 		], $headers);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('passwords_not_matched', $response['validity']);
-
+		
+		$response = $response->json();
+		$this->assertArrayHasKey('errors', $response);
+		$this->assertArrayHasKey('password', $response['errors']);
+		$this->assertArrayHasKey('confirm_password', $response['errors']);
+		$this->assertEquals(1, count($response['errors']['password']));
+		$this->assertEquals(1, count($response['errors']['confirm_password']));
+		
 	}
 
 	public function test_if_authorized_admin_able_to_update_an_admin_with_same_email(){
@@ -491,9 +511,11 @@ class AdminControllerTest extends TestCase{
 		], $headers);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_request', $response['validity']);
-
+		$response = $response->json();
+		$this->assertArrayHasKey('errors', $response);
+		$this->assertArrayHasKey('password', $response['errors']);
+		$this->assertEquals(2, count($response['errors']['password']));
+		
 	}
 
 	public function test_if_authorized_admin_fails_to_update_with_invalid_password_fields_2(){
@@ -523,10 +545,13 @@ class AdminControllerTest extends TestCase{
 			'confirm_password'	=>	'123',
 			'company_id'		=>	$company_id
 		], $headers);
-
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_request', $response['validity']);
+		$response = $response->json();
+		
+		$this->assertArrayHasKey('message', $response);
+		$this->assertArrayHasKey('errors', $response);
+		$this->assertEquals(1, count($response['errors']['password']));
+		$this->assertEquals(2, count($response['errors']['confirm_password']));
 
 	}
 
@@ -576,7 +601,7 @@ class AdminControllerTest extends TestCase{
 
 		$response->assertStatus((int)config('global.error_code'));
 		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('non_numeric', $response['validity']);
+		$this->assertEquals('invalid_ids', $response['validity']);
 
 	}
 
