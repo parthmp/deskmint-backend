@@ -20,6 +20,7 @@ class AdminService{
 	 * __construct function
 	 *
 	 * @param AdminRepository $admin_repository
+	 * @param UserRepository $user_repository
 	 */
 	public function __construct(private AdminRepository $admin_repository, private UserRepository $user_repository){
 		

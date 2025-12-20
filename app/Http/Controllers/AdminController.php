@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\General;
-use App\Http\Requests\CreateAdminRequest;
-use App\Http\Requests\UpdateAdminRequest;
+use App\Http\Requests\Admin\CreateAdminRequest;
+use App\Http\Requests\Admin\UpdateAdminRequest;
 use App\Models\User;
 use App\Services\Admin\AdminService;
 use App\Services\DeleteService;

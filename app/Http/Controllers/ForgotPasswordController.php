@@ -32,7 +32,7 @@ class ForgotPasswordController extends Controller{
 			return response(['message' 	=> 	'Invalid request', 'validity'	=>	'invalid_turnstile'], config('global.error_code'));
 		}
 			
-		$email_address = strtolower(Sanitize::input($request->input('email_address')));
+		$email_address = strtolower((string) Sanitize::input($request->input('email_address')));
 		$device = Sanitize::input($request->input('device'));
 
 		$user = User::where('email', '=', $email_address)->first();
