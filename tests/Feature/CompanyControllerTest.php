@@ -69,10 +69,13 @@ class CompanyControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-		
-		
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_request', $response['validity']);
+
+		$response = $response->json();
+
+		$this->assertArrayHasKey('message', $response);
+		$this->assertArrayHasKey('errors', $response);
+		$this->assertArrayHasKey('company_name', $response['errors']);
+		$this->assertEquals(1, (int) count($response['errors']['company_name']));
 
     }
 
@@ -89,9 +92,10 @@ class CompanyControllerTest extends TestCase{
 
 		$response->assertStatus((int)config('global.error_code'));
 		
-		
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_request', $response['validity']);
+		$this->assertArrayHasKey('message', $response);
+		$this->assertArrayHasKey('errors', $response);
+		$this->assertArrayHasKey('company_name', $response['errors']);
+		$this->assertEquals(1, (int) count($response['errors']['company_name']));
 
     }
 
