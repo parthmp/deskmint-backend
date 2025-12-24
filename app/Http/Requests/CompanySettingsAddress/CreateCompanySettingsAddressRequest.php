@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\CompanySettingsAddress;
 
 use App\Helpers\Sanitize;
 use Illuminate\Foundation\Http\FormRequest;
@@ -32,11 +32,6 @@ class CreateCompanySettingsAddressRequest extends FormRequest
 			$apt = Sanitize::input($this->input('apt'));
 		}
 
-		$street = '';
-		if($this->filled('address_street')){
-			$street = Sanitize::input($this->input('address_street'));
-		}
-
 		$city = '';
 		if($this->filled('city')){
 			$city = Sanitize::input($this->input('city'));
@@ -62,7 +57,6 @@ class CreateCompanySettingsAddressRequest extends FormRequest
 		$this->merge([
 			'address_street'	=>	$address_street,
 			'apt'				=>	$apt,
-			'address_street'	=>	$street,
 			'city'				=>	$city,
 			'state'				=>	$state,
 			'postal_code'		=>	$postal_code,

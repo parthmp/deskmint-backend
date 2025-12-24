@@ -4,52 +4,48 @@ namespace App\Http\Controllers;
 
 use App\Helpers\General;
 use App\Helpers\Sanitize;
+use App\Http\Requests\CompanySettingsDefault\CreateCompanySettingsDefaultRequest;
+use App\Services\CompanySettingsDefaults\CompanySettingsDefaultsService;
 use Exception;
 use Illuminate\Http\Request;
 
 class CompanySettingsDefaultsController extends Controller{
 
-	public function show(Request $request){
-
-		$company_id = Sanitize::input($request->input('company_id'));
-		$company = General::fetchDefaultCompanyById($company_id);
-
-		return [
-			'invoice_terms' 	=> $company->invoice_terms,
-			'invoice_footer'	=> $company->invoice_footer,
-		];
+	public function __construct(private CompanySettingsDefaultsService $company_settings_defaults_service){
 
 	}
 
-	public function saveOrUpdate(Request $request){
+	public function show(Request $request){
 
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 
 		try{
 
-			$invoice_terms = '';
-			if($request->filled('invoice_terms')){
-				$invoice_terms = Sanitize::input($request->input('invoice_terms'));
-			}
+			$company = $this->company_settings_defaults_service->fetch($company_id);
 
-			$invoice_footer = '';
-			if($request->filled('invoice_footer')){
-				$invoice_footer = Sanitize::input($request->input('invoice_footer'));
-			}
+			return [
+				'invoice_terms' 	=> $company->invoice_terms,
+				'invoice_footer'	=> $company->invoice_footer,
+			];
 
-			$company = General::fetchDefaultCompanyById($company_id);
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
-			$company->invoice_terms = $invoice_terms;
-			$company->invoice_footer = $invoice_footer;
+	}
 
-			if($company->save()){
+	public function upsert(CreateCompanySettingsDefaultRequest $request){
+
+		try{
+
+			if($this->company_settings_defaults_service->update($request->validated())){
 				return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
 			}
 
-		}catch(Exception $e){
-
 			return General::wentWrong();
 
+		}catch(Exception $e){
+			return General::wentWrong();
 		}
 
 	}

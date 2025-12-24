@@ -110,7 +110,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::delete('manage-company-settings-logo', [CompanySettingsLogoController::class, 'destroy']);
 
 	Route::get('manage-company-settings-defaults', [CompanySettingsDefaultsController::class, 'show']);
-	Route::post('manage-company-settings-defaults', [CompanySettingsDefaultsController::class, 'saveOrUpdate']);
+	Route::post('manage-company-settings-defaults', [CompanySettingsDefaultsController::class, 'upsert']);
 
 	Route::get('manage-company-settings-additional-fields', [CompanySettingsAdditionalFieldsController::class, 'show']);
 	Route::post('manage-company-settings-additional-fields', [CompanySettingsAdditionalFieldsController::class, 'upsert']);

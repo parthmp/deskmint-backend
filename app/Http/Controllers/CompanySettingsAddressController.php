@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\General;
 use App\Helpers\Sanitize;
-use App\Http\Requests\CreateCompanySettingsAddressRequest;
+use App\Http\Requests\CompanySettingsAddress\CreateCompanySettingsAddressRequest;
 use App\Services\CompanySettingsAddress\CompanySettingsAddressService;
 use Exception;
 use Illuminate\Http\Request;
