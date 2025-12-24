@@ -14,6 +14,12 @@ class CompanySettingsAddressService{
 
 	}
 
+	/**
+	 * fetch function
+	 *
+	 * @param integer $company_id
+	 * @return Company|null
+	 */
 	public function fetch(int $company_id) : Company|null {
 
 		$company = $this->company_repository->fetchDefaultById($company_id);
@@ -26,10 +32,21 @@ class CompanySettingsAddressService{
 
 	}
 
+	/**
+	 * fetchCountries function
+	 *
+	 * @return Collection|null
+	 */
 	public function fetchCountries() : Collection|null {
 		return $this->country_repository->fetchSorted();
 	}
 
+	/**
+	 * update function
+	 *
+	 * @param array $data
+	 * @return void
+	 */
 	public function update(array $data){
 
 		$company = $this->fetch((int) $data['company_id']);
