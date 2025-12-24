@@ -42,7 +42,7 @@ class AdminService{
 				[
 					'label'	=>	'email',
 					'text'	=>	'Email'
-				],
+			],
 				[
 					'label'	=>	'created_at',
 					'text'	=>	'Added on'
@@ -96,12 +96,12 @@ class AdminService{
 	}
 
 	/**
-	 * fetchById function
+	 * fetch function
 	 *
 	 * @param integer $id
 	 * @return Response|User
 	 */
-	public function fetchById(int $id) : Response|User {
+	public function fetch(int $id) : Response|User {
 		
 		$admin = $this->admin_repository->fetchById($id);
 

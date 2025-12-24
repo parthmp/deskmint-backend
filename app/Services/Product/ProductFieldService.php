@@ -48,10 +48,9 @@ class ProductFieldService{
 	/**
 	 * prepareInsertData function
 	 *
-	 * @param array $productRows
-	 * @param array $settingsSnapshot
-	 * @param integer $companyId
-	 * @param integer $invoiceId
+	 * @param array $product_rows
+	 * @param integer $company_id
+	 * @param integer $invoice_id
 	 * @return array
 	 */
 	protected function prepareInsertData(array $product_rows, int $company_id, int $invoice_id): array {

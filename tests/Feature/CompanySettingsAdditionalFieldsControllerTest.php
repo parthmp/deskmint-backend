@@ -53,8 +53,10 @@ class CompanySettingsAdditionalFieldsControllerTest extends TestCase{
 
 		$json = $response->json();
 		
-		$this->assertArrayHasKey('validity', $json);
-		$this->assertEquals('invalid_data', $json['validity']);
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertArrayHasKey('all_fields', $json['errors']);
+		$this->assertEquals(1, count($json['errors']['all_fields']));
 
 	}
 
@@ -76,8 +78,10 @@ class CompanySettingsAdditionalFieldsControllerTest extends TestCase{
 
 		$json = $response->json();
 		
-		$this->assertArrayHasKey('validity', $json);
-		$this->assertEquals('invalid_data', $json['validity']);
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertArrayHasKey('all_fields', $json['errors']);
+		$this->assertEquals(1, count($json['errors']['all_fields']));
 
 	}
 
@@ -103,8 +107,10 @@ class CompanySettingsAdditionalFieldsControllerTest extends TestCase{
 
 		$json = $response->json();
 		
-		$this->assertArrayHasKey('validity', $json);
-		$this->assertEquals('invalid_data', $json['validity']);
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertArrayHasKey('all_fields.0.label', $json['errors']);
+		$this->assertEquals(1, count($json['errors']['all_fields.0.label']));
 
 	}
 
@@ -130,9 +136,10 @@ class CompanySettingsAdditionalFieldsControllerTest extends TestCase{
 		$response->assertStatus((int) config('global.error_code'));
 
 		$json = $response->json();
-		
-		$this->assertArrayHasKey('validity', $json);
-		$this->assertEquals('invalid_data', $json['validity']);
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertArrayHasKey('all_fields.0.label', $json['errors']);
+		$this->assertEquals(1, count($json['errors']['all_fields.0.label']));
 
 	}
 
@@ -160,7 +167,7 @@ class CompanySettingsAdditionalFieldsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus(200);
-
+		
 		$json = $response->json();
 		
 		$this->assertArrayHasKey('validity', $json);
@@ -284,8 +291,10 @@ class CompanySettingsAdditionalFieldsControllerTest extends TestCase{
 
 		$json = $response->json();
 		
-		$this->assertArrayHasKey('validity', $json);
-		$this->assertEquals('invalid_data', $json['validity']);
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertArrayHasKey('id', $json['errors']);
+		$this->assertEquals(1, count($json['errors']['id']));
 
 	}
 

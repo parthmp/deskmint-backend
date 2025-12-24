@@ -16,6 +16,16 @@ class CompanyRepository{
 	}
 
 	/**
+	 * fetchDefaultById function
+	 *
+	 * @param integer $company_id
+	 * @return Company|null
+	 */
+	public function fetchDefaultById(int $company_id) : Company|null {
+		return Company::where([['id', '=', $company_id], ['default', '=', 1]])->first();
+	}
+
+	/**
 	 * create function
 	 *
 	 * @param string $company_name

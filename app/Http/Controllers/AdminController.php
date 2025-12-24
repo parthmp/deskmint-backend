@@ -74,7 +74,7 @@ class AdminController extends Controller{
 	 * @return Response|User
 	 */
 	public function	show(Request $request, int $id) : Response|User {
-		return $this->admin_service->fetchById($id);
+		return $this->admin_service->fetch($id);
 	}
 
 	public function destroy(Request $request){
