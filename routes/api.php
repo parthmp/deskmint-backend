@@ -103,7 +103,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::post('manage-company-settings-details', [CompanySettingsDetailsController::class, 'saveOrUpdate']);
 
 	Route::get('manage-company-settings-address', [CompanySettingsAddressController::class, 'show']);
-	Route::post('manage-company-settings-address', [CompanySettingsAddressController::class, 'saveOrUpdate']);
+	Route::post('manage-company-settings-address', [CompanySettingsAddressController::class, 'upsert']);
 
 	Route::get('manage-company-settings-logo', [CompanySettingsLogoController::class, 'show']);
 	Route::post('manage-company-settings-logo', [CompanySettingsLogoController::class, 'saveOrUpdate']);

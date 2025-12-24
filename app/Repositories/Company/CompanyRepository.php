@@ -50,4 +50,16 @@ class CompanyRepository{
 
 	}
 
+	public function updateByObj(array $data, Company $company) : bool {
+
+		$company->address_street = $data['address_street'];
+		$company->apt = $data['apt'];
+		$company->city = $data['city'];
+		$company->state = $data['state'];
+		$company->postal_code = $data['postal_code'];
+		$company->country_id = $data['country_id'];
+		return $company->save();
+
+	}
+
 }
