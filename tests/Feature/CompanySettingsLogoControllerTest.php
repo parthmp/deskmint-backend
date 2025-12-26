@@ -65,9 +65,11 @@ class CompanySettingsLogoControllerTest extends TestCase{
 		$response->assertStatus((int) config('global.error_code'));
 
 		$json = $response->json();
-
-		$this->assertArrayHasKey('validity', $json);
-		$this->assertEquals('invalid_file', $json['validity']);
+		
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertArrayHasKey('logo', $json['errors']);
+		$this->assertEquals(2, (int) count($json['errors']['logo']));
 
 	}
 
@@ -93,9 +95,10 @@ class CompanySettingsLogoControllerTest extends TestCase{
 		$response->assertStatus((int) config('global.error_code'));
 
 		$json = $response->json();
-
-		$this->assertArrayHasKey('validity', $json);
-		$this->assertEquals('invalid_file', $json['validity']);
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertArrayHasKey('logo', $json['errors']);
+		$this->assertEquals(2, (int) count($json['errors']['logo']));
 
 	}
 
@@ -122,9 +125,11 @@ class CompanySettingsLogoControllerTest extends TestCase{
 		$response->assertStatus((int) config('global.error_code'));
 
 		$json = $response->json();
-
-		$this->assertArrayHasKey('validity', $json);
-		$this->assertEquals('invalid_file', $json['validity']);
+		
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertArrayHasKey('logo', $json['errors']);
+		$this->assertEquals(1, (int) count($json['errors']['logo']));
 
 	}
 
@@ -148,9 +153,10 @@ class CompanySettingsLogoControllerTest extends TestCase{
 		$response->assertStatus((int) config('global.error_code'));
 
 		$json = $response->json();
-
-		$this->assertArrayHasKey('validity', $json);
-		$this->assertEquals('invalid_file', $json['validity']);
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertArrayHasKey('logo', $json['errors']);
+		$this->assertEquals(1, (int) count($json['errors']['logo']));
 
 	}
 

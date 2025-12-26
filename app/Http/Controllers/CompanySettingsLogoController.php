@@ -8,8 +8,7 @@ use App\Http\Requests\CompanySettingsLogo\CreateCompanySettingsLogoRequest;
 use App\Services\CompanySettingsLogo\CompanySettingsLogoService;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Response;
 
 class CompanySettingsLogoController extends Controller{
 
@@ -18,8 +17,13 @@ class CompanySettingsLogoController extends Controller{
 		
 	}
 
-
-	public function show(Request $request){
+	/**
+	 * show function
+	 *
+	 * @param Request $request
+	 * @return array
+	 */
+	public function show(Request $request) : array {
 
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 
@@ -30,37 +34,49 @@ class CompanySettingsLogoController extends Controller{
 		];
 
 	}
-    
-	public function upsert(CreateCompanySettingsLogoRequest $request){
+	
+	/**
+	 * upsert function
+	 *
+	 * @param CreateCompanySettingsLogoRequest $request
+	 * @return Response
+	 */
+	public function upsert(CreateCompanySettingsLogoRequest $request) : Response {
 
 		$data = $request->validated();
 
-		$this->company_settings_logo_service->updateCompanyLogo([
-			'company_id'	=>	$data['company_id'],
-			'logo'			=>	$request->file('logo')
-		]);
+		try{
+			
+			if($this->company_settings_logo_service->update(['company_id' => $data['company_id'], 'logo' => $request->file('logo')])){
+				return response(['message' => 'Logo saved successfully', 'validity' => 'upload_success'], 200);
+			}
+			
+			return General::wentWrong();
+			
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 	}
 
-	public function destroy(Request $request){
+	/**
+	 * destroy function
+	 *
+	 * @param Request $request
+	 * @return Response
+	 */
+	public function destroy(Request $request) : Response {
 		
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 
 		try{
 
-			$path = 'logos/'.$company_id;
-
-			if(Storage::disk('public')->exists($path)){
-				Storage::disk('public')->deleteDirectory($path);
-			}
-
-			$company = General::fetchDefaultCompanyById($company_id);
-			$company->logo = '';
-
-			if($company->save()){
+			if($this->company_settings_logo_service->remove($company_id)){
 				return response(['message' => 'Logo removed successfully', 'validity' => 'remove_success'], 200);
 			}
-
+			
+			return General::wentWrong();
+			
 		}catch(Exception $e){
 			return General::wentWrong();
 		}

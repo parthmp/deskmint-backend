@@ -91,7 +91,14 @@ class CompanyRepository{
 
 	}
 
-	public function updateCompanyLogoByObj(string $filename, Company $company){
+	/**
+	 * updateCompanyLogoByObj function
+	 *
+	 * @param string $filename
+	 * @param Company $company
+	 * @return boolean
+	 */
+	public function updateCompanyLogoByObj(string $filename, Company $company) : bool {
 		$company->logo = $filename;
 		return $company->save();
 	}
