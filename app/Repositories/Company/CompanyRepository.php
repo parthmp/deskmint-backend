@@ -57,7 +57,7 @@ class CompanyRepository{
 	 * @param Company $company
 	 * @return boolean
 	 */
-	public function updateByObj(array $data, Company $company) : bool {
+	public function updateCompanyAddressByObj(array $data, Company $company) : bool {
 
 		$company->address_street = $data['address_street'];
 		$company->apt = $data['apt'];
@@ -65,6 +65,21 @@ class CompanyRepository{
 		$company->state = $data['state'];
 		$company->postal_code = $data['postal_code'];
 		$company->country_id = $data['country_id'];
+		return $company->save();
+
+	}
+
+	public function updateCompanyDetailsByObj(array $data, Company $company) : bool {
+
+		$company->company_name = $data['company_name'];
+		$company->size = $data['size'];
+		$company->id_number = $data['id_number'];
+		$company->gst_vat_number = $data['gst'];
+		$company->classification = $data['classification'];
+		$company->website = $data['website'];
+		$company->email = $data['email'];
+		$company->phone = $data['phone'];
+
 		return $company->save();
 
 	}

@@ -64,10 +64,11 @@ class CompanySettingsDetailsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$json = $response->json();
-
+		
 		$response->assertStatus((int) config('global.error_code'));
-		$this->assertArrayHasKey('validity', $json);
-		$this->assertEquals('invalid_data', $json['validity']);
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('company_name', $json['errors']);
+		$this->assertEquals(1, (int) count($json['errors']['company_name']));
 
 	}
 	
@@ -83,11 +84,11 @@ class CompanySettingsDetailsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$json = $response->json();
-
+		
 		$response->assertStatus((int) config('global.error_code'));
-		$this->assertArrayHasKey('validity', $json);
-		$this->assertEquals('invalid_data', $json['validity']);
-
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('company_name', $json['errors']);
+		$this->assertEquals(1, (int) count($json['errors']['company_name']));
 	}
 
 	public function test_to_see_if_it_saves_company_details_with_only_required_fields() : void {

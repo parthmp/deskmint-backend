@@ -8,12 +8,12 @@
 		 * input function
 		 *
 		 * @param String|null $string
-		 * @return void
+		 * @return String|null
 		 */
-		public static function input(String|null $string){
+		public static function input(String|null $string) : String|null {
 
 			if($string === null){
-				return '';
+				return null;
 			}
 
 			return trim(strip_tags(stripslashes($string)));

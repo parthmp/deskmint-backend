@@ -61,7 +61,7 @@ class CompanySettingsAddressService{
 
 		}
 
-		$this->company_repository->updateByObj($data, $company);
+		$this->company_repository->updateCompanyAddressByObj($data, $company);
 		
 	}
 

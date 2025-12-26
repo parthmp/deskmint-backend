@@ -40,6 +40,13 @@ class UserRepository{
 		return $user;
 	}
 
+	/**
+	 * update function
+	 *
+	 * @param array $data
+	 * @param integer $id
+	 * @return User
+	 */
 	public function update(array $data, int $id): User {
 
 		$user = User::findOrFail($id);
