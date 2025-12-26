@@ -21,7 +21,12 @@ class CompanySettingsDetailsController extends Controller{
 
 		try{
 
-			return $this->company_settings_details_service->fetch($company_id);
+			$data = $this->company_settings_details_service->fetch($company_id);
+			if($data){
+				return $data;
+			}
+
+			return General::wentWrong();
 
 		}catch(Exception $e){
 			return General::wentWrong();

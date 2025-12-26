@@ -69,6 +69,13 @@ class CompanyRepository{
 
 	}
 
+	/**
+	 * updateCompanyDetailsByObj function
+	 *
+	 * @param array $data
+	 * @param Company $company
+	 * @return boolean
+	 */
 	public function updateCompanyDetailsByObj(array $data, Company $company) : bool {
 
 		$company->company_name = $data['company_name'];

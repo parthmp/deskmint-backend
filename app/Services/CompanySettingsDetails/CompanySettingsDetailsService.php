@@ -30,7 +30,13 @@ class CompanySettingsDetailsService{
 
 	}
 
-	public function updateCompanyDetails(array $data){
+	/**
+	 * updateCompanyDetails function
+	 *
+	 * @param array $data
+	 * @return boolean
+	 */
+	public function updateCompanyDetails(array $data) : bool {
 
 		$company = $this->fetch((int) $data['company_id']);
 
