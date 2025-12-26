@@ -91,4 +91,9 @@ class CompanyRepository{
 
 	}
 
+	public function updateCompanyLogoByObj(string $filename, Company $company){
+		$company->logo = $filename;
+		return $company->save();
+	}
+
 }

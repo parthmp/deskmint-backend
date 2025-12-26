@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Helpers\General;
 use App\Helpers\Sanitize;
+use App\Http\Requests\CompanySettingsLogo\CreateCompanySettingsLogoRequest;
+use App\Services\CompanySettingsLogo\CompanySettingsLogoService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -11,65 +13,32 @@ use Illuminate\Support\Facades\Validator;
 
 class CompanySettingsLogoController extends Controller{
 
+
+	public function __construct(private CompanySettingsLogoService $company_settings_logo_service){
+		
+	}
+
+
 	public function show(Request $request){
 
 		$company_id = (int) Sanitize::input($request->input('company_id'));
-		$path = 'logos/'.$company_id;
 
-		$company = General::fetchDefaultCompanyById($company_id);
+		$url = $this->company_settings_logo_service->fetch($company_id);
 
-		$logo_file = $path.'/'.$company->logo;
-
-		$image_url = '';
-
-		if(Storage::disk('public')->exists($logo_file)){
-			$image_url = Storage::disk('public')->url($logo_file);
-		}
-
-		return ['url' => $image_url];
+		return [
+			'url'	=>	$url
+		];
 
 	}
     
-	public function saveOrUpdate(Request $request){
+	public function upsert(CreateCompanySettingsLogoRequest $request){
 
-		$validator = Validator::make($request->all(), [
-			'logo' => 'required|image|mimes:jpeg,jpg,png,gif,webp|max:5120'
+		$data = $request->validated();
+
+		$this->company_settings_logo_service->updateCompanyLogo([
+			'company_id'	=>	$data['company_id'],
+			'logo'			=>	$request->file('logo')
 		]);
-
-		if($validator->fails()){
-			return response(['message' => 'Unable to upload - Invalid file', 'validity' => 'invalid_file'], config('global.error_code'));
-		}
-
-		$company_id = Sanitize::input($request->input('company_id'));
-
-		try{
-
-			if($request->hasFile('logo')){
-
-				$file = $request->file('logo');
-				$path = 'logos/'.$company_id;
-				
-				$extension = $file->getClientOriginalExtension();
-				$filename = md5(time().'_'.$file->getClientOriginalName()).'.'.$extension;
-				
-				Storage::disk('public')->deleteDirectory($path);
-				Storage::disk('public')->makeDirectory($path);
-
-				Storage::disk('public')->putFileAs($path, $file, $filename);
-				
-				$company = General::fetchDefaultCompanyById($company_id);
-				$company->logo = $filename;
-
-				if($company->save()){
-					return response(['message' => 'Logo uploaded successfully', 'validity' => 'upload_success'], 200);
-				}
-
-				
-			}
-
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
 
 	}
 
