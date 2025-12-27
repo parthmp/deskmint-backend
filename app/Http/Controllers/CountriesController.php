@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\General;
-use App\Models\Country;
+use App\Services\Country\CountryService;
 use Illuminate\Http\Request;
 
 class CountriesController extends Controller{
+
+	public function __construct(private CountryService $country_service){
+	}
     
 	public function fetchCountries(Request $request){
-
-		return General::fetchCoutries();
-
+		return $this->country_service->fetchAll();
 	}
 
 }
