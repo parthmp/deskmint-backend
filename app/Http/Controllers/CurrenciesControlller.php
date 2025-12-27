@@ -2,22 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Currency;
+use App\Services\Currency\CurrencyService;
 use Illuminate\Http\Request;
 
 class CurrenciesControlller extends Controller{
     
+	public function __construct(private CurrencyService $currency_service){
+	}
 
 	public function fetchCurrencies(Request $request){
-
-		$currencies = Currency::orderBy('currency', 'asc')->get()->map(function($currency){
-			return [
-				'value'	=>	$currency->id,
-				'text'	=>	$currency->currency.' - '.$currency->code
-			];
-		});
-
-		return $currencies;
+		
+		return $this->currency_service->fetchAll();
 
 	}
 
