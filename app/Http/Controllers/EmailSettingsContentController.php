@@ -4,85 +4,48 @@ namespace App\Http\Controllers;
 
 use App\Helpers\General;
 use App\Helpers\Sanitize;
-use App\Models\SettingsSection;
-use App\Traits\SettingsDefault;
+use App\Http\Requests\EmailSettingsContent\CreateEmailSettingsContentRequest;
+use App\Services\EmailSettingsContent\EmailSettingsContentService;
 use Exception;
 use Illuminate\Http\Request;
 
 class EmailSettingsContentController extends Controller{
 
-	use SettingsDefault;
-
 	/**
-	 * show function
+	 * __construct function
 	 *
-	 * @param Request $request
-	 * @return void
+	 * @param EmailSettingsContentService $email_settings_content_service
 	 */
-	public function show(Request $request){
-
-		$company_id = Sanitize::input($request->input('company_id'));
-
-		$email_content = SettingsSection::where([['type', '=', ESC_EMAIL_CONTENT_TYPE], ['company_id', '=', $company_id]])->first();
-
-		if(!$email_content){
-			return $this->getDefaultEmailContentSettings();
-		}
-
-		return json_decode($email_content->settings_json);
-
+	public function __construct(private EmailSettingsContentService $email_settings_content_service){
 	}
 
-	/**
-	 * saveOrUpdate function
-	 *
-	 * @param Request $request
-	 * @return void
-	 */
-	public function saveOrUpdate(Request $request){
 
-		$company_id = Sanitize::input($request->input('company_id'));
+	public function show(Request $request){
 
-		$email_content_invoice = '';
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 
-		if($request->filled('email_content_invoice')){
-			$email_content_invoice = Sanitize::input($request->input('email_content_invoice'));
-		}
-
-		$email_content_reminder = '';
-
-		if($request->filled('email_content_reminder')){
-			$email_content_reminder = Sanitize::input($request->input('email_content_reminder'));
+		try{
+			return $this->email_settings_content_service->fetch($company_id);
+		}catch(Exception $e){
+			return General::wentWrong();
 		}
 		
-		$payment_details = '';
+	}
 
-		if($request->filled('payment_details')){
-			$payment_details = Sanitize::input($request->input('payment_details'));
-		}
-		
 
-		$email_content = SettingsSection::where([['type', '=', ESC_EMAIL_CONTENT_TYPE], ['company_id', '=', $company_id]])->first();
+	public function upsert(CreateEmailSettingsContentRequest $request){
+
+		$data = $request->validated();
+
+		$email_content = $this->email_settings_content_service->fetchRecord($data['company_id']);
 
 		try{
 
-			if(!$email_content){
-				$email_content = new SettingsSection();
-				$email_content->company_id = $company_id;
-				$email_content->type = ESC_EMAIL_CONTENT_TYPE;
-			}
-			
-			$json_string = json_encode([
-				'email_content_invoice'		=>	$email_content_invoice,
-				'email_content_reminder'	=>	$email_content_reminder,
-				'payment_details'			=>	$payment_details
-			]);
-
-			$email_content->settings_json = $json_string;
-
-			if($email_content->save()){
+			if($this->email_settings_content_service->updateByObj($data, $email_content)){
 				return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
 			}
+
+			return General::wentWrong();
 
 		}catch(Exception $e){
 			return General::wentWrong();
