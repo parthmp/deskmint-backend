@@ -2,21 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Industry;
+use App\Services\Industry\IndustryService;
 use Illuminate\Http\Request;
 
 class IndustriesController extends Controller{
+
+	public function __construct(private IndustryService $industry_service){
+
+	}
     
 	public function fetchIndustries(Request $request){
 
-		$industries = Industry::orderBy('industry_name', 'asc')->get()->map(function($ind){
-			return [
-				'value'	=>	$ind->id,
-				'text'	=>	$ind->industry_name
-			];
-		});
-
-		return $industries;
+		return $this->industry_service->fetchAll();
 
 	}
 
