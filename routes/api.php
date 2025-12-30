@@ -152,7 +152,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::post('manage-email-settings-reminders', [EmailSettingsRemindersController::class, 'upsert']);
 
 	Route::get('manage-email-settings-smtp', [EmailSettingsSMTPController::class, 'show']);
-	Route::post('manage-email-settings-smtp', [EmailSettingsSMTPController::class, 'saveOrUpdate']);
+	Route::post('manage-email-settings-smtp', [EmailSettingsSMTPController::class, 'upsert']);
 
 
 	Route::get('manage-payments-settings', [PaymentSettings::class, 'show']);

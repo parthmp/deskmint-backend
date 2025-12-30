@@ -96,9 +96,10 @@ class EmailSettingsSMTPControllerTest extends TestCase{
 		], $c['headers']);
 		
 		$json = $response->json();
-
-		$this->assertArrayHasKey('validity', $json);
-		$this->assertEquals('invalid_data', $json['validity']);
+		
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(8, count($json['errors']));
 		
 		Mail::assertNothingSent();
 
@@ -117,9 +118,9 @@ class EmailSettingsSMTPControllerTest extends TestCase{
 		], $c['headers']);
 		
 		$json = $response->json();
-
-		$this->assertArrayHasKey('validity', $json);
-		$this->assertEquals('invalid_data', $json['validity']);
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(8, count($json['errors']));
 		
 		Mail::assertNothingSent();
 	}
@@ -143,9 +144,9 @@ class EmailSettingsSMTPControllerTest extends TestCase{
 		], $c['headers']);
 		
 		$json = $response->json();
-
-		$this->assertArrayHasKey('validity', $json);
-		$this->assertEquals('invalid_data', $json['validity']);
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(4, count($json['errors']));
 		Mail::assertNothingSent();
 
 	}
