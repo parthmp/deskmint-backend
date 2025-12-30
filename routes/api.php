@@ -149,7 +149,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::post('manage-email-settings-content', [EmailSettingsContentController::class, 'upsert']);
 
 	Route::get('manage-email-settings-reminders', [EmailSettingsRemindersController::class, 'show']);
-	Route::post('manage-email-settings-reminders', [EmailSettingsRemindersController::class, 'saveOrUpdate']);
+	Route::post('manage-email-settings-reminders', [EmailSettingsRemindersController::class, 'upsert']);
 
 	Route::get('manage-email-settings-smtp', [EmailSettingsSMTPController::class, 'show']);
 	Route::post('manage-email-settings-smtp', [EmailSettingsSMTPController::class, 'saveOrUpdate']);

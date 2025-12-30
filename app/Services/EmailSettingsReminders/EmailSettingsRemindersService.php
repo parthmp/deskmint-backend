@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\EmailSettingsContent;
+namespace App\Services\EmailSettingsReminders;
 
 use App\Models\SettingsSection;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
@@ -8,13 +8,13 @@ use App\Traits\SettingsDefault;
 use Exception;
 
 /**
- * EmailSettingsContentService class
+ * EmailSettingsRemindersService class
  */
-class EmailSettingsContentService{
+class EmailSettingsRemindersService{
 
 	use SettingsDefault;
 
-	private $type = ESC_EMAIL_CONTENT_TYPE;
+	private $type = ESC_EMAIL_REMINDERS_TYPE;
 
 	/**
 	 * __construct function
@@ -23,7 +23,7 @@ class EmailSettingsContentService{
 	 */
 	public function __construct(private SettingsSectionRepository $settings_section_repository){
 	}
-	
+
 	/**
 	 * fetchRecord function
 	 *
@@ -45,7 +45,7 @@ class EmailSettingsContentService{
 		$email_content = $this->fetchRecord($company_id);
 
 		if(!$email_content){
-			return $this->getDefaultEmailContentSettings();
+			return $this->getDefaultEmailRemindersSettings();
 		}
 
 		return json_decode($email_content->settings_json, true);
@@ -56,29 +56,29 @@ class EmailSettingsContentService{
 	 * updateByObj function
 	 *
 	 * @param array $data
-	 * @param SettingsSection|null $email_content
+	 * @param SettingsSection|null $setting_record
 	 * @return boolean
 	 */
-	public function updateByObj(array $data, SettingsSection|null $email_content) : bool {
+	public function updateByObj(array $data, SettingsSection|null $setting_record) : bool {
 
 		try{
 
-			if(!$email_content){
-				$email_content = $this->settings_section_repository->createObj($data['company_id'], $this->type);
+			if(!$setting_record){
+				$setting_record = $this->settings_section_repository->createObj($data['company_id'], $this->type);
 			}
+
 			
 			$json_string = json_encode([
-				'email_content_invoice'		=>	$data['email_content_invoice'],
-				'email_content_reminder'	=>	$data['email_content_reminder'],
-				'payment_details'			=>	$data['payment_details']
+				'send_n_times'		=>	$data['send_n_times'],
+				'days_gap'			=>	$data['days_gap']
 			]);
 
-			$email_content->settings_json = $json_string;
+			$setting_record->settings_json = $json_string;
 
-			return $email_content->save();
+			return $setting_record->save();
 
 		}catch(Exception $e){
-			throw new Exception('unable to update email content settings');
+			throw new Exception('unable to update email reminders settings');
 		}
 
 	}

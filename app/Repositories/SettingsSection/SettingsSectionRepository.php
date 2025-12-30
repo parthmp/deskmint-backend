@@ -46,7 +46,7 @@ class SettingsSectionRepository{
 	 * @param string $type
 	 * @return SettingsSection
 	 */
-	public function createObj(int $company_id, string $type) : SettingsSection{
+	public function createObj(int $company_id, string $type) : SettingsSection {
 
 		$settings = new SettingsSection();
 		$settings->company_id = $company_id;
