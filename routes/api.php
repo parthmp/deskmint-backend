@@ -93,7 +93,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::post('manage-invoice-settings', [InvoiceSettingsGeneralController::class, 'upsert']);
 
 	Route::get('manage-invoice-settings-numbers', [InvoiceSettingsNumbersController::class, 'show']);
-	Route::post('manage-invoice-settings-numbers', [InvoiceSettingsNumbersController::class, 'saveOrUpdate']);
+	Route::post('manage-invoice-settings-numbers', [InvoiceSettingsNumbersController::class, 'upsert']);
 	Route::get('manage-invoice-settings-numbers/reset-number', [InvoiceSettingsNumbersController::class, 'resetInvoiceNumber']);
 
 	Route::get('manage-invoice-settings-client-details', [InvoiceSettingsClientDetailsController::class, 'show']);
