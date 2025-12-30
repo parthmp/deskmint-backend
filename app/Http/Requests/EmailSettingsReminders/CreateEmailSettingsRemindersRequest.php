@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\EmailSettingsReminders;
 
 use App\Helpers\Sanitize;
 use Illuminate\Foundation\Http\FormRequest;

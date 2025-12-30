@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\General;
 use App\Helpers\Sanitize;
-use App\Http\Requests\CreateEmailSettingsRemindersRequest;
+use App\Http\Requests\EmailSettingsReminders\CreateEmailSettingsRemindersRequest;
 use App\Services\EmailSettingsReminders\EmailSettingsRemindersService;
 use Exception;
 use Illuminate\Http\Request;

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\General;
 use App\Helpers\Sanitize;
-use App\Http\Requests\CreateEmailSettingsSMTPRequest;
+use App\Http\Requests\EmailSettingsSMTP\CreateEmailSettingsSMTPRequest;
 use App\Services\EmailSettingsSMTP\EmailSettingsSMTPService;
 use Exception;
 use Illuminate\Http\Request;

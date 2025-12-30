@@ -6,7 +6,7 @@ use App\Repositories\Industry\IndustryRepository;
 use Illuminate\Support\Collection;
 
 /**
- * EmailSettingsSMTPService class
+ * IndustryService class
  */
 class IndustryService{
 
