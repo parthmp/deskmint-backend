@@ -98,4 +98,15 @@ class SettingsSectionRepository{
 
 	}
 
+	/**
+	 * destroy function
+	 *
+	 * @param integer $company_id
+	 * @param string $type
+	 * @return void
+	 */
+	public function destroy(int $company_id, string $type) : void {
+		SettingsSection::where([['company_id', '=', $company_id], ['type', '=', $type]])->delete();
+	}
+
 }

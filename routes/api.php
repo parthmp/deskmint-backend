@@ -156,7 +156,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 
 	Route::get('manage-payments-settings', [PaymentSettingsController::class, 'show']);
 	Route::get('manage-paypal-settings', [PaymentSettingsPaypalController::class, 'show']);
-	Route::post('manage-paypal-settings', [PaymentSettingsPaypalController::class, 'saveOrUpdate']);
+	Route::post('manage-paypal-settings', [PaymentSettingsPaypalController::class, 'upsert']);
 	Route::delete('manage-paypal-settings', [PaymentSettingsPaypalController::class, 'destroy']);
 
 	Route::get('manage-stripe-settings', [PaymentSettingsStripeController::class, 'show']);
