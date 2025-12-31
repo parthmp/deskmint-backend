@@ -79,8 +79,11 @@ class InvoiceSettingsAPFControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int) config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_request', $response['validity']);
+
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(3, count($json['errors']));
 
 	}
 
@@ -98,8 +101,10 @@ class InvoiceSettingsAPFControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int) config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_request', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(3, count($json['errors']));
 
 	}
 
@@ -121,8 +126,10 @@ class InvoiceSettingsAPFControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int) config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_request', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(3, count($json['errors']));
 
 	}
 
@@ -155,8 +162,11 @@ class InvoiceSettingsAPFControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int) config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_request', $response['validity']);
+		$json = $response->json();
+		
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(2, count($json['errors']));
 
 	}
 
@@ -681,6 +691,8 @@ class InvoiceSettingsAPFControllerTest extends TestCase{
 											]
 		], $c['headers']);
 
+		$json = $response->json();
+		
 		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-product-columns?'. $params);
 		
 		$json = $response->json();

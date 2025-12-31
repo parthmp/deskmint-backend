@@ -130,7 +130,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::post('manage-invoice-settings-invoice-details', [InvoiceSettingsInvoiceDetailsController::class, 'saveOrUpdate']);
 
 	Route::get('manage-invoice-settings-additional-product-fields', [InvoiceSettingsAPFController::class, 'show']);
-	Route::post('manage-invoice-settings-additional-product-fields', [InvoiceSettingsAPFController::class, 'saveOrUpdate']);
+	Route::post('manage-invoice-settings-additional-product-fields', [InvoiceSettingsAPFController::class, 'upsert']);
 	Route::delete('manage-invoice-settings-additional-product-fields/{id}', [InvoiceSettingsAPFController::class, 'destroy']);
 
 

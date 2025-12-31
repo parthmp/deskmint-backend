@@ -2,6 +2,7 @@
 
 namespace App\Services\InvoiceSettingsAPF;
 
+use App\Helpers\Sanitize;
 use App\Models\SettingsSection;
 use App\Repositories\InvoiceSettingsAPF\InvoiceSettingsAPFRepository;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
@@ -67,7 +68,14 @@ class InvoiceSettingsAPFService{
 
 	}
 
-	private function modifyJson(SettingsSection|array|null $saved_setting, Collection $fields){
+	/**
+	 * modifyJson function
+	 *
+	 * @param SettingsSection|array|null $saved_setting
+	 * @param Collection $fields
+	 * @return array
+	 */
+	private function modifyJson(SettingsSection|array|null $saved_setting, Collection $fields) : array {
 
 		$old_json = [];
 
@@ -106,27 +114,135 @@ class InvoiceSettingsAPFService{
 
 	}
 
+	/**
+	 * regenerateSettings function
+	 *
+	 * @param integer $company_id
+	 * @return boolean
+	 */
 	public function regenerateSettings(int $company_id) : bool {
 
 		$fields = $this->fetchCompanyById($company_id);
 
 		$saved_setting = $this->settings_section_repository->fetchSettings($company_id, $this->type);
-
+		
 		$changes_made = false;
 		$old_json = [];
 		
 		if($saved_setting){
+
 			$arr = $this->modifyJson($saved_setting, $fields);
 			$changes_made = $arr['changes_made'];
 			$old_json = $arr['old_json'];
-		}
 
-		if($changes_made){
-			$this->settings_section_repository->updateByObj($old_json, $saved_setting);
+			if($changes_made){
+				$this->settings_section_repository->updateByObj(json_encode($old_json), $saved_setting);
+			}
+
 		}
 
 		return $changes_made;
+
 	}
 
+	/**
+	 * ifInvalidIdsPresent function
+	 *
+	 * @param array $data
+	 * @return boolean
+	 */
+	public function ifInvalidIdsPresent(array $data) : bool {
+		
+		$invalid_ids = false;
+
+		for($z = 0 ; $z < count($data['labels']) ; $z++){
+
+			if($data['labels'][$z]['id'] !== $data['types'][$z]['id'] || $data['labels'][$z]['id'] !== $data['taxes'][$z]['id'] || $data['types'][$z]['id'] !== $data['taxes'][$z]['id']){
+				$invalid_ids = true;
+				break;
+			}
+
+		}
+
+		return $invalid_ids;
+	}
+
+	/**
+	 * update function
+	 *
+	 * @param array $data
+	 * @return void
+	 */
+	public function update(array $data) : void {
+
+		$labels = $data['labels'];
+		$company_id = $data['company_id'];
+		$types = $data['types'];
+		$taxes = $data['taxes'];
+	
+		$upsert = [];
+		/* now validate for ids */
+		for($z = 0 ; $z < count($labels) ; $z++){
+			
+			$upsert[] = [
+				'id'				=>	$labels[$z]['id'],
+				'company_id'		=>	$company_id,
+				'label'				=>	Sanitize::input($labels[$z]['value'].''),
+				'type'				=>	Sanitize::input($types[$z]['value'].''),
+				'tax_rate'			=>	(float) Sanitize::input($taxes[$z]['value']),
+			];
+
+		}
+		
+
+		$this->invoice_settings_apf_repository->upsert($upsert);
+
+	}
+
+	/**
+	 * destroy function
+	 *
+	 * @param integer $id
+	 * @return void
+	 */
+	public function destroy(int $id) : void {
+		$this->invoice_settings_apf_repository->destroy($id);
+	}
+
+	/**
+	 * removeDeletedFromSettingsSection function
+	 *
+	 * @param integer $company_id
+	 * @param integer $id
+	 * @return boolean
+	 */
+	public function removeDeletedFromSettingsSection(int $company_id, int $id) : bool {
+
+		$settings = $this->settings_section_repository->fetchSettings($company_id, $this->type);
+			
+		if($settings){
+
+			$modified = [];
+
+			$json = json_decode($settings->settings_json, true);
+			
+			for($z = 0 ; $z < count($json) ; $z++){
+				if($json[$z]['type'] === 'custom'){
+					
+					if($json[$z]['id_column'] !== (int) $id){
+						$modified[] = $json[$z];
+					}
+				}else{
+					$modified[] = $json[$z];
+				}
+			}
+
+			return $this->settings_section_repository->updateByObj(json_encode($modified), $settings);
+
+		}
+
+		return false;
+
+	}
 
 }
