@@ -119,9 +119,7 @@ class EmailSettingsSMTPService{
 				'test_email_address'	=>	$data['test_email_address']
 			]);
 
-			$setting_record->settings_json = $json_string;
-
-			return $setting_record->save();
+			return $this->settings_section_repository->updateByObj($json_string, $setting_record);
 
 		}catch(Exception $e){
 			throw new Exception('unable to update email smtp settings');

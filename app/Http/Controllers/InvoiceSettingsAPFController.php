@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\FieldDefinitions\ArrangedFields\ProductColumnsFields;
-use App\FieldDefinitions\ArrangedFields\SettingsArrangedFields;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\AdditionalProductColumnsField;
 use App\Models\SettingsSection;
+use App\Services\InvoiceSettingsAPF\InvoiceSettingsAPFService;
 use App\Traits\SettingsDefault;
 use Exception;
 use Illuminate\Http\Request;
@@ -15,48 +14,14 @@ use Illuminate\Support\Facades\Validator;
 
 class InvoiceSettingsAPFController extends Controller{
 
-	use SettingsDefault;
+	public function __construct(private InvoiceSettingsAPFService $invoice_settings_apf_service){}
 
 	public function show(Request $request){
 
-		$company_id = Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 
 		try{
-
-			$fields = AdditionalProductColumnsField::where('company_id', '=', $company_id)->get();
-
-			$labels = [];
-			$types = [];
-			$taxes = [];
-
-			foreach($fields as $field){
-
-				$labels[] = [
-					'id'			=>		$field->id,
-					'value'			=>		$field->label,
-					'error'			=>		'',
-					'show_errors'	=>		false
-				];
-
-				$types[] = [
-					'id'			=>		$field->id,
-					'value'			=>		$field->type,
-					'error'			=>		''
-				];
-
-				$taxes[] = [
-					'id'			=>		$field->id,
-					'value'			=>		$field->tax_rate
-				];
-
-			}
-
-			return [
-				'labels'	=>		$labels,
-				'types'		=>		$types,
-				'taxes'		=>		$taxes
-			];
-
+			return $this->invoice_settings_apf_service->fetch($company_id);
 		}catch(Exception $e){
 			return General::wentWrong();
 		}
@@ -71,52 +36,7 @@ class InvoiceSettingsAPFController extends Controller{
 	 * @return bool
 	 */
 	private function regenerateSettings(int $company_id) : bool {
-		
-		$fields = AdditionalProductColumnsField::where('company_id', '=', $company_id)->get();
-
-		$saved_setting = SettingsSection::where([['company_id', '=', $company_id], ['type', '=', ISC_PRODUCT_COLUMNS_TYPE]])->first();
-
-		$changes_made = false;
-
-		$old_json = [];
-
-		if($saved_setting){
-
-			$old_json = json_decode($saved_setting->settings_json, true);
-			
-			for($z = 0 ; $z < count($fields) ; $z++){
-
-				for($x = 0 ; $x < count($old_json) ; $x++){
-
-					if(($old_json[$x]['type'] === 'custom' && (int) $old_json[$x]['id_column'] === (int) $fields[$z]['id']) && ($old_json[$x]['text'] !== $fields[$z]['label'] || $old_json[$x]['type'] !== $fields[$z]['type'] || (int) $old_json[$x]['tax_rate'] !== (int) $fields[$z]['tax_rate'])){
-						
-						$old_json[$x] = [
-							'id'		=>	$old_json[$x]['id'],
-							'tax'		=>	$fields[$z]['type'] === 'tax' ? true : false,
-							'text'		=>	$fields[$z]['label'],
-							'type'		=>	'custom',
-							'value'		=>	$fields[$z]['label'],
-							'mapped'	=>	null,
-							'tax_rate'	=>	$fields[$z]['tax_rate'],
-							'id_column'	=>	$fields[$z]['id']
-						];
-
-						$changes_made = true;
-					}
-
-				}
-
-			}
-
-		}
-
-		if($changes_made){
-			$saved_setting->settings_json = json_encode($old_json);
-			$saved_setting->save();
-		}
-
-		return $changes_made;
-
+		return $this->invoice_settings_apf_service->regenerateSettings($company_id);
 	}
 	
 	/**

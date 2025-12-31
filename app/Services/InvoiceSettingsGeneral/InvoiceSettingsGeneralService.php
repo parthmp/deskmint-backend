@@ -89,9 +89,7 @@ class InvoiceSettingsGeneralService{
 				'e_invoice_on'			=>	$data['e_invoice']
 			]);
 
-			$setting_record->settings_json = $json_string;
-
-			return $setting_record->save();
+			return $this->settings_section_repository->updateByObj($json_string, $setting_record);
 
 		}catch(Exception $e){
 			throw new Exception('unable to update invoice general settings');

@@ -87,9 +87,7 @@ class InvoiceSettingsNumbersService{
 				'number_pattern'	=>	$data['number_pattern']
 			]);
 
-			$record->settings_json = $json_string;
-
-			return $record->save();
+			return $this->settings_section_repository->updateByObj($json_string, $record);
 
 		}catch(Exception $e){
 			throw new Exception('unable to update invoice numbers settings');

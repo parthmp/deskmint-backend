@@ -3,6 +3,7 @@
 namespace App\Repositories\SettingsSection;
 
 use App\Models\SettingsSection;
+use Exception;
 use Illuminate\Database\Eloquent\Collection;
 
 class SettingsSectionRepository{
@@ -53,6 +54,27 @@ class SettingsSectionRepository{
 		$settings->type = $type;
 
 		return $settings;
+
+	}
+
+	/**
+	 * updateByObj function
+	 *
+	 * @param string $json
+	 * @param SettingsSection $setting_record
+	 * @return boolean
+	 */
+	public function updateByObj(string $json, SettingsSection $setting_record) : bool {
+
+		try{
+			
+			$setting_record->settings_json = $json;
+
+			return $setting_record->save();
+
+		}catch(Exception $e){
+			throw new Exception('unable to update the record');
+		}
 
 	}
 

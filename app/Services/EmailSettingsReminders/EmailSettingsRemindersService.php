@@ -73,9 +73,7 @@ class EmailSettingsRemindersService{
 				'days_gap'			=>	$data['days_gap']
 			]);
 
-			$setting_record->settings_json = $json_string;
-
-			return $setting_record->save();
+			return $this->settings_section_repository->updateByObj($json_string, $setting_record);
 
 		}catch(Exception $e){
 			throw new Exception('unable to update email reminders settings');

@@ -73,9 +73,7 @@ class EmailSettingsContentService{
 				'payment_details'			=>	$data['payment_details']
 			]);
 
-			$email_content->settings_json = $json_string;
-
-			return $email_content->save();
+			return $this->settings_section_repository->updateByObj($json_string, $email_content);
 
 		}catch(Exception $e){
 			throw new Exception('unable to update email content settings');
