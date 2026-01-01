@@ -16,7 +16,7 @@ class PaymentSettingsPaypalController extends Controller{
 
 		$data = $request->validated();
 		$company_id = $data['company_id'];
-		return $this->payment_settings_paypal_service->fetch($company_id);;
+		return $this->payment_settings_paypal_service->fetch($company_id);
 
 	}
     
