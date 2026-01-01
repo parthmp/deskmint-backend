@@ -3,11 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\General;
-use App\Helpers\Sanitize;
 use App\Http\Requests\CompanySettingsDefault\CreateCompanySettingsDefaultRequest;
+use App\Http\Requests\GenericRequest;
 use App\Services\CompanySettingsDefaults\CompanySettingsDefaultsService;
 use Exception;
-use Illuminate\Http\Request;
 
 class CompanySettingsDefaultsController extends Controller{
 
@@ -15,9 +14,10 @@ class CompanySettingsDefaultsController extends Controller{
 
 	}
 
-	public function show(Request $request){
+	public function show(GenericRequest $request){
 
-		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$data = $request->validated();
+		$company_id = $data['company_id'];
 
 		try{
 

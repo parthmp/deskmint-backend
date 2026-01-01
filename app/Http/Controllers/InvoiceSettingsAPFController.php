@@ -4,18 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Helpers\General;
 use App\Helpers\Sanitize;
+use App\Http\Requests\GenericRequest;
 use App\Http\Requests\InvoiceSettingsAPF\CreateInvoiceSettingsAPFRequest;
 use App\Services\InvoiceSettingsAPF\InvoiceSettingsAPFService;
 use Exception;
-use Illuminate\Http\Request;
 
 class InvoiceSettingsAPFController extends Controller{
 
 	public function __construct(private InvoiceSettingsAPFService $invoice_settings_apf_service){}
 
-	public function show(Request $request){
+	public function show(GenericRequest $request){
 
-		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$data = $request->validated();
+		$company_id = $data['company_id'];
 
 		try{
 			return $this->invoice_settings_apf_service->fetch($company_id);
@@ -25,13 +26,7 @@ class InvoiceSettingsAPFController extends Controller{
 
 	}
 
-	/**
-	 * regenerateSettings function
-	 *
-	 * @param Request $request
-	 * @param integer $company_id
-	 * @return bool
-	 */
+	
 	private function regenerateSettings(int $company_id) : bool {
 		return $this->invoice_settings_apf_service->regenerateSettings($company_id);
 	}
@@ -61,12 +56,13 @@ class InvoiceSettingsAPFController extends Controller{
 
 	}
 
-	public function destroy(Request $request, int $id){
+	public function destroy(GenericRequest $request, int $id){
 
 		try{
 
 			$id = (int) Sanitize::input($id);
-			$company_id = (int) Sanitize::input($request->input('company_id'));
+			$data = $request->validated();
+			$company_id = $data['company_id'];
 
 			$this->invoice_settings_apf_service->destroy($id);
 

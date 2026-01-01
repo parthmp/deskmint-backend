@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\Sanitize;
+use App\Http\Requests\GenericRequest;
 use App\Services\PaymentSettings\PaymentSettingsService;
-use Illuminate\Http\Request;
 
 class PaymentSettingsController extends Controller{
 
 	public function __construct(private PaymentSettingsService $payment_settings_service){}
     
-	public function show(Request $request){
+	public function show(GenericRequest $request){
 
-		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$data = $request->validated();
+		$company_id = $data['company_id'];
 		return array_map("strtolower", $this->payment_settings_service->getGateWayNames((int) $company_id));
 		
 	}

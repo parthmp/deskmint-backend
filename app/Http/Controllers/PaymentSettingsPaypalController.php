@@ -3,19 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\General;
-use App\Helpers\Sanitize;
+use App\Http\Requests\GenericRequest;
 use App\Http\Requests\PaymentSettingsPayPal\CreatePaymentSettingsPayPalRequest;
 use App\Services\PaymentSettingsPaypal\PaymentSettingsPaypalService;
 use Exception;
-use Illuminate\Http\Request;
 
 class PaymentSettingsPaypalController extends Controller{
 
 	public function __construct(private PaymentSettingsPaypalService $payment_settings_paypal_service){}
 
-	public function show(Request $request){
+	public function show(GenericRequest $request){
 
-		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$data = $request->validated();
+		$company_id = $data['company_id'];
 		return $this->payment_settings_paypal_service->fetch($company_id);;
 
 	}
@@ -38,9 +38,10 @@ class PaymentSettingsPaypalController extends Controller{
 
 	}
 
-	public function destroy(Request $request){
+	public function destroy(GenericRequest $request){
 
-		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$data = $request->validated();
+		$company_id = $data['company_id'];
 
 		try{
 

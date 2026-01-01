@@ -3,20 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\General;
-use App\Helpers\Sanitize;
 use App\Http\Requests\EmailSettingsReminders\CreateEmailSettingsRemindersRequest;
+use App\Http\Requests\GenericRequest;
 use App\Services\EmailSettingsReminders\EmailSettingsRemindersService;
 use Exception;
-use Illuminate\Http\Request;
 
 class EmailSettingsRemindersController extends Controller{
     
 	public function __construct(private EmailSettingsRemindersService $email_settings_reminders_service){
 	}
 
-	public function show(Request $request){
+	public function show(GenericRequest $request){
 
-		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$data = $request->validated();
+		$company_id = $data['company_id'];
 
 		try{
 			return $this->email_settings_reminders_service->fetch($company_id);

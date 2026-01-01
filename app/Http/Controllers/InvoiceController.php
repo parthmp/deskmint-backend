@@ -13,7 +13,6 @@ use App\Services\Invoice\InvoiceService;
 use App\Traits\CustomFieldsPrinting;
 use App\Traits\CustomFieldsUpsert;
 use App\Traits\CustomFieldsValidation;
-use App\Traits\PaymentGatewayDetails;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -21,7 +20,7 @@ use Illuminate\Support\Facades\Validator;
 
 class InvoiceController extends Controller{
 
-	use CustomFieldsPrinting, PaymentGatewayDetails, CustomFieldsValidation, CustomFieldsUpsert;
+	use CustomFieldsPrinting, CustomFieldsValidation, CustomFieldsUpsert;
 
 	public function __construct(
 		private ClientRepository $client_repository,

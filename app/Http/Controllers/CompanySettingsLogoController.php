@@ -3,11 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\General;
-use App\Helpers\Sanitize;
 use App\Http\Requests\CompanySettingsLogo\CreateCompanySettingsLogoRequest;
+use App\Http\Requests\GenericRequest;
 use App\Services\CompanySettingsLogo\CompanySettingsLogoService;
 use Exception;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class CompanySettingsLogoController extends Controller{
@@ -17,15 +16,11 @@ class CompanySettingsLogoController extends Controller{
 		
 	}
 
-	/**
-	 * show function
-	 *
-	 * @param Request $request
-	 * @return array
-	 */
-	public function show(Request $request) : array {
+	
+	public function show(GenericRequest $request) : array {
 
-		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$data = $request->validated();
+		$company_id = $data['company_id'];
 
 		$url = $this->company_settings_logo_service->fetch($company_id);
 
@@ -35,12 +30,7 @@ class CompanySettingsLogoController extends Controller{
 
 	}
 	
-	/**
-	 * upsert function
-	 *
-	 * @param CreateCompanySettingsLogoRequest $request
-	 * @return Response
-	 */
+	
 	public function upsert(CreateCompanySettingsLogoRequest $request) : Response {
 
 		$data = $request->validated();
@@ -59,15 +49,11 @@ class CompanySettingsLogoController extends Controller{
 
 	}
 
-	/**
-	 * destroy function
-	 *
-	 * @param Request $request
-	 * @return Response
-	 */
-	public function destroy(Request $request) : Response {
+	
+	public function destroy(GenericRequest $request) : Response {
 		
-		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$data = $request->validated();
+		$company_id = $data['company_id'];
 
 		try{
 

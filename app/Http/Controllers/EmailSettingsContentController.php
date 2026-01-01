@@ -3,11 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\General;
-use App\Helpers\Sanitize;
 use App\Http\Requests\EmailSettingsContent\CreateEmailSettingsContentRequest;
+use App\Http\Requests\GenericRequest;
 use App\Services\EmailSettingsContent\EmailSettingsContentService;
 use Exception;
-use Illuminate\Http\Request;
 
 class EmailSettingsContentController extends Controller{
 
@@ -20,9 +19,10 @@ class EmailSettingsContentController extends Controller{
 	}
 
 
-	public function show(Request $request){
+	public function show(GenericRequest $request){
 
-		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$data = $request->validated();
+		$company_id = $data['company_id'];
 
 		try{
 			return $this->email_settings_content_service->fetch($company_id);

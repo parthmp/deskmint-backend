@@ -20,7 +20,7 @@ class DefaultCompany
     public function handle(Request $request, Closure $next): Response{
 
 		$v = Validator::make($request->all(), [
-			'company_id'		=>	'required'
+			'company_id'		=>	'required|exists:companies,id'
 		]);
 
 		if($v->fails()){
