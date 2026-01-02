@@ -48,8 +48,10 @@ class PaymentSettingsStripeControllerTest extends TestCase{
 		$response->assertStatus((int) config('global.error_code'));
 
 		$json = $response->json();
-		$this->assertArrayHasKey('validity', $json);
-		$this->assertEquals('invalid_request', $json['validity']);
+		
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 		
 	}
 
@@ -68,8 +70,9 @@ class PaymentSettingsStripeControllerTest extends TestCase{
 		$response->assertStatus((int) config('global.error_code'));
 
 		$json = $response->json();
-		$this->assertArrayHasKey('validity', $json);
-		$this->assertEquals('invalid_request', $json['validity']);
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 		
 	}
 

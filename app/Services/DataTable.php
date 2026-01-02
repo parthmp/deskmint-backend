@@ -5,8 +5,6 @@
 	use App\Helpers\Sanitize;
 	use App\Models\ClientsCustomField;
 	use Illuminate\Support\Facades\Schema;
-	use Carbon\Carbon;
-	use Carbon\CarbonTimeZone;
 	use Illuminate\Support\Facades\DB;
 
 	class DataTable{
@@ -274,59 +272,59 @@
 
 		}
 
-		public static function modifyForColumns($columns, $columns_sorting){
-			if(empty($columns_sorting)){
-				return $columns;
-			}
+		// public static function modifyForColumns($columns, $columns_sorting){
+		// 	if(empty($columns_sorting)){
+		// 		return $columns;
+		// 	}
 			
-			$result = [];
+		// 	$result = [];
 			
-			if(!empty($columns_sorting->custom_fields)){
+		// 	if(!empty($columns_sorting->custom_fields)){
 				
-				$custom_field_ids = array_column($columns_sorting->custom_fields, 'clients_custom_fields_id');
+		// 		$custom_field_ids = array_column($columns_sorting->custom_fields, 'clients_custom_fields_id');
 				
-				$custom_fields = ClientsCustomField::whereIn('id', $custom_field_ids)->with('customFieldType')->get()->keyBy('id');
+		// 		$custom_fields = ClientsCustomField::whereIn('id', $custom_field_ids)->with('customFieldType')->get()->keyBy('id');
 				
-				foreach($columns_sorting->custom_fields as $item){
+		// 		foreach($columns_sorting->custom_fields as $item){
 
-					$field = $custom_fields[$item->clients_custom_fields_id] ?? null;
-					$input_type = $field->customFieldType->input_type ?? null;
+		// 			$field = $custom_fields[$item->clients_custom_fields_id] ?? null;
+		// 			$input_type = $field->customFieldType->input_type ?? null;
 
-					$label = str_replace([' ', '-'], '_', strtolower($field->label ?? ''));
-					if($input_type === 'date'){
-						$label .= '_cdate_';
-					}
+		// 			$label = str_replace([' ', '-'], '_', strtolower($field->label ?? ''));
+		// 			if($input_type === 'date'){
+		// 				$label .= '_cdate_';
+		// 			}
 					
-					$result[] = [
-						'label' => $label,
-						'text' => $field->label ?? null,
-						'order' => $item->order
-					];
-				}
-			}
+		// 			$result[] = [
+		// 				'label' => $label,
+		// 				'text' => $field->label ?? null,
+		// 				'order' => $item->order
+		// 			];
+		// 		}
+		// 	}
 			
-			if(!empty($columns_sorting->client_fields)){
-				foreach($columns_sorting->client_fields as $item){
-					$result[] = [
-						'label' => $item->field,
-						'text' => ucwords(str_replace('_', ' ', $item->field)),
-						'order' => $item->order
-					];
-				}
-			}
+		// 	if(!empty($columns_sorting->client_fields)){
+		// 		foreach($columns_sorting->client_fields as $item){
+		// 			$result[] = [
+		// 				'label' => $item->field,
+		// 				'text' => ucwords(str_replace('_', ' ', $item->field)),
+		// 				'order' => $item->order
+		// 			];
+		// 		}
+		// 	}
 			
-			usort($result, function($a, $b){
-				return $a['order'] <=> $b['order'];
-			});
+		// 	usort($result, function($a, $b){
+		// 		return $a['order'] <=> $b['order'];
+		// 	});
 			
-			unset($item);
+		// 	unset($item);
 			
-			array_push($result, [
-						'label'	=> 'actions',
-						'text'	=> 'Actions'
-					]);
+		// 	array_push($result, [
+		// 				'label'	=> 'actions',
+		// 				'text'	=> 'Actions'
+		// 			]);
 
-			return $result;
-		}
+		// 	return $result;
+		// }
 
 	}
