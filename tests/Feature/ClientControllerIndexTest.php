@@ -337,7 +337,7 @@ class ClientControllerIndexTest extends TestCase{
 		
 		$response->assertStatus(200);
 		$json = $response->json();
-
+		
 		$this->assertEquals('first_name', $json['table_data']['columns'][0]['label']);
 		$this->assertEquals('last_name', $json['table_data']['columns'][1]['label']);
 		$this->assertEquals('email', $json['table_data']['columns'][2]['label']);

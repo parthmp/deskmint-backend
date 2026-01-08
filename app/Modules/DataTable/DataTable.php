@@ -14,9 +14,8 @@ class DataTable{
     private string|null $searched_term = null;
     private int|null $current_page = null;
     private array|null $sorted_column = [];
-    private string|null $per_page = null;
+    private int|null $per_page = 15;
     private array|null $date_range = null;
-    private int $default_per_page = 15;
     private array $hide_columns = ['deleted_at', 'updated_at'];
     private bool $paginate = false;
 	private Model $model;
@@ -65,10 +64,12 @@ class DataTable{
 
 	public function setCompanyId(int $company_id) : self {
 		$this->company_id = $company_id;
+		
 		return $this;
 	}
 
-	public function setSearchableColumns() : self {
+	public function setSearchableColumns(array $searchables) : self {
+		$this->searchables = $searchables;
 		$this->searchable_columns_with_tables = [];
 		for($z = 0 ; $z < count($this->allowed_columns) ; $z++){
 			$tables_for_columns[] = $this->table;
@@ -88,7 +89,7 @@ class DataTable{
 	}
 
 	public function setPerPage(int $per_page) : self {
-		$this->default_per_page = $per_page;
+		$this->per_page = $per_page;
 		return $this;
 	}
 
@@ -112,6 +113,13 @@ class DataTable{
 		return $this;
 	}
 
+	public function executeCompanyId() : self {
+		if($this->company_id !== null){
+			$this->fields = $this->fields->where("{$this->table}.company_id", '=', $this->company_id);
+		}
+		return $this;
+	}
+
 	public function executeJoins() : self {
 
 		foreach($this->joins as $join){
@@ -126,10 +134,10 @@ class DataTable{
 					
 					if(stripos($col, ' as ') !== false) {
 						[$actual_column, $alias] = preg_split('/\s+as\s+/i', $col);
-						$allowed_columns[] = trim($alias);
+						$this->allowed_columns[] = trim($alias);
 						$this->searchable_columns_with_tables[] = trim($actual_column);
 					}else{
-						$allowed_columns[] = basename(str_replace('.', '/', $col));
+						$this->allowed_columns[] = basename(str_replace('.', '/', $col));
 						$this->searchable_columns_with_tables[] = $col;
 					}
 
@@ -145,7 +153,7 @@ class DataTable{
 		}
 
 		$this->fields->select($this->selects);
-
+	
 		return $this;
 
 	}
@@ -178,7 +186,7 @@ class DataTable{
 		return $this;
 	}
 
-	public function setForDateRange() : self {
+	public function executeDateRange() : self {
 
 		if($this->date_range){
 
@@ -260,7 +268,11 @@ class DataTable{
 	}
 
 	public function executeRewrites() : self {
-		if(isset($this->sorted_column['label'], $this->sorted_column['sort_visibility']) && in_array($this->sorted_column['label'], $this->allowed_columns, true) && in_array(strtolower($this->sorted_column['sort_visibility']), $this->allowed_sorting_directions, true)){
+		if(
+			isset($this->sorted_column['label'], $this->sorted_column['sort_visibility']) && 
+			in_array($this->sorted_column['label'], $this->allowed_columns, true) && 
+			in_array(strtolower($this->sorted_column['sort_visibility']), $this->allowed_sorting_directions, true)
+		){
 
 			$direction = strtolower($this->sorted_column['sort_visibility']);
 			$column = $this->sorted_column['label'];
@@ -304,7 +316,7 @@ class DataTable{
 
 	public function results() : LengthAwarePaginator {
 
-		$this->setSearchableColumns()->setPaginate()->setFields()->executeJoins()->setForDateRange()->executeSearchTerm()->setPaginateSortedColumns()->executeRewrites();
+		$this->setPaginate()->setFields()->executeJoins()->executeCompanyId()->executeDateRange()->executeSearchTerm()->setPaginateSortedColumns()->executeRewrites();
 
 		if($this->paginate){
 			$fields = $this->fields->orderBy($this->table.'.id', 'desc')->paginate($this->per_page, ['*'], 'page', (int)$this->current_page);

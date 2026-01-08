@@ -385,8 +385,8 @@ class ClientsController extends Controller{
 		$data['searched_term'] = Sanitize::input($request->input('searched_term'));
 		$data['current_page'] = Sanitize::input($request->input('current_page'));
 		$data['sorted_column'] = $request->input('sorted_column');
-		$data['per_page'] = Sanitize::input($request->input('per_page'));
-		$data['date_range'] = Sanitize::input($request->input('date_range'));
+		$data['per_page'] = Sanitize::input($request->input('default_per_page'));
+		$data['date_range'] = $request->input('date_range');
 
 		$joins =	[
 				[
