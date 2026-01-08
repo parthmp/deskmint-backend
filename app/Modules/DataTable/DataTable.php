@@ -4,7 +4,8 @@ namespace App\Modules\DataTable;
 
 use App\Helpers\Sanitize;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -23,13 +24,14 @@ class DataTable{
 	private array $allowed_columns;
 	private array $selects;
 	private array $joins;
-	private Collection $fields;
+	private Builder $fields;
 	private array $tables_for_columns = [];
 	private array $dates_columns = [];
 	private array $rewrites = [];
 	private array $searchables = [];
 	private array $searchable_columns_with_tables = [];
 	private array $allowed_sorting_directions = ['asc', 'desc'];
+	private int $company_id = 0;
 	
 	public function setVars(array $data) : self {
 		$this->searched_term = $data['searched_term'];
@@ -53,6 +55,16 @@ class DataTable{
 		if(count($columns) > 0){
 			$this->allowed_columns = array_values(array_diff($this->allowed_columns, $columns));
 		}
+		return $this;
+	}
+
+	public function setDatesColumns(array $dates_columns) : self {
+		$this->dates_columns = $dates_columns;
+		return $this;
+	}
+
+	public function setCompanyId(int $company_id) : self {
+		$this->company_id = $company_id;
 		return $this;
 	}
 
@@ -153,7 +165,7 @@ class DataTable{
 		// 	$current_page = (int)Sanitize::input($request->input('current_page'));
 		// }
 
-		$this->sorted_column = null;
+		//$this->sorted_column = null;
 		if($this->sorted_column){
 			
 			//$sorted_column = $request->input('sorted_column');
@@ -199,7 +211,7 @@ class DataTable{
 		if($this->searched_term !== ''){
 					
 			//if(empty($searchables)){
-				$this->fields->where(function ($q) {
+				$this->fields = $this->fields->where(function ($q) {
 					
 					foreach($this->searchable_columns_with_tables as $index => $column){
 
@@ -290,7 +302,9 @@ class DataTable{
 
 	}
 
-	public function results() : Collection {
+	public function results() : LengthAwarePaginator {
+
+		$this->setSearchableColumns()->setPaginate()->setFields()->executeJoins()->setForDateRange()->executeSearchTerm()->setPaginateSortedColumns()->executeRewrites();
 
 		if($this->paginate){
 			$fields = $this->fields->orderBy($this->table.'.id', 'desc')->paginate($this->per_page, ['*'], 'page', (int)$this->current_page);

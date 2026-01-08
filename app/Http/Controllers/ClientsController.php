@@ -12,7 +12,8 @@ use App\Models\Currency;
 use App\Models\Industry;
 use App\Models\SettingsIndexColumn;
 use App\Models\UserIndexColumn;
-use App\Services\DataTable;
+use App\Modules\DataTable\DataTable;
+//use App\Services\DataTable;
 use App\Traits\ArrangedColumns;
 use App\Traits\CustomFieldsPrinting;
 use App\Traits\CustomFieldsUpsert;
@@ -28,6 +29,8 @@ use Illuminate\Support\Facades\Validator;
 class ClientsController extends Controller{
 
 	use CustomFieldsPrinting, CustomFieldsValidation, CustomFieldsUpsert, ArrangedColumns;
+
+	public function __construct(private DataTable $datatable){}
 
 	public function fetchClientsCustomFields(Request $request){
 
@@ -379,13 +382,13 @@ class ClientsController extends Controller{
 		}
 		$clients_flat_columns = array_unique($clients_flat_columns);
 		
-		$fields = DataTable::sortNPaginate(
-			$request,
-			\App\Models\Client::class,
-			['deleted_at', 'updated_at'],
-			$company_id,
-			$searchable_dates,
-			[
+		$data['searched_term'] = Sanitize::input($request->input('searched_term'));
+		$data['current_page'] = Sanitize::input($request->input('current_page'));
+		$data['sorted_column'] = $request->input('sorted_column');
+		$data['per_page'] = Sanitize::input($request->input('per_page'));
+		$data['date_range'] = Sanitize::input($request->input('date_range'));
+
+		$joins =	[
 				[
 					'table' => 'clients_flat',
 					'first' => 'clients.id',
@@ -428,10 +431,63 @@ class ClientsController extends Controller{
 					'second' => 'industries.id',
 					'columns' => ['industries.industry_name as industry_name']
 				]
-			],
-			[],
-			$searchable_columns
-		);
+			];
+
+		$fields = $this->datatable->setVars($data)->setModel(Client::class)->skipColumns(['deleted_at', 'updated_at'])->setDatesColumns($searchable_dates)->setCompanyId($company_id)->setJoins($joins)->setSearchableColumns($searchable_columns)->results();
+		
+		// $fields = DataTable::sortNPaginate(
+		// 	$request,
+		// 	\App\Models\Client::class,
+		// 	['deleted_at', 'updated_at'],
+		// 	$company_id,
+		// 	$searchable_dates,
+		// 	[
+		// 		[
+		// 			'table' => 'clients_flat',
+		// 			'first' => 'clients.id',
+		// 			'operator' => '=',
+		// 			'second' => 'clients_flat.client_id',
+		// 			'columns' => $clients_flat_columns
+		// 		],
+		// 		[
+		// 			'table' => 'companies',
+		// 			'first' => 'clients.company_id',
+		// 			'operator' => '=',
+		// 			'second' => 'companies.id',
+		// 			'columns' => ['companies.company_name as company_name']
+		// 		],
+		// 		[
+		// 			'table' => 'currencies',
+		// 			'first' => 'clients.currency_id',
+		// 			'operator' => '=',
+		// 			'second' => 'currencies.id',
+		// 			'columns' => ['currencies.currency as currency']
+		// 		],
+		// 		[
+		// 			'table' => 'countries as b_countries',
+		// 			'first' => 'clients.billing_country_id',
+		// 			'operator' => '=',
+		// 			'second' => 'b_countries.id',
+		// 			'columns' => ['b_countries.country_name as b_country_name']
+		// 		],
+		// 		[
+		// 			'table' => 'countries as s_countries',
+		// 			'first' => 'clients.shipping_country_id',
+		// 			'operator' => '=',
+		// 			'second' => 's_countries.id',
+		// 			'columns' => ['s_countries.country_name as s_country_name']
+		// 		],
+		// 		[
+		// 			'table' => 'industries',
+		// 			'first' => 'clients.industry_id',
+		// 			'operator' => '=',
+		// 			'second' => 'industries.id',
+		// 			'columns' => ['industries.industry_name as industry_name']
+		// 		]
+		// 	],
+		// 	[],
+		// 	$searchable_columns
+		// );
 		
 		$rows = $fields->items();
 		

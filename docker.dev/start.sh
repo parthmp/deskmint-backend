@@ -10,6 +10,10 @@ set -e
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
+# FIX TINKER PERMISSIONS
+mkdir -p /var/www/.config/psysh && chown -R www-data:www-data /var/www/.config
+chmod -R 755 /var/www/.config
+
 supervisord
 
 /usr/local/sbin/php-fpm -F
