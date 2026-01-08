@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Schema;
 
 class DataTable{
 
+	public function  __construct(private QueryBuilder $query_builder){}
+
     private string|null $searched_term = null;
     private int|null $current_page = null;
     private array|null $sorted_column = [];
@@ -50,6 +52,11 @@ class DataTable{
 
 	}
 
+	public function setRewrites(array $rewrites) :self {
+		$this->rewrites = $rewrites;
+		return $this;
+	}
+
 	public function skipColumns(array $columns) : self {
 		if(count($columns) > 0){
 			$this->allowed_columns = array_values(array_diff($this->allowed_columns, $columns));
@@ -72,7 +79,7 @@ class DataTable{
 		$this->searchables = $searchables;
 		$this->searchable_columns_with_tables = [];
 		for($z = 0 ; $z < count($this->allowed_columns) ; $z++){
-			$tables_for_columns[] = $this->table;
+			$this->tables_for_columns[] = $this->table;
 			$this->searchable_columns_with_tables[] = $this->table . '.' . $this->allowed_columns[$z];
 		}
 		return $this;
@@ -143,9 +150,9 @@ class DataTable{
 
 					if(stripos($join['table'], ' as ') !== false){
 						[, $alias] = preg_split('/\s+as\s+/i', $join['table']);
-						$tables_for_columns[] = trim($alias);
+						$this->tables_for_columns[] = trim($alias);
 					}else{
-						$tables_for_columns[] = $join['table'];
+						$this->tables_for_columns[] = $join['table'];
 					}
 				}
 
@@ -160,24 +167,8 @@ class DataTable{
 
 	public function setPaginateSortedColumns() : self {
 
-		// $searched_term = '';
-		// if($this->searched_term){
-		// 	$this->searched_term = Sanitize::input($request->input('searched_term'));
-		// }
-		
-		// if($request->filled('per_page')){
-		// 	$per_page = (int)Sanitize::input($request->input('per_page'));
-		// }
-
-		// if($request->filled('current_page')){
-		// 	$current_page = (int)Sanitize::input($request->input('current_page'));
-		// }
-
-		//$this->sorted_column = null;
 		if($this->sorted_column){
-			
-			//$sorted_column = $request->input('sorted_column');
-			
+
 			foreach($this->sorted_column as $key => $value){
 				$sorted_column[$key] = Sanitize::input($value);
 			}
@@ -218,49 +209,48 @@ class DataTable{
 
 		if($this->searched_term !== ''){
 					
-			//if(empty($searchables)){
-				$this->fields = $this->fields->where(function ($q) {
-					
-					foreach($this->searchable_columns_with_tables as $index => $column){
+			$this->fields = $this->fields->where(function ($q) {
+				
+				foreach($this->searchable_columns_with_tables as $index => $column){
 
-						$search_allowed = false;
+					$search_allowed = false;
 
-						if($this->searchables === null){
+					if($this->searchables === null){
+						$search_allowed = true;
+					}else if(is_array($this->searchables)){
+						if(in_array($column, $this->searchables)){
 							$search_allowed = true;
-						}else if(is_array($this->searchables)){
-							if(in_array($column, $this->searchables)){
-								$search_allowed = true;
-							}
 						}
-
-						if($search_allowed){
-
-							$search_expr = $column;
-
-							foreach($this->rewrites as $key => $map){
-								if($column === $key || $column === $key || $column === preg_replace('/.*\./', '', $key)){
-									$case = "CASE";
-									foreach($map as $db_value => $display_value){
-										$case .= " WHEN {$key} = '".addslashes($db_value)."' THEN '".addslashes($display_value)."'";
-									}
-									$case .= " ELSE {$key} END";
-									$search_expr = DB::raw($case);
-									break;
-								}
-							}
-
-							if($index === 0){
-								$q->whereRaw($search_expr instanceof \Illuminate\Database\Query\Expression ? $search_expr->getValue(DB::connection()->getQueryGrammar()) . " LIKE ?" : "{$search_expr} LIKE ?", ["%{$this->searched_term}%"]);
-							}else{
-								$q->orWhereRaw($search_expr instanceof \Illuminate\Database\Query\Expression ? $search_expr->getValue(DB::connection()->getQueryGrammar()) . " LIKE ?" : "{$search_expr} LIKE ?", ["%{$this->searched_term}%"]
-								);
-							}
-
-						}
-					
 					}
-				});
-			//}
+
+					if($search_allowed){
+
+						$search_expr = $column;
+
+						foreach($this->rewrites as $key => $map){
+							if($column === $key || $column === $key || $column === preg_replace('/.*\./', '', $key)){
+								$case = "CASE";
+								foreach($map as $db_value => $display_value){
+									$case .= " WHEN {$key} = '".addslashes($db_value)."' THEN '".addslashes($display_value)."'";
+								}
+								$case .= " ELSE {$key} END";
+								$search_expr = DB::raw($case);
+								break;
+							}
+						}
+
+						if($index === 0){
+							$q->whereRaw($search_expr instanceof \Illuminate\Database\Query\Expression ? $search_expr->getValue(DB::connection()->getQueryGrammar()) . " LIKE ?" : "{$search_expr} LIKE ?", ["%{$this->searched_term}%"]);
+						}else{
+							$q->orWhereRaw($search_expr instanceof \Illuminate\Database\Query\Expression ? $search_expr->getValue(DB::connection()->getQueryGrammar()) . " LIKE ?" : "{$search_expr} LIKE ?", ["%{$this->searched_term}%"]
+							);
+						}
+
+					}
+				
+				}
+			});
+			
 
 		}
 

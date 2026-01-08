@@ -433,9 +433,37 @@ class ClientsController extends Controller{
 				]
 			];
 
-		$fields = $this->datatable->setVars($data)->setModel(Client::class)->skipColumns(['deleted_at', 'updated_at'])->setDatesColumns($searchable_dates)->setCompanyId($company_id)->setJoins($joins)->setSearchableColumns($searchable_columns)->results();
+			// $slug.'s_custom_fields.required' => [
+			// 		0	=>	'No',
+			// 		1	=>	"Yes"
+			// 	]
+
+		$fields = $this->datatable->setVars($data)->setModel(Client::class)->skipColumns(['deleted_at', 'updated_at'])->setDatesColumns($searchable_dates)->setCompanyId($company_id)->setJoins($joins)->setSearchableColumns($searchable_columns)->setRewrites([
+			'clients.send_reminders' => [
+				0	=>	'No',
+				1	=>	"Yes"
+			]
+		])->results();
+
+		$fields->each(function($ele){
+			
+			if((int)$ele->send_reminders === 0){
+				$ele->send_reminders = [
+					'type'		=>	'label',
+					'highlight'	=>	'error',
+					'text'		=>	'No'
+				];
+			}else{
+				$ele->send_reminders = [
+					'type'		=>	'label',
+					'highlight'	=>	'success',
+					'text'		=>	'Yes'
+				];
+			}
+
+		});
 		
-		// $fields = DataTable::sortNPaginate(
+		// $fields = \App\Services\DataTable::sortNPaginate(
 		// 	$request,
 		// 	\App\Models\Client::class,
 		// 	['deleted_at', 'updated_at'],
@@ -485,7 +513,12 @@ class ClientsController extends Controller{
 		// 			'columns' => ['industries.industry_name as industry_name']
 		// 		]
 		// 	],
-		// 	[],
+		// 	[
+		// 		'clients.send_reminders' => [
+		// 		0	=>	'No',
+		// 		1	=>	"Yes"
+		// 	]
+		// 	],
 		// 	$searchable_columns
 		// );
 		
@@ -495,7 +528,7 @@ class ClientsController extends Controller{
 			
 			foreach($rows[$z]->getAttributes() as $col_key => $col_val){
 				
-				if(General::isMySQLDateTime($col_val)){
+				if(!is_array($col_val) && General::isMySQLDateTime($col_val)){
 					
 					if(in_array($col_key, $date_only_columns)){
 						$rows[$z]->{$col_key} = [
