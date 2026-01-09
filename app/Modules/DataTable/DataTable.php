@@ -3,14 +3,22 @@
 namespace App\Modules\DataTable;
 
 use App\Helpers\Sanitize;
+use App\Modules\DataTable\Builders\QueryBuilder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * DataTable class
+ */
 class DataTable{
 
+	/**
+	 * __construct function
+	 *
+	 * @param QueryBuilder $query_builder
+	 */
 	public function  __construct(private QueryBuilder $query_builder){}
 
     private string|null $searched_term = null;
@@ -34,6 +42,12 @@ class DataTable{
 	private array $allowed_sorting_directions = ['asc', 'desc'];
 	private int $company_id = 0;
 	
+	/**
+	 * setVars function
+	 *
+	 * @param array $data
+	 * @return self
+	 */
 	public function setVars(array $data) : self {
 		$this->searched_term = $data['searched_term'];
 		$this->current_page = $data['current_page'];
@@ -43,6 +57,12 @@ class DataTable{
 		return $this;
 	}
 
+	/**
+	 * setModel function
+	 *
+	 * @param string $model_class
+	 * @return self
+	 */
 	public function setModel(string $model_class) : self {
 
 		$this->model = new $model_class;
@@ -52,11 +72,23 @@ class DataTable{
 
 	}
 
+	/**
+	 * setRewrites function
+	 *
+	 * @param array $rewrites
+	 * @return self
+	 */
 	public function setRewrites(array $rewrites) :self {
 		$this->rewrites = $rewrites;
 		return $this;
 	}
 
+	/**
+	 * skipColumns function
+	 *
+	 * @param array $columns
+	 * @return self
+	 */
 	public function skipColumns(array $columns) : self {
 		if(count($columns) > 0){
 			$this->allowed_columns = array_values(array_diff($this->allowed_columns, $columns));
@@ -64,17 +96,35 @@ class DataTable{
 		return $this;
 	}
 
+	/**
+	 * setDatesColumns function
+	 *
+	 * @param array $dates_columns
+	 * @return self
+	 */
 	public function setDatesColumns(array $dates_columns) : self {
 		$this->dates_columns = $dates_columns;
 		return $this;
 	}
 
+	/**
+	 * setCompanyId function
+	 *
+	 * @param integer $company_id
+	 * @return self
+	 */
 	public function setCompanyId(int $company_id) : self {
 		$this->company_id = $company_id;
 		
 		return $this;
 	}
 
+	/**
+	 * setSearchableColumns function
+	 *
+	 * @param array $searchables
+	 * @return self
+	 */
 	public function setSearchableColumns(array $searchables) : self {
 		$this->searchables = $searchables;
 		$this->searchable_columns_with_tables = [];
@@ -85,6 +135,11 @@ class DataTable{
 		return $this;
 	}
 
+	/**
+	 * setPaginate function
+	 *
+	 * @return self
+	 */
 	public function setPaginate() : self {
 
 		if($this->searched_term || $this->current_page || $this->sorted_column || $this->per_page || $this->date_range){
@@ -95,14 +150,25 @@ class DataTable{
 
 	}
 
+	/**
+	 * setPerPage function
+	 *
+	 * @param integer $per_page
+	 * @return self
+	 */
 	public function setPerPage(int $per_page) : self {
 		$this->per_page = $per_page;
 		return $this;
 	}
 
+	/**
+	 * setFields function
+	 *
+	 * @return self
+	 */
 	public function setFields() : self {
 
-		$this->fields = $this->model::query()->from($this->table);
+		$this->fields = $this->query_builder->create($this->model, $this->table);
 
 		$all_columns = Schema::getColumnListing($this->table);
 		$this->selects = array_diff($all_columns, $this->hide_columns);
@@ -115,56 +181,48 @@ class DataTable{
 
 	}
 
+	/**
+	 * setJoins function
+	 *
+	 * @param array $joins
+	 * @return self
+	 */
 	public function setJoins(array $joins) :self {
 		$this->joins = $joins;
 		return $this;
 	}
 
+	/**
+	 * executeCompanyId function
+	 *
+	 * @return self
+	 */
 	public function executeCompanyId() : self {
 		if($this->company_id !== null){
-			$this->fields = $this->fields->where("{$this->table}.company_id", '=', $this->company_id);
+			$this->fields = $this->query_builder->buildForCompanyId($this->fields, $this->table, $this->company_id);
 		}
 		return $this;
 	}
 
+	/**
+	 * executeJoins function
+	 *
+	 * @return self
+	 */
 	public function executeJoins() : self {
 
-		foreach($this->joins as $join){
-
-			$this->fields->leftJoin($join['table'], $join['first'], $join['operator'], $join['second']);
-
-			if(!empty($join['columns'])){
-
-				foreach ($join['columns'] as $col){
-
-					$this->selects[] = $col;
-					
-					if(stripos($col, ' as ') !== false) {
-						[$actual_column, $alias] = preg_split('/\s+as\s+/i', $col);
-						$this->allowed_columns[] = trim($alias);
-						$this->searchable_columns_with_tables[] = trim($actual_column);
-					}else{
-						$this->allowed_columns[] = basename(str_replace('.', '/', $col));
-						$this->searchable_columns_with_tables[] = $col;
-					}
-
-					if(stripos($join['table'], ' as ') !== false){
-						[, $alias] = preg_split('/\s+as\s+/i', $join['table']);
-						$this->tables_for_columns[] = trim($alias);
-					}else{
-						$this->tables_for_columns[] = $join['table'];
-					}
-				}
-
-			}
-		}
-
-		$this->fields->select($this->selects);
+		/** works with refs/pointers  */
+		$this->query_builder->buildJoins($this->fields, $this->joins, $this->selects, $this->allowed_columns, $this->searchable_columns_with_tables, $this->tables_for_columns);
 	
 		return $this;
 
 	}
 
+	/**
+	 * setPaginateSortedColumns function
+	 *
+	 * @return self
+	 */
 	public function setPaginateSortedColumns() : self {
 
 		if($this->sorted_column){
@@ -177,6 +235,11 @@ class DataTable{
 		return $this;
 	}
 
+	/**
+	 * executeDateRange function
+	 *
+	 * @return self
+	 */
 	public function executeDateRange() : self {
 
 		if($this->date_range){
@@ -185,78 +248,39 @@ class DataTable{
 				
 				$from_date = (string) Sanitize::input($this->date_range[0]);
 				$to_date = (string) Sanitize::input($this->date_range[1]);
-				
-				if(strtotime($from_date) !== false && strtotime($to_date) !== false){
 
-					$this->fields = $this->fields->where(function ($query) use ($from_date, $to_date) {
-						foreach($this->dates_columns as $index => $column){
-							if($index === 0){
-								$query->whereBetween($column, [$from_date, $to_date]);
-							}else{
-								$query->orWhereBetween($column, [$from_date, $to_date]);
-							}
-						}
-					});
-
+				$data = $this->query_builder->buildForDateRange($this->fields, $from_date, $to_date, $this->dates_columns);
+				if($data){
+					$this->fields = $data;
 				}
+
 			} 
 
 		}
 		return $this;
 	}
 
+	/**
+	 * executeSearchTerm function
+	 *
+	 * @return self
+	 */
 	public function executeSearchTerm() : self {
 
 		if($this->searched_term !== ''){
-					
-			$this->fields = $this->fields->where(function ($q) {
-				
-				foreach($this->searchable_columns_with_tables as $index => $column){
 
-					$search_allowed = false;
-
-					if($this->searchables === null){
-						$search_allowed = true;
-					}else if(is_array($this->searchables)){
-						if(in_array($column, $this->searchables)){
-							$search_allowed = true;
-						}
-					}
-
-					if($search_allowed){
-
-						$search_expr = $column;
-
-						foreach($this->rewrites as $key => $map){
-							if($column === $key || $column === $key || $column === preg_replace('/.*\./', '', $key)){
-								$case = "CASE";
-								foreach($map as $db_value => $display_value){
-									$case .= " WHEN {$key} = '".addslashes($db_value)."' THEN '".addslashes($display_value)."'";
-								}
-								$case .= " ELSE {$key} END";
-								$search_expr = DB::raw($case);
-								break;
-							}
-						}
-
-						if($index === 0){
-							$q->whereRaw($search_expr instanceof \Illuminate\Database\Query\Expression ? $search_expr->getValue(DB::connection()->getQueryGrammar()) . " LIKE ?" : "{$search_expr} LIKE ?", ["%{$this->searched_term}%"]);
-						}else{
-							$q->orWhereRaw($search_expr instanceof \Illuminate\Database\Query\Expression ? $search_expr->getValue(DB::connection()->getQueryGrammar()) . " LIKE ?" : "{$search_expr} LIKE ?", ["%{$this->searched_term}%"]
-							);
-						}
-
-					}
-				
-				}
-			});
+			$this->fields = $this->query_builder->buildForSearchTerm($this->fields, $this->searchable_columns_with_tables, $this->searchables, $this->rewrites, $this->searched_term);
 			
-
 		}
 
 		return $this;
 	}
 
+	/**
+	 * executeRewrites function
+	 *
+	 * @return self
+	 */
 	public function executeRewrites() : self {
 		if(
 			isset($this->sorted_column['label'], $this->sorted_column['sort_visibility']) && 
@@ -264,46 +288,19 @@ class DataTable{
 			in_array(strtolower($this->sorted_column['sort_visibility']), $this->allowed_sorting_directions, true)
 		){
 
-			$direction = strtolower($this->sorted_column['sort_visibility']);
-			$column = $this->sorted_column['label'];
+			$this->query_builder->buildForRewrites($this->fields, $this->sorted_column, $this->rewrites, $this->table);
 
-			$rewrite_key = null;
-			foreach($this->rewrites as $key => $map){
-				if($column === $key || $column === preg_replace('/.*\./', '', $key)){
-					$rewrite_key = $key;
-					break;
-				}
-			}
-
-			if($rewrite_key !== null){
-
-				$case = "CASE";
-				foreach($this->rewrites[$rewrite_key] as $db_value => $display_value){
-					$case .= " WHEN {$rewrite_key} = '".addslashes($db_value)."' THEN '".addslashes($display_value)."'";
-				}
-				$case .= " ELSE {$rewrite_key} END";
-
-				$this->fields->orderByRaw("$case $direction");
-
-			}else{
-
-				
-				$database_type = DB::connection()->getConfig('driver');
-				if($database_type === 'mysql'){
-					$this->fields->orderBy($column, $direction);
-				}else{
-					$qualified_column = (strpos($column, '.') === false) ? "{$this->table}.{$column}" : $column;
-					$this->fields->orderBy($qualified_column, $direction);
-				}
-				
-
-			}
 		}
 
 		return $this;
 
 	}
 
+	/**
+	 * results function
+	 *
+	 * @return LengthAwarePaginator
+	 */
 	public function results() : LengthAwarePaginator {
 
 		$this->setPaginate()->setFields()->executeJoins()->executeCompanyId()->executeDateRange()->executeSearchTerm()->setPaginateSortedColumns()->executeRewrites();
