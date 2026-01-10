@@ -1,11 +1,11 @@
 <?php
 
-namespace App\FieldDefinitions\ArrangedFields;
+namespace App\Modules\ArrangedFields\Implementation;
 
-use App\Interfaces\ArrangedFieldsInterface;
+use App\Modules\ArrangedFields\Contracts\ArrangedFieldsInterface;
 use App\Traits\SettingsDefault;
 
-class ProductColumnsFields implements ArrangedFieldsInterface{
+class CompanyDetailsFields implements ArrangedFieldsInterface{
 
 	use SettingsDefault;
 
@@ -20,7 +20,7 @@ class ProductColumnsFields implements ArrangedFieldsInterface{
 	}
 
 	public function fetchDefaultArrangedFieldsData(int $company_id){
-		return $this->getDefaultProductColumnsSettings($company_id);
+		return $this->getDefaultInvoiceCompanyDetailsSettings($company_id);
 	}
 
 	public function getType(): string {

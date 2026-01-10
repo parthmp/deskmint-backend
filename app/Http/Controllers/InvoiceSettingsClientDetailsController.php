@@ -2,17 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\FieldDefinitions\ArrangedFields\ClientsDetailsFields;
-use App\FieldDefinitions\ArrangedFields\SettingsArrangedFields;
-use App\Helpers\General;
+
 use App\Helpers\Sanitize;
 use App\Models\ClientsCustomField;
-use App\Models\SettingsSection;
+use App\Modules\ArrangedFields\ArrangedFields;
+use App\Modules\ArrangedFields\Implementation\ClientsDetailsFields;
 use App\Traits\SettingsDefault;
-use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Validator;
 
 class InvoiceSettingsClientDetailsController extends Controller{
 
@@ -26,7 +22,7 @@ class InvoiceSettingsClientDetailsController extends Controller{
 		
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 		
-		return (new SettingsArrangedFields($this->getClientDetailFields(), $request, $company_id))->fetchArrangedFieldsData(ClientsCustomField::class);
+		return (new ArrangedFields($this->getClientDetailFields(), $request, $company_id))->fetchArrangedFieldsData(ClientsCustomField::class);
 
 	}
 
@@ -35,7 +31,7 @@ class InvoiceSettingsClientDetailsController extends Controller{
 
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 
-		$settings_arranged_fields = new SettingsArrangedFields($this->getClientDetailFields(), $request, $company_id);
+		$settings_arranged_fields = new ArrangedFields($this->getClientDetailFields(), $request, $company_id);
 
 		return $settings_arranged_fields->saveOrUpdate(ClientsCustomField::class, 'clients');
 

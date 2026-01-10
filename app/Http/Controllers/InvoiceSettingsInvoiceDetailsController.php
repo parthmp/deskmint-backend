@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\FieldDefinitions\ArrangedFields\InvoiceDetailsFields;
-use App\FieldDefinitions\ArrangedFields\SettingsArrangedFields;
 use App\Helpers\Sanitize;
 use App\Models\InvoicesCustomField;
+use App\Modules\ArrangedFields\ArrangedFields;
+use App\Modules\ArrangedFields\Implementation\InvoiceDetailsFields;
 use App\Traits\SettingsDefault;
 use Illuminate\Http\Request;
 
@@ -21,7 +21,7 @@ class InvoiceSettingsInvoiceDetailsController extends Controller{
 		
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 		
-		return (new SettingsArrangedFields($this->getInvoiceDetailFields(), $request, $company_id))->fetchArrangedFieldsData(InvoicesCustomField::class);
+		return (new ArrangedFields($this->getInvoiceDetailFields(), $request, $company_id))->fetchArrangedFieldsData(InvoicesCustomField::class);
 
 	}
 
@@ -30,7 +30,7 @@ class InvoiceSettingsInvoiceDetailsController extends Controller{
 
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 
-		$settings_arranged_fields = new SettingsArrangedFields($this->getInvoiceDetailFields(), $request, $company_id);
+		$settings_arranged_fields = new ArrangedFields($this->getInvoiceDetailFields(), $request, $company_id);
 
 		return $settings_arranged_fields->saveOrUpdate(InvoicesCustomField::class, 'invoices');
 

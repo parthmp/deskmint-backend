@@ -1,18 +1,18 @@
 <?php
 
-namespace App\FieldDefinitions\ArrangedFields;
+namespace App\Modules\ArrangedFields;
 
 use App\Helpers\General;
 use App\Helpers\Sanitize;
-use App\Interfaces\ArrangedFieldsInterface;
 use App\Models\SettingsSection;
+use App\Modules\ArrangedFields\Contracts\ArrangedFieldsInterface;
 use App\Traits\SettingsDefault;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 
-class SettingsArrangedFields{
+class ArrangedFields{
 
 	use SettingsDefault;
 

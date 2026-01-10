@@ -1,8 +1,8 @@
 <?php
 
-namespace App\FieldDefinitions\ArrangedFields;
+namespace App\Modules\ArrangedFields\Implementation;
 
-use App\Interfaces\ArrangedFieldsInterface;
+use App\Modules\ArrangedFields\Contracts\ArrangedFieldsInterface;
 use App\Traits\SettingsDefault;
 
 class ClientsDetailsFields implements ArrangedFieldsInterface{

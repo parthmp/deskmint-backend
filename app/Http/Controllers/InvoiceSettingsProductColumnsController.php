@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\FieldDefinitions\ArrangedFields\ProductColumnsFields;
-use App\FieldDefinitions\ArrangedFields\SettingsArrangedFields;
 use App\Helpers\Sanitize;
 use App\Models\AdditionalProductColumnsField;
+use App\Modules\ArrangedFields\ArrangedFields;
+use App\Modules\ArrangedFields\Implementation\ProductColumnsFields;
 use App\Traits\SettingsDefault;
 use Illuminate\Http\Request;
 
@@ -21,7 +21,7 @@ class InvoiceSettingsProductColumnsController extends Controller{
 		
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 		
-		return (new SettingsArrangedFields($this->getProductColumnFields(), $request, $company_id))->fetchArrangedFieldsData();
+		return (new ArrangedFields($this->getProductColumnFields(), $request, $company_id))->fetchArrangedFieldsData();
 
 	}
 
@@ -30,7 +30,7 @@ class InvoiceSettingsProductColumnsController extends Controller{
 
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 
-		$settings_arranged_fields = new SettingsArrangedFields($this->getProductColumnFields(), $request, $company_id);
+		$settings_arranged_fields = new ArrangedFields($this->getProductColumnFields(), $request, $company_id);
 
 		return $settings_arranged_fields->saveOrUpdate(AdditionalProductColumnsField::class, 'invoice_items',  ['product_id' => 'Item']);
 

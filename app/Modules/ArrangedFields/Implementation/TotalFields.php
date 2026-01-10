@@ -1,16 +1,11 @@
 <?php
 
-namespace App\FieldDefinitions\ArrangedFields;
+namespace App\Modules\ArrangedFields\Implementation;
 
-use App\Helpers\General;
-use App\Helpers\Sanitize;
-use App\Interfaces\ArrangedFieldsInterface;
-use App\Models\SettingsSection;
+use App\Modules\ArrangedFields\Contracts\ArrangedFieldsInterface;
 use App\Traits\SettingsDefault;
-use Exception;
-use Illuminate\Http\Request;
 
-class CompanyAddressFields implements ArrangedFieldsInterface{
+class TotalFields implements ArrangedFieldsInterface{
 
 	use SettingsDefault;
 
@@ -25,7 +20,7 @@ class CompanyAddressFields implements ArrangedFieldsInterface{
 	}
 
 	public function fetchDefaultArrangedFieldsData(int $company_id){
-		return $this->getDefaultInvoiceCompanyAddressSettings($company_id);
+		return $this->getDefaultTotalFieldsSettings();
 	}
 
 	public function getType(): string {

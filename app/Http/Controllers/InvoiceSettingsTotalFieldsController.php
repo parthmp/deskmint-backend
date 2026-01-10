@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\FieldDefinitions\ArrangedFields\SettingsArrangedFields;
-use App\FieldDefinitions\ArrangedFields\TotalFields;
 use App\Helpers\Sanitize;
+use App\Modules\ArrangedFields\ArrangedFields;
+use App\Modules\ArrangedFields\Implementation\TotalFields;
 use App\Traits\SettingsDefault;
 use Illuminate\Http\Request;
 
@@ -20,7 +20,7 @@ class InvoiceSettingsTotalFieldsController extends Controller{
 		
 		$company_id = Sanitize::input($request->input('company_id'));
 		
-		return (new SettingsArrangedFields($this->getTotalFields(), $request, $company_id))->fetchArrangedFieldsData();
+		return (new ArrangedFields($this->getTotalFields(), $request, $company_id))->fetchArrangedFieldsData();
 
 	}
 
@@ -29,7 +29,7 @@ class InvoiceSettingsTotalFieldsController extends Controller{
 
 		$company_id = Sanitize::input($request->input('company_id'));
 
-		$settings_arranged_fields = new SettingsArrangedFields($this->getTotalFields(), $request, $company_id);
+		$settings_arranged_fields = new ArrangedFields($this->getTotalFields(), $request, $company_id);
 
 		return $settings_arranged_fields->saveOrUpdate('', '');
 
