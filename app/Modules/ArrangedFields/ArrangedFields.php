@@ -3,41 +3,32 @@
 namespace App\Modules\ArrangedFields;
 
 use App\Helpers\General;
-use App\Helpers\Sanitize;
 use App\Models\SettingsSection;
 use App\Modules\ArrangedFields\Contracts\ArrangedFieldsInterface;
 use App\Traits\SettingsDefault;
 use Exception;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Validator;
 
 class ArrangedFields{
 
 	use SettingsDefault;
 
 	private ArrangedFieldsInterface $arranged_object;
-	private int $company_id;
-	private Request $request;
+	private array $data;
 	
-	public function __construct(ArrangedFieldsInterface $obj, Request $request, int $company_id){
+	public function __construct(ArrangedFieldsInterface $obj, array $data){
 		$this->arranged_object = $obj;
-		$this->company_id = $company_id;
-		$this->request = $request;
+		$this->data = $data;
 	}
 
 	public function fetchArrangedFieldsData(string $model = ''){
-
+		
 		try{
-
-			$company_id = (int) Sanitize::input($this->company_id);
-
 			
-			$default_data = $this->arranged_object->fetchDefaultArrangedFieldsData($company_id);
+			$default_data = $this->arranged_object->fetchDefaultArrangedFieldsData($this->data['company_id']);
 			
+			$settings = SettingsSection::where([['type', '=', $this->arranged_object->getType()], ['company_id', '=', $this->data['company_id']]])->first();
 			
-			$settings = SettingsSection::where([['type', '=', $this->arranged_object->getType()], ['company_id', '=', $company_id]])->first();
-
 			if($settings){
 				
 				$dropdown_fields = [];
@@ -50,7 +41,7 @@ class ArrangedFields{
 
 					$temp_saved_rows = [];
 
-					$ids = $model::where('company_id', '=', $company_id)->pluck('id')->toArray();
+					$ids = $model::where('company_id', '=', $this->data['company_id'])->pluck('id')->toArray();
 					for($z = 0 ; $z < count($saved_rows) ; $z++){
 
 						if(isset($saved_rows[$z][$this->arranged_object->getJsonColumn()])){
@@ -88,8 +79,8 @@ class ArrangedFields{
 							}
 
 						}else{
-
-							if($saved_rows[$x][$this->arranged_object->getJsonColumn()] === $default_merged[$z][$this->arranged_object->getJsonColumn()]){
+							
+							if((string) $saved_rows[$x][$this->arranged_object->getJsonColumn()] === (string) $default_merged[$z][$this->arranged_object->getJsonColumn()]){
 								$found = true;
 								break;
 							}
@@ -103,7 +94,7 @@ class ArrangedFields{
 					}
 					
 				}
-
+				
 				return [
 					'dropdown'	=>	$dropdown_fields,
 					'rows'		=>	$saved_rows
@@ -119,16 +110,22 @@ class ArrangedFields{
 
 	}
 
+	/**
+	 * validateSettingsPost function
+	 *
+	 * @param array $rows
+	 * @param string $model
+	 * @param string $table
+	 * @return boolean
+	 */
 	private function validateSettingsPost(array $rows, string $model, string $table) : bool {
 		
-		$company_id = (int) Sanitize::input($this->company_id);
-			
-		$default = $this->arranged_object->fetchDefaultArrangedFieldsData($company_id);
-
+		$default = $this->arranged_object->fetchDefaultArrangedFieldsData($this->data['company_id']);
+		
 		$default = array_merge($default['dropdown'], $default['rows']);
-
+		
 		foreach($rows as $row){
-
+			
 			if($row['type'] === 'normal'){
 				
 				if(!isset($row['mapped'])){
@@ -149,7 +146,7 @@ class ArrangedFields{
 				}
 
 			}else{
-
+				
 				if(!isset($row[$this->arranged_object->getJsonColumn()])){
 					return false;
 				}
@@ -182,12 +179,14 @@ class ArrangedFields{
 		if(count($exceptions) === 0){
 			return '';
 		}
-
+		
 		$mapped = [];
 		foreach($rows as $row){
 			if(isset($row['mapped'])){
-				foreach($row['mapped'] as $mapped_field){
-					$mapped[] = $mapped_field;
+				if(is_array($row['mapped'])){
+					foreach($row['mapped'] as $mapped_field){
+						$mapped[] = $mapped_field;
+					}
 				}
 			}
 			
@@ -211,23 +210,21 @@ class ArrangedFields{
 	 */
 	public function saveOrUpdate(string $model, string $table, array $exceptions = []) { /* exceptions text values are mapped to the mapped array for each row */
 		
-		$v = Validator::make($this->request->all(), [
-			'rows'              => 'required|array',
-			'rows.*.id'         => 'required|integer',
-			'rows.*.text'       => 'required|string',
-			'rows.*.value'      => 'required|string',
-			'rows.*.type'       => 'required|string|in:normal,custom'
-		]);
+		// $v = Validator::make($this->request->all(), [
+		// 	'rows'              => 'required|array',
+		// 	'rows.*.id'         => 'required|integer',
+		// 	'rows.*.text'       => 'required|string',
+		// 	'rows.*.value'      => 'required|string',
+		// 	'rows.*.type'       => 'required|string|in:normal,custom'
+		// ]);
 
-		if($v->fails()){
-			return response(['message' => 'invalid request','validity' => 'invalid_data'], config('global.error_code'));
-		}
+		// if($v->fails()){
+		// 	return response(['message' => 'invalid request','validity' => 'invalid_data'], config('global.error_code'));
+		// }
 
-		try{
-
-			$rows = $this->request->input('rows');
-
-			$exception_col_name = $this->validateExceptions($rows, $exceptions);
+		//try{
+			
+			$exception_col_name = $this->validateExceptions($this->data['rows'], $exceptions);
 			
 			if($exception_col_name !== ''){
 				return response(['message' => 'You are not allowed to delete '.$exception_col_name,'validity' => 'deletion_not_allowed'], config('global.error_code'));
@@ -235,32 +232,34 @@ class ArrangedFields{
 			
 			/* now validate before moving forward */
 			if($model !== '' && $table !== ''){
-
-				if(!$this->validateSettingsPost($rows, $model, $table)){
+				
+				if(!$this->validateSettingsPost($this->data['rows'], $model, $table)){
 					return response(['message' => 'invalid request','validity' => 'bad_request'], config('global.error_code'));
 				}
 
 			}
-
-			$settings = SettingsSection::where([['type', '=', $this->arranged_object->getType()], ['company_id', '=', $this->company_id]])->first();
+			
+			$settings = SettingsSection::where([['type', '=', $this->arranged_object->getType()], ['company_id', '=', $this->data['company_id']]])->first();
 
 			if($settings){
 				$s = $settings;
 			}else{
 				$s = new SettingsSection();
-				$s->company_id = $this->company_id;
+				$s->company_id = $this->data['company_id'];
 				$s->type = $this->arranged_object->getType();
 			}
 
-			$s->settings_json = json_encode($rows);
-
+			$s->settings_json = json_encode($this->data['rows']);
+			
 			if($s->save()){
+				
 				return response(['message' => 'Saved successfully','validity' => 'save_success'], 200);
 			}
 
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
+		// }catch(Exception $e){
+			
+		// 	return General::wentWrong();
+		// }
 	}
 	
 }

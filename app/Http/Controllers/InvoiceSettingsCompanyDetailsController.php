@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\Sanitize;
+
+use App\Http\Requests\GenericRequest;
 use App\Models\AdditionalCompanyField;
 use App\Modules\ArrangedFields\ArrangedFields;
 use App\Modules\ArrangedFields\Implementation\CompanyDetailsFields;
-use Illuminate\Http\Request;
+use App\Modules\ArrangedFields\Requests\ArrangedFieldsRequest;
 
 
 class InvoiceSettingsCompanyDetailsController extends Controller{
@@ -15,20 +16,20 @@ class InvoiceSettingsCompanyDetailsController extends Controller{
 		return new CompanyDetailsFields(ISC_INVOICE_COMPANY_DETAILS_TYPE, 'id', 'id_column');
 	}
 
-	public function show(Request $request) : mixed {
+	public function show(GenericRequest $request) : mixed {
 
-		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$data = $request->validated();
 
-		return (new ArrangedFields($this->getCompanyDetailFields(), $request, $company_id))->fetchArrangedFieldsData();
+		return (new ArrangedFields($this->getCompanyDetailFields(), $data))->fetchArrangedFieldsData();
 		
 	}
 
 	
-	public function saveOrUpdate(Request $request) : mixed {
+	public function saveOrUpdate(ArrangedFieldsRequest $request) : mixed {
 
-		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$data = $request->validated();
 
-		$settings_arranged_fields = new ArrangedFields($this->getCompanyDetailFields(), $request, $company_id);
+		$settings_arranged_fields = new ArrangedFields($this->getCompanyDetailFields(), $data);
 
 		return $settings_arranged_fields->saveOrUpdate(AdditionalCompanyField::class, 'companies');
 

@@ -31,8 +31,11 @@ class InvoiceSettingsInvoiceDetailsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 
@@ -99,7 +102,7 @@ class InvoiceSettingsInvoiceDetailsControllerTest extends TestCase{
 												$array_element
 											]
 		], $c['headers']);
-
+		
 		$response->assertStatus(200);
 		$this->assertArrayHasKey('validity', $response);
 		$this->assertEquals('save_success', $response['validity']);

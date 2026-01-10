@@ -29,8 +29,11 @@ class InvoiceSettingsCompanyDetailsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		
+		$response = $response->json();
+		$this->assertArrayHasKey('message', $response);
+		$this->assertArrayHasKey('errors', $response);
+		$this->assertEquals(1, count($response['errors']));
 
 	}
 
@@ -53,8 +56,11 @@ class InvoiceSettingsCompanyDetailsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$response = $response->json();
+		
+		$this->assertArrayHasKey('message', $response);
+		$this->assertArrayHasKey('errors', $response);
+		$this->assertEquals(2, count($response['errors']));
 
 	}
 
@@ -160,11 +166,12 @@ class InvoiceSettingsCompanyDetailsControllerTest extends TestCase{
 		$settings = json_decode($settings->settings_json, true);
 		
 		$this->assertEquals([[
-								'id'						=>	1,
+								'id'						=>	'1',
 								'text'						=>	'bla',
 								'value'						=>	'bla',
 								'type'						=>	'custom',
-								'id_column'					=>	100
+								'id_column'					=>	'100',
+								'mapped'					=>	''
 							]], $settings);
 	}
 

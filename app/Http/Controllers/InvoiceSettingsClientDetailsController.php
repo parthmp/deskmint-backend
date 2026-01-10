@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 
-use App\Helpers\Sanitize;
+use App\Http\Requests\GenericRequest;
 use App\Models\ClientsCustomField;
 use App\Modules\ArrangedFields\ArrangedFields;
 use App\Modules\ArrangedFields\Implementation\ClientsDetailsFields;
+use App\Modules\ArrangedFields\Requests\ArrangedFieldsRequest;
 use App\Traits\SettingsDefault;
-use Illuminate\Http\Request;
 
 class InvoiceSettingsClientDetailsController extends Controller{
 
@@ -18,20 +18,20 @@ class InvoiceSettingsClientDetailsController extends Controller{
 		return new ClientsDetailsFields(ISC_INVOICE_CLIENT_DETAILS_TYPE, 'id', 'clients_custom_field_id');
 	}
 	
-	public function show(Request $request) : mixed{
+	public function show(GenericRequest $request) : mixed{
 		
-		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$data = $request->validated();
 		
-		return (new ArrangedFields($this->getClientDetailFields(), $request, $company_id))->fetchArrangedFieldsData(ClientsCustomField::class);
+		return (new ArrangedFields($this->getClientDetailFields(), $data))->fetchArrangedFieldsData(ClientsCustomField::class);
 
 	}
 
 	
-	public function saveOrUpdate(Request $request) : mixed{
+	public function saveOrUpdate(ArrangedFieldsRequest $request) : mixed{
 
-		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$data = $request->validated();
 
-		$settings_arranged_fields = new ArrangedFields($this->getClientDetailFields(), $request, $company_id);
+		$settings_arranged_fields = new ArrangedFields($this->getClientDetailFields(), $data);
 
 		return $settings_arranged_fields->saveOrUpdate(ClientsCustomField::class, 'clients');
 

@@ -20,4 +20,25 @@
 
 		}
 
+		/**
+		 * recursive function
+		 *
+		 * @param array $input
+		 * @return array
+		 */
+		public static function recursive(array $input) : array {
+			
+			$result = [];
+			
+			foreach($input as $key => $value){
+				if(is_array($value)){
+					$result[$key] = self::recursive($value);
+				}else{
+					$result[$key] = Sanitize::input($value);
+				}
+			}
+			
+			return $result;
+		}
+
 	}

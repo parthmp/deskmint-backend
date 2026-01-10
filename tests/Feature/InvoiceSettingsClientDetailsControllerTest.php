@@ -41,8 +41,11 @@ class InvoiceSettingsClientDetailsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+		
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 
@@ -60,8 +63,11 @@ class InvoiceSettingsClientDetailsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+		
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 
@@ -84,8 +90,11 @@ class InvoiceSettingsClientDetailsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+		
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(2, count($json['errors']));
 
 	}
 
@@ -226,7 +235,7 @@ class InvoiceSettingsClientDetailsControllerTest extends TestCase{
 		$settings = json_decode($settings->settings_json, true);
 		
 		$this->assertEquals([[
-								'id'						=>	1,
+								'id'						=>	'1',
 								'text'						=>	'bla',
 								'value'						=>	'bla',
 								'type'						=>	'normal',
@@ -259,8 +268,9 @@ class InvoiceSettingsClientDetailsControllerTest extends TestCase{
 												]
 											]
 		], $c['headers']);
-
+		
 		$response->assertStatus(200);
+		
 		$this->assertArrayHasKey('validity', $response);
 		$this->assertEquals('save_success', $response['validity']);
 
@@ -269,11 +279,12 @@ class InvoiceSettingsClientDetailsControllerTest extends TestCase{
 		$settings = json_decode($settings->settings_json, true);
 		
 		$this->assertEquals([[
-								'id'						=>	1,
+								'id'						=>	'1',
 								'text'						=>	'bla',
 								'value'						=>	'bla',
 								'type'						=>	'custom',
-								'clients_custom_field_id'	=>	100
+								'clients_custom_field_id'	=>	'100',
+								'mapped'					=>	null,
 							]], $settings);
 	}
 

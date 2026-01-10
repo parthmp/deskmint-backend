@@ -229,7 +229,7 @@ class InvoiceSettingsAPFService{
 			for($z = 0 ; $z < count($json) ; $z++){
 				if($json[$z]['type'] === 'custom'){
 					
-					if($json[$z]['id_column'] !== (int) $id){
+					if((string) $json[$z]['id_column'] !== (string) $id){
 						$modified[] = $json[$z];
 					}
 				}else{

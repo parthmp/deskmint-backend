@@ -639,9 +639,10 @@ class InvoiceSettingsAPFControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus(200);
+		
 		$this->assertArrayHasKey('validity', $response);
 		$this->assertEquals('saved_success', $response['validity']);
-
+		
 		$params = http_build_query([
 			'company_id' 		=> $company_id
 		]);
@@ -649,7 +650,7 @@ class InvoiceSettingsAPFControllerTest extends TestCase{
 		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-product-columns?'. $params);
 		
 		$json = $response->json();
-
+		
 		$rows = array_merge($json['rows'], $json['dropdown']);
 		
 		/* save settings - not default */
@@ -657,7 +658,11 @@ class InvoiceSettingsAPFControllerTest extends TestCase{
 			'company_id'			=>		$company_id,
 			'rows'					=>		$rows
 		], $c['headers']);
-
+		$response = $response->json();
+		
+		$this->assertArrayHasKey('validity', $response);
+		$this->assertEquals('save_success', $response['validity']);
+		
 		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-product-columns?'. $params);
 		
 		$json = $response->json();
@@ -866,7 +871,7 @@ class InvoiceSettingsAPFControllerTest extends TestCase{
 		$json = $response->json();
 		
 		$last_row = last($json['rows']);
-
+		
 		$this->assertEmpty($json['dropdown']);
 		$this->assertEquals('abc123', $last_row['text']);
 		$this->assertEquals('abc123', $last_row['value']);
