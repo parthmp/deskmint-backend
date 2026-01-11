@@ -2,7 +2,6 @@
 
 namespace App\Repositories\SettingsSection;
 
-use App\Helpers\Sanitize;
 use App\Models\SettingsSection;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;

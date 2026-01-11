@@ -5,6 +5,7 @@ namespace App\Modules\ArrangedFields;
 use App\Helpers\General;
 use App\Models\SettingsSection;
 use App\Modules\ArrangedFields\Contracts\ArrangedFieldsInterface;
+use App\Repositories\SettingsSection\SettingsSectionRepository;
 use App\Traits\SettingsDefault;
 use Exception;
 use Illuminate\Support\Facades\Schema;
@@ -14,11 +15,13 @@ class ArrangedFields{
 	use SettingsDefault;
 
 	private ArrangedFieldsInterface $arranged_object;
+	private SettingsSectionRepository $settings_section_repository;
 	private array $data;
 	
 	public function __construct(ArrangedFieldsInterface $obj, array $data){
 		$this->arranged_object = $obj;
 		$this->data = $data;
+		$this->settings_section_repository = new SettingsSectionRepository();
 	}
 
 	public function fetchArrangedFieldsData(string $model = ''){
@@ -27,7 +30,7 @@ class ArrangedFields{
 			
 			$default_data = $this->arranged_object->fetchDefaultArrangedFieldsData($this->data['company_id']);
 			
-			$settings = SettingsSection::where([['type', '=', $this->arranged_object->getType()], ['company_id', '=', $this->data['company_id']]])->first();
+			$settings = $this->settings_section_repository->fetchSettings((int) $this->data['company_id'], $this->arranged_object->getType());
 			
 			if($settings){
 				
@@ -209,20 +212,8 @@ class ArrangedFields{
 	 * @return void
 	 */
 	public function saveOrUpdate(string $model, string $table, array $exceptions = []) { /* exceptions text values are mapped to the mapped array for each row */
-		
-		// $v = Validator::make($this->request->all(), [
-		// 	'rows'              => 'required|array',
-		// 	'rows.*.id'         => 'required|integer',
-		// 	'rows.*.text'       => 'required|string',
-		// 	'rows.*.value'      => 'required|string',
-		// 	'rows.*.type'       => 'required|string|in:normal,custom'
-		// ]);
 
-		// if($v->fails()){
-		// 	return response(['message' => 'invalid request','validity' => 'invalid_data'], config('global.error_code'));
-		// }
-
-		//try{
+		try{
 			
 			$exception_col_name = $this->validateExceptions($this->data['rows'], $exceptions);
 			
@@ -239,27 +230,26 @@ class ArrangedFields{
 
 			}
 			
-			$settings = SettingsSection::where([['type', '=', $this->arranged_object->getType()], ['company_id', '=', $this->data['company_id']]])->first();
+
+			$settings = $this->settings_section_repository->fetchSettings((int) $this->data['company_id'], $this->arranged_object->getType());
 
 			if($settings){
 				$s = $settings;
 			}else{
-				$s = new SettingsSection();
-				$s->company_id = $this->data['company_id'];
-				$s->type = $this->arranged_object->getType();
+				$s = $this->settings_section_repository->createObj((int) $this->data['company_id'], $this->arranged_object->getType());
 			}
 
-			$s->settings_json = json_encode($this->data['rows']);
-			
-			if($s->save()){
+			$json = json_encode($this->data['rows']);
+
+			if($this->settings_section_repository->updateByObj($json, $s)){
 				
 				return response(['message' => 'Saved successfully','validity' => 'save_success'], 200);
 			}
 
-		// }catch(Exception $e){
+		}catch(Exception $e){
 			
-		// 	return General::wentWrong();
-		// }
+			return General::wentWrong();
+		}
 	}
 	
 }
