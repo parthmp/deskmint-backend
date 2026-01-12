@@ -16,7 +16,7 @@ class InvoiceSettingsTotalFieldsController extends Controller{
 		return new TotalFields(ISC_INVOICE_TOTAL_FIELDS_TYPE, '', '');
 	}
 	
-	public function show(GenericRequest $request) : mixed{
+	public function show(GenericRequest $request){
 		
 		$data = $request->validated();
 		
@@ -25,7 +25,7 @@ class InvoiceSettingsTotalFieldsController extends Controller{
 	}
 
 	
-	public function saveOrUpdate(ArrangedFieldsRequest $request) : mixed{
+	public function saveOrUpdate(ArrangedFieldsRequest $request){
 
 		$data = $request->validated();
 

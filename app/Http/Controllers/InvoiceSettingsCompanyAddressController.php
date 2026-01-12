@@ -15,7 +15,7 @@ class InvoiceSettingsCompanyAddressController extends Controller{
 		return new CompanyAddressFields(ISC_INVOICE_COMPANY_ADDRESS_TYPE, 'id', 'id_column');
 	}
 
-	public function show(GenericRequest $request) : mixed{
+	public function show(GenericRequest $request){
 
 		$data = $request->validated();
 
@@ -24,7 +24,7 @@ class InvoiceSettingsCompanyAddressController extends Controller{
 	}
 
 	
-	public function saveOrUpdate(ArrangedFieldsRequest $request) : mixed{
+	public function saveOrUpdate(ArrangedFieldsRequest $request){
 
 		$data = $request->validated();
 

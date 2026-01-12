@@ -325,7 +325,7 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 
 		}
 
-		public static function fetchDefaultCompanyById(int $company_id) : mixed{
+		public static function fetchDefaultCompanyById(int $company_id) : ?Company {
 			$company = Company::where([['id', '=', $company_id], ['default', '=', 1]])->first();
 			return $company;
 		}

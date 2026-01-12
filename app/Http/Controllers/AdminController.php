@@ -31,7 +31,7 @@ class AdminController extends Controller{
 	}
 
 
-	public function store(CreateAdminRequest $request): mixed {
+	public function store(CreateAdminRequest $request){
 
 		try{
 			
@@ -55,7 +55,7 @@ class AdminController extends Controller{
 		
 	}
 
-	public function update(UpdateAdminRequest $request, int $id): mixed {
+	public function update(UpdateAdminRequest $request, int $id){
 		try {
 			$this->admin_service->update($request->validated(), $id);
 			return response(['message' => 'Admin updated successfully', 'validity' => 'admin_updated'], 200);

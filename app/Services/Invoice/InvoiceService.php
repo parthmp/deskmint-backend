@@ -138,7 +138,7 @@ class InvoiceService{
 	 * @param integer $company_id
 	 * @return mixed
 	 */
-	public function validateAllForInvoice(Request $request, int $company_id) : mixed{
+	public function validateAllForInvoice(Request $request, int $company_id){
 		return $this->invoice_validation_service->validateAllForInvoice($request, $company_id);
 	}
 	

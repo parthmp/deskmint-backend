@@ -18,7 +18,7 @@ class InvoiceSettingsClientDetailsController extends Controller{
 		return new ClientsDetailsFields(ISC_INVOICE_CLIENT_DETAILS_TYPE, 'id', 'clients_custom_field_id');
 	}
 	
-	public function show(GenericRequest $request) : mixed{
+	public function show(GenericRequest $request){
 		
 		$data = $request->validated();
 		
@@ -27,7 +27,7 @@ class InvoiceSettingsClientDetailsController extends Controller{
 	}
 
 	
-	public function saveOrUpdate(ArrangedFieldsRequest $request) : mixed{
+	public function saveOrUpdate(ArrangedFieldsRequest $request){
 
 		$data = $request->validated();
 

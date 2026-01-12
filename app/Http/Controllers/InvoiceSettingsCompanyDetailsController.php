@@ -16,7 +16,7 @@ class InvoiceSettingsCompanyDetailsController extends Controller{
 		return new CompanyDetailsFields(ISC_INVOICE_COMPANY_DETAILS_TYPE, 'id', 'id_column');
 	}
 
-	public function show(GenericRequest $request) : mixed {
+	public function show(GenericRequest $request){
 
 		$data = $request->validated();
 
@@ -25,7 +25,7 @@ class InvoiceSettingsCompanyDetailsController extends Controller{
 	}
 
 	
-	public function saveOrUpdate(ArrangedFieldsRequest $request) : mixed {
+	public function saveOrUpdate(ArrangedFieldsRequest $request){
 
 		$data = $request->validated();
 

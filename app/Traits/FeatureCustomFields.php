@@ -175,7 +175,7 @@ trait FeatureCustomFields{
 		}
 	}
 
-	public function indexData(Request $request, string $feature_custom_fields_model, string $slug) : mixed{
+	public function indexData(Request $request, string $feature_custom_fields_model, string $slug){
 
 		$v = Validator::make($request->all(), [
 			'default_per_page'	=>	'required|integer|min:1'
@@ -269,7 +269,7 @@ trait FeatureCustomFields{
 
 	}
 
-	public function showData(string $feature_custom_fields_model, int $company_id, int $id) : mixed{
+	public function showData(string $feature_custom_fields_model, int $company_id, int $id){
 
 		$id = Sanitize::input($id);
 		
@@ -283,7 +283,7 @@ trait FeatureCustomFields{
 	}
 
 	
-	public function updateData(Request $request, string $feature_custom_fields_model, string $slug, int $id, string $type, string $custom_id) : mixed{
+	public function updateData(Request $request, string $feature_custom_fields_model, string $slug, int $id, string $type, string $custom_id){
 		
 		$company_id = Sanitize::input($request->input('company_id'));
 

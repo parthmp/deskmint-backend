@@ -52,7 +52,13 @@ class DataTable{
 		$this->searched_term = $data['searched_term'];
 		$this->current_page = $data['current_page'];
 		$this->sorted_column = $data['sorted_column'];
-		$this->per_page = $data['per_page'];
+
+		if($data['per_page']){
+			$this->per_page = $data['per_page'];
+		}else if($data['default_per_page']){
+			$this->per_page = $data['default_per_page'];
+		}
+
 		$this->date_range = $data['date_range'];
 		return $this;
 	}

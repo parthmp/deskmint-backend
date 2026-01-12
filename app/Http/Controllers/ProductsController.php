@@ -15,7 +15,7 @@ class ProductsController extends Controller{
 
 	use GeneralDelete;
 
-	private function ifProductExistsById(int $id) : mixed{
+	private function ifProductExistsById(int $id){
 
 		$product = Product::where('id', '=', $id)->first();
 		if(!$product){

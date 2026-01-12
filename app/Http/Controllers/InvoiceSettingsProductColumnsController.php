@@ -18,7 +18,7 @@ class InvoiceSettingsProductColumnsController extends Controller{
 		return new ProductColumnsFields(ISC_PRODUCT_COLUMNS_TYPE, 'id', 'id_column');
 	}
 	
-	public function show(GenericRequest $request) : mixed{
+	public function show(GenericRequest $request){
 		
 		$data = $request->validated();
 		
@@ -27,7 +27,7 @@ class InvoiceSettingsProductColumnsController extends Controller{
 	}
 
 	
-	public function saveOrUpdate(ArrangedFieldsRequest $request) : mixed{
+	public function saveOrUpdate(ArrangedFieldsRequest $request){
 
 		$data = $request->validated();
 

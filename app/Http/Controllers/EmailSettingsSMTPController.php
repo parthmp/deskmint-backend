@@ -26,7 +26,7 @@ class EmailSettingsSMTPController extends Controller{
 
 	}
 	
-	public function upsert(CreateEmailSettingsSMTPRequest $request) : mixed {
+	public function upsert(CreateEmailSettingsSMTPRequest $request){
 
 		$data = $request->validated();
 

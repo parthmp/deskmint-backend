@@ -141,7 +141,7 @@ class InvoiceValidationService extends ProductFieldService {
 	 * @param integer $company_id
 	 * @return mixed
 	 */
-	public function validateAllForInvoice(Request $request, int $company_id) : mixed{
+	public function validateAllForInvoice(Request $request, int $company_id){
 
 		$tab0_valid = $this->validateInvoiceDetails($request);
 		

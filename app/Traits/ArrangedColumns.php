@@ -91,7 +91,7 @@ trait ArrangedColumns{
 
 	}
 
-	private function getSavedColumnData(int $company_id, string $feature_name) : mixed{
+	private function getSavedColumnData(int $company_id, string $feature_name){
 
 		$user_data = UserIndexColumn::where([['user_id', '=', Auth::user()->id], ['company_id', '=', $company_id], ['feature_name', '=', $feature_name]])->first();
 
