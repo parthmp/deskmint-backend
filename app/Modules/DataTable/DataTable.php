@@ -133,7 +133,7 @@ class DataTable{
 	 */
 	public function setSearchableColumns(array $searchables) : self {
 
-		if($searchables[0] === '*'){
+		if(!empty($searchables) && $searchables[0] === '*'){
 			$this->searchables = null;
 		}else{
 			$this->searchables = $searchables;

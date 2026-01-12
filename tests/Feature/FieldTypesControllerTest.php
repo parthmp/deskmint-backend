@@ -2,14 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\AccessTokenData;
-use App\Models\Company;
+
 use App\Models\CustomFieldType;
-use App\Models\RefreshToken;
-use App\Models\User;
-use Database\Factories\CustomFieldTypeFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use Tests\Traits\DefaultCompany;
 use Tests\Traits\SetAccess;
@@ -58,9 +53,11 @@ class FieldTypesControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_request', $response['validity']);
+		$json = $response->json();
+		
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(2, count($json['errors']));
 	}
 
 	public function test_if_adding_input_type_fails_2(){
@@ -862,8 +859,11 @@ class FieldTypesControllerTest extends TestCase{
 
 		$response->assertStatus((int)config('global.error_code'));
 
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_request', $response['validity']);
+		$json = $response->json();
+		
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(2, count($json['errors']));
 
 	}
 
@@ -887,8 +887,11 @@ class FieldTypesControllerTest extends TestCase{
 
 		$response->assertStatus((int)config('global.error_code'));
 
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_request', $response['validity']);
+		$json = $response->json();
+		
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 
@@ -911,8 +914,11 @@ class FieldTypesControllerTest extends TestCase{
 
 		$response->assertStatus((int)config('global.error_code'));
 
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_request', $response['validity']);
+		$json = $response->json();
+		
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 
@@ -989,7 +995,7 @@ class FieldTypesControllerTest extends TestCase{
 		$response->assertStatus((int)config('global.error_code'));
 
 		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('non_numeric', $response['validity']);
+		$this->assertEquals('invalid_ids', $response['validity']);
 
 	}
 

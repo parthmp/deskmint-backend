@@ -10,9 +10,7 @@ use App\Models\CustomFieldType;
 use App\Models\Industry;
 use App\Models\SettingsIndexColumn;
 use App\Models\UserIndexColumn;
-use Illuminate\Container\Attributes\Auth;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 use Tests\Traits\CustomFields;
@@ -910,6 +908,7 @@ class ClientControllerIndexTest extends TestCase{
 		$response = $this->withHeaders($c['headers'])->get('/api/manage-clients?'. http_build_query($params));
 		
 		$response->assertStatus(200);
+		
 		$json = $response->json();
 		
 		$this->assertEquals(20, $json['table_data']['rows'][0]['id']);
