@@ -13,7 +13,6 @@ use App\Models\Industry;
 use App\Models\SettingsIndexColumn;
 use App\Models\UserIndexColumn;
 use App\Modules\DataTable\DataTable;
-//use App\Services\DataTable;
 use App\Traits\ArrangedColumns;
 use App\Traits\CustomFieldsPrinting;
 use App\Traits\CustomFieldsUpsert;

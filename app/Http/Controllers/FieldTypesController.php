@@ -4,63 +4,36 @@ namespace App\Http\Controllers;
 
 use App\Helpers\General;
 use App\Helpers\Sanitize;
+use App\Http\Requests\FieldType\CreateFieldTypesRequest;
+use App\Http\Requests\GenericRequest;
 use App\Models\CustomFieldType;
-use App\Services\DataTable;
-use App\Traits\GeneralDelete;
+use App\Modules\DataTable\Requests\DataTableRequest;
+use App\Services\DeleteService;
+use App\Services\FieldType\FieldTypesService;
 use Exception;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpFoundation\Request;
 
 class FieldTypesController extends Controller{
 
-	use GeneralDelete;
+	public function __construct(private FieldTypesService $field_types_service, private DeleteService $delete_service){}
 	
-	public function getInputTypes(Request $request){
+	public function getInputTypes(GenericRequest $request){
 
-		$input_types = [];
-
-		foreach(config('global.field_types') as $custom_field){
-
-			$input_types[] = [
-				'value'	=>	$custom_field,
-				'text'	=>	ucfirst($custom_field)
-			];
-
-		}
-
-		usort($input_types, function($a, $b) {
-			return strcmp($a['text'], $b['text']);
-		});
-
-		return $input_types;
+		return $this->field_types_service->fetchInputTypes();
 
 	}
 
-	public function store(Request $request){
+	public function store(CreateFieldTypesRequest $request){
 		
-		$v = Validator::make($request->all(), [
-			'input_type' 	=> 	'required',
-			'input_name'	=>	'required'
-		]);
-		
-		if($v->fails()){
-			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
-		}
+		$data = $request->validated();
 
-		$input_type = Sanitize::input($request->input('input_type'));
-		$input_name = Sanitize::input($request->input('input_name'));
-
-		if(!in_array($input_type, config('global.field_types'))){
+		if(!in_array($data['input_type'], config('global.field_types'))){
 			return response(['message' => 'Invalid field provided', 'validity' => 'invalid_field'], config('global.error_code'));
 		}
 
 		try{
-
-			$custom_type = new CustomFieldType();
-			$custom_type->input_type = $input_type;
-			$custom_type->input_name = $input_name;
 			
-			if($custom_type->save()){
+			if($this->field_types_service->create($data['input_type'], $data['input_name'])){
 				return response(['message' => 'Custom field type created successfully', 'validity' => 'created_success'], 200);
 			}
 
@@ -72,112 +45,39 @@ class FieldTypesController extends Controller{
 
 	}
 
-	public function index(Request $request){
+	public function index(DataTableRequest $request){
 		
-		$v = Validator::make($request->all(), [
-			'default_per_page'	=>	'required|integer|min:1'
-		]);
-
-		if($v->fails()){
-			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
-		}
-		
-		$fields = DataTable::sortNPaginate($request, CustomFieldType::class, ['deleted_at', 'updated_at'], null, ['created_at']);
-		
-		$fields->each(function($ele){
-			$ele->input_type = ucfirst($ele->input_type);
-		});
-		
-		$table_data = [
-			'columns' => [
-				[
-					'label' => 	'id',
-					'text'	=>	'ID#'
-				],
-				[
-					'label' => 	'input_type',
-					'text'	=>	'Input type'
-				],
-				[
-					'label'	=>	'input_name',
-					'text'	=>	'Input name'
-				],
-				[
-					'label'	=>	'created_at',
-					'text'	=>	'Added on'
-				],[
-					'label'	=> 'actions',
-					'text'	=> 'Actions'
-				]
-			],
-			'rows' => $fields->items()
-		];
-
-		$total_pages = $fields->lastPage();
-
-		return [
-			'table_data'	=>		$table_data,
-			'total_pages'	=>		$total_pages,
-			'current_page'	=>		$fields->currentPage()
-		];
+		$data = $request->validated();
+		return $this->field_types_service->fetch($data);
 
 	}
 
-	private function findField(Request $request){
+	public function show(GenericRequest $request, int $id){
 
-		$field_id = Sanitize::input($request->segment(3));
-
-		if($field_id === ''){
+		try{
+			$id = (int) Sanitize::input($id);
+			return $this->field_types_service->fetchById($id);
+		}catch(Exception $e){
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}
-
-		$field = CustomFieldType::select('id', 'input_type', 'input_name')->where('id', '=', $field_id)->first();
-		if(!$field){
-			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
-		}
-
-		return $field;
 
 	}
 
-	public function show(Request $request){
-
-		return $this->findField($request);	
-
-	}
-
-	public function update(Request $request){
+	public function update(CreateFieldTypesRequest $request, int $id){
 		
-		$field = $this->findField($request);
-
-		if($field instanceof \Illuminate\Http\Response){
-        	return $field;
-    	}
-
-		$v = Validator::make($request->all(), [
-			'input_type' 	=> 	'required',
-			'input_name'	=>	'required'
-		]);
+		$id = (int) Sanitize::input($id);
 		
-		if($v->fails()){
-			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
-		}
-
-		$input_type = Sanitize::input($request->input('input_type'));
-		$input_name = Sanitize::input($request->input('input_name'));
-
-		if(!in_array($input_type, config('global.field_types'))){
+		$data = $request->validated();
+		
+		if(!in_array($data['input_type'], config('global.field_types'))){
 			return response(['message' => 'Invalid field provided', 'validity' => 'invalid_field'], config('global.error_code'));
 		}
 
-
 		try{
 
-			
-			$field->input_type = $input_type;
-			$field->input_name = $input_name;
+			$field = $this->field_types_service->fetchById($id);
 
-			if($field->save()){
+			if($this->field_types_service->updateByObj($data['input_type'], $data['input_name'], $field)){
 				return response(['message' => 'Custom field type updated successfully', 'validity' => 'updated_success'], 200);
 			}
 
@@ -193,7 +93,7 @@ class FieldTypesController extends Controller{
 
 		try{
 
-			$response = $this->deleteByIds($request, CustomFieldType::class, 'Field');
+			$response = $this->delete_service->deleteByIds($request, CustomFieldType::class, 'Field type');
 			return response($response[0], $response[1]);
 
 		}catch(Exception $e){

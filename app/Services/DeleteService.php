@@ -5,7 +5,6 @@ namespace App\Services;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Database\Eloquent\Model;
 
 class DeleteService{
 
