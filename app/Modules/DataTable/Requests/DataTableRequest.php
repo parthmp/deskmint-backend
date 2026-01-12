@@ -19,7 +19,7 @@ class DataTableRequest extends FormRequest
 
 		$company_id = (int) Sanitize::input($this->input('company_id'));
 
-		$searched_term = $this->input('searched_term') ? Sanitize::input($this->input('searched_term')) : null;
+		$searched_term = $this->input('searched_term') ? (string) Sanitize::input((string)$this->input('searched_term')) : '';
 		$current_page = $this->input('current_page') ? Sanitize::input($this->input('current_page')) : null;
 		$sorted_column = $this->input('sorted_column') ? Sanitize::recursive($this->input('sorted_column')) : null;
 		$per_page = $this->input('default_per_page') ? Sanitize::input($this->input('default_per_page')) : null;

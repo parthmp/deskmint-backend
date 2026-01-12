@@ -66,8 +66,7 @@ class FieldTypesService{
 		->setModel(CustomFieldType::class)
 		->skipColumns(['deleted_at', 'updated_at'])
 		->setDatesColumns(['created_at'])
-		->setCompanyId($data['company_id'])
-		->setSearchableColumns(['created_at'])
+		->setSearchableColumns(['*'])
 		->results();
 
 		$fields->each(function($ele){

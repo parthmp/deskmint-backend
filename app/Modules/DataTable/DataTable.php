@@ -30,17 +30,17 @@ class DataTable{
     private bool $paginate = false;
 	private Model $model;
 	private string $table;
-	private array $allowed_columns;
+	private array $allowed_columns = [];
 	private array $selects;
-	private array $joins;
+	private array $joins = [];
 	private Builder $fields;
 	private array $tables_for_columns = [];
 	private array $dates_columns = [];
 	private array $rewrites = [];
-	private array $searchables = [];
+	private ?array $searchables = null;
 	private array $searchable_columns_with_tables = [];
 	private array $allowed_sorting_directions = ['asc', 'desc'];
-	private int $company_id = 0;
+	private ?int $company_id = null;
 	
 	/**
 	 * setVars function
@@ -126,7 +126,13 @@ class DataTable{
 	 * @return self
 	 */
 	public function setSearchableColumns(array $searchables) : self {
-		$this->searchables = $searchables;
+
+		if($searchables[0] === '*'){
+			$this->searchables = null;
+		}else{
+			$this->searchables = $searchables;
+		}
+		
 		$this->searchable_columns_with_tables = [];
 		for($z = 0 ; $z < count($this->allowed_columns) ; $z++){
 			$this->tables_for_columns[] = $this->table;
@@ -211,6 +217,9 @@ class DataTable{
 	 */
 	public function executeJoins() : self {
 
+		if(empty($this->joins)){
+			return $this;
+		}
 		/** works with refs/pointers  */
 		$this->query_builder->buildJoins($this->fields, $this->joins, $this->selects, $this->allowed_columns, $this->searchable_columns_with_tables, $this->tables_for_columns);
 	
@@ -304,7 +313,7 @@ class DataTable{
 	public function results() : LengthAwarePaginator {
 
 		$this->setPaginate()->setFields()->executeJoins()->executeCompanyId()->executeDateRange()->executeSearchTerm()->setPaginateSortedColumns()->executeRewrites();
-
+		
 		if($this->paginate){
 			$fields = $this->fields->orderBy($this->table.'.id', 'desc')->paginate($this->per_page, ['*'], 'page', (int)$this->current_page);
 		}else{

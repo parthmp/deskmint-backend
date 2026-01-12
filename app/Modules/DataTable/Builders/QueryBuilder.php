@@ -119,7 +119,7 @@ class QueryBuilder{
 	 * @param string|null $searched_term
 	 * @return Builder
 	 */
-	public function buildForSearchTerm(Builder $fields, array $searchable_columns_with_tables, array $searchables, array $rewrites, ?string $searched_term) : Builder {
+	public function buildForSearchTerm(Builder $fields, array $searchable_columns_with_tables, ?array $searchables, array $rewrites, ?string $searched_term) : Builder {
 		
 		return $fields->where(function ($q) use($searchable_columns_with_tables, $searchables, $rewrites, $searched_term) {
 				
