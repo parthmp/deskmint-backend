@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\ForgotPassword;
 
 use App\Helpers\General;
 use App\Mail\SendResetPasswordEmail;
@@ -84,7 +84,7 @@ class ForgotPasswordService{
 	 */
 	public function updatePassword(CustomPasswordReset $reset_code_row, string $password) : bool {
 
-		return $this->updatePassword($reset_code_row, $password);
+		return $this->custom_password_reset_repository->updatePasswordByObj($reset_code_row, $password);
 
 	}
 

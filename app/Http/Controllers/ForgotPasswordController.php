@@ -6,7 +6,7 @@ use App\Helpers\General;
 use App\Helpers\Turnstile;
 use App\Http\Requests\ForgotPassword\ResetPasswordRequest;
 use App\Http\Requests\ForgotPassword\SendResetPasswordCodeRequest;
-use App\Services\ForgotPasswordService;
+use App\Services\ForgotPassword\ForgotPasswordService;
 use App\Services\User\UserService;
 use Exception;
 use Illuminate\Support\Facades\Log;

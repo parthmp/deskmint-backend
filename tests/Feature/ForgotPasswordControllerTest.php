@@ -20,7 +20,9 @@ class ForgotPasswordControllerTest extends TestCase{
 
     public function test_send_reset_password_code_invalid_data_1(): void{
 
-        $response = $this->post('/api/send-reset-password-code', [
+        $response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/send-reset-password-code', [
 			'email_address' 	=> 	'',
 			'turnstile_token'	=>	'',
 			'device'			=>	''
@@ -28,15 +30,19 @@ class ForgotPasswordControllerTest extends TestCase{
 
 		$expected = (int)config('global.error_code');
 		$response->assertStatus($expected);
-
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(3, count($json['errors']));
 
     }
 
 	public function test_send_reset_password_code_invalid_data_2(): void{
 
-        $response = $this->post('/api/send-reset-password-code', [
+        $response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/send-reset-password-code', [
 			'email_address' 	=> 	'foo@bar.com',
 			'turnstile_token'	=>	'',
 			'device'			=>	''
@@ -45,14 +51,18 @@ class ForgotPasswordControllerTest extends TestCase{
 		$expected = (int)config('global.error_code');
 		$response->assertStatus($expected);
 
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(2, count($json['errors']));
 
     }
 
 	public function test_send_reset_password_code_invalid_data_3(): void{
 
-        $response = $this->post('/api/send-reset-password-code', [
+        $response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/send-reset-password-code', [
 			'email_address' 	=> 	'foo@bar.com',
 			'turnstile_token'	=>	'test123',
 			'device'			=>	''
@@ -61,14 +71,18 @@ class ForgotPasswordControllerTest extends TestCase{
 		$expected = (int)config('global.error_code');
 		$response->assertStatus($expected);
 
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
     }
 
 	public function test_send_reset_password_code_invalid_data_4(): void{
 
-        $response = $this->post('/api/send-reset-password-code', [
+        $response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/send-reset-password-code', [
 			'email_address' 	=> 	'foobar.com',
 			'turnstile_token'	=>	'test123',
 			'device'			=>	'device 123'
@@ -77,8 +91,10 @@ class ForgotPasswordControllerTest extends TestCase{
 		$expected = (int)config('global.error_code');
 		$response->assertStatus($expected);
 
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
     }
 
@@ -163,7 +179,9 @@ class ForgotPasswordControllerTest extends TestCase{
 
 	public function test_reset_password_invalid_data_1(): void{
 
-		$response = $this->post('/api/reset-password', [
+		$response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/reset-password', [
 			'reset_code' 			=> 	'',
 			'password'				=>	'',
 			'retype_password'		=>	'',
@@ -173,14 +191,18 @@ class ForgotPasswordControllerTest extends TestCase{
 		$expected = (int)config('global.error_code');
 		$response->assertStatus($expected);
 
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(4, count($json['errors']));
 
     }
 
 	public function test_reset_password_invalid_data_2(): void{
 
-		$response = $this->post('/api/reset-password', [
+		$response = $response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/reset-password', [
 			'reset_code' 			=> 	'test123',
 			'password'				=>	'',
 			'retype_password'		=>	'',
@@ -190,14 +212,18 @@ class ForgotPasswordControllerTest extends TestCase{
 		$expected = (int)config('global.error_code');
 		$response->assertStatus($expected);
 
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(3, count($json['errors']));
 
     }
 
 	public function test_reset_password_invalid_data_3(): void{
 
-		$response = $this->post('/api/reset-password', [
+		$response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/reset-password', [
 			'reset_code' 			=> 	'test123',
 			'password'				=>	'123456pass',
 			'retype_password'		=>	'',
@@ -207,25 +233,28 @@ class ForgotPasswordControllerTest extends TestCase{
 		$expected = (int)config('global.error_code');
 		$response->assertStatus($expected);
 
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
-
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(2, count($json['errors']));
     }
 
 	public function test_reset_password_invalid_data_4(): void{
-
-		$response = $this->post('/api/reset-password', [
-			'reset_code' 			=> 	'test123',
-			'password'				=>	'123456pass',
-			'retype_password'		=>	'123456pass',
-			'device'				=>	''
+		$response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/reset-password', [
+			'reset_code'        => 'test123',
+			'password'          => '123456pass',
+			'retype_password'   => '123456pass',
+			'device'            => ''
 		]);
-
-		$expected = (int)config('global.error_code');
-		$response->assertStatus($expected);
-
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		
+		$response->assertStatus((int)config('global.error_code'));
+		$response->assertJsonValidationErrors('device');
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
     }
 
