@@ -1,90 +1,117 @@
 <?php
 
-	namespace App\Services;
+namespace App\Services;
 
-	use App\Helpers\General;
-	use App\Mail\SendResetPasswordEmail;
-	use App\Models\AccessTokenData;
-	use App\Models\CustomPasswordReset;
-	use App\Models\RefreshToken;
-	use App\Models\User;
-	use Illuminate\Support\Facades\Hash;
-	use Illuminate\Support\Facades\Mail;
+use App\Helpers\General;
+use App\Mail\SendResetPasswordEmail;
+use App\Models\CustomPasswordReset;
+use App\Models\User;
+use App\Repositories\AccessTokenData\AccessTokenDataRepository;
+use App\Repositories\CustomPasswordReset\CustomPasswordResetRepository;
+use App\Repositories\RefreshToken\RefreshTokenRepository;
+use Illuminate\Support\Facades\Mail;
 
-	class ForgotPasswordService{
+class ForgotPasswordService{
+
+	public function __construct(private CustomPasswordResetRepository $custom_password_reset_repository, private AccessTokenDataRepository $access_token_data_repository, private RefreshTokenRepository $refresh_token_repository){}
+	
+	/**
+	 * createResetCode function
+	 *
+	 * @param User $user
+	 * @param string $device
+	 * @return CustomPasswordReset
+	 */
+	public function createResetCode(User $user, string $device) : CustomPasswordReset {
 		
+		$token = General::generateRandomString();
 
-		public function createResetCode($user, $device){
-			
-			$token = General::generateRandomString();
-
-			$reset = new CustomPasswordReset();
-
-			$reset->user_id = $user->id;
-			$reset->reset_code = $token;
-			$reset->device = $device;
-			$reset->save();
-
-			return $reset;
-
-		}
-
-		public function sendResetPasswordEmail($reset_token){
-
-			Mail::to($reset_token->user->email)->queue(new SendResetPasswordEmail($reset_token));
-
-		}
-
-		public function findResetCode($reset_code, $device){
-
-			$reset_code_row = CustomPasswordReset::where([['reset_code', '=', $reset_code], ['device', '=', $device], ['used', '=', 0]])->first();
-
-			if(!$reset_code_row){
-				return false;
-			}
-
-			return $reset_code_row;
-
-		}
-
-		public function validateResetCode($reset_code_row){
-
-			$seconds_limit = config('global.reset_code_expiry');
-
-			$diff = (now())->diffInSeconds($reset_code_row->created_at, true);
-
-			if($diff < ($seconds_limit)){
-				return true;
-			}
-
-			return false;
-
-		}
-
-		public function updatePassword($reset_code_row, $password){
-
-			$reset_code_row->used = 1;
-			$reset_code_row->used_at = now();
-			$reset_code_row->save();
-
-			$user = $reset_code_row->user;
-
-			$user->password = Hash::make($password);
-			$user->update();
-
-		}
-
-		public function invalidateAllResetCodes($user, $device){
-
-			CustomPasswordReset::where([['user_id', '=', $user->id], ['device', '=', $device]])->delete();
-
-		}
-
-		public function invalidatePastTokensForAllDevices($user){
-
-			AccessTokenData::where('user_id', '=', $user->id)->delete();
-			RefreshToken::where('user_id', '=', $user->id)->delete();
-
-		}
+		return $this->custom_password_reset_repository->create($user, $device, $token);
 
 	}
+
+	/**
+	 * sendResetPasswordEmail function
+	 *
+	 * @param CustomPasswordReset $reset_token
+	 * @return void
+	 */
+	public function sendResetPasswordEmail(CustomPasswordReset $reset_token) : void {
+
+		Mail::to($reset_token->user->email)->queue(new SendResetPasswordEmail($reset_token));
+
+	}
+
+	/**
+	 * findResetCode function
+	 *
+	 * @param string $reset_code
+	 * @param string $device
+	 * @return CustomPasswordReset|null
+	 */
+	public function findResetCode(string $reset_code, string $device) : ?CustomPasswordReset {
+
+		return $this->custom_password_reset_repository->fetchUnusedByCodeAndDevice($reset_code, $device);
+
+	}
+
+	/**
+	 * validateResetCode function
+	 *
+	 * @param CustomPasswordReset $reset_code_row
+	 * @return boolean
+	 */
+	public function validateResetCode(CustomPasswordReset $reset_code_row) : bool {
+
+		$seconds_limit = config('global.reset_code_expiry');
+
+		$diff = (now())->diffInSeconds($reset_code_row->created_at, true);
+
+		if($diff < ($seconds_limit)){
+			return true;
+		}
+
+		return false;
+
+	}
+
+	/**
+	 * updatePassword function
+	 *
+	 * @param CustomPasswordReset $reset_code_row
+	 * @param string $password
+	 * @return boolean
+	 */
+	public function updatePassword(CustomPasswordReset $reset_code_row, string $password) : bool {
+
+		return $this->updatePassword($reset_code_row, $password);
+
+	}
+
+	/**
+	 * invalidateAllResetCodes function
+	 *
+	 * @param User $user
+	 * @param string $device
+	 * @return void
+	 */
+	public function invalidateAllResetCodes(User $user, string $device) : void {
+
+		$this->custom_password_reset_repository->invalidateAllResetCodes($user->id, $device);
+
+	}
+
+	/**
+	 * invalidatePastTokensForAllDevices function
+	 *
+	 * @param User $user
+	 * @return void
+	 */
+	public function invalidatePastTokensForAllDevices(User $user) : void {
+
+		$this->access_token_data_repository->deleteById($user->id);
+		$this->refresh_token_repository->deleteById($user->id);
+
+	}
+
+}
