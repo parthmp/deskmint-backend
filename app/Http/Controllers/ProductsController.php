@@ -3,21 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\General;
-use App\Helpers\Sanitize;
+use App\Http\Requests\Product\CreateProductRequest;
 use App\Models\Product;
-use App\Services\DataTable;
-use App\Traits\GeneralDelete;
+use App\Modules\DataTable\Requests\DataTableRequest;
+use App\Services\DeleteService;
+use App\Services\Product\ProductService;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class ProductsController extends Controller{
 
-	use GeneralDelete;
+	public function __construct(private ProductService $product_service, private DeleteService $delete_service){}
 
 	private function ifProductExistsById(int $id){
 
-		$product = Product::where('id', '=', $id)->first();
+		$product = $this->product_service->fetchById($id);
 		if(!$product){
 			return null;
 		}
@@ -25,55 +25,24 @@ class ProductsController extends Controller{
 		return $product;
 	}
 
-	private function saveOrUpdateProduct(Request $request, int $product_id = 0, bool $add_new = true){
+	private function saveOrUpdateProduct(CreateProductRequest $request, int $product_id = 0, bool $add_new = true){
 
-		$v = Validator::make($request->all(), [
-			'product_name'	=>	'required'
-		]);
-
-		if($v->fails()){
-			return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_data'], config('global.error_code'));
-		}
+		$data = $request->validated()	;
 
 		if(!$add_new){
-			$product = Product::where('id', '=', $product_id)->first();
+			$product = $this->product_service->fetchById($product_id);
 			if(!$product){
 				return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 			}
 		}
 
-		$company_id = Sanitize::input($request->input('company_id'));
-		$product_name = Sanitize::input($request->input('product_name'));
-
-		$price = 0;
-		$sku = '';
-		$description = '';
-
-		if($request->filled('price')){
-			$price = Sanitize::input($request->input('price'));
-		}
-
-		if($request->filled('sku')){
-			$sku = Sanitize::input($request->input('sku'));
-		}
-
-		if($request->filled('description')){
-			$description = Sanitize::input($request->input('description'));
-		}
-
 		if($add_new){
-			$product = new Product();
+			$product = $this->product_service->createEmpty();
 		}
 
 		try{
 
-			$product->company_id = $company_id;
-			$product->product_name = $product_name;
-			$product->price = $price;
-			$product->sku = $sku;
-			$product->description = $description;
-
-			if($product->save()){
+			if($this->product_service->upsert($data, $product)){
 				$msg = 'Product saved succesfully';
 				$validity = 'created_success';
 				if(!$add_new){
@@ -84,68 +53,19 @@ class ProductsController extends Controller{
 			}
 
 		}catch(Exception $e){
-
+			return General::wentWrong();
 		}
 
 	}
 
-	public function index(Request $request){
+	public function index(DataTableRequest $request){
 
-		$v = Validator::make($request->all(), [
-			'default_per_page'	=>	'required|integer|min:1'
-		]);
-
-		if($v->fails()){
-			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
-		}
-		
-		$fields = DataTable::sortNPaginate($request, Product::class, ['deleted_at', 'updated_at'], null, ['created_at']);
-		
-		$fields->each(function($ele){
-			$ele->input_type = ucfirst($ele->input_type);
-		});
-		
-		$table_data = [
-			'columns' => [
-				[
-					'label' => 	'id',
-					'text'	=>	'ID#'
-				],
-				[
-					'label' => 	'product_name',
-					'text'	=>	'Product name'
-				],
-				[
-					'label'	=>	'price',
-					'text'	=>	'Price'
-				],
-				[
-					'label'	=>	'sku',
-					'text'	=>	'SKU'
-				],
-				[
-					'label'	=>	'created_at',
-					'text'	=>	'Added on'
-				],
-				[
-					'label'	=> 'actions',
-					'text'	=> 'Actions'
-				]
-			],
-			'rows' => $fields->items()
-		];
-
-		$total_pages = $fields->lastPage();
-
-		return [
-			'table_data'	=>		$table_data,
-			'total_pages'	=>		$total_pages,
-			'current_page'	=>		$fields->currentPage()
-		];
+		$data = $request->validated();
+		return $this->product_service->fetch($data);
 
 	}
 
-	public function store(Request $request){
+	public function store(CreateProductRequest $request){
 		
 		return $this->saveOrUpdateProduct($request);
 		
@@ -163,7 +83,7 @@ class ProductsController extends Controller{
 
 	}
 
-	public function update(Request $request, int $id){
+	public function update(CreateProductRequest $request, int $id){
 		
 		$product = $this->ifProductExistsById($id);
 		
@@ -179,7 +99,7 @@ class ProductsController extends Controller{
 		
 		try{
 
-			$response = $this->deleteByIds($request, Product::class, 'Product');
+			$response = $this->delete_service->deleteByIds($request, Product::class, 'Product');
 			return response($response[0], $response[1]);
 
 		}catch(Exception $e){

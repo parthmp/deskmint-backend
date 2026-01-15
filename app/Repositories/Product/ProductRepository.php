@@ -30,4 +30,23 @@ class ProductRepository{
 
 	}
 
+	/**
+	 * fetchById function
+	 *
+	 * @param integer $id
+	 * @return Product|null
+	 */
+	public function fetchById(int $id) : ?Product {
+		return Product::where('id', '=', $id)->first();
+	}
+
+	/**
+	 * createEmpty function
+	 *
+	 * @return Product
+	 */
+	public function createEmpty() : Product {
+		return new Product();
+	}
+
 }
