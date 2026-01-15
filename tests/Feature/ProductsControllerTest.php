@@ -53,8 +53,9 @@ class ProductsControllerTest extends TestCase{
 
 		$json = $response->json();
 
-		$this->arrayHasKey('validity', $json);
-		$this->assertEquals('invalid_data', $json['validity']);
+		$this->arrayHasKey('message', $json);
+		$this->arrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 
@@ -72,8 +73,9 @@ class ProductsControllerTest extends TestCase{
 
 		$json = $response->json();
 
-		$this->arrayHasKey('validity', $json);
-		$this->assertEquals('invalid_data', $json['validity']);
+		$this->arrayHasKey('message', $json);
+		$this->arrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 
@@ -90,8 +92,9 @@ class ProductsControllerTest extends TestCase{
 
 		$json = $response->json();
 
-		$this->arrayHasKey('validity', $json);
-		$this->assertEquals('invalid_data', $json['validity']);
+		$this->arrayHasKey('message', $json);
+		$this->arrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 
@@ -201,8 +204,9 @@ class ProductsControllerTest extends TestCase{
 
 		$json = $response->json();
 
-		$this->arrayHasKey('validity', $json);
-		$this->assertEquals('invalid_request', $json['validity']);
+		$this->arrayHasKey('message', $json);
+		$this->arrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 	
@@ -223,8 +227,9 @@ class ProductsControllerTest extends TestCase{
 
 		$json = $response->json();
 
-		$this->arrayHasKey('validity', $json);
-		$this->assertEquals('invalid_data', $json['validity']);
+		$this->arrayHasKey('message', $json);
+		$this->arrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 
@@ -244,8 +249,9 @@ class ProductsControllerTest extends TestCase{
 
 		$json = $response->json();
 
-		$this->arrayHasKey('validity', $json);
-		$this->assertEquals('invalid_data', $json['validity']);
+		$this->arrayHasKey('message', $json);
+		$this->arrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 
@@ -264,8 +270,9 @@ class ProductsControllerTest extends TestCase{
 
 		$json = $response->json();
 
-		$this->arrayHasKey('validity', $json);
-		$this->assertEquals('invalid_data', $json['validity']);
+		$this->arrayHasKey('message', $json);
+		$this->arrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 	
@@ -507,9 +514,11 @@ class ProductsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('non_numeric', $response['validity']);
+		$json = $response->json();
+		
+		$this->arrayHasKey('message', $json);
+		$this->arrayHasKey('validity', $json);
+		$this->assertEquals('invalid_ids', $json['validity']);
 
 	}
 

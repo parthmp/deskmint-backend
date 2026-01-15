@@ -50,6 +50,12 @@ class ProductService{
 		return $this->product_repository->createEmpty();
 	}
 
+	/**
+	 * fetch function
+	 *
+	 * @param array $data
+	 * @return array
+	 */
 	public function fetch(array $data) : array{
 
 		$fields = $this->datatable
