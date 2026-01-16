@@ -7,7 +7,7 @@ use App\Models\AccessTokenData;
 use App\Models\RefreshToken;
 use App\Models\TwoFactorAuthToken;
 use App\Models\User;
-use App\Services\LoginService;
+use App\Services\Login\LoginService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;

@@ -14,7 +14,7 @@ class SettingRepository{
 	 *
 	 * @return Setting
 	 */
-	public function fetchFirst() : Setting {
+	public function fetchFirst() : ?Setting {
 		return Setting::first();
 	}
 

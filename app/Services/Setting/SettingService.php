@@ -22,7 +22,7 @@ class SettingService{
 	 *
 	 * @return Setting
 	 */
-	public function fetchFirst() : Setting {
+	public function fetchFirst() : ?Setting {
 		return $this->setting_repository->fetchFirst();
 	}
 
