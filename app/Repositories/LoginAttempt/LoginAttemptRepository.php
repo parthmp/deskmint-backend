@@ -19,4 +19,14 @@ class LoginAttemptRepository{
 		return LoginAttempt::where('user_id', '=', $user_id)->first();
 	}
 
+	/**
+	 * deleteByUserId function
+	 *
+	 * @param integer $user_id
+	 * @return void
+	 */
+	public function deleteByUserId(int $user_id) : void {
+		LoginAttempt::where('user_id', '=', $user_id)->delete();
+	}
+
 }

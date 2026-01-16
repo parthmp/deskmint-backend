@@ -43,4 +43,24 @@ class TwoFactorAuthTokenRepository{
 		return $two_factor_auth_obj->update();
 	}
 
+	/**
+	 * create function
+	 *
+	 * @param integer $user_id
+	 * @param string $token
+	 * @param string $otp
+	 * @param string $device
+	 * @return boolean
+	 */
+	public function create(int $user_id, string $token, string $otp, string $device) : bool {
+
+		$tfa = new TwoFactorAuthToken();
+		$tfa->user_id = $user_id;
+		$tfa->token = $token;
+		$tfa->otp = $otp;
+		$tfa->device = $device;
+		return $tfa->save();
+
+	}
+
 }
