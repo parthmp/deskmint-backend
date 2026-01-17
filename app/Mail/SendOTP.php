@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Request;
 use Illuminate\Mail\Mailables\Address;
 
 
-class SendOTP extends Mailable
+class SendOTP extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 

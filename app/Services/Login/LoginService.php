@@ -99,11 +99,11 @@ class LoginService{
 	/**
 	 * isTokenValid function
 	 *
-	 * @param TwoFactorAuthToken $found_token
+	 * @param TwoFactorAuthToken|null $found_token
 	 * @param string $device
 	 * @return boolean
 	 */
-	public function isTokenValid(TwoFactorAuthToken $found_token, string $device) : bool {
+	public function isTokenValid(?TwoFactorAuthToken $found_token, string $device) : bool {
 		
 		if(!$found_token){
 			return false;

@@ -48,7 +48,7 @@ class LoginServiceTest extends TestCase{
 		app(LoginService::class)->sendOTPEmail($user, $otp);
 
 		Mail::assertQueued(SendOTP::class, function ($mail) use ($user, $otp) {
-			return $mail->hasTo($user->email) && $mail->getOtp() === $otp;
+			return $mail->hasTo($user->email) && (string) $mail->getOTP() === (string) $otp;
 		});
 
 	}
@@ -175,7 +175,7 @@ class LoginServiceTest extends TestCase{
         $request->server->set('REMOTE_ADDR', '127.0.0.1');
 
 		
-        $result = (new LoginService)->issueTokens($user, 'android', $request);
+        $result = app(LoginService::class)->issueTokens($user, 'android', $request);
 
         
         $this->assertArrayHasKey('token', $result);
