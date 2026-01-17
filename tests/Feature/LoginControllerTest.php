@@ -26,7 +26,9 @@ class LoginControllerTest extends TestCase
 
     public function test_if_invalid_fields_1(): void {
         
-		$response = $this->post('/api/login', [
+		$response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/login', [
 			'email_address' 	=> 'foobar.com',
 			'password' 			=> '1234678',
 			'turnstile_token'	=>	'123467980',
@@ -35,14 +37,19 @@ class LoginControllerTest extends TestCase
 		$expected = (int)config('global.error_code');
 		$response->assertStatus($expected);
 
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_fields', $response['validity']);
+		$json = $response->json();
+
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(2, count($json['errors']));
 
     }
 
 	public function test_if_invalid_fields_2(): void {
         
-		$response = $this->post('/api/login', [
+		$response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/login', [
 			'email_address' 	=> 'foo@bar.com',
 			'password' 			=> '',
 			'turnstile_token'	=>	'123467980',
@@ -51,14 +58,19 @@ class LoginControllerTest extends TestCase
 		$expected = (int)config('global.error_code');
 		$response->assertStatus($expected);
 
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_fields', $response['validity']);
+		$json = $response->json();
+
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
     }
 
 	public function test_if_invalid_fields_3(): void {
         
-		$response = $this->post('/api/login', [
+		$response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/login', [
 			'email_address' 	=> 'foo@bar.com',
 			'password' 			=> '123456789',
 			'turnstile_token'	=>	'',
@@ -67,14 +79,19 @@ class LoginControllerTest extends TestCase
 		$expected = (int)config('global.error_code');
 		$response->assertStatus($expected);
 
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_fields', $response['validity']);
+		$json = $response->json();
+
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
     }
 
 	public function test_if_invalid_fields_4(): void {
         
-		$response = $this->post('/api/login', [
+		$response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/login', [
 			'email_address' 	=> 'foo@bar.com',
 			'password' 			=> '123456789',
 			'turnstile_token'	=>	'123456789',
@@ -83,14 +100,19 @@ class LoginControllerTest extends TestCase
 		$expected = (int)config('global.error_code');
 		$response->assertStatus($expected);
 
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_fields', $response['validity']);
+		$json = $response->json();
+
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
     }
 
 	public function test_if_turnstile_invalid(): void {
         
-		$response = $this->post('/api/login', [
+		$response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/login', [
 			'email_address' 	=> 	'foo@bar.com',
 			'password' 			=> 	'123456789',
 			'turnstile_token'	=>	'123456789',
@@ -351,7 +373,9 @@ class LoginControllerTest extends TestCase
 
 	public function test_resend_otp_invalid_request_1(): void{
 
-		$response = $this->post('/api/resend-otp', [
+		$response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/resend-otp', [
 			'token' 			=> '',
 			'device' 			=> ''
 		]);
@@ -359,14 +383,19 @@ class LoginControllerTest extends TestCase
 		$expected = (int)config('global.error_code');
 		$response->assertStatus($expected);
 		
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(2, count($json['errors']));
 
 	}
 
 	public function test_resend_otp_invalid_request_2(): void{
 
-		$response = $this->post('/api/resend-otp', [
+		$response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/resend-otp', [
 			'token' 			=> '123456789',
 			'device' 			=> ''
 		]);
@@ -374,14 +403,19 @@ class LoginControllerTest extends TestCase
 		$expected = (int)config('global.error_code');
 		$response->assertStatus($expected);
 		
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 
 	public function test_resend_otp_invalid_request_3(): void{
 
-		$response = $this->post('/api/resend-otp', [
+		$response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/resend-otp', [
 			'token' 			=> '',
 			'device' 			=> 'device 123'
 		]);
@@ -389,8 +423,11 @@ class LoginControllerTest extends TestCase
 		$expected = (int)config('global.error_code');
 		$response->assertStatus($expected);
 		
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 
@@ -454,47 +491,62 @@ class LoginControllerTest extends TestCase
 
 		
 
-		$response = $this->post('/api/validate-otp', [
+		$response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/validate-otp', [
 			'token' 			=> 	'',
 			'otp'				=>	'',
 			'device' 			=> 	''
 		]);
 
-		$response->assertStatus(401);
+		$response->assertStatus((int) config('global.error_code'));
 		
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(3, count($json['errors']));
 
 	}
 
 	public function test_if_otp_is_valid_invalid_data_2(): void{
 
 		
-		$response = $this->post('/api/validate-otp', [
+		$response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/validate-otp', [
 			'token' 			=> 	'',
 			'otp'				=>	'123456',
 			'device' 			=> 	''
 		]);
 
-		$response->assertStatus(401);
+		$response->assertStatus((int) config('global.error_code'));
 		
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(2, count($json['errors']));
 
 	}
 
 	public function test_if_otp_is_valid_invalid_data_3(): void{
 
-		$response = $this->post('/api/validate-otp', [
+		$response = $this->withHeaders([
+			'Accept' => 'application/json',
+		])->post('/api/validate-otp', [
 			'token' 			=> 	'21123',
 			'otp'				=>	'123456',
 			'device' 			=> 	''
 		]);
 
-		$response->assertStatus(401);
+		$response->assertStatus((int) config('global.error_code'));
 		
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 

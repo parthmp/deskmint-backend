@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\General;
+use App\Helpers\Turnstile;
 use App\Http\Requests\Login\LoginRequest;
 use App\Http\Requests\Login\ResendOTPRequest;
 use App\Http\Requests\Login\ValidateOTPRequest;
@@ -32,6 +33,10 @@ class LoginController extends Controller{
 		
 		$user =	$this->user_service->fetchUserByEmail($email);
 		$setting = $this->setting_service->fetchFirst();
+
+		if(!Turnstile::validate($data['turnstile_token'])){
+			return response(['message' 	=> 'Invalid request','validity'	=> 'invalid_turnstile'], config('global.error_code'));
+		}
 
 		if(!$user){
 			return response(['message'	=> 'Invalid email or password entered','validity'	=>	'invalid_email_and_password'], config('global.error_code'));
