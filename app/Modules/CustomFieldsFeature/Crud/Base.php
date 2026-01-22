@@ -2,12 +2,13 @@
 
 namespace App\Modules\CustomFieldsFeature\Crud;
 
+use App\Helpers\General;
 use App\Modules\CustomFieldsFeature\DatabaseOperations\DatabaseOperations;
 use App\Modules\CustomFieldsFeature\Exceptions\InvalidFieldsException;
 use App\Modules\CustomFieldsFeature\Exceptions\LabelCharException;
 use App\Modules\CustomFieldsFeature\Exceptions\LabelFoundException;
-use App\Modules\CustomFieldsFeature\FlatTable\FlatTable;
 use App\Repositories\CustomFieldType\CustomFieldTypeRepository;
+use App\Repositories\SettingsSection\SettingsSectionRepository;
 use Exception;
 
 /**
@@ -15,10 +16,12 @@ use Exception;
  */
 class Base{
 
-	public function __construct(private CustomFieldTypeRepository $custom_field_type_repository){}
+	public function __construct(private CustomFieldTypeRepository $custom_field_type_repository, private SettingsSectionRepository $settings_section_repository){}
 
-	public function saveOrUpdateCustomField(array $data, string $feature_custom_fields_model, string $slug, bool $add, string $type, string $custom_id , mixed $object = null) : mixed {
+	public function saveOrUpdateCustomField(array $data, string $feature_custom_fields_model, string $slug, bool $add, string $type, string $custom_id , mixed $object = null) : bool {
 		
+		$db = new DatabaseOperations($feature_custom_fields_model);
+
 		$company_id = $data['company_id'];
 		
 		if(!$add){
@@ -58,8 +61,6 @@ class Base{
 		
 		/* check if label exists already */
 
-		$db = new DatabaseOperations($feature_custom_fields_model);
-
 		if($add){
 			$found_label = $db->fetchCustomFieldById($company_id, $label);
 		}else{
@@ -90,60 +91,99 @@ class Base{
 		}
 
 		try{
-			
-			$db->createOrUpdate([
 
+			$flag1 = $db->createOrUpdate([
+				'id'					=>		$field->id,
+				'company_id'			=>		$company_id,
+				'label'					=>		$label,
+				'placeholder'			=>		$placeholder,
+				'is_required_flag'		=>		$is_required_flag,
+				'options'				=>		$options,
+				'default_value'			=>		$default_value,
+				'add_edit_page_order'	=>		$add_edit_page_order,
+				'slug'					=>		$slug,
+				'past_label'			=>		$data['past_label'],
+				'input_type'			=>		$field->input_type
 			], $add, $feature_custom_fields_model);
 
-			// if($add){
-			// 	$ccf = new $feature_custom_fields_model();
-			// }else{
-			// 	$ccf = $object;
-			// 	$object = null;
-			// }
+			$flag2 = $this->modifyArrangedFieldsSettings($type, $company_id, $custom_id, $feature_custom_fields_model);
 
-			// $ccf->custom_field_type_id = $field->id;
-			// $ccf->company_id = $company_id;
-			// $ccf->label = $label;
-			// $ccf->placeholder = $placeholder;
-			// $ccf->required = $is_required_flag;
-			// $ccf->type_params = $options;
-			// $ccf->default_value = $default_value;
-			// $ccf->order_on_add_edit_page = (int)$add_edit_page_order;
-
-			// $success_message = 'Custom field updated successfully';
-			// $validity_message = 'updated_success';
-
-			// if($add){
-
-			// 	$success_message = 'Custom field created successfully';
-			// 	$validity_message = 'created_success';
-
-			// }
-
-			// /* handle flat table */
-			// $flat_table = new FlatTable($slug.'s_flat', $slug.'s', $slug.'_id');
-			// if($add){
-			// 	$flat_table->addFlatTableColumn($label, $field->input_type);
-			// }else{
-			// 	$past_label = (string) $data['past_label'];
-			// 	$flat_table->editFlatTableColumn($past_label, $label, $field->input_type);
-			// }
-			// /**/
-
-			// if($ccf->save()){
-
-			// 	//$this->modifyArrangedFieldsSettings($type, $company_id, $custom_id, $feature_custom_fields_model);
-
-			// 	return response(['message' => $success_message, 'validity' => $validity_message], 200);
-			// }else{
-			// 	return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], config('global.error_code'));
-			// }
-
+			return $flag1 && $flag2;
 
 		}catch(Exception $e){
-			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], config('global.error_code'));
+			throw new Exception("failed to save / update the record");
 		}
+	}
+
+	/**
+	 * modifyArrangedFieldsSettings function
+	 *
+	 * @param string $type
+	 * @param integer $company_id
+	 * @param string $custom_id
+	 * @param string $custom_fields_table_modal
+	 * @return void
+	 */
+	public function modifyArrangedFieldsSettings(string $type, int $company_id, string $custom_id, string $custom_fields_table_modal) : bool {
+
+		$db = new DatabaseOperations($custom_fields_table_modal);
+
+		$field = $this->settings_section_repository->fetchSettings($company_id, $type);
+
+		if($field){
+
+			$new_json = [];
+
+			$json = json_decode($field->settings_json, true);
+
+			$custom_fields = $db->fetchCustomFieldsArrayByCompanyId($company_id);
+
+			$ids = [];
+
+			foreach($custom_fields as $c_field){
+				$ids[] = $c_field['id'];
+			}
+
+			for($z = 0 ; $z < count($json) ; $z++){
+
+				$fine_to_push = true;
+
+				if(isset($json[$z][$custom_id]) && !in_array($json[$z][$custom_id], $ids)){
+					$fine_to_push = false;
+				}
+
+				for($x = 0 ; $x < count($custom_fields) ; $x++){
+
+					if(isset($json[$z][$custom_id])){
+
+						if((int) $json[$z][$custom_id] === (int) $custom_fields[$x]['id'] && $json[$z]['type'] === 'custom'){
+							
+							$json[$z]['text'] = $custom_fields[$x]['label'];
+							$json[$z]['type'] = 'custom';
+							$json[$z]['value'] = General::replaceWithUnderscores($custom_fields[$x]['label']);
+							$json[$z]['mapped'] = null;
+							$json[$z][$custom_id] = $custom_fields[$x]['id'];
+
+						}
+
+					}
+
+				}
+
+				if($fine_to_push){
+					$new_json[] = $json[$z];
+				}
+
+			}
+
+			$new_json = json_encode($new_json);
+			$field->settings_json = $new_json;
+			return $field->save();
+
+		}
+
+		return true;
+
 	}
 
 }

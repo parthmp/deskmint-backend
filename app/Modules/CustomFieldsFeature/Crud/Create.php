@@ -6,6 +6,6 @@ namespace App\Modules\CustomFieldsFeature\Crud;
 /**
  * Create class
  */
-class Create{
-
+class Create extends Base{
+	
 }

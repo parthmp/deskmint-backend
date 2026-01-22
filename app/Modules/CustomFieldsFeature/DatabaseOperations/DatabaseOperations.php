@@ -52,7 +52,7 @@ class DatabaseOperations{
 	 * @param Model|null $object
 	 * @return boolean
 	 */
-	public function createOrUpdate(array $data, bool $add, ?Model $object) : bool {
+	public function createOrUpdate(array $data, bool $add, ?String $object) : bool {
 		
 		if($add){
 			$ccf = new $this->feature_custom_fields_model();
@@ -80,14 +80,16 @@ class DatabaseOperations{
 		}
 		/**/
 		return $ccf->save();
-		// if($ccf->save()){
-		// 	//handle modifyArrangedFieldsSettings here
-		// 	//$this->modifyArrangedFieldsSettings($type, $company_id, $custom_id, $feature_custom_fields_model);
+	}
 
-		// 	return response(['message' => $success_message, 'validity' => $validity_message], 200);
-		// }else{
-		// 	return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], config('global.error_code'));
-		// }
+	/**
+	 * fetchCustomFieldsArrayByCompanyId function
+	 *
+	 * @param integer $company_id
+	 * @return array
+	 */
+	public function fetchCustomFieldsArrayByCompanyId(int $company_id) : array {
+		return $this->feature_custom_fields_model::where('company_id', '=', $company_id)->get()->toArray();
 	}
 
 }
