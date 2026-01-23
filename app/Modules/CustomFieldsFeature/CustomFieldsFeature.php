@@ -3,7 +3,9 @@
 namespace App\Modules\CustomFieldsFeature;
 
 use App\Modules\CustomFieldsFeature\Crud\Create;
+use App\Modules\CustomFieldsFeature\Crud\Delete;
 use App\Modules\CustomFieldsFeature\Crud\Read;
+use App\Modules\CustomFieldsFeature\Crud\Update;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
@@ -11,7 +13,7 @@ class CustomFieldsFeature{
 
 	private string $model;
 
-	public function __construct(private Read $read, private Create $create){}
+	public function __construct(private Read $read, private Create $create, private Update $update, private Delete $delete){}
 
 	/**
 	 * setModel function
@@ -71,6 +73,36 @@ class CustomFieldsFeature{
 	 */
 	public function showData(string $feature_custom_fields_model, int $company_id, int $id) : Model {
 		return $this->read->showData($feature_custom_fields_model, $company_id, $id);
+	}
+
+	/**
+	 * updateData function
+	 *
+	 * @param array $data
+	 * @param string $feature_custom_fields_model
+	 * @param string $slug
+	 * @param integer $id
+	 * @param string $type
+	 * @param string $custom_id
+	 * @return boolean
+	 */
+	public function updateData(array $data, string $feature_custom_fields_model, string $slug, int $id, string $type, string $custom_id) : bool {
+		return $this->update->updateData($data, $feature_custom_fields_model, $slug, $id, $type, $custom_id);
+	}
+
+	/**
+	 * destroyData function
+	 *
+	 * @param array $data
+	 * @param string $feature_custom_fields_model
+	 * @param string $slug
+	 * @param string $type
+	 * @param integer $company_id
+	 * @param string $custom_id
+	 * @return boolean|null
+	 */
+	public function destroyData(array $data, string $feature_custom_fields_model, string $slug, string $type, int $company_id, string $custom_id) : ?bool {
+		return $this->delete->destroyData($data, $feature_custom_fields_model, $slug, $type, $company_id, $custom_id);
 	}
 
 }
