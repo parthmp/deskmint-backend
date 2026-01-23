@@ -2,7 +2,7 @@
 
 namespace App\Modules\CustomFieldsFeature\Crud;
 
-
+use App\Modules\CustomFieldsFeature\DatabaseOperations\DatabaseOperations;
 use App\Modules\CustomFieldsFeature\Exceptions\RecordNotFoundException;
 use App\Modules\DataTable\DataTable;
 use Illuminate\Database\Eloquent\Collection;
@@ -25,8 +25,10 @@ class Read{
 	 */
 	public function fetchFieldTypes(string $model) : Collection {
 
-		$fields = $model::select(['id', 'input_type', 'input_name'])->orderBy('input_name', 'asc')->get();
-		
+		$db = new DatabaseOperations($model);
+
+		$fields = $db->fetchDataWithSortedInputName();
+
 		$fields = $fields->each(function($field){
 			$field->text = ucfirst($field->input_type).' - '.$field->input_name;
 			$field->value = $field->id;
@@ -140,7 +142,8 @@ class Read{
 	 */
 	public function showData(string $feature_custom_fields_model, int $company_id, int $id) : Model {
 		
-		$custom_field = $feature_custom_fields_model::select('custom_field_type_id', 'label', 'placeholder', 'required', 'default_value', 'order_on_add_edit_page', 'type_params')->where([['id', '=', $id], ['company_id','=', $company_id]])->with('customFieldType')->first();
+		$db = new DatabaseOperations($feature_custom_fields_model);
+		$custom_field = $db->fetchDataForSingleRecord($id, $company_id);
 
 		if(!$custom_field){
 			throw new RecordNotFoundException("record not found");

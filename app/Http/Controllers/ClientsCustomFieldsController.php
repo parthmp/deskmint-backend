@@ -10,8 +10,6 @@ use App\Modules\CustomFieldsFeature\CustomFieldsFeature;
 use App\Modules\CustomFieldsFeature\Requests\CreateCustomFieldsFeatureRequest;
 use App\Modules\CustomFieldsFeature\Requests\DeleteCustomFieldsFeatureRequest;
 use App\Modules\DataTable\Requests\DataTableRequest;
-use App\Traits\FeatureCustomFields;
-use Illuminate\Http\Response;
 
 class ClientsCustomFieldsController extends Controller{
 	
@@ -24,14 +22,23 @@ class ClientsCustomFieldsController extends Controller{
 	}
 
 	public function store(CreateCustomFieldsFeatureRequest $request){
+		/**
+		 * TODO : use try and catch for error handling here
+		 */
 		return $this->custom_fields_feature->saveOrUpdateCustomField($request->validated(), ClientsCustomField::class, 'client', true, ISC_INVOICE_CLIENT_DETAILS_TYPE, $this->custom_id_flag);
 	}
 
 	public function index(DataTableRequest $request){
+		/**
+		 * TODO : use try and catch for error handling here
+		 */
 		return $this->custom_fields_feature->indexData($request->validated(), ClientsCustomField::class, 'client');
 	}
 
 	public function show(GenericRequest $request, int $id){
+		/**
+		 * TODO : use try and catch for error handling here
+		 */
 		$data = $request->validated();
 		$company_id = $data['company_id'];
 		$id = (int) Sanitize::input($id);
@@ -39,10 +46,16 @@ class ClientsCustomFieldsController extends Controller{
 	}
 
 	public function update(CreateCustomFieldsFeatureRequest $request, int $id){
+		/**
+		 * TODO : use try and catch for error handling here
+		 */
 		return $this->custom_fields_feature->updateData($request->validated(), ClientsCustomField::class, 'client', $id, ISC_INVOICE_CLIENT_DETAILS_TYPE, $this->custom_id_flag);
 	}
 
 	public function destroy(DeleteCustomFieldsFeatureRequest $request){
+		/**
+		 * TODO : use try and catch for error handling here
+		 */
 		$data = $request->validated();
 		$company_id = $data['company_id'];
 		return $this->custom_fields_feature->destroyData($request->validated(), ClientsCustomField::class, 'client', ISC_INVOICE_CLIENT_DETAILS_TYPE, $company_id, $this->custom_id_flag);

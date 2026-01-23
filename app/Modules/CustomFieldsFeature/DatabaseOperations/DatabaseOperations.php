@@ -3,6 +3,7 @@
 namespace App\Modules\CustomFieldsFeature\DatabaseOperations;
 
 use App\Modules\CustomFieldsFeature\FlatTable\FlatTable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -90,6 +91,57 @@ class DatabaseOperations{
 	 */
 	public function fetchCustomFieldsArrayByCompanyId(int $company_id) : array {
 		return $this->feature_custom_fields_model::where('company_id', '=', $company_id)->get()->toArray();
+	}
+
+	/**
+	 * fetchDataWithSortedInputName function
+	 *
+	 * @return Collection|null
+	 */
+	public function fetchDataWithSortedInputName() : ?Collection {
+		return $this->feature_custom_fields_model::select(['id', 'input_type', 'input_name'])->orderBy('input_name', 'asc')->get();
+	}
+
+	/**
+	 * fetchDataForSingleRecord function
+	 *
+	 * @param integer $id
+	 * @param integer $company_id
+	 * @return Model|null
+	 */
+	public function fetchDataForSingleRecord(int $id, int $company_id) : ?Model {
+		return $this->feature_custom_fields_model::select('custom_field_type_id', 'label', 'placeholder', 'required', 'default_value', 'order_on_add_edit_page', 'type_params')->where([['id', '=', $id], ['company_id','=', $company_id]])->with('customFieldType')->first();
+	}
+
+	/**
+	 * fetchCustomFieldByIdAndCompanyId function
+	 *
+	 * @param integer $id
+	 * @param integer $company_id
+	 * @return Model|null
+	 */
+	public function fetchCustomFieldByIdAndCompanyId(int $id, int $company_id) : ?Model {
+		return $this->feature_custom_fields_model::where([['id', '=', $id], ['company_id','=', $company_id]])->first();
+	}
+
+	/**
+	 * fetchColumnNamesByIds function
+	 *
+	 * @param array $ids
+	 * @return Collection|null
+	 */
+	public function fetchColumnNamesByIds(array $ids) : ?Collection {
+		return $this->feature_custom_fields_model::whereIn('id', $ids)->get();
+	}
+
+	/**
+	 * deleteByIds function
+	 *
+	 * @param array $ids
+	 * @return void
+	 */
+	public function deleteByIds(array $ids) : void {
+		$this->feature_custom_fields_model::whereIn('id', $ids)->delete();
 	}
 
 }

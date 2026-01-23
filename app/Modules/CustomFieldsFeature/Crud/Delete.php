@@ -2,6 +2,7 @@
 
 namespace App\Modules\CustomFieldsFeature\Crud;
 
+use App\Modules\CustomFieldsFeature\DatabaseOperations\DatabaseOperations;
 use App\Modules\CustomFieldsFeature\Exceptions\InvalidFieldsException;
 use App\Modules\CustomFieldsFeature\FlatTable\FlatTable;
 use Exception;
@@ -24,6 +25,8 @@ class Delete extends Base{
 	 */
 	public function destroyData(array $data, string $feature_custom_fields_model, string $slug, string $type, int $company_id, string $custom_id) : ?bool {
 
+		$db = new DatabaseOperations($feature_custom_fields_model);
+
 		$ids = $data['ids'];
 		
 		if(!is_array($ids) || empty($ids)){
@@ -41,7 +44,7 @@ class Delete extends Base{
 			
 			$flat_table = new FlatTable($slug.'s_flat', $slug.'s', $slug.'_id');
 
-			$column_names = $feature_custom_fields_model::whereIn('id', $ids)->get();
+			$column_names = $db->fetchColumnNamesByIds($ids);
 
 			$column_names_arranged = [];
 
@@ -52,8 +55,7 @@ class Delete extends Base{
 			$flat_table->dropColumns($column_names_arranged);
 			$column_names_arranged = null;
 			
-
-			$feature_custom_fields_model::whereIn('id', $ids)->delete();
+			$db->deleteByIds($ids);
 			
 			return $this->modifyArrangedFieldsSettings($type, $company_id, $custom_id, $feature_custom_fields_model);
 

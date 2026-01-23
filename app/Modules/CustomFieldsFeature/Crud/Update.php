@@ -2,6 +2,7 @@
 
 namespace App\Modules\CustomFieldsFeature\Crud;
 
+use App\Modules\CustomFieldsFeature\DatabaseOperations\DatabaseOperations;
 use App\Modules\CustomFieldsFeature\Exceptions\RecordNotFoundException;
 
 /**
@@ -22,8 +23,10 @@ class Update extends Base{
 	 */
 	public function updateData(array $data, string $feature_custom_fields_model, string $slug, int $id, string $type, string $custom_id) : bool {
 		
-		$custom_field = $feature_custom_fields_model::where([['id', '=', $id], ['company_id','=', $data['company_id']]])->first();
-		
+		$db = new DatabaseOperations($feature_custom_fields_model);
+
+		$custom_field = $db->fetchCustomFieldByIdAndCompanyId($id, $data['company_id']);
+
 		if(!$custom_field){
 			throw new RecordNotFoundException("record not found");
 		}
