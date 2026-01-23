@@ -27,9 +27,9 @@ class DatabaseOperations{
 	 *
 	 * @param integer $company_id
 	 * @param string $label
-	 * @return Model
+	 * @return Model|null
 	 */
-	public function fetchCustomFieldById(int $company_id, string $label) : Model {
+	public function fetchCustomFieldById(int $company_id, string $label) : ?Model {
 		return $this->feature_custom_fields_model::where([['company_id', '=', $company_id], ['label', '=', trim($label)]])->first();
 	}
 
@@ -39,9 +39,9 @@ class DatabaseOperations{
 	 * @param integer $company_id
 	 * @param string $label
 	 * @param string $exclude_label
-	 * @return Model
+	 * @return Model|null
 	 */
-	public function fetchCustomFieldByIdExcludingRecord(int $company_id, string $label, string $exclude_label) : Model {
+	public function fetchCustomFieldByIdExcludingRecord(int $company_id, string $label, string $exclude_label) : ?Model {
 		return $this->feature_custom_fields_model::where([['company_id', '=', $company_id], ['label', '=', trim($label)], ['label', '<>', $exclude_label]])->first();
 	}
 
@@ -53,7 +53,7 @@ class DatabaseOperations{
 	 * @param Model|null $object
 	 * @return boolean
 	 */
-	public function createOrUpdate(array $data, bool $add, ?String $object) : bool {
+	public function createOrUpdate(array $data, bool $add, ?Model $object) : bool {
 		
 		if($add){
 			$ccf = new $this->feature_custom_fields_model();

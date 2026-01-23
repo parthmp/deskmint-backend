@@ -104,7 +104,7 @@ class Base{
 				'slug'					=>		$slug,
 				'past_label'			=>		$data['past_label'],
 				'input_type'			=>		$field->input_type
-			], $add, $feature_custom_fields_model);
+			], $add, $object);
 
 			$flag2 = $this->modifyArrangedFieldsSettings($type, $company_id, $custom_id, $feature_custom_fields_model);
 

@@ -21,9 +21,9 @@ class Read{
 	 * fetchFieldTypes function
 	 *
 	 * @param string $model
-	 * @return Collection
+	 * @return Collection|null
 	 */
-	public function fetchFieldTypes(string $model) : Collection {
+	public function fetchFieldTypes(string $model) : ?Collection {
 
 		$db = new DatabaseOperations($model);
 

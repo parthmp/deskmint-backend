@@ -39,7 +39,6 @@ class CustomFieldsFeature{
 	 * saveOrUpdateCustomField function
 	 *
 	 * @param array $data
-	 * @param string $feature_custom_fields_model
 	 * @param string $slug
 	 * @param boolean $add
 	 * @param string $type
@@ -47,62 +46,58 @@ class CustomFieldsFeature{
 	 * @param mixed $object
 	 * @return boolean
 	 */
-	public function saveOrUpdateCustomField(array $data, string $feature_custom_fields_model, string $slug, bool $add, string $type, string $custom_id , mixed $object = null) : bool {
-		return $this->create->saveOrUpdateCustomField($data, $feature_custom_fields_model, $slug, $add, $type, $custom_id , $object);
+	public function saveOrUpdateCustomField(array $data, string $slug, bool $add, string $type, string $custom_id , mixed $object = null) : bool {
+		return $this->create->saveOrUpdateCustomField($data, $this->model, $slug, $add, $type, $custom_id , $object);
 	}
 
 	/**
 	 * indexData function
 	 *
 	 * @param array $data
-	 * @param string $feature_custom_fields_model
 	 * @param string $slug
 	 * @return array
 	 */
-	public function indexData(array $data, string $feature_custom_fields_model, string $slug) : array {
-		return $this->read->indexData($data, $feature_custom_fields_model, $slug);
+	public function indexData(array $data, string $slug) : array {
+		return $this->read->indexData($data, $this->model, $slug);
 	}
 
 	/**
 	 * showData function
 	 *
-	 * @param string $feature_custom_fields_model
 	 * @param integer $company_id
 	 * @param integer $id
 	 * @return Model
 	 */
-	public function showData(string $feature_custom_fields_model, int $company_id, int $id) : Model {
-		return $this->read->showData($feature_custom_fields_model, $company_id, $id);
+	public function showData(int $company_id, int $id) : Model {
+		return $this->read->showData($this->model, $company_id, $id);
 	}
 
 	/**
 	 * updateData function
 	 *
 	 * @param array $data
-	 * @param string $feature_custom_fields_model
 	 * @param string $slug
 	 * @param integer $id
 	 * @param string $type
 	 * @param string $custom_id
 	 * @return boolean
 	 */
-	public function updateData(array $data, string $feature_custom_fields_model, string $slug, int $id, string $type, string $custom_id) : bool {
-		return $this->update->updateData($data, $feature_custom_fields_model, $slug, $id, $type, $custom_id);
+	public function updateData(array $data, string $slug, int $id, string $type, string $custom_id) : bool {
+		return $this->update->updateData($data, $this->model, $slug, $id, $type, $custom_id);
 	}
 
 	/**
 	 * destroyData function
 	 *
 	 * @param array $data
-	 * @param string $feature_custom_fields_model
 	 * @param string $slug
 	 * @param string $type
 	 * @param integer $company_id
 	 * @param string $custom_id
 	 * @return boolean|null
 	 */
-	public function destroyData(array $data, string $feature_custom_fields_model, string $slug, string $type, int $company_id, string $custom_id) : ?bool {
-		return $this->delete->destroyData($data, $feature_custom_fields_model, $slug, $type, $company_id, $custom_id);
+	public function destroyData(array $data, string $slug, string $type, int $company_id, string $custom_id) : ?bool {
+		return $this->delete->destroyData($data, $this->model, $slug, $type, $company_id, $custom_id);
 	}
 
 }
