@@ -3,7 +3,6 @@
 	namespace App\Services;
 
 	use App\Helpers\Sanitize;
-	use App\Models\ClientsCustomField;
 	use Illuminate\Support\Facades\Schema;
 	use Illuminate\Support\Facades\DB;
 
