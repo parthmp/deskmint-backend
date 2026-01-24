@@ -5,9 +5,8 @@ namespace Tests\Feature;
 use App\Helpers\General;
 use App\Models\CustomFieldType;
 use App\Models\InvoicesCustomField;
-use App\Services\ManageFlatTable;
+use App\Modules\CustomFieldsFeature\FlatTable\FlatTable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 use Tests\Traits\CustomFields;
@@ -43,8 +42,11 @@ class InvoicesCustomFieldsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(4, count($json['errors']));
 
 	}
 
@@ -130,7 +132,7 @@ class InvoicesCustomFieldsControllerTest extends TestCase{
 
 		$company_id = $this->set_default_company();
 
-		$flat_table = new ManageFlatTable('invoices_flat', 'invoices', 'invoice_id');
+		$flat_table = new FlatTable('invoices_flat', 'invoices', 'invoice_id');
 		$flat_table->addFlatTableColumn('past label here');
 
 		CustomFieldType::truncate();
