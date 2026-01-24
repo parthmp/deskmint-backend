@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers;
 
-
+use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
 use App\Models\ClientsCustomField;
 use App\Models\CustomFieldType;
 use App\Modules\CustomFieldsFeature\CustomFieldsFeature;
+use App\Modules\CustomFieldsFeature\Exceptions\InvalidFieldsException;
+use App\Modules\CustomFieldsFeature\Exceptions\LabelCharException;
+use App\Modules\CustomFieldsFeature\Exceptions\LabelFoundException;
+use App\Modules\CustomFieldsFeature\Exceptions\RecordNotFoundException;
 use App\Modules\CustomFieldsFeature\Requests\CreateCustomFieldsFeatureRequest;
 use App\Modules\CustomFieldsFeature\Requests\DeleteCustomFieldsFeatureRequest;
 use App\Modules\DataTable\Requests\DataTableRequest;
+use Exception;
 
 class ClientsCustomFieldsController extends Controller{
 	
@@ -24,42 +29,85 @@ class ClientsCustomFieldsController extends Controller{
 	}
 
 	public function store(CreateCustomFieldsFeatureRequest $request){
-		/**
-		 * TODO : use try and catch for error handling here
-		 */
-		return $this->custom_fields_feature->setModel($this->model)->saveOrUpdateCustomField($request->validated(), 'client', true, ISC_INVOICE_CLIENT_DETAILS_TYPE, $this->custom_id_flag);
+
+		try{
+
+			$this->custom_fields_feature->setModel($this->model)->saveOrUpdateCustomField($request->validated(), 'client', true, ISC_INVOICE_CLIENT_DETAILS_TYPE, $this->custom_id_flag);
+
+			return response(['message' => 'Custom field created successfully', 'validity' => 'created_success'], 200);
+
+		}catch(InvalidFieldsException|LabelCharException|LabelFoundException $e){
+
+			return response(['message' => $e->getMessage()], config('global.error_code'));
+
+		}catch(Exception $e){
+
+			return General::wentWrong();
+
+		}
+		
 	}
 
 	public function index(DataTableRequest $request){
-		/**
-		 * TODO : use try and catch for error handling here
-		 */
+
 		return $this->custom_fields_feature->setModel($this->model)->indexData($request->validated(), 'client');
 	}
 
 	public function show(GenericRequest $request, int $id){
-		/**
-		 * TODO : use try and catch for error handling here
-		 */
+
 		$data = $request->validated();
 		$company_id = $data['company_id'];
 		$id = (int) Sanitize::input($id);
-		return $this->custom_fields_feature->setModel($this->model)->showData($company_id, $id);
+
+		try{
+			return $this->custom_fields_feature->setModel($this->model)->showData($company_id, $id);
+		}catch(RecordNotFoundException $e){
+			return response(['message' => $e->getMessage()], config('global.error_code'));
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
+		
 	}
 
 	public function update(CreateCustomFieldsFeatureRequest $request, int $id){
-		/**
-		 * TODO : use try and catch for error handling here
-		 */
-		return $this->custom_fields_feature->setModel($this->model)->updateData($request->validated(), 'client', $id, ISC_INVOICE_CLIENT_DETAILS_TYPE, $this->custom_id_flag);
+		
+		try{
+			
+			$this->custom_fields_feature->setModel($this->model)->updateData($request->validated(), 'client', $id, ISC_INVOICE_CLIENT_DETAILS_TYPE, $this->custom_id_flag);
+			return response(['message' => 'Custom field updated successfully', 'validity' => 'updated_success'], 200);
+
+		}catch(InvalidFieldsException|LabelCharException|LabelFoundException|RecordNotFoundException $e){
+
+			return response(['message' => $e->getMessage()], config('global.error_code'));
+
+		}catch(Exception $e){
+
+			return General::wentWrong();
+
+		}
 	}
 
 	public function destroy(DeleteCustomFieldsFeatureRequest $request){
-		/**
-		 * TODO : use try and catch for error handling here
-		 */
+		
 		$data = $request->validated();
 		$company_id = $data['company_id'];
-		return $this->custom_fields_feature->setModel($this->model)->destroyData($request->validated(), 'client', ISC_INVOICE_CLIENT_DETAILS_TYPE, $company_id, $this->custom_id_flag);
+
+		try{
+
+			$this->custom_fields_feature->setModel($this->model)->destroyData($request->validated(), 'client', ISC_INVOICE_CLIENT_DETAILS_TYPE, $company_id, $this->custom_id_flag);
+			return response(['message' => 'Custom field(s) deleted successfully', 'validity' => 'delete_success'], 200);
+
+		}catch(InvalidFieldsException $e){
+
+			return response(['message' => $e->getMessage()], config('global.error_code'));
+
+		}catch(Exception $e){
+
+			return General::wentWrong();
+			
+		}
+
+		
 	}
 }

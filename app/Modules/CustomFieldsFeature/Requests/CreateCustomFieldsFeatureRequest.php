@@ -61,4 +61,11 @@ class CreateCustomFieldsFeatureRequest extends FormRequest
 			'default_value'			=>		'sometimes'
         ];
     }
+
+	public function messages()
+	{
+		return [
+			'label' => 'Label must not contain special characters'
+		];
+	}
 }

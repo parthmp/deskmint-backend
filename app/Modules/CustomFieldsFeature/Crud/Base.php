@@ -26,7 +26,7 @@ class Base{
 		
 		if(!$add){
 			if(!$data['past_label']){
-				return false;
+				throw new InvalidFieldsException("Invalid request");
 			}
 		}
 		
@@ -35,7 +35,7 @@ class Base{
 		$field = $this->custom_field_type_repository->fetchById($input_field);
 		
 		if(!$field){
-			return false;
+			throw new InvalidFieldsException("Invalid request");
 		}
 
 		$options = '';
