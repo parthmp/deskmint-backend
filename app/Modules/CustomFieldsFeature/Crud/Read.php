@@ -146,7 +146,7 @@ class Read{
 		$custom_field = $db->fetchDataForSingleRecord($id, $company_id);
 
 		if(!$custom_field){
-			throw new RecordNotFoundException("Record not found");
+			throw new RecordNotFoundException("Record not found", "invalid_request");
 		}
 
 		return $custom_field;

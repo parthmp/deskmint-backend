@@ -38,7 +38,7 @@ class ClientsCustomFieldsController extends Controller{
 
 		}catch(InvalidFieldsException|LabelCharException|LabelFoundException $e){
 
-			return response(['message' => $e->getMessage()], config('global.error_code'));
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], config('global.error_code'));
 
 		}catch(Exception $e){
 
@@ -62,7 +62,7 @@ class ClientsCustomFieldsController extends Controller{
 		try{
 			return $this->custom_fields_feature->setModel($this->model)->showData($company_id, $id);
 		}catch(RecordNotFoundException $e){
-			return response(['message' => $e->getMessage()], config('global.error_code'));
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], config('global.error_code'));
 		}catch(Exception $e){
 			return General::wentWrong();
 		}
@@ -79,7 +79,7 @@ class ClientsCustomFieldsController extends Controller{
 
 		}catch(InvalidFieldsException|LabelCharException|LabelFoundException|RecordNotFoundException $e){
 
-			return response(['message' => $e->getMessage()], config('global.error_code'));
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], config('global.error_code'));
 
 		}catch(Exception $e){
 
@@ -100,12 +100,12 @@ class ClientsCustomFieldsController extends Controller{
 
 		}catch(InvalidFieldsException $e){
 
-			return response(['message' => $e->getMessage()], config('global.error_code'));
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], config('global.error_code'));
 
 		}catch(Exception $e){
 
 			return General::wentWrong();
-			
+
 		}
 
 		

@@ -30,12 +30,12 @@ class Delete extends Base{
 		$ids = $data['ids'];
 		
 		if(!is_array($ids) || empty($ids)){
-			throw new InvalidFieldsException("Invalid ids provided.");
+			throw new InvalidFieldsException("Invalid ids provided.", "invalid_ids");
 		}
 
 		foreach($ids as $id){
 			if (!is_numeric($id)) {
-				throw new InvalidFieldsException("All IDs must be numeric");
+				throw new InvalidFieldsException("All IDs must be numeric", "non_numeric");
 				break;
 			}
 		}

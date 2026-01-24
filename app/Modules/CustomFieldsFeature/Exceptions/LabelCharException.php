@@ -3,6 +3,8 @@
 namespace App\Modules\CustomFieldsFeature\Exceptions;
 
 use Exception;
-class LabelCharException extends Exception {
+class LabelCharException extends CustomFieldException {
 	
+
+
 }

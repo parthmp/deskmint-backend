@@ -23,11 +23,15 @@
 		/**
 		 * recursive function
 		 *
-		 * @param array $input
-		 * @return array
+		 * @param array|null $input
+		 * @return array|null
 		 */
-		public static function recursive(array $input) : array {
-			
+		public static function recursive(?array $input) : ?array {
+
+			if(!is_array($input)){
+				return null;
+			}
+
 			$result = [];
 			
 			foreach($input as $key => $value){

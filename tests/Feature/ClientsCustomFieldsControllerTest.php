@@ -9,7 +9,7 @@ use App\Models\Company;
 use App\Models\CustomFieldType;
 use App\Models\RefreshToken;
 use App\Models\User;
-use App\Services\ManageFlatTable;
+use App\Modules\CustomFieldsFeature\FlatTable\FlatTable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Schema;
@@ -66,8 +66,11 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(4, count($json['errors']));
 
 	}
 
@@ -86,8 +89,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(4, count($json['errors']));
 
 	}
 
@@ -111,8 +116,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(2, count($json['errors']));
 
 	}
 
@@ -565,8 +572,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_request', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(4, count($json['errors']));
 
 	}
 
@@ -592,8 +601,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(4, count($json['errors']));
 
 	}
 	
@@ -616,8 +627,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(4, count($json['errors']));
 
 	}
 	
@@ -644,8 +657,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		], $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_data', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(2, count($json['errors']));
 
 	}
 
@@ -769,7 +784,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 		$company_id = $this->set_default_company();
 
-		$flat_table = new ManageFlatTable('clients_flat', 'clients', 'client_id');
+		$flat_table = new FlatTable('clients_flat', 'clients', 'client_id');
 		$flat_table->addFlatTableColumn('past label here');
 
 		CustomFieldType::truncate();
@@ -838,7 +853,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 		Schema::dropIfExists('clients_flat');
 
-		$flat_table = new ManageFlatTable('clients_flat', 'clients', 'client_id');
+		$flat_table = new FlatTable('clients_flat', 'clients', 'client_id');
 		$flat_table->addFlatTableColumn('past label here');
 		$this->assertFalse(Schema::hasColumn('clients_flat', 'after_update'));
 
@@ -890,7 +905,7 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 
 		$select_field = CustomFieldType::where('input_type', '=', 'email')->first();
 
-		$flat_table = new ManageFlatTable('clients_flat', 'clients', 'client_id');
+		$flat_table = new FlatTable('clients_flat', 'clients', 'client_id');
 		$flat_table->addFlatTableColumn('past label here');
 		$this->assertFalse(Schema::hasColumn('clients_flat', 'after_update'));
 		
@@ -1081,8 +1096,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		], $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_label_chars', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 
@@ -1127,8 +1144,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		], $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_label_chars', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 
@@ -1249,8 +1268,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		], $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_ids', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 
@@ -1276,8 +1297,10 @@ class ClientsCustomFieldsControllerTest extends TestCase{
 		], $c['headers']);
 		
 		$response->assertStatus((int)config('global.error_code'));
-		$this->assertArrayHasKey('validity', $response);
-		$this->assertEquals('invalid_ids', $response['validity']);
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(1, count($json['errors']));
 
 	}
 

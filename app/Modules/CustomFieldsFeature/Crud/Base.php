@@ -26,7 +26,7 @@ class Base{
 		
 		if(!$add){
 			if(!$data['past_label']){
-				throw new InvalidFieldsException("Invalid request");
+				throw new InvalidFieldsException("Invalid request", "invalid_request");
 			}
 		}
 		
@@ -35,19 +35,19 @@ class Base{
 		$field = $this->custom_field_type_repository->fetchById($input_field);
 		
 		if(!$field){
-			throw new InvalidFieldsException("Invalid request");
+			throw new InvalidFieldsException("Invalid request", "invalid_request");
 		}
 
 		$options = '';
 		if(strtolower($field->input_type) === 'select' || strtolower($field->input_type) === 'multiselect'){
 
 			if(!$data['select_options']){
-				throw new InvalidFieldsException("Please fill options");
+				throw new InvalidFieldsException("Please fill options", "invalid_data");
 			}
 
 			$options_temp = $data['select_options'];
 			if($options_temp === ''){
-				throw new InvalidFieldsException("Please fill options");
+				throw new InvalidFieldsException("Please fill options", "invalid_data");
 			}
 
 			$options = $options_temp;
@@ -56,7 +56,7 @@ class Base{
 
 		$label = (string) $data['label'];
 		if(strlen($label) > 50){
-			throw new LabelCharException("Label must not have more than 50 characters");
+			throw new LabelCharException("Label must not have more than 50 characters", "invalid_label");
 		}
 		
 		/* check if label exists already */
@@ -68,7 +68,7 @@ class Base{
 		}
 
 		if($found_label){
-			throw new LabelFoundException("Label already exists");
+			throw new LabelFoundException("Label already exists", "invalid_label");
 		}
 		
 		$placeholder = '';

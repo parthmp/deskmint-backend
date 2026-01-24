@@ -28,7 +28,7 @@ class Update extends Base{
 		$custom_field = $db->fetchCustomFieldByIdAndCompanyId($id, $data['company_id']);
 
 		if(!$custom_field){
-			throw new RecordNotFoundException("Record not found");
+			throw new RecordNotFoundException("Record not found", "invalid_request");
 		}
 		
 		return $this->saveOrUpdateCustomField($data, $feature_custom_fields_model, $slug, false, $type, $custom_id, $custom_field);	

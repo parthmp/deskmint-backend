@@ -3,6 +3,6 @@
 namespace App\Modules\CustomFieldsFeature\Exceptions;
 
 use Exception;
-class RecordNotFoundException extends Exception {
+class RecordNotFoundException extends CustomFieldException {
 	
 }
