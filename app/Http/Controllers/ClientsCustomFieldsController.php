@@ -18,12 +18,12 @@ use App\Modules\DataTable\Requests\DataTableRequest;
 use Exception;
 
 class ClientsCustomFieldsController extends Controller{
-	
-	public function __construct(private CustomFieldsFeature $custom_fields_feature){}
 
 	private string $custom_id_flag = 'clients_custom_field_id';
 	private string $model = ClientsCustomField::class;
-
+	
+	public function __construct(private CustomFieldsFeature $custom_fields_feature){}
+	
 	public function fetchFieldTypes(GenericRequest $request){
 		return $this->custom_fields_feature->setModel(CustomFieldType::class)->fetchFieldTypes();
 	}
