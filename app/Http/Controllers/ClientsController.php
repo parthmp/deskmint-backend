@@ -463,65 +463,6 @@ class ClientsController extends Controller{
 
 		});
 		
-		// $fields = \App\Services\DataTable::sortNPaginate(
-		// 	$request,
-		// 	\App\Models\Client::class,
-		// 	['deleted_at', 'updated_at'],
-		// 	$company_id,
-		// 	$searchable_dates,
-		// 	[
-		// 		[
-		// 			'table' => 'clients_flat',
-		// 			'first' => 'clients.id',
-		// 			'operator' => '=',
-		// 			'second' => 'clients_flat.client_id',
-		// 			'columns' => $clients_flat_columns
-		// 		],
-		// 		[
-		// 			'table' => 'companies',
-		// 			'first' => 'clients.company_id',
-		// 			'operator' => '=',
-		// 			'second' => 'companies.id',
-		// 			'columns' => ['companies.company_name as company_name']
-		// 		],
-		// 		[
-		// 			'table' => 'currencies',
-		// 			'first' => 'clients.currency_id',
-		// 			'operator' => '=',
-		// 			'second' => 'currencies.id',
-		// 			'columns' => ['currencies.currency as currency']
-		// 		],
-		// 		[
-		// 			'table' => 'countries as b_countries',
-		// 			'first' => 'clients.billing_country_id',
-		// 			'operator' => '=',
-		// 			'second' => 'b_countries.id',
-		// 			'columns' => ['b_countries.country_name as b_country_name']
-		// 		],
-		// 		[
-		// 			'table' => 'countries as s_countries',
-		// 			'first' => 'clients.shipping_country_id',
-		// 			'operator' => '=',
-		// 			'second' => 's_countries.id',
-		// 			'columns' => ['s_countries.country_name as s_country_name']
-		// 		],
-		// 		[
-		// 			'table' => 'industries',
-		// 			'first' => 'clients.industry_id',
-		// 			'operator' => '=',
-		// 			'second' => 'industries.id',
-		// 			'columns' => ['industries.industry_name as industry_name']
-		// 		]
-		// 	],
-		// 	[
-		// 		'clients.send_reminders' => [
-		// 		0	=>	'No',
-		// 		1	=>	"Yes"
-		// 	]
-		// 	],
-		// 	$searchable_columns
-		// );
-		
 		$rows = $fields->items();
 		
 		for($z = 0 ; $z < count($rows) ; $z++){
