@@ -2,9 +2,9 @@
 
 namespace App\Modules\CustomFieldsFeature\Exceptions;
 
-use Exception;
+use App\Exceptions\BaseException;
 
-class InvalidFieldsException extends CustomFieldException {
+class InvalidFieldsException extends BaseException {
 	
 
 }

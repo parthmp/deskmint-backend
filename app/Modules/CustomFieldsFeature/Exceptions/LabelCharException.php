@@ -2,8 +2,9 @@
 
 namespace App\Modules\CustomFieldsFeature\Exceptions;
 
-use Exception;
-class LabelCharException extends CustomFieldException {
+use App\Exceptions\BaseException;
+
+class LabelCharException extends BaseException {
 	
 
 

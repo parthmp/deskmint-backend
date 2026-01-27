@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Modules\CustomFieldsFeature\Exceptions;
+namespace App\Exceptions;
 
 use Exception;
 
-abstract class CustomFieldException extends Exception{
+abstract class BaseException extends Exception{
 
     protected string $validity = '';
     
@@ -16,5 +16,4 @@ abstract class CustomFieldException extends Exception{
     public function getValidity(): string {
         return $this->validity;
     }
-
 }

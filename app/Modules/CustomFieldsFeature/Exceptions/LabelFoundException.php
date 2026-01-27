@@ -2,7 +2,8 @@
 
 namespace App\Modules\CustomFieldsFeature\Exceptions;
 
-use Exception;
-class LabelFoundException extends CustomFieldException {
+use App\Exceptions\BaseException;
+
+class LabelFoundException extends BaseException {
 	
 }

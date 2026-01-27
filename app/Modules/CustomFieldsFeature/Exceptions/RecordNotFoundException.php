@@ -2,7 +2,8 @@
 
 namespace App\Modules\CustomFieldsFeature\Exceptions;
 
-use Exception;
-class RecordNotFoundException extends CustomFieldException {
+use App\Exceptions\BaseException;
+
+class RecordNotFoundException extends BaseException {
 	
 }
