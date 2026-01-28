@@ -3,13 +3,14 @@
 namespace App\Modules\CustomFields;
 
 use App\Modules\CustomFields\Actions\Printing;
+use App\Modules\CustomFields\Actions\Upsert;
 use App\Modules\CustomFields\Actions\Validation;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
 class CustomFields{
 
-	public function __construct(private Printing $printing, private Validation $validation){}
+	public function __construct(private Printing $printing, private Validation $validation, private Upsert $upsert){}
 
 	/**
 	 * printCustomFields function
@@ -32,6 +33,22 @@ class CustomFields{
 	 */
 	public function validateCustomFields(Request $request, string $model, string $validity, int $tab = 3) : bool {
 		return $this->validation->validateCustomFields($request, $model, $validity, $tab);
+	}
+
+	/**
+	 * upsertCustomFieldValues function
+	 *
+	 * @param Request $request
+	 * @param integer $db_id
+	 * @param string $custom_fields_model
+	 * @param string $custom_fields_value_model
+	 * @param string $flat_table
+	 * @param string $type
+	 * @param boolean $add
+	 * @return void
+	 */
+	public function upsertCustomFieldValues(Request $request, int $db_id, string $custom_fields_model, string $custom_fields_value_model, string $flat_table, string $type = 'client', bool $add = true) : void {
+		$this->upsert->upsertCustomFieldValues($request, $db_id, $custom_fields_model, $custom_fields_value_model, $flat_table, $type, $add);
 	}
 
 }
