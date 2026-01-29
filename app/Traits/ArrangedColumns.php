@@ -7,7 +7,6 @@ use App\Helpers\Sanitize;
 use App\Models\SettingsIndexColumn;
 use App\Models\UserIndexColumn;
 use Exception;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
