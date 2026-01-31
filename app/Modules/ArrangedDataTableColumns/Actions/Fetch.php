@@ -4,12 +4,28 @@ namespace App\Modules\ArrangedDataTableColumns\Actions;
 
 use App\Helpers\General;
 use App\Helpers\Sanitize;
+use App\Models\SettingsIndexColumn;
+use App\Models\UserIndexColumn;
+use App\Modules\ArrangedDataTableColumns\DatabaseOperations\DatabaseOperations;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Fetch class
+ */
 class Fetch{
 
-	private function splitFields(array $json_fields, string $type) : array{
+	public function __construct(private DatabaseOperations $database_operations){}
+
+
+	/**
+	 * splitFields function
+	 *
+	 * @param array $json_fields
+	 * @param string $type
+	 * @return array
+	 */
+	private function splitFields(array $json_fields, string $type) : array {
 
 		$saved_labels_normal = [];
 		$saved_ids_custom = [];
@@ -26,6 +42,17 @@ class Fetch{
 
 	}
 
+
+	/**
+	 * parseSavedData function
+	 *
+	 * @param string $columns_json
+	 * @param string $type
+	 * @param string $custom_fields_model
+	 * @param integer $company_id
+	 * @param array $table_columns
+	 * @return array
+	 */
 	private function parseSavedData(string $columns_json, string $type, string $custom_fields_model, int $company_id, array $table_columns) : array {
 
 		$user_fields = [];
@@ -39,7 +66,7 @@ class Fetch{
 		$saved_labels_normal = $splitted['normal'];
 		$saved_ids_custom = $splitted['custom'];
 
-		$general_custom_columns_ids = $custom_fields_model::where('company_id', '=', $company_id)->pluck('id')->toArray();
+		$general_custom_columns_ids = $this->database_operations->setModel($custom_fields_model)->pluckIdsByCompanyIdC($company_id);
 		
 		foreach($fields_json as $field){
 
@@ -77,18 +104,33 @@ class Fetch{
 
 	}
 
-	private function getSavedColumnData(int $company_id, string $feature_name){
+	/**
+	 * getSavedColumnData function
+	 *
+	 * @param integer $company_id
+	 * @param string $feature_name
+	 * @return SettingsIndexColumn|UserIndexColumn|null
+	 */
+	private function getSavedColumnData(int $company_id, string $feature_name) : SettingsIndexColumn|UserIndexColumn|null {
 
-		$user_data = UserIndexColumn::where([['user_id', '=', Auth::user()->id], ['company_id', '=', $company_id], ['feature_name', '=', $feature_name]])->first();
+		$user_data = $this->database_operations->fetchUserIndexColumnDataByUserId($company_id, $feature_name);
 
 		if(!$user_data){
-			$user_data = SettingsIndexColumn::where([['company_id', '=', $company_id], ['feature_name', '=', $feature_name]])->first();
+			$user_data = $this->database_operations->fetchSettingsIndexColumnDataByFeatureName($company_id, $feature_name);
 		}
 
 		return $user_data;
 
 	}
 
+	/**
+	 * modifyParsedSavedData function
+	 *
+	 * @param array $user_fields
+	 * @param array $general_custom_columns
+	 * @param string $type
+	 * @return array
+	 */
 	private function modifyParsedSavedData(array $user_fields, array $general_custom_columns, string $type) : array {
 
 		for($z = 0 ; $z < count($user_fields) ; $z++){
@@ -118,7 +160,16 @@ class Fetch{
 
 	}
 
-	private function addNotSavedAndLaterAddedColumns(array $general_custom_columns, array $saved_ids_custom, int $counter, string $type) : array{
+	/**
+	 * addNotSavedAndLaterAddedColumns function
+	 *
+	 * @param array $general_custom_columns
+	 * @param array $saved_ids_custom
+	 * @param integer $counter
+	 * @param string $type
+	 * @return array
+	 */
+	private function addNotSavedAndLaterAddedColumns(array $general_custom_columns, array $saved_ids_custom, int $counter, string $type) : array {
 
 		$user_fields = [];
 
@@ -152,7 +203,15 @@ class Fetch{
 
 	}
 
-	private function nonUserDataColumns(array $columns, array $custom_columns, string $type) : array{
+	/**
+	 * nonUserDataColumns function
+	 *
+	 * @param array $columns
+	 * @param array $custom_columns
+	 * @param string $type
+	 * @return array
+	 */
+	private function nonUserDataColumns(array $columns, array $custom_columns, string $type) : array {
 
 		$counter = 1;
 
@@ -210,6 +269,16 @@ class Fetch{
 
 	}
 
+	/**
+	 * fetchArrangedColumnsData function
+	 *
+	 * @param Request $request
+	 * @param string $feature_name
+	 * @param string $original_table
+	 * @param string $custom_fields_model
+	 * @param string $type
+	 * @return array
+	 */
 	public function fetchArrangedColumnsData(Request $request, string $feature_name, string $original_table, string $custom_fields_model, string $type) : array {
 		
 		$company_id = (int) Sanitize::input($request->input('company_id'));
@@ -221,7 +290,7 @@ class Fetch{
 		$table_columns = Schema::getColumnListing($original_table);
 		$table_columns = array_values(array_diff($table_columns, ['deleted_at', 'updated_at']));
 		
-		$general_custom_columns = $custom_fields_model::where('company_id', '=', $company_id)->whereHas('customFieldType')->with('customFieldType')->get()->toArray();
+		$general_custom_columns = $this->database_operations->setModel($custom_fields_model)->fetchGeneralCustomColumns($company_id);
 
 		$user_fields = [];
 
