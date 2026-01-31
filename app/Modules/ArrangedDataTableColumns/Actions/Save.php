@@ -3,26 +3,48 @@
 namespace App\Modules\ArrangedDataTableColumns\Actions;
 
 use App\Helpers\Sanitize;
+use App\Modules\ArrangedDataTableColumns\DatabaseOperations\DatabaseOperations;
+use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Save class
+ */
 class Save{
 
-	public function __construct(private Validation $validation){}
+	/**
+	 * __construct function
+	 *
+	 * @param Validation $validation
+	 * @param DatabaseOperations $database_operations
+	 */
+	public function __construct(private Validation $validation, private DatabaseOperations $database_operations){}
 
-	public function saveArrangedColumnsData(Request $request, string $custom_fields_model, string $feature_name, string $original_table, string $type) : Response{
+	/**
+	 * saveArrangedColumnsData function
+	 *
+	 * @param Request $request
+	 * @param string $custom_fields_model
+	 * @param string $feature_name
+	 * @param string $original_table
+	 * @param string $type
+	 * @return boolean
+	 */
+	public function saveArrangedColumnsData(Request $request, string $custom_fields_model, string $feature_name, string $original_table, string $type) : bool {
 		
 		$validated = $this->validation->validatePostedColumns($request);
-		if($validated !== null){
-			return $validated;
+		if(!$validated){
+			throw new InvalidDataProvidedException("Invalid data provided", "invalid_request", config('global.error_code'));
 		}
 
 		$columns = $request->input('columns');
 		$company_id = Sanitize::input($request->input('company_id'));
 
 		if(empty($columns)){
-			UserIndexColumn::where([['user_id', '=', Auth::user()->id], ['company_id', '=', $company_id], ['feature_name', '=', $feature_name]])->delete();
-			//return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
+			$this->database_operations->deleteUserIndexColumn($company_id, $feature_name);
+			return true;
 		}
 
 		$general_columns = Schema::getColumnListing($original_table);
@@ -35,7 +57,7 @@ class Save{
 				$columns[$z][$type.'s_custom_fields_id'] = '-';
 			}
 			if(!in_array($columns[$z]['label'], $general_columns) && !in_array($columns[$z][$type.'s_custom_fields_id'], $general_custom_column_ids)){
-				//return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+				throw new InvalidDataProvidedException("Invalid data provided", "invalid_request", config('global.error_code'));
 			}
 
 		}
@@ -44,18 +66,16 @@ class Save{
 
 			$columns = json_encode($columns);
 			
-			UserIndexColumn::where([['user_id', '=', Auth::user()->id], ['company_id', '=', $company_id], ['feature_name', '=', $feature_name]])->delete();
-			
-			$user_index_col = new UserIndexColumn();
-			$user_index_col->user_id = Auth::user()->id;
-			$user_index_col->company_id = $company_id;
-			$user_index_col->feature_name = $feature_name;
-			$user_index_col->columns_json = $columns;
-			$user_index_col->save();
-			//return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
+			$this->database_operations->deleteUserIndexColumn($company_id, $feature_name);
 
+			return $this->database_operations->createNewIndexColumn([
+				'company_id'		=>		$company_id,
+				'feature_name'		=>		$feature_name,
+				'columns'			=>		$columns,
+			]);
+			
 		}catch(Exception $e){
-			//return General::wentWrong();
+			throw new Exception("Something went wrong!");
 		}
 	}
 

@@ -68,6 +68,32 @@ class DatabaseOperations{
 		return $this->model::where('company_id', '=', $company_id)->whereHas('customFieldType')->with('customFieldType')->get()->toArray();
 	}
 
+	/**
+	 * deleteUserIndexColumn function
+	 *
+	 * @param integer $company_id
+	 * @param string $feature_name
+	 * @return void
+	 */
+	public function deleteUserIndexColumn(int $company_id, string $feature_name) : void {
+		UserIndexColumn::where([['user_id', '=', Auth::user()->id], ['company_id', '=', $company_id], ['feature_name', '=', $feature_name]])->delete();
+	}
 
+	/**
+	 * createNewIndexColumn function
+	 *
+	 * @param array $data
+	 * @return boolean
+	 */
+	public function createNewIndexColumn(array $data) : bool {
+		$user_index_col = new UserIndexColumn();
+		$user_index_col->user_id = Auth::user()->id;
+		$user_index_col->company_id = $data['company_id'];
+		$user_index_col->feature_name = $data['feature_name'];
+		$user_index_col->columns_json = $data['columns'];
+		return $user_index_col->save();
+	}
+
+	
 
 }

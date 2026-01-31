@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Validator;
 
 class Validation{
 
-	public function validatePostedColumns(Request $request){
+	public function validatePostedColumns(Request $request) : bool {
 
 		$validation_rules = [
 			'columns'	 =>	'required|array'
@@ -16,10 +16,10 @@ class Validation{
 		$v = Validator::make($request->all(), $validation_rules);
 
 		if($v->fails()){
-			//return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+			return false;
 		}
 
-		return null;
+		return true;
 
 	}
 
