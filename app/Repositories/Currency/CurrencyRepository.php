@@ -16,4 +16,18 @@ class CurrencyRepository{
 		return Currency::orderBy('currency', 'asc')->get();
 	}
 
+	/**
+	 * fetchWithTextAndValue function
+	 *
+	 * @return array
+	 */
+	public function fetchWithTextAndValue() : array {
+		return Currency::orderBy('currency', 'asc')->get()->map(function($currency){
+			return [
+				'value'	=>	$currency->id,
+				'text'	=>	$currency->currency.' - '.$currency->code
+			];
+		});
+	}
+
 }

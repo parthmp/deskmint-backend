@@ -12,7 +12,10 @@ use App\Models\Currency;
 use App\Models\Industry;
 use App\Models\SettingsIndexColumn;
 use App\Models\UserIndexColumn;
+use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
+use App\Modules\CustomFields\CustomFields;
 use App\Modules\DataTable\DataTable;
+use App\Services\Client\ClientService;
 use App\Traits\ArrangedColumns;
 use App\Traits\CustomFieldsPrinting;
 use App\Traits\CustomFieldsUpsert;
@@ -27,36 +30,38 @@ use Illuminate\Support\Facades\Validator;
 
 class ClientsController extends Controller{
 
-	use CustomFieldsPrinting, CustomFieldsValidation, CustomFieldsUpsert, ArrangedColumns;
+	//use CustomFieldsPrinting, CustomFieldsValidation, CustomFieldsUpsert, ArrangedColumns;
 
-	public function __construct(private DataTable $datatable){}
+	public function __construct(private DataTable $datatable, private CustomFields $custom_fields, private ArrangedDataTableColumns $arranged_data_table_columns, private ClientService $client_service){}
 
 	public function fetchClientsCustomFields(Request $request){
 
-		$company_id = Sanitize::input($request->input('company_id'));
+		// $company_id = Sanitize::input($request->input('company_id'));
 
-		$fields = ClientsCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->orderBy('order_on_add_edit_page', 'asc')->with('customFieldType')->get();
+		// $fields = ClientsCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->orderBy('order_on_add_edit_page', 'asc')->with('customFieldType')->get();
 
-		$currencies = Currency::orderBy('currency', 'asc')->get()->map(function($currency){
-			return [
-				'value'	=>	$currency->id,
-				'text'	=>	$currency->currency.' - '.$currency->code
-			];
-		});
+		// $currencies = Currency::orderBy('currency', 'asc')->get()->map(function($currency){
+		// 	return [
+		// 		'value'	=>	$currency->id,
+		// 		'text'	=>	$currency->currency.' - '.$currency->code
+		// 	];
+		// });
 
-		$industries = Industry::orderBy('industry_name', 'asc')->get()->map(function($ind){
-			return [
-				'value'	=>	$ind->id,
-				'text'	=>	$ind->industry_name
-			];
-		});
+		// $industries = Industry::orderBy('industry_name', 'asc')->get()->map(function($ind){
+		// 	return [
+		// 		'value'	=>	$ind->id,
+		// 		'text'	=>	$ind->industry_name
+		// 	];
+		// });
 
-		return [
-					'data_fields' 	=> $this->adjustRowsPrinting($fields),
-					'countries'		=>	General::fetchCoutries(),
-					'currencies'	=>	$currencies,
-					'industries'	=>	$industries,
-				];
+		// return [
+		// 			'data_fields' 	=> $this->adjustRowsPrinting($fields),
+		// 			'countries'		=>	General::fetchCoutries(),
+		// 			'currencies'	=>	$currencies,
+		// 			'industries'	=>	$industries,
+		// 		];
+
+		return $this->client_service->fetchCustomFields($request);
 
 	}
 
