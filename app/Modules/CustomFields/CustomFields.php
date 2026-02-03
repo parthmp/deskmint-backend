@@ -63,4 +63,15 @@ class CustomFields{
 		return $this->fetch->setModel($model)->fetchCustomFields($company_id);
 	}
 
+	/**
+	 * fetchCustomFieldsArray function
+	 *
+	 * @param string $model
+	 * @param integer $company_id
+	 * @return array
+	 */
+	public function fetchCustomFieldsArray(string $model, int $company_id) : array {
+		return $this->fetch->setModel($model)->fetchCustomFieldsArray($company_id);
+	}
+
 }

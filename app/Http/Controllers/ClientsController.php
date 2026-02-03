@@ -224,13 +224,13 @@ class ClientsController extends Controller{
 
 	public function index(Request $request){
 
-		$v = Validator::make($request->all(), [
-			'default_per_page'	=>	'required|integer|min:1'
-		]);
+		// $v = Validator::make($request->all(), [
+		// 	'default_per_page'	=>	'required|integer|min:1'
+		// ]);
 
-		if($v->fails()){
-			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
-		}
+		// if($v->fails()){
+		// 	return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+		// }
 		
 		$company_id = Sanitize::input($request->input('company_id'));
 

@@ -29,4 +29,15 @@ class Fetch{
 		return $this->model::where('company_id', '=', $company_id)->whereHas('customFieldType')->orderBy('order_on_add_edit_page', 'asc')->with('customFieldType')->get();
 	}
 
+
+	/**
+	 * fetchCustomFieldsArray function
+	 *
+	 * @param integer $company_id
+	 * @return array
+	 */
+	public function fetchCustomFieldsArray(int $company_id) : array {
+		return $this->model::where('company_id', '=', $company_id)->whereHas('customFieldType')->with('customFieldType')->get()->toArray();
+	}
+
 }
