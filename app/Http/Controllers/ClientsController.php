@@ -16,6 +16,7 @@ use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\CustomFields\CustomFields;
 use App\Modules\DataTable\DataTable;
 use App\Services\Client\ClientService;
+use App\Services\Client\Exceptions\ClientException;
 use App\Traits\ArrangedColumns;
 use App\Traits\CustomFieldsPrinting;
 use App\Traits\CustomFieldsUpsert;
@@ -35,31 +36,6 @@ class ClientsController extends Controller{
 	public function __construct(private DataTable $datatable, private CustomFields $custom_fields, private ArrangedDataTableColumns $arranged_data_table_columns, private ClientService $client_service){}
 
 	public function fetchClientsCustomFields(Request $request){
-
-		// $company_id = Sanitize::input($request->input('company_id'));
-
-		// $fields = ClientsCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->orderBy('order_on_add_edit_page', 'asc')->with('customFieldType')->get();
-
-		// $currencies = Currency::orderBy('currency', 'asc')->get()->map(function($currency){
-		// 	return [
-		// 		'value'	=>	$currency->id,
-		// 		'text'	=>	$currency->currency.' - '.$currency->code
-		// 	];
-		// });
-
-		// $industries = Industry::orderBy('industry_name', 'asc')->get()->map(function($ind){
-		// 	return [
-		// 		'value'	=>	$ind->id,
-		// 		'text'	=>	$ind->industry_name
-		// 	];
-		// });
-
-		// return [
-		// 			'data_fields' 	=> $this->adjustRowsPrinting($fields),
-		// 			'countries'		=>	General::fetchCoutries(),
-		// 			'currencies'	=>	$currencies,
-		// 			'industries'	=>	$industries,
-		// 		];
 
 		return $this->client_service->fetchCustomFields($request);
 
@@ -223,300 +199,24 @@ class ClientsController extends Controller{
 	}
 
 	public function index(Request $request){
-
-		// $v = Validator::make($request->all(), [
-		// 	'default_per_page'	=>	'required|integer|min:1'
-		// ]);
-
-		// if($v->fails()){
-		// 	return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
-		// }
 		
-		$company_id = Sanitize::input($request->input('company_id'));
-
-		/* check custom fields showing fallback */
-		$user_data = UserIndexColumn::where([['user_id', '=', Auth::user()->id], ['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->first();
-		
-		if(!$user_data){
-			$user_data = SettingsIndexColumn::where([['company_id', '=', $company_id], ['feature_name', '=', 'clients']])->first();
+		try{
+			return $this->client_service->fetchIndex($request);
+		}catch(ClientException $e){
+			return response($e->getMessage(), $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
 		}
-
-		$searchable_columns = [];
-		$show_columns = [];
-		$searchable_dates = [];
-		$clients_flat_columns = [];
-		$date_only_columns = [];
-
-		if($user_data){
-			
-			$user_data =  json_decode($user_data->columns_json, true);
-			$clients_custom_columns = ClientsCustomField::where('company_id', '=', $company_id)->whereHas('customFieldType')->with('customFieldType')->get()->toArray();
-
-			for($z = 0 ; $z < count($user_data) ; $z++){
-				$temp_label2 = $user_data[$z]['label'];
-				if($user_data[$z]['show'] === true){
-					if($user_data[$z]['type'] === 'normal'){
-
-						$temp_label = $user_data[$z]['label'];
-						
-
-						/* handle edge cases here */
-						if($temp_label === 'company_id'){
-							$temp_label = 'company_name';
-						}else if($temp_label === 'currency_id'){
-							$temp_label = 'currency';
-						}else if($temp_label === 'billing_country_id'){
-							$temp_label = 'b_country_name';
-						}else if($temp_label === 'shipping_country_id'){
-							$temp_label = 's_country_name';
-						}else if($temp_label === 'industry_id'){
-							$temp_label = 'industry_name';
-						}
-
-						$show_columns[] = [
-							'label'	=>	$temp_label,
-							'text'	=>	$user_data[$z]['text']
-						];
-						
-						
-					}else{
-
-						for($x = 0 ; $x < count($clients_custom_columns) ; $x++){
-
-							if($user_data[$z]['clients_custom_fields_id'] === $clients_custom_columns[$x]['id']){
-
-								$label_with_underscores = General::replaceWithUnderscores($clients_custom_columns[$x]['label']);
-
-								if($clients_custom_columns[$x]['custom_field_type']['input_type'] === config('global.field_types')[5]){
-									$date_only_columns[] = $label_with_underscores;
-								}
-
-								$clients_flat_columns[] = 'clients_flat.'.$label_with_underscores.' as '.$label_with_underscores;
-								$show_columns[] = [
-									'label'	=>	General::replaceWithUnderscores($clients_custom_columns[$x]['label']),
-									'text'	=>	General::NormalizeColumnName($clients_custom_columns[$x]['label'])
-								];
-
-								
-
-							}
-
-						}
-
-					}
-				}
-
-				/* refactor this later on if possible */
-				if($user_data[$z]['type'] === 'normal'){
-					if($user_data[$z]['searchable'] === true){
-						if($user_data[$z]['is_date'] === true){
-							$searchable_dates[] = 'clients.'.$user_data[$z]['label'];
-						}else{
-
-							if($temp_label2 === 'company_id'){
-								$searchable_columns[] = 'companies.company_name';
-							}else if($temp_label2 === 'currency_id'){
-								$searchable_columns[] = 'currencies.currency';
-							}else if($temp_label2 === 'billing_country_id'){
-								$searchable_columns[] = 'b_countries.country_name';
-							}else if($temp_label2 === 'shipping_country_id'){
-								$searchable_columns[] = 's_countries.country_name';
-							}else if($temp_label2 === 'industry_id'){
-								$searchable_columns[] = 'industries.industry_name';
-							}else{
-								$searchable_columns[] = 'clients.'.$user_data[$z]['label'];
-							}
-
-							
-						}
-						
-					}
-				}else{
-					if($user_data[$z]['searchable'] === true){
-
-						for($x = 0 ; $x < count($clients_custom_columns) ; $x++){
-
-							if($user_data[$z]['clients_custom_fields_id'] === $clients_custom_columns[$x]['id']){
-
-								$label_with_underscores = General::replaceWithUnderscores($clients_custom_columns[$x]['label']);
-
-								$clients_flat_columns[] = 'clients_flat.'.$label_with_underscores.' as '.$label_with_underscores;
-
-								if($user_data[$z]['is_date'] === true){
-									$searchable_dates[] = 'clients_flat.'.$label_with_underscores;
-								}else{
-									$searchable_columns[] = 'clients_flat.'.$label_with_underscores;
-								}
-								
-							}
-
-						}
-
-						
-					}
-				}
-
-			}
-
-
-		}else{
-
-			array_push($searchable_columns, 'clients.first_name');
-			array_push($searchable_columns, 'clients.last_name');
-			array_push($searchable_columns, 'clients.email');
-			array_push($searchable_dates, 'clients.created_at');
-
-			array_push($show_columns, [
-				'label'	=>	'first_name',
-				'text'	=>	'First name',
-			]);
-			array_push($show_columns, [
-				'label'	=>	'last_name',
-				'text'	=>	'Last name',
-			]);
-			array_push($show_columns, [
-				'label'	=>	'email',
-				'text'	=>	'Email',
-			]);
-			array_push($show_columns, [
-				'label'	=>	'created_at',
-				'text'	=>	'Added on',
-			]);
-
-		}
-		$clients_flat_columns = array_unique($clients_flat_columns);
 		
-		$data['searched_term'] = Sanitize::input($request->input('searched_term'));
-		$data['current_page'] = Sanitize::input($request->input('current_page'));
-		$data['sorted_column'] = $request->input('sorted_column');
-		$data['default_per_page'] = Sanitize::input($request->input('default_per_page'));
-		$data['per_page'] = $request->input('per_page') ? Sanitize::input($request->input('per_page')) : $data['default_per_page'];
-		$data['date_range'] = $request->input('date_range');
-
-		$joins =	[
-				[
-					'table' => 'clients_flat',
-					'first' => 'clients.id',
-					'operator' => '=',
-					'second' => 'clients_flat.client_id',
-					'columns' => $clients_flat_columns
-				],
-				[
-					'table' => 'companies',
-					'first' => 'clients.company_id',
-					'operator' => '=',
-					'second' => 'companies.id',
-					'columns' => ['companies.company_name as company_name']
-				],
-				[
-					'table' => 'currencies',
-					'first' => 'clients.currency_id',
-					'operator' => '=',
-					'second' => 'currencies.id',
-					'columns' => ['currencies.currency as currency']
-				],
-				[
-					'table' => 'countries as b_countries',
-					'first' => 'clients.billing_country_id',
-					'operator' => '=',
-					'second' => 'b_countries.id',
-					'columns' => ['b_countries.country_name as b_country_name']
-				],
-				[
-					'table' => 'countries as s_countries',
-					'first' => 'clients.shipping_country_id',
-					'operator' => '=',
-					'second' => 's_countries.id',
-					'columns' => ['s_countries.country_name as s_country_name']
-				],
-				[
-					'table' => 'industries',
-					'first' => 'clients.industry_id',
-					'operator' => '=',
-					'second' => 'industries.id',
-					'columns' => ['industries.industry_name as industry_name']
-				]
-			];
-
-			// $slug.'s_custom_fields.required' => [
-			// 		0	=>	'No',
-			// 		1	=>	"Yes"
-			// 	]
-
-		$fields = $this->datatable->setVars($data)->setModel(Client::class)->skipColumns(['deleted_at', 'updated_at'])->setDatesColumns($searchable_dates)->setCompanyId($company_id)->setJoins($joins)->setSearchableColumns($searchable_columns)->setRewrites([
-			'clients.send_reminders' => [
-				0	=>	'No',
-				1	=>	"Yes"
-			]
-		])->results();
-
-		$fields->each(function($ele){
-			
-			if((int)$ele->send_reminders === 0){
-				$ele->send_reminders = [
-					'type'		=>	'label',
-					'highlight'	=>	'error',
-					'text'		=>	'No'
-				];
-			}else{
-				$ele->send_reminders = [
-					'type'		=>	'label',
-					'highlight'	=>	'success',
-					'text'		=>	'Yes'
-				];
-			}
-
-		});
-		
-		$rows = $fields->items();
-		
-		for($z = 0 ; $z < count($rows) ; $z++){
-			
-			foreach($rows[$z]->getAttributes() as $col_key => $col_val){
-				
-				if(!is_array($col_val) && General::isMySQLDateTime($col_val)){
-					
-					if(in_array($col_key, $date_only_columns)){
-						$rows[$z]->{$col_key} = [
-							'type' 	=> 'date',
-							'text'	=>	Carbon::parse($col_val)->toISOString()
-						];
-					}else{
-						$rows[$z]->{$col_key} = Carbon::parse($col_val)->toISOString();
-					}
-
-				}
-
-				
-			}
-		 	
-		}
-		array_push($show_columns, [
-			'label'	=>	'actions',
-			'text'	=>	'Actions'
-		]);
-		$table_data = [
-			'columns' => $show_columns,
-			'rows' => $fields->items()
-		];
-		
-		$total_pages = $fields->lastPage();
-
-		return [
-			'table_data'	=>		$table_data,
-			'total_pages'	=>		$total_pages,
-			'current_page'	=>		$fields->currentPage()
-		];
-
 	}
 
 	public function fetchArrangedColumns(Request $request){
-		return $this->fetchArrangedColumnsData($request, 'clients', 'clients', ClientsCustomField::class, 'client');
+		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'clients', 'clients', ClientsCustomField::class, 'client');
 	}
 	
 
 	public function saveArrangedColumns(Request $request){
-		return $this->saveArrangedColumnsData($request, ClientsCustomField::class, 'clients', 'clients', 'client');
+		return $this->arranged_data_table_columns->saveArrangedColumnsData($request, ClientsCustomField::class, 'clients', 'clients', 'client');
 	}
 
 	public function destroy(Request $request){

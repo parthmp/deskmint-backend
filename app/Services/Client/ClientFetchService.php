@@ -135,54 +135,57 @@ class ClientFetchService{
 
 	}
 
+	private function getJoins(array $clients_flat_columns) : array {
+		return [
+					[
+						'table' => 'clients_flat',
+						'first' => 'clients.id',
+						'operator' => '=',
+						'second' => 'clients_flat.client_id',
+						'columns' => $clients_flat_columns
+					],
+					[
+						'table' => 'companies',
+						'first' => 'clients.company_id',
+						'operator' => '=',
+						'second' => 'companies.id',
+						'columns' => ['companies.company_name as company_name']
+					],
+					[
+						'table' => 'currencies',
+						'first' => 'clients.currency_id',
+						'operator' => '=',
+						'second' => 'currencies.id',
+						'columns' => ['currencies.currency as currency']
+					],
+					[
+						'table' => 'countries as b_countries',
+						'first' => 'clients.billing_country_id',
+						'operator' => '=',
+						'second' => 'b_countries.id',
+						'columns' => ['b_countries.country_name as b_country_name']
+					],
+					[
+						'table' => 'countries as s_countries',
+						'first' => 'clients.shipping_country_id',
+						'operator' => '=',
+						'second' => 's_countries.id',
+						'columns' => ['s_countries.country_name as s_country_name']
+					],
+					[
+						'table' => 'industries',
+						'first' => 'clients.industry_id',
+						'operator' => '=',
+						'second' => 'industries.id',
+						'columns' => ['industries.industry_name as industry_name']
+					]
+				];
+
+	}
+
 	private function processDataTable(array $clients_flat_columns, array $data, array $searchable_dates, array $searchable_columns, int $company_id) : LengthAwarePaginator {
-
-		$joins =	[
-				[
-					'table' => 'clients_flat',
-					'first' => 'clients.id',
-					'operator' => '=',
-					'second' => 'clients_flat.client_id',
-					'columns' => $clients_flat_columns
-				],
-				[
-					'table' => 'companies',
-					'first' => 'clients.company_id',
-					'operator' => '=',
-					'second' => 'companies.id',
-					'columns' => ['companies.company_name as company_name']
-				],
-				[
-					'table' => 'currencies',
-					'first' => 'clients.currency_id',
-					'operator' => '=',
-					'second' => 'currencies.id',
-					'columns' => ['currencies.currency as currency']
-				],
-				[
-					'table' => 'countries as b_countries',
-					'first' => 'clients.billing_country_id',
-					'operator' => '=',
-					'second' => 'b_countries.id',
-					'columns' => ['b_countries.country_name as b_country_name']
-				],
-				[
-					'table' => 'countries as s_countries',
-					'first' => 'clients.shipping_country_id',
-					'operator' => '=',
-					'second' => 's_countries.id',
-					'columns' => ['s_countries.country_name as s_country_name']
-				],
-				[
-					'table' => 'industries',
-					'first' => 'clients.industry_id',
-					'operator' => '=',
-					'second' => 'industries.id',
-					'columns' => ['industries.industry_name as industry_name']
-				]
-			];
-
-			
+		
+		$joins = $this->getJoins($clients_flat_columns);
 
 		$fields = $this->datatable->setVars($data)->setModel(Client::class)->skipColumns(['deleted_at', 'updated_at'])->setDatesColumns($searchable_dates)->setCompanyId($company_id)->setJoins($joins)->setSearchableColumns($searchable_columns)->setRewrites([
 			'clients.send_reminders' => [

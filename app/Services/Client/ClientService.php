@@ -18,4 +18,15 @@ class ClientService{
 		return $this->client_fetch_service->fetchCustomFields($request);
 	}
 
+	
+	/**
+	 * fetchIndex function
+	 *
+	 * @param Request $request
+	 * @return array
+	 */
+	public function fetchIndex(Request $request) : array {
+		return $this->client_fetch_service->fetchIndex($request);
+	}
+
 }
