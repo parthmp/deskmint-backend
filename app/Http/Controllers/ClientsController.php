@@ -224,6 +224,7 @@ class ClientsController extends Controller{
 		$ids = $request->input('ids');
 		
 		try{
+			$ids = Sanitize::recursive($ids);
 			$this->client_service->deleteClients($ids);
 		}catch(ClientException $e){
 			return response($e->getMessage(), $e->getCode());
@@ -233,20 +234,19 @@ class ClientsController extends Controller{
 
 	}
 
-	public function show(Request $request){
+	public function show(Request $request, int $id){
 		
-		$id = $request->segment(3);
+		try{
 
-		$client = Client::where('id', '=', $id)->with('billing_country')->with('shipping_country')->with('currency')->with('industry')->first();
-		if(!$client){
-			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
+			$id = Sanitize::input($id);
+
+			return $this->client_service->fetchSingleClientById($id);
+
+		}catch(ClientException $e){
+			return response($e->getMessage(), $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
 		}
-
-		$custom_fields = ClientCustomFieldValue::where('client_id', '=', $id)->whereHas('ClientsCustomField')->whereHas('ClientsCustomField.customFieldType')->with('ClientsCustomField', 'ClientsCustomField.customFieldType')->get();
-
-		$contact_info = ClientContactInfo::where('client_id', '=', $id)->get();
-		
-		return ['client_info' => $client, 'contact_info' => $contact_info, 'custom_fields' => $custom_fields];
 
 	}
 

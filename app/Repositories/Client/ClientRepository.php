@@ -3,10 +3,13 @@
 namespace App\Repositories\Client;
 
 use App\Models\Client;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class ClientRepository{
+
+	public function __construct(private ClientContactInfoRepository $client_contact_info_repository){}
 
 	/**
 	 * searchByName function
@@ -46,6 +49,26 @@ class ClientRepository{
 			DB::table($table)->whereIn('client_id', $ids)->delete();
 		}
 		Client::whereIn('id', $ids)->delete();
+	}
+
+	/**
+	 * fetchAllDataById function
+	 *
+	 * @param integer $id
+	 * @return Client|null
+	 */
+	public function fetchAllDataById(int $id) : ?Client {
+		return Client::where('id', '=', $id)->with('billing_country')->with('shipping_country')->with('currency')->with('industry')->first();
+	}
+
+	/**
+	 * fetchClientContactInfoById function
+	 *
+	 * @param integer $id
+	 * @return Collection|null
+	 */
+	public function fetchClientContactInfoById(int $id) : ?Collection {
+		return $this->client_contact_info_repository->fetchById($id);
 	}
 
 }

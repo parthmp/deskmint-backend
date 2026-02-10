@@ -39,4 +39,14 @@ class ClientService{
 		return $this->client_delete_service->deleteClientsByIds($ids);
 	}
 
+	/**
+	 * fetchSingleClientById function
+	 *
+	 * @param integer $id
+	 * @return array
+	 */
+	public function fetchSingleClientById(int $id) : array {
+		return $this->client_fetch_service->fetchSingleClientById($id);
+	}
+
 }

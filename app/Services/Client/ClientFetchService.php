@@ -9,6 +9,7 @@ use App\Models\ClientsCustomField;
 use App\Modules\ArrangedDataTableColumns\DatabaseOperations\DatabaseOperations as ArrangedDataTableDatabaseOperations;
 use App\Modules\CustomFields\CustomFields;
 use App\Modules\DataTable\DataTable;
+use App\Repositories\Client\ClientRepository;
 use App\Repositories\Currency\CurrencyRepository;
 use App\Repositories\Industry\IndustryRepository;
 use App\Services\Client\Exceptions\ClientException;
@@ -28,7 +29,8 @@ class ClientFetchService{
 		private IndustryRepository $industry_repository, 
 		private ClientValidationService $client_validation_service,
 		private ArrangedDataTableDatabaseOperations $arranged_database_operations,
-		private DataTable $datatable
+		private DataTable $datatable,
+		private ClientRepository $client_repository
 	){}
 	
 	/**
@@ -378,6 +380,31 @@ class ClientFetchService{
 			'total_pages'	=>		$total_pages,
 			'current_page'	=>		$fields->currentPage()
 		];
+
+	}
+
+	
+	/**
+	 * fetchSingleClientById function
+	 *
+	 * @param integer $id
+	 * @return array
+	 */
+	public function fetchSingleClientById(int $id) : array {
+
+		$id = Sanitize::input($id);
+
+		$client = $this->client_repository->fetchAllDataById($id);
+
+		if(!$client){
+			throw new ClientException('Invalid request', 'invalid_request', config('global.error_code'));
+		}
+
+		$custom_fields = $this->custom_fields->fetchCustomFieldValues($id, 'client');
+
+		$contact_info = $this->client_repository->fetchClientContactInfoById($id);
+
+		return ['client_info' => $client, 'contact_info' => $contact_info, 'custom_fields' => $custom_fields];
 
 	}
 

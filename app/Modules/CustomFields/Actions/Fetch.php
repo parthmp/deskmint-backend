@@ -40,4 +40,16 @@ class Fetch{
 		return $this->model::where('company_id', '=', $company_id)->whereHas('customFieldType')->with('customFieldType')->get()->toArray();
 	}
 
+	/**
+	 * fetchCustomFieldValues function
+	 *
+	 * @param integer $id
+	 * @param string $type
+	 * @return Collection|null
+	 */
+	public function fetchCustomFieldValues(int $id, string $type) : ?Collection {
+		$first_upper = ucfirst($type);
+		return $this->model::where($type.'_id', '=', $id)->whereHas($first_upper.'sCustomField')->whereHas($first_upper.'sCustomField.customFieldType')->with($first_upper.'sCustomField', $first_upper.'sCustomField.customFieldType')->get();
+	}
+
 }
