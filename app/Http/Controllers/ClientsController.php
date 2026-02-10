@@ -81,122 +81,122 @@ class ClientsController extends Controller{
 
 	}
 
-	private function validatePersonInfo(Request $request){
+	// private function validatePersonInfo(Request $request){
 
-		$validation_rules1 = [
-			'personal_info.first_name.value'	=>	'required',
-			'personal_info.last_name.value'		=>	'required',
-			'personal_info.email.value'			=>	'required|email'
-		];
+	// 	$validation_rules1 = [
+	// 		'personal_info.first_name.value'	=>	'required',
+	// 		'personal_info.last_name.value'		=>	'required',
+	// 		'personal_info.email.value'			=>	'required|email'
+	// 	];
 
-		$personal_info_validation = Validator::make($request->all(), $validation_rules1);
-		if($personal_info_validation->fails()){
-			return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_data_tab1', 'tab_switch' => 0], config('global.error_code'));
-		}
+	// 	$personal_info_validation = Validator::make($request->all(), $validation_rules1);
+	// 	if($personal_info_validation->fails()){
+	// 		return response(['message' => 'Please fill in required fields', 'validity' => 'invalid_data_tab1', 'tab_switch' => 0], config('global.error_code'));
+	// 	}
 
-		return null;
-	}
+	// 	return null;
+	// }
 
-	private function validateContactInfo(Request $request){
+	// private function validateContactInfo(Request $request){
 
-		$response = ['message' => 'Please fill in required fields', 'validity' => 'invalid_data_tab2', 'tab_switch' => 1];
+	// 	$response = ['message' => 'Please fill in required fields', 'validity' => 'invalid_data_tab2', 'tab_switch' => 1];
 
-		if(!$request->has('contact_info')){
-			return response($response, config('global.error_code'));
-		}
+	// 	if(!$request->has('contact_info')){
+	// 		return response($response, config('global.error_code'));
+	// 	}
 
-		$contact_info = $request->input('contact_info');
-		if(empty($contact_info)){
-			$response['message'] = 'Please have at least one contact info added';
-			return response($response, config('global.error_code'));
-		}
+	// 	$contact_info = $request->input('contact_info');
+	// 	if(empty($contact_info)){
+	// 		$response['message'] = 'Please have at least one contact info added';
+	// 		return response($response, config('global.error_code'));
+	// 	}
 
-		$validation_rules2 = [
-			'contact_info'							=>	'required|array|min:1',
-			'contact_info.*.id'						=>	'required',
-			'contact_info.*.first_name.value'		=>	'required',
-			'contact_info.*.last_name.value'		=>	'required',
-			'contact_info.*.email.value'			=>	'required|email',
-		];
+	// 	$validation_rules2 = [
+	// 		'contact_info'							=>	'required|array|min:1',
+	// 		'contact_info.*.id'						=>	'required',
+	// 		'contact_info.*.first_name.value'		=>	'required',
+	// 		'contact_info.*.last_name.value'		=>	'required',
+	// 		'contact_info.*.email.value'			=>	'required|email',
+	// 	];
 
-		$contact_info_validation = Validator::make($request->all(), $validation_rules2);
+	// 	$contact_info_validation = Validator::make($request->all(), $validation_rules2);
 
-		if($contact_info_validation->fails()){
-			return response($response, config('global.error_code'));
-		}
+	// 	if($contact_info_validation->fails()){
+	// 		return response($response, config('global.error_code'));
+	// 	}
 
-		return null;
-	}
+	// 	return null;
+	// }
 
-	private function validateBillingNShippingInfo(Request $request, bool $copy_to_shipping){
+	// private function validateBillingNShippingInfo(Request $request, bool $copy_to_shipping){
 
-		$response = ['message' => 'Please fill in required fields', 'validity' => 'invalid_data_tab3', 'tab_switch' => 2];
+	// 	$response = ['message' => 'Please fill in required fields', 'validity' => 'invalid_data_tab3', 'tab_switch' => 2];
 
-		if(!$request->has('billing_info')){
-			return response($response, config('global.error_code'));
-		}
+	// 	if(!$request->has('billing_info')){
+	// 		return response($response, config('global.error_code'));
+	// 	}
 
-		$validation_rules3 = [
-			'billing_info.street.value'						=>	'required',
-			'billing_info.apt.value'						=>	'required',
-			'billing_info.city.value'						=>	'required',
-			'billing_info.state.value'						=>	'required',
-			'billing_info.postal_code.value'				=>	'required',
-			'billing_info.country.value'					=>	'required|exists:countries,id',
-		];
+	// 	$validation_rules3 = [
+	// 		'billing_info.street.value'						=>	'required',
+	// 		'billing_info.apt.value'						=>	'required',
+	// 		'billing_info.city.value'						=>	'required',
+	// 		'billing_info.state.value'						=>	'required',
+	// 		'billing_info.postal_code.value'				=>	'required',
+	// 		'billing_info.country.value'					=>	'required|exists:countries,id',
+	// 	];
 
-		$billing_info_validation = Validator::make($request->all(), $validation_rules3);
-		if($billing_info_validation->fails()){
-			return response($response, config('global.error_code'));
-		}
+	// 	$billing_info_validation = Validator::make($request->all(), $validation_rules3);
+	// 	if($billing_info_validation->fails()){
+	// 		return response($response, config('global.error_code'));
+	// 	}
 
-		if($copy_to_shipping === false){
+	// 	if($copy_to_shipping === false){
 
-			$validation_rules3 = [
-				'shipping_info.street.value'						=>	'required',
-				'shipping_info.apt.value'							=>	'required',
-				'shipping_info.city.value'							=>	'required',
-				'shipping_info.state.value'							=>	'required',
-				'shipping_info.postal_code.value'					=>	'required',
-				'shipping_info.country.value'						=>	'required|exists:countries,id',
-			];
+	// 		$validation_rules3 = [
+	// 			'shipping_info.street.value'						=>	'required',
+	// 			'shipping_info.apt.value'							=>	'required',
+	// 			'shipping_info.city.value'							=>	'required',
+	// 			'shipping_info.state.value'							=>	'required',
+	// 			'shipping_info.postal_code.value'					=>	'required',
+	// 			'shipping_info.country.value'						=>	'required|exists:countries,id',
+	// 		];
 
-			$shipping_info_validation = Validator::make($request->all(), $validation_rules3);
-			if($shipping_info_validation->fails()){
-				return response($response, config('global.error_code'));
-			}
+	// 		$shipping_info_validation = Validator::make($request->all(), $validation_rules3);
+	// 		if($shipping_info_validation->fails()){
+	// 			return response($response, config('global.error_code'));
+	// 		}
 
-		}
+	// 	}
 		
-		return null;
+	// 	return null;
 
-	}
+	// }
 
-	private function validateSettings(Request $request){
+	// private function validateSettings(Request $request){
 
-		$response = ['message' => 'Please fill in required fields', 'validity' => 'invalid_data_tab5', 'tab_switch' => 4];
+	// 	$response = ['message' => 'Please fill in required fields', 'validity' => 'invalid_data_tab5', 'tab_switch' => 4];
 
-		if(!$request->has('settings')){
-			return response($response, config('global.error_code'));
-		}
+	// 	if(!$request->has('settings')){
+	// 		return response($response, config('global.error_code'));
+	// 	}
 
-		$settings_rules = [
-			'settings.currency.value'								=>	'required|exists:currencies,id',
-			'settings.industry.value'								=>	'required|exists:industries,id',
-			'settings.payment_terms.value'							=>	'required|in:0,7,14,30,60,90',
-			'settings.quote_valid.value'							=>	'required|in:0,7,14,30,60,90',
-			'settings.send_reminder.value'							=>	'required|in:0,1',
-			'settings.size.value'									=>	'required',
-		];
+	// 	$settings_rules = [
+	// 		'settings.currency.value'								=>	'required|exists:currencies,id',
+	// 		'settings.industry.value'								=>	'required|exists:industries,id',
+	// 		'settings.payment_terms.value'							=>	'required|in:0,7,14,30,60,90',
+	// 		'settings.quote_valid.value'							=>	'required|in:0,7,14,30,60,90',
+	// 		'settings.send_reminder.value'							=>	'required|in:0,1',
+	// 		'settings.size.value'									=>	'required',
+	// 	];
 
-		$settings_validation = Validator::make($request->all(), $settings_rules);
-		if($settings_validation->fails()){
-			return response($response, config('global.error_code'));
-		}
+	// 	$settings_validation = Validator::make($request->all(), $settings_rules);
+	// 	if($settings_validation->fails()){
+	// 		return response($response, config('global.error_code'));
+	// 	}
 
-		return null;
+	// 	return null;
 
-	}
+	// }
 
 	public function index(Request $request){
 		
