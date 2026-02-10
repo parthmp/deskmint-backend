@@ -71,4 +71,14 @@ class ClientRepository{
 		return $this->client_contact_info_repository->fetchById($id);
 	}
 
+	/**
+	 * fetchById function
+	 *
+	 * @param integer $id
+	 * @return Client|null
+	 */
+	public function fetchById(int $id) : ?Client {
+		return Client::where('id', '=', $id)->first();
+	}
+
 }

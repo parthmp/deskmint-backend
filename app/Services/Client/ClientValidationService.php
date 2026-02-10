@@ -2,6 +2,8 @@
 
 namespace App\Services\Client;
 
+use App\Models\ClientsCustomField;
+use App\Modules\CustomFields\CustomFields;
 use App\Services\Client\Exceptions\ClientException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -10,6 +12,8 @@ use Illuminate\Support\Facades\Validator;
  * ClientValidationService class
  */
 class ClientValidationService{
+
+	public function __construct(private CustomFields $custom_fields){}
 
 	/**
 	 * validateForIndex function
@@ -43,7 +47,11 @@ class ClientValidationService{
 
 		$personal_info_validation = Validator::make($request->all(), $validation_rules1);
 
-		return !$personal_info_validation->fails();
+		if($personal_info_validation->fails()){
+			throw new ClientException('Please fill in required fields', 'invalid_data_tab1', config('global.error_code'), 0);
+		}
+
+		return true;
 
 	}
 
@@ -75,8 +83,11 @@ class ClientValidationService{
 		];
 
 		$contact_info_validation = Validator::make($request->all(), $validation_rules2);
+		if($contact_info_validation->fails()){
+			throw new ClientException($response['message'], $response['validity'], config('global.error_code'), $response['tab_switch']);
+		}
 
-		return !$contact_info_validation->fails();
+		return true;
 
 	}
 
@@ -104,7 +115,11 @@ class ClientValidationService{
 		];
 
 		$billing_info_validation = Validator::make($request->all(), $validation_rules3);
-		return !$billing_info_validation->fails();
+		if($billing_info_validation->fails()){
+			throw new ClientException($response['message'], $response['validity'], config('global.error_code'), $response['tab_switch']);
+		}
+
+		return true;
 
 	}
 
@@ -136,15 +151,19 @@ class ClientValidationService{
 			];
 
 			$shipping_info_validation = Validator::make($request->all(), $validation_rules3);
+
+			if($shipping_info_validation->fails()){
+				throw new ClientException($response['message'], $response['validity'], config('global.error_code'), $response['tab_switch']);
+			}
 			
-			return !$shipping_info_validation->fails();
+			return true;
 
 		}
 		
 		return true;
 
 	}
-	
+
 	/**
 	 * validateSettings function
 	 *
@@ -169,8 +188,29 @@ class ClientValidationService{
 		];
 
 		$settings_validation = Validator::make($request->all(), $settings_rules);
+		if($settings_validation->fails()){
+			throw new ClientException($response['message'], $response['validity'], config('global.error_code'), $response['tab_switch']);
+		}
 		
-		return !$settings_validation->fails();
+		return true;
+
+	}
+
+	/**
+	 * validateClientForUpsert function
+	 *
+	 * @param Request $request
+	 * @param boolean $copy_to_shipping
+	 * @return boolean
+	 */
+	public function validateClientForUpsert(Request $request, bool $copy_to_shipping) : bool {
+
+		return 	$this->validatePersonInfo($request) &&
+				$this->validateContactInfo($request) &&
+				$this->validateBillingInfo($request) &&
+				$this->validateShippingInfo($request, $copy_to_shipping) &&
+				$this->validateSettings($request) &&
+				$this->custom_fields->validateCustomFields($request, ClientsCustomField::class, 'invalid_data_tab4');
 
 	}
 

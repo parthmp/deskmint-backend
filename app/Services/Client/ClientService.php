@@ -6,7 +6,10 @@ use Illuminate\Http\Request;
 
 class ClientService{
 
-	public function __construct(private ClientFetchService $client_fetch_service, private ClientDeleteService $client_delete_service){}
+	public function __construct(
+		private ClientFetchService $client_fetch_service, 
+		private ClientDeleteService $client_delete_service
+	){}
 
 	/**
 	 * fetchCustomFields function

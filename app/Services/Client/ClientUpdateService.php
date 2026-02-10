@@ -2,6 +2,6 @@
 
 namespace App\Services\Client;
 
-class ClientUpdateService{
+class ClientUpdateService extends ClientBaseService{
 	
 }

@@ -2,6 +2,6 @@
 
 namespace App\Services\Client;
 
-class ClientSaveService{
+class ClientSaveService extends ClientBaseService{
 	
 }
