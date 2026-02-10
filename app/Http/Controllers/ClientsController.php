@@ -223,29 +223,12 @@ class ClientsController extends Controller{
 		
 		$ids = $request->input('ids');
 		
-		if(!is_array($ids) || empty($ids)){
-			return response(['message' => 'No valid IDs provided', 'validity' => 'invalid_ids'], config('global.error_code'));
-		}
-
-		foreach($ids as $id){
-			if(!is_numeric($id)){
-				return response(['message' => 'All IDs must be numeric', 'validity' => 'non_numeric'], config('global.error_code'));
-			}
-		}
-
 		try{
-
-			$flat_table = 'clients_flat';
-
-			if(Schema::hasTable($flat_table)){
-				DB::table($flat_table)->whereIn('client_id', $ids)->delete();
-			}
-
-			Client::whereIn('id', $ids)->delete();
-			return response(['message' => 'Custom field(s) deleted successfully', 'validity' => 'delete_success'], 200);
-
+			$this->client_service->deleteClients($ids);
+		}catch(ClientException $e){
+			return response($e->getMessage(), $e->getCode());
 		}catch(Exception $e){
-			return response(['message' => 'Something went wrong', 'validity' => 'something_wrong'], 500);
+			return General::wentWrong();
 		}
 
 	}

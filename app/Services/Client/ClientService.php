@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 
 class ClientService{
 
-	public function __construct(private ClientFetchService $client_fetch_service){}
+	public function __construct(private ClientFetchService $client_fetch_service, private ClientDeleteService $client_delete_service){}
 
 	/**
 	 * fetchCustomFields function
@@ -18,7 +18,7 @@ class ClientService{
 		return $this->client_fetch_service->fetchCustomFields($request);
 	}
 
-	
+
 	/**
 	 * fetchIndex function
 	 *
@@ -27,6 +27,16 @@ class ClientService{
 	 */
 	public function fetchIndex(Request $request) : array {
 		return $this->client_fetch_service->fetchIndex($request);
+	}
+
+	/**
+	 * deleteClients function
+	 *
+	 * @param array $ids
+	 * @return boolean
+	 */
+	public function deleteClients(array $ids) : bool {
+		return $this->client_delete_service->deleteClientsByIds($ids);
 	}
 
 }

@@ -3,6 +3,8 @@
 namespace App\Repositories\Client;
 
 use App\Models\Client;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ClientRepository{
 
@@ -30,6 +32,20 @@ class ClientRepository{
 
 		return $clients;
 		
+	}
+
+	/**
+	 * deleteRecordsByClientIds function
+	 *
+	 * @param string $table
+	 * @param array $ids
+	 * @return void
+	 */
+	public function deleteRecordsByClientIds(string $table, array $ids) : void {
+		if(Schema::hasTable($table)){
+			DB::table($table)->whereIn('client_id', $ids)->delete();
+		}
+		Client::whereIn('id', $ids)->delete();
 	}
 
 }
