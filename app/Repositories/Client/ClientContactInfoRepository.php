@@ -17,4 +17,16 @@ class ClientContactInfoRepository{
 		return ClientContactInfo::where('client_id', '=', $id)->get();
 	}
 
+	/**
+	 * upsertInfo function
+	 *
+	 * @param array $upsert_array
+	 * @param array $identifiers
+	 * @param array $columns
+	 * @return void
+	 */
+	public function upsertInfo(array $upsert_array, array $identifiers, array $columns) : void {
+		ClientContactInfo::upsert($upsert_array, $identifiers, $columns);
+	}
+
 }

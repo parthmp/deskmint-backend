@@ -8,7 +8,9 @@ class ClientService{
 
 	public function __construct(
 		private ClientFetchService $client_fetch_service, 
-		private ClientDeleteService $client_delete_service
+		private ClientDeleteService $client_delete_service,
+		private ClientSaveService $client_save_service,
+		private ClientUpdateService $client_update_service
 	){}
 
 	/**
@@ -50,6 +52,26 @@ class ClientService{
 	 */
 	public function fetchSingleClientById(int $id) : array {
 		return $this->client_fetch_service->fetchSingleClientById($id);
+	}
+
+	/**
+	 * save function
+	 *
+	 * @param Request $request
+	 * @return boolean
+	 */
+	public function save(Request $request) : bool {
+		return $this->client_save_service->save($request);
+	}
+
+	/**
+	 * update function
+	 *
+	 * @param Request $request
+	 * @return boolean
+	 */
+	public function update(Request $request) : bool {
+		return $this->client_update_service->update($request);
 	}
 
 }

@@ -3,6 +3,10 @@
 namespace App\Services\Client;
 
 use App\Helpers\Sanitize;
+use App\Models\ClientCustomFieldValue;
+use App\Models\ClientsCustomField;
+use App\Modules\CustomFields\CustomFields;
+use App\Repositories\Client\ClientContactInfoRepository;
 use App\Repositories\Client\ClientRepository;
 use App\Services\Client\Exceptions\ClientException;
 use Exception;
@@ -12,10 +16,20 @@ class ClientBaseService{
 
 	public function __construct(
 		private ClientRepository $client_repository,
-		private ClientValidationService $client_validation_service
+		private ClientValidationService $client_validation_service,
+		private ClientContactInfoRepository $client_contact_info_repository,
+		private CustomFields $custom_fields
 	){}
 
-	private function upsertContactInfoForClient(Request $request, int $client_id, bool $add = true){
+	/**
+	 * upsertContactInfoForClient function
+	 *
+	 * @param Request $request
+	 * @param integer $client_id
+	 * @param boolean $add
+	 * @return void
+	 */
+	private function upsertContactInfoForClient(Request $request, int $client_id, bool $add = true) : void {
 
 		$contact_info = $request->input('contact_info');
 
@@ -46,12 +60,19 @@ class ClientBaseService{
 		}
 
 		if(!empty($upsert)){
-			ClientContactInfo::upsert($upsert, ['id'], ['first_name', 'last_name', 'email', 'phone', 'deleted_at']);
+			$this->client_contact_info_repository->upsertInfo($upsert, ['id'], ['first_name', 'last_name', 'email', 'phone', 'deleted_at']);
 		}
 
 	}
 	
-	public function saveOrUpdateClient(Request $request, $add = true){
+	/**
+	 * saveOrUpdateClient function
+	 *
+	 * @param Request $request
+	 * @param boolean $add
+	 * @return boolean
+	 */
+	public function saveOrUpdateClient(Request $request, $add = true) : bool {
 		
 		if(!$add){
 
@@ -75,7 +96,7 @@ class ClientBaseService{
 			/**
 			 * this should throw ClientException if invalid.
 			 */
-			$valid = $this->client_validation_service->validateClientForUpsert($request, $copy_to_shipping);
+			$this->client_validation_service->validateClientForUpsert($request, $copy_to_shipping);
 
 			try{
 
@@ -118,44 +139,45 @@ class ClientBaseService{
 				$industry_id = Sanitize::input($request->input('settings.industry.value'));
 
 				if($add){
-					$client = new Client();
+					$client = $this->client_repository->createEmpty();
 				}
-				
-				$client->company_id = $company_id;
-				$client->first_name = $personal_info_first_name;
-				$client->last_name = $personal_info_last_name;
-				$client->tax_number = $personal_info_tax_id;
-				$client->website = $website;
-				$client->email = $email;
-				$client->phone = $phone;
-				
-				$client->billing_street = $billing_street;
-				$client->billing_apt = $billing_apt;
-				$client->billing_city = $billing_city;
-				$client->billing_state = $billing_state;
-				$client->billing_postal_code = $billing_postal_code;
-				$client->billing_country_id = $billing_country_id;
 
-				$client->shipping_street = $shipping_street;
-				$client->shipping_apt = $shipping_apt;
-				$client->shipping_city = $shipping_city;
-				$client->shipping_state = $shipping_state;
-				$client->shipping_postal_code = $shipping_postal_code;
-				$client->shipping_country_id = $shipping_country_id;
+				$data = [
+					'company_id'				=>	$company_id,
+					'personal_info_first_name'	=>	$personal_info_first_name,
+					'personal_info_last_name'	=>	$personal_info_last_name,
+					'personal_info_tax_id'		=>	$personal_info_tax_id,
+					'website'					=>	$website,
+					'email'						=>	$email,
+					'phone'						=>	$phone,
+					'billing_street'			=>	$billing_street,
+					'billing_apt'				=>	$billing_apt,
+					'billing_city'				=>	$billing_city,
+					'billing_state'				=>	$billing_state,
+					'billing_postal_code'		=>	$billing_postal_code,
+					'billing_country_id'		=>	$billing_country_id,
+					'shipping_street'			=>	$shipping_street,
+					'shipping_apt'				=>	$shipping_apt,
+					'shipping_city'				=>	$shipping_city,
+					'shipping_state'			=>	$shipping_state,
+					'shipping_postal_code'		=>	$shipping_postal_code,
+					'shipping_country_id'		=>	$shipping_country_id,
+					'currency_id'				=>	$currency_id,
+					'payment_terms'				=>	$payment_terms,
+					'quote_valid_days'			=>	$quote_valid_days,
+					'send_reminders'			=>	$send_reminders,
+					'size'						=>	$size,
+					'industry_id'				=>	$industry_id
+				];
 
-				$client->currency_id = $currency_id;
-				$client->payment_terms = $payment_terms;
-				$client->quote_valid_days = $quote_valid_days;
-				$client->send_reminders = $send_reminders;
-				$client->size = $size;
-				$client->industry_id = $industry_id;
-				$saved = $client->save();
+				[$saved, $client_id] = $this->client_repository->createEmpty($client, $data);
 
 				$this->upsertContactInfoForClient($request, $client->id, $add);
-				$this->upsertCustomFieldValues($request, $client->id, ClientsCustomField::class, ClientCustomFieldValue::class, 'clients_flat', 'client', $add);
+				$this->custom_fields->upsertCustomFieldValues($request, $client->id, ClientsCustomField::class, ClientCustomFieldValue::class, 'clients_flat', 'client', $add);
 
 				if($saved){
-					return response(['message' => 'Client saved successfully', 'validity' => 'client_saved'], 200);
+					//return response(['message' => 'Client saved successfully', 'validity' => 'client_saved'], 200);
+					return true;
 				}else{
 					throw new Exception();
 				}
@@ -171,9 +193,6 @@ class ClientBaseService{
 		}catch(Exception $e){
 			throw new Exception();
 		}
-		
-		
-		
 
 	}
 	

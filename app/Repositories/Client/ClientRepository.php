@@ -81,4 +81,55 @@ class ClientRepository{
 		return Client::where('id', '=', $id)->first();
 	}
 
+	/**
+	 * createEmpty function
+	 *
+	 * @return Client
+	 */
+	public function createEmpty() : Client {
+		return new Client();
+	}
+
+	/**
+	 * createOrUpdate function
+	 *
+	 * @param Client $client
+	 * @return array
+	 */
+	public function createOrUpdate(Client $client, array $data) : array {
+
+		$client->company_id = $data['company_id'];
+		$client->first_name = $data['personal_info_first_name'];
+		$client->last_name = $data['personal_info_last_name'];
+		$client->tax_number = $data['personal_info_tax_id'];
+		$client->website = $data['website'];
+		$client->email = $data['email'];
+		$client->phone = $data['phone'];
+		
+		$client->billing_street = $data['billing_street'];
+		$client->billing_apt = $data['billing_apt'];
+		$client->billing_city = $data['billing_city'];
+		$client->billing_state = $data['billing_state'];
+		$client->billing_postal_code = $data['billing_postal_code'];
+		$client->billing_country_id = $data['billing_country_id'];
+
+		$client->shipping_street = $data['shipping_street'];
+		$client->shipping_apt = $data['shipping_apt'];
+		$client->shipping_city = $data['shipping_city'];
+		$client->shipping_state = $data['shipping_state'];
+		$client->shipping_postal_code = $data['shipping_postal_code'];
+		$client->shipping_country_id = $data['shipping_country_id'];
+
+		$client->currency_id = $data['currency_id'];
+		$client->payment_terms = $data['payment_terms'];
+		$client->quote_valid_days = $data['quote_valid_days'];
+		$client->send_reminders = $data['send_reminders'];
+		$client->size = $data['size'];
+		$client->industry_id = $data['industry_id'];
+		$saved = $client->save();
+
+		return [$saved, $client->id];
+
+	}
+
 }
