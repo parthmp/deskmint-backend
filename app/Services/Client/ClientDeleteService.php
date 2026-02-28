@@ -34,8 +34,6 @@ class ClientDeleteService{
 			
 			return true;
 
-			//return response(['message' => 'Custom field(s) deleted successfully', 'validity' => 'delete_success'], 200);
-
 		}catch(Exception $e){
 			throw new ClientException('Something went wrong', 'something_wrong', 500);
 		}

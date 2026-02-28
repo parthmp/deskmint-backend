@@ -5,6 +5,7 @@ namespace App\Services\Client;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\Client;
+use App\Models\ClientCustomFieldValue;
 use App\Models\ClientsCustomField;
 use App\Modules\ArrangedDataTableColumns\DatabaseOperations\DatabaseOperations as ArrangedDataTableDatabaseOperations;
 use App\Modules\CustomFields\CustomFields;
@@ -75,7 +76,8 @@ class ClientFetchService{
 			'currency_id'				=>		'currency',
 			'billing_country_id'		=>		'b_country_name',
 			'shipping_country_id'		=>		's_country_name',
-			'industry_id'				=>		'industry_id'
+			'industry_id'				=>		'industry_name',
+			default						=>		$temp_label
 		};
 
 	}
@@ -259,9 +261,7 @@ class ClientFetchService{
 						
 						
 					}else{
-
-						$show_columns[] = $this->processClientCustomColumns($clients_custom_columns, $user_data[$z]['clients_custom_fields_id']);
-
+						$show_columns = array_merge($show_columns, $this->processClientCustomColumns($clients_custom_columns, $user_data[$z]['clients_custom_fields_id']));
 					}
 				}
 
@@ -400,7 +400,7 @@ class ClientFetchService{
 			throw new ClientException('Invalid request', 'invalid_request', config('global.error_code'));
 		}
 
-		$custom_fields = $this->custom_fields->fetchCustomFieldValues($id, 'client');
+		$custom_fields = $this->custom_fields->fetchCustomFieldValues($id, 'client', ClientCustomFieldValue::class);
 
 		$contact_info = $this->client_repository->fetchClientContactInfoById($id);
 

@@ -81,8 +81,8 @@ class CustomFields{
 	 * @param string $type
 	 * @return Collection|null
 	 */
-	public function fetchCustomFieldValues(int $id, string $type) : ?Collection {
-		return $this->fetch->fetchCustomFieldValues($id, $type);
+	public function fetchCustomFieldValues(int $id, string $type, string $model) : ?Collection {
+		return $this->fetch->setModel($model)->fetchCustomFieldValues($id, $type);
 	}
 
 }

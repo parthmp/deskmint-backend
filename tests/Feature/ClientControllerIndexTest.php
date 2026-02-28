@@ -182,6 +182,7 @@ class ClientControllerIndexTest extends TestCase{
 		
 		$response->assertStatus(200);
 		$response = $response->json();
+		
 		$this->arrayHasKey('validity', $response);
 		$this->assertEquals('saved_success', $response['validity']);
 

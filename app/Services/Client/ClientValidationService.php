@@ -197,6 +197,22 @@ class ClientValidationService{
 	}
 
 	/**
+	 * validateCustomFields function
+	 *
+	 * @param Request $request
+	 * @return boolean
+	 */
+	public function validateCustomFields(Request $request) : bool {
+
+		if(!$this->custom_fields->validateCustomFields($request, ClientsCustomField::class, 'invalid_data_tab4')){
+			$response = ['message' => 'Please fill in required fields', 'validity' => 'invalid_data_tab4', 'tab_switch' => 3];
+			throw new ClientException($response['message'], $response['validity'], config('global.error_code'), $response['tab_switch']);
+		};
+
+		return true;
+	}
+
+	/**
 	 * validateClientForUpsert function
 	 *
 	 * @param Request $request
@@ -209,8 +225,8 @@ class ClientValidationService{
 				$this->validateContactInfo($request) &&
 				$this->validateBillingInfo($request) &&
 				$this->validateShippingInfo($request, $copy_to_shipping) &&
-				$this->validateSettings($request) &&
-				$this->custom_fields->validateCustomFields($request, ClientsCustomField::class, 'invalid_data_tab4');
+				$this->validateCustomFields($request) &&
+				$this->validateSettings($request);
 
 	}
 

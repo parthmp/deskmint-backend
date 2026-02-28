@@ -34,7 +34,7 @@ class Validation{
 		$db_custom_fields = $model::where('company_id', '=', $company_id)->whereHas('customFieldType')->get();
 		
 		if($db_custom_fields->isEmpty()){
-			return false;
+			return true;
 		}
 		
 		$validation_rules = [

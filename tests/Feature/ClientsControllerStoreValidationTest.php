@@ -784,7 +784,7 @@ class ClientsControllerStoreValidationTest extends TestCase{
 		$response = $this->post('/api/manage-clients', $post_data, $c['headers']);
 
 		$response->assertStatus((int)config('global.error_code'));
-
+		
 		$this->arrayHasKey('validity', $response);
 		$this->assertEquals('invalid_data_tab4', $response['validity']);
 		

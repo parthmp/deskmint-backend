@@ -3,12 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Client;
-use App\Models\Company;
 use App\Models\Country;
 use App\Models\Currency;
 use App\Models\Industry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use Tests\Traits\CustomFields;
 use Tests\Traits\DefaultCompany;
@@ -69,8 +67,9 @@ class ClientControllerDeleteTest extends TestCase{
 		$temp = $this->addNewClient();
 
 		$response = $this->delete('/api/manage-clients', ['ids' => ['one', 'two'], 'company_id' => $temp['company_id']], $temp['headers']);
-
+		
 		$response->assertStatus((int)config('global.error_code'));
+		
 		$this->arrayHasKey('validity', $response);
 		$this->assertEquals('non_numeric', $response['validity']);
 
@@ -83,10 +82,13 @@ class ClientControllerDeleteTest extends TestCase{
 		$ids = Client::pluck('id')->toArray();
 		
 		$response = $this->delete('/api/manage-clients', ['ids' => $ids, 'company_id' => $temp['company_id']], $temp['headers']);
-
+		
 		$response->assertStatus(200);
-		$this->arrayHasKey('validity', $response);
-		$this->assertEquals('delete_success', $response['validity']);
+
+		$json = $response->json();
+		
+		$this->arrayHasKey('validity', $json);
+		$this->assertEquals('delete_success', $json['validity']);
 
 		$ids = Client::pluck('id')->toArray();
 		$this->assertEmpty($ids);

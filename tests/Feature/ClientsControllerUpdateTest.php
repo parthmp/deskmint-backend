@@ -90,7 +90,7 @@ class ClientsControllerUpdateTest extends TestCase{
 		
 		$response->assertStatus(200);
 		$this->arrayHasKey('validity', $response);
-		$this->assertEquals('client_saved', $response['validity']);
+		$this->assertEquals('client_updated', $response['validity']);
 
 		/* test for a few clients fields */
 		$client = Client::orderBy('id', 'desc')->first();
@@ -173,7 +173,7 @@ class ClientsControllerUpdateTest extends TestCase{
 		
 		$response->assertStatus(200);
 		$this->arrayHasKey('validity', $response);
-		$this->assertEquals('client_saved', $response['validity']);
+		$this->assertEquals('client_updated', $response['validity']);
 
 		/* test for a few clients fields */
 		$client = Client::orderBy('id', 'desc')->first();
@@ -256,7 +256,7 @@ class ClientsControllerUpdateTest extends TestCase{
 		
 		$response->assertStatus(200);
 		$this->arrayHasKey('validity', $response);
-		$this->assertEquals('client_saved', $response['validity']);
+		$this->assertEquals('client_updated', $response['validity']);
 
 		/* test for a few clients fields */
 		$client = Client::orderBy('id', 'desc')->first();
@@ -348,7 +348,7 @@ class ClientsControllerUpdateTest extends TestCase{
 		
 		$response->assertStatus(200);
 		$this->arrayHasKey('validity', $response);
-		$this->assertEquals('client_saved', $response['validity']);
+		$this->assertEquals('client_updated', $response['validity']);
 
 		/* test for a few clients fields */
 		$client = Client::orderBy('id', 'desc')->first();
@@ -440,7 +440,7 @@ class ClientsControllerUpdateTest extends TestCase{
 		
 		$response->assertStatus(200);
 		$this->arrayHasKey('validity', $response);
-		$this->assertEquals('client_saved', $response['validity']);
+		$this->assertEquals('client_updated', $response['validity']);
 
 		/* test for a few clients fields */
 		$client = Client::orderBy('id', 'desc')->first();

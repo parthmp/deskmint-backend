@@ -27,7 +27,7 @@ class CurrencyRepository{
 				'value'	=>	$currency->id,
 				'text'	=>	$currency->currency.' - '.$currency->code
 			];
-		});
+		})->toArray();
 	}
 
 }

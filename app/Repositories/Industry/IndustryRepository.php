@@ -27,7 +27,7 @@ class IndustryRepository{
 				'value'	=>	$ind->id,
 				'text'	=>	$ind->industry_name
 			];
-		});
+		})->toArray();
 	}
 
 }

@@ -170,13 +170,12 @@ class ClientBaseService{
 					'industry_id'				=>	$industry_id
 				];
 
-				[$saved, $client_id] = $this->client_repository->createEmpty($client, $data);
+				[$saved, $client_id] = $this->client_repository->createOrUpdate($client, $data);
 
-				$this->upsertContactInfoForClient($request, $client->id, $add);
-				$this->custom_fields->upsertCustomFieldValues($request, $client->id, ClientsCustomField::class, ClientCustomFieldValue::class, 'clients_flat', 'client', $add);
+				$this->upsertContactInfoForClient($request, $client_id, $add);
+				$this->custom_fields->upsertCustomFieldValues($request, $client_id, ClientsCustomField::class, ClientCustomFieldValue::class, 'clients_flat', 'client', $add);
 
 				if($saved){
-					//return response(['message' => 'Client saved successfully', 'validity' => 'client_saved'], 200);
 					return true;
 				}else{
 					throw new Exception();
@@ -190,8 +189,6 @@ class ClientBaseService{
 
 		}catch(ClientException $e){
 			throw new ClientException($e->getMessage(), $e->getValidity(), $e->getCode(), $e->getTab());
-		}catch(Exception $e){
-			throw new Exception();
 		}
 
 	}
