@@ -7,21 +7,36 @@ use App\Helpers\Sanitize;
 use App\Models\AdditionalProductColumnsField;
 use App\Models\AdditionalProductColumnsFieldValue;
 use App\Models\Invoice;
+use App\Models\InvoicesCustomField;
 use App\Models\Product;
+use App\Modules\CustomFields\CustomFields;
+use App\Repositories\Client\ClientRepository;
+use App\Repositories\SettingsSection\SettingsSectionRepository;
 use App\Services\HandleInvoiceNumbers;
-use App\Services\InvoiceSettingsService;
+use App\Services\Invoice\Exceptions\InvoiceException;
+use App\Services\Invoice\InvoiceSettingsService;
 use App\Services\Product\ProductFieldService;
 use Illuminate\Http\Request;
 
 class InvoiceService{
 
 	public function __construct(
-		private InvoiceValidationService $invoice_validation_service,
+		private InvoiceFetchService $invoice_fetch_service,
 		private ProductFieldService $product_field_service,
 		private InvoiceNumberService $invoice_number_service,
-		private InvoiceCalculationService $invoice_calculation_service
-	){
+		private InvoiceCalculationService $invoice_calculation_service,
+		private ClientRepository $client_repository,
+	){}
 
+	/**
+	 * searchClientByName function
+	 *
+	 * @param integer $company_id
+	 * @param string $search_term
+	 * @return array
+	 */
+	public function searchClientByName(int $company_id, string $search_term) : array {
+		return $this->client_repository->searchByName($company_id, $search_term);
 	}
 
 	/**
@@ -30,9 +45,9 @@ class InvoiceService{
 	 * @param Request $request
 	 * @return bool
 	 */
-	public function validateInvoiceDetails(Request $request) : bool {
-		return $this->invoice_validation_service->validateInvoiceDetails($request);
-	}
+	// public function validateInvoiceDetails(Request $request) : bool {
+	// 	//return $this->invoice_validation_service->validateInvoiceDetails($request);
+	// }
 
 	/**
 	 * validateInvoiceSettings function
@@ -40,9 +55,9 @@ class InvoiceService{
 	 * @param Request $request
 	 * @return boolean
 	 */
-	public function validateInvoiceSettings(Request $request) : bool {
-		return $this->invoice_validation_service->validateInvoiceSettings($request);
-	}
+	// public function validateInvoiceSettings(Request $request) : bool {
+	// 	//return $this->invoice_validation_service->validateInvoiceSettings($request);
+	// }
 
 	/**
 	 * ifSubmittedFieldsAreSameAsDefined function
@@ -51,9 +66,9 @@ class InvoiceService{
 	 * @param integer $company_id
 	 * @return boolean
 	 */
-	public function ifSubmittedFieldsAreSameAsDefined(Request $request, int $company_id) : bool {
-		return $this->invoice_validation_service->ifSubmittedFieldsAreSameAsDefined($request, $company_id);
-	}
+	// public function ifSubmittedFieldsAreSameAsDefined(Request $request, int $company_id) : bool {
+	// 	//return $this->invoice_validation_service->ifSubmittedFieldsAreSameAsDefined($request, $company_id);
+	// }
 
 	/**
 	 * insertProductRows function
@@ -139,7 +154,7 @@ class InvoiceService{
 	 * @return mixed
 	 */
 	public function validateAllForInvoice(Request $request, int $company_id){
-		return $this->invoice_validation_service->validateAllForInvoice($request, $company_id);
+		//return $this->invoice_validation_service->validateAllForInvoice($request, $company_id);
 	}
 	
 	/**
@@ -270,5 +285,16 @@ class InvoiceService{
 			'rows'						=>	$totals['rows']
 		];
 
+	}
+
+	/**
+	 * fetchInitialData function
+	 *
+	 * @param Request $request
+	 * @param integer $company_id
+	 * @return array
+	 */
+	public function fetchInitialData(Request $request, int $company_id) : array {
+		return $this->invoice_fetch_service->fetchInitialData($request, $company_id);
 	}
 }

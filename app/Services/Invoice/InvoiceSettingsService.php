@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Invoice;
 
 use App\Models\SettingsSection;
 use App\Traits\SettingsDefault;
@@ -13,16 +13,16 @@ class InvoiceSettingsService{
 	private int $company_id = 0;
 
 	/**
-	 * fetchInvoiceSettingResults function
+	 * setCompany function
 	 *
 	 * @param integer $company_id
-	 * @return array
+	 * @return self
 	 */
-	public function __construct(int $company_id) {
+	public function setCompany(int $company_id) : self {
 		
 		$this->company_id = $company_id;
 		$this->results = SettingsSection::where('company_id', '=', $company_id)->whereIn('type', [ISC_INVOICE_NUMBERS_TYPE, ISC_PRODUCT_COLUMNS_TYPE, ISC_INVOICE_TOTAL_FIELDS_TYPE])->get()->mapWithKeys(fn($s) => [$s->type => json_decode($s->settings_json, true)])->toArray();
-	
+		return $this;
 	}
 
 	/**

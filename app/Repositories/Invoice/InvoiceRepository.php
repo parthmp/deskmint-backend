@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoicesCustomField;
+use App\Repositories\SettingsSection\SettingsSectionRepository;
 use App\Services\HandleInvoiceNumbers;
 use App\Services\Invoice\InvoiceService;
 use App\Services\InvoiceSettingsService;
@@ -17,13 +18,12 @@ use Illuminate\Http\Request;
 
 class InvoiceRepository{
 
-	use PaymentGatewayDetails, CustomFieldsPrinting;
+	//use PaymentGatewayDetails, CustomFieldsPrinting;
 
-	private InvoiceService $invoice_service;
-
-	public function __construct(InvoiceService $invoice_service){
-		$this->invoice_service = $invoice_service;
-	}
+	public function __construct(
+		//private InvoiceService $invoice_service
+		private SettingsSectionRepository $settings_section_repository
+	){}
 
 	/**
 	 * getInitialData function
@@ -40,7 +40,7 @@ class InvoiceRepository{
 		$custom_fields = $this->fetchInvoiceCustomFields($request);
 
 		/* get payment integration data */
-		$gateways = $this->getGateWayNames((int) $company_id);
+		$gateways = $this->settings_section_repository->getGateWayNames((int) $company_id);
 
 
 		return [
