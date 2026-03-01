@@ -2,8 +2,8 @@
 
 namespace App\Services\Invoice\Exceptions;
 
-use App\Exceptions\BaseException;
+use App\Exceptions\BaseExceptionWithTabs;
 
-class InvoiceException extends BaseException{
+class InvoiceException extends BaseExceptionWithTabs{
 
 }

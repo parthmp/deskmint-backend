@@ -11,6 +11,7 @@ use App\Models\InvoicesCustomField;
 use App\Models\Product;
 use App\Modules\CustomFields\CustomFields;
 use App\Repositories\Client\ClientRepository;
+use App\Repositories\Product\ProductRepository;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use App\Services\HandleInvoiceNumbers;
 use App\Services\Invoice\Exceptions\InvoiceException;
@@ -26,6 +27,7 @@ class InvoiceService{
 		private InvoiceNumberService $invoice_number_service,
 		private InvoiceCalculationService $invoice_calculation_service,
 		private ClientRepository $client_repository,
+		private ProductRepository $product_repository
 	){}
 
 	/**
@@ -297,4 +299,16 @@ class InvoiceService{
 	public function fetchInitialData(Request $request, int $company_id) : array {
 		return $this->invoice_fetch_service->fetchInitialData($request, $company_id);
 	}
+
+	/**
+	 * searchProductsByName function
+	 *
+	 * @param integer $company_id
+	 * @param string $search_term
+	 * @return array
+	 */
+	public function searchProductsByName(int $company_id, string $search_term) : array {
+		return $this->product_repository->searchByName($company_id, $search_term);
+	}
+
 }

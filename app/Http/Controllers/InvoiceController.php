@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\General;
 use App\Helpers\Sanitize;
+use App\Http\Requests\Product\SearchProductRequest;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoicesCustomField;
 use App\Services\Invoice\Exceptions\InvoiceException;
@@ -48,13 +49,12 @@ class InvoiceController extends Controller{
 
 	}
 
-	public function fetchProducts(Request $request){
+	public function fetchProducts(SearchProductRequest $request){
 		
-		$company_id = (int) Sanitize::input($request->input('company_id'));
-		$searched = (string) Sanitize::input($request->input('searched'));
+		$data = $request->validated();
 
-		try{	
-			return $this->product_repository->searchByName($company_id, $searched);
+		try{
+			return $this->invoice_service->searchProductsByName($data['company_id'], $data['searched']);
 		}catch(Exception $e){
 			return General::wentWrong();
 		}
@@ -71,33 +71,33 @@ class InvoiceController extends Controller{
 	 */
 	public function store(Request $request){
 		
-		$company_id = (int) Sanitize::input($request->input('company_id'));
+		// $company_id = (int) Sanitize::input($request->input('company_id'));
 
-		$errors = $this->invoice_service->validateAllForInvoice($request, $company_id);
+		// $errors = $this->invoice_service->validateAllForInvoice($request, $company_id);
 		
-		if($errors !== null){
-			return $errors;
-		}
+		// if($errors !== null){
+		// 	return $errors;
+		// }
 
-		try{
+		// try{
 
-			$invoice_id = $this->invoice_repository->insertInvoice($request);
+		// 	$invoice_id = $this->invoice_repository->insertInvoice($request);
 
-			/* custom fields insertion */
-			$this->upsertCustomFieldValues($request, $invoice_id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', true);
+		// 	/* custom fields insertion */
+		// 	$this->upsertCustomFieldValues($request, $invoice_id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', true);
 
-			$this->invoice_service->insertProductRows($request, $invoice_id, $company_id);
+		// 	$this->invoice_service->insertProductRows($request, $invoice_id, $company_id);
 
-			/* override manual reset here */
-			$this->invoice_service->resetManualInvoieNumberResetFlag($company_id);
+		// 	/* override manual reset here */
+		// 	$this->invoice_service->resetManualInvoieNumberResetFlag($company_id);
 
-			return response(['message' => 'Invoice created successfully', 'validator' => 'invalid_created'], 200);
+		// 	return response(['message' => 'Invoice created successfully', 'validator' => 'invalid_created'], 200);
 
-		}catch(Exception $e){
+		// }catch(Exception $e){
 
-			return General::wentWrong();
+		// 	return General::wentWrong();
 
-		}
+		// }
 
 		
 
