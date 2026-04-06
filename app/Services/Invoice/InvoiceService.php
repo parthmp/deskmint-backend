@@ -7,10 +7,12 @@ use App\Helpers\Sanitize;
 use App\Models\AdditionalProductColumnsField;
 use App\Models\AdditionalProductColumnsFieldValue;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\InvoicesCustomField;
 use App\Models\Product;
 use App\Modules\CustomFields\CustomFields;
 use App\Repositories\Client\ClientRepository;
+use App\Repositories\Invoice\InvoiceRepository;
 use App\Repositories\Product\ProductRepository;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use App\Services\HandleInvoiceNumbers;
@@ -27,7 +29,9 @@ class InvoiceService{
 		private InvoiceNumberService $invoice_number_service,
 		private InvoiceCalculationService $invoice_calculation_service,
 		private ClientRepository $client_repository,
-		private ProductRepository $product_repository
+		private ProductRepository $product_repository,
+		private InvoiceValidationService $invoice_validation_service,
+		private InvoiceRepository $invoice_repository
 	){}
 
 	/**
@@ -156,7 +160,7 @@ class InvoiceService{
 	 * @return mixed
 	 */
 	public function validateAllForInvoice(Request $request, int $company_id){
-		//return $this->invoice_validation_service->validateAllForInvoice($request, $company_id);
+		return $this->invoice_validation_service->validateAllForInvoice($request, $company_id);
 	}
 	
 	/**
@@ -310,5 +314,47 @@ class InvoiceService{
 	public function searchProductsByName(int $company_id, string $search_term) : array {
 		return $this->product_repository->searchByName($company_id, $search_term);
 	}
+
+	/**
+	 * insertInvoice function
+	 *
+	 * @param Request $request
+	 * @param array $data
+	 * @return integer
+	 */
+	public function insertInvoice(Request $request, array $data) : int {
+
+		$data = $this->invoice_repository->insertInvoiceData($request, $data);
+		
+		$invoice = $data['invoice'];
+		$rows = $data['rows'];
+
+		$invoice_items = [];
+		foreach($rows as $row){
+
+			$temp = [];
+
+			$temp['invoice_id'] = $invoice->id;
+			$temp['product_id'] = Sanitize::input($row['product_id']);
+			$temp['description'] = Sanitize::input($row['description'] ?? '');
+			$temp['unit_price'] = Sanitize::input($row['unit_price']);
+			$temp['quantity'] = Sanitize::input($row['quantity']);
+			$temp['tax'] = Sanitize::input($row['tax']);
+			$temp['tax_amount'] = Sanitize::input($row['tax_amount']);
+			$temp['line_subtotal'] = Sanitize::input($row['line_subtotal']);
+			$temp['line_total'] = Sanitize::input($row['line_total']);
+
+			$invoice_items[] = $temp;
+			
+		}
+
+		InvoiceItem::insert($invoice_items);
+
+		$invoice_items = null;
+
+		return $invoice->id;
+
+	}
+
 
 }

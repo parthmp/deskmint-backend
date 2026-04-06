@@ -2,17 +2,13 @@
 
 namespace App\Repositories\Invoice;
 
-use App\Helpers\Sanitize;
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class InvoiceRepository{
 
-	public function insertInvoiceData(Request $request) : array {
-
-		$data = $this->invoice_service->getInvoiceInsertData($request);
+	public function insertInvoiceData(Request $request, array $data) : array {
 
 		$settings = $data['settings'];
 		$client_id = $data['client_id'];
@@ -65,37 +61,5 @@ class InvoiceRepository{
 		
 	}
 
-	public function insertInvoice(Request $request) : int {
-
-		$data = $this->insertInvoiceData($request);
-		$invoice = $data['invoice'];
-		$rows = $data['rows'];
-
-		$invoice_items = [];
-		foreach($rows as $row){
-
-			$temp = [];
-
-			$temp['invoice_id'] = $invoice->id;
-			$temp['product_id'] = Sanitize::input($row['product_id']);
-			$temp['description'] = Sanitize::input($row['description'] ?? '');
-			$temp['unit_price'] = Sanitize::input($row['unit_price']);
-			$temp['quantity'] = Sanitize::input($row['quantity']);
-			$temp['tax'] = Sanitize::input($row['tax']);
-			$temp['tax_amount'] = Sanitize::input($row['tax_amount']);
-			$temp['line_subtotal'] = Sanitize::input($row['line_subtotal']);
-			$temp['line_total'] = Sanitize::input($row['line_total']);
-
-			$invoice_items[] = $temp;
-			
-		}
-
-		InvoiceItem::insert($invoice_items);
-
-		$invoice_items = null;
-
-		return $invoice->id;
-
-	}
-
+	
 }

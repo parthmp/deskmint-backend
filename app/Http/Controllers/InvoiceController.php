@@ -7,6 +7,7 @@ use App\Helpers\Sanitize;
 use App\Http\Requests\Product\SearchProductRequest;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoicesCustomField;
+use App\Modules\CustomFields\CustomFields;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use App\Services\Invoice\InvoiceService;
 use Exception;
@@ -18,7 +19,8 @@ use Illuminate\Http\Request;
 class InvoiceController extends Controller{
 
 	public function __construct(
-		private InvoiceService $invoice_service
+		private InvoiceService $invoice_service,
+		private CustomFields $custom_fields
 	){}
     
 
@@ -71,38 +73,34 @@ class InvoiceController extends Controller{
 	 */
 	public function store(Request $request){
 		
-		// $company_id = (int) Sanitize::input($request->input('company_id'));
+		$company_id = (int) Sanitize::input($request->input('company_id'));
 
-		// $errors = $this->invoice_service->validateAllForInvoice($request, $company_id);
+		try{
+
+			$this->invoice_service->validateAllForInvoice($request, $company_id);
+
+			try{
+
+				$invoice_id = $this->invoice_service->insertInvoice($request, $this->invoice_service->getInvoiceInsertData($request));
+
+				$this->custom_fields->upsertCustomFieldValues($request, $invoice_id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', true);
+				$this->invoice_service->insertProductRows($request, $invoice_id, $company_id);
+
+				/* override manual reset here */
+				$this->invoice_service->resetManualInvoieNumberResetFlag($company_id);
+
+				return response(['message' => 'Invoice created successfully', 'validator' => 'invalid_created'], 200);
+
+			}catch(Exception $e){
+				return General::wentWrong();
+			}
+			
+		}catch(InvoiceException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 		
-		// if($errors !== null){
-		// 	return $errors;
-		// }
-
-		// try{
-
-		// 	$invoice_id = $this->invoice_repository->insertInvoice($request);
-
-		// 	/* custom fields insertion */
-		// 	$this->upsertCustomFieldValues($request, $invoice_id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', true);
-
-		// 	$this->invoice_service->insertProductRows($request, $invoice_id, $company_id);
-
-		// 	/* override manual reset here */
-		// 	$this->invoice_service->resetManualInvoieNumberResetFlag($company_id);
-
-		// 	return response(['message' => 'Invoice created successfully', 'validator' => 'invalid_created'], 200);
-
-		// }catch(Exception $e){
-
-		// 	return General::wentWrong();
-
-		// }
-
-		
-
-
-
 	}
 
 }
