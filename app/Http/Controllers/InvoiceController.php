@@ -19,8 +19,7 @@ use Illuminate\Http\Request;
 class InvoiceController extends Controller{
 
 	public function __construct(
-		private InvoiceService $invoice_service,
-		private CustomFields $custom_fields
+		private InvoiceService $invoice_service
 	){}
     
 
@@ -81,14 +80,7 @@ class InvoiceController extends Controller{
 
 			try{
 
-				$invoice_id = $this->invoice_service->insertInvoice($request, $this->invoice_service->getInvoiceInsertData($request));
-
-				$this->custom_fields->upsertCustomFieldValues($request, $invoice_id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', true);
-				$this->invoice_service->insertProductRows($request, $invoice_id, $company_id);
-
-				/* override manual reset here */
-				$this->invoice_service->resetManualInvoieNumberResetFlag($company_id);
-
+				$this->invoice_service->save($request, $company_id);
 				return response(['message' => 'Invoice created successfully', 'validator' => 'invalid_created'], 200);
 
 			}catch(Exception $e){
@@ -100,7 +92,7 @@ class InvoiceController extends Controller{
 		}catch(Exception $e){
 			return General::wentWrong();
 		}
-		
+
 	}
 
 }

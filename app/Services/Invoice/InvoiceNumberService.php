@@ -5,7 +5,7 @@ namespace App\Services\Invoice;
 use App\Models\Invoice;
 use App\Models\SettingsSection;
 use App\Services\HandleInvoiceNumbers;
-use App\Services\InvoiceSettingsService;
+use App\Services\Invoice\InvoiceSettingsService;
 
 class InvoiceNumberService{
 
@@ -48,7 +48,8 @@ class InvoiceNumberService{
 			return 'copy - '.$invoice->invoice_number.' original '.$invoice->id;
 		}
 		
-		$settings = new InvoiceSettingsService((int) $company_id);
+		$settings = new InvoiceSettingsService();
+		$settings->setCompany((int) $company_id);
 
 		return (new HandleInvoiceNumbers((int) $company_id, $settings->getInvoiceNumbers(), (int) $timezone_offset_minutes))->getNextInvoiceNumber();
 
