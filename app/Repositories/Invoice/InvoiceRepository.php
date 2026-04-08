@@ -61,5 +61,25 @@ class InvoiceRepository{
 		
 	}
 
+	/**
+	 * fetchInvoiceByNumber function
+	 *
+	 * @param string $invoice_number
+	 * @param integer $company_id
+	 * @param boolean $last
+	 * @return Invoice|null
+	 */
+	public function fetchInvoiceByNumber(string $invoice_number, int $company_id, bool $last = false) : ?Invoice {
+
+		$query = Invoice::where([['company_id', '=', $company_id], ['invoice_number', '=', $invoice_number]]);
+
+		if($last){
+			$query = $query->orderBy('id', 'desc');
+		}
+
+		return $query->first();
+
+	}
+
 	
 }

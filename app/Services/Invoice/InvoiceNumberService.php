@@ -2,12 +2,18 @@
 
 namespace App\Services\Invoice;
 
-use App\Models\Invoice;
-use App\Models\SettingsSection;
+use App\Repositories\Invoice\InvoiceRepository;
+use App\Repositories\SettingsSection\SettingsSectionRepository;
 use App\Services\HandleInvoiceNumbers;
 use App\Services\Invoice\InvoiceSettingsService;
 
 class InvoiceNumberService{
+
+	public function __construct(
+		private SettingsSectionRepository $settings_section_repository,
+		private InvoiceRepository $invoice_repository,
+		private InvoiceSettingsService $invoice_settings_service
+	){}
 
 	/**
 	 * resetManualInvoieNumberResetFlag function
@@ -15,9 +21,9 @@ class InvoiceNumberService{
 	 * @param integer $company_id
 	 * @return void
 	 */
-	public function resetManualInvoieNumberResetFlag(int $company_id) : void{
-
-		$setting = SettingsSection::where([['company_id', '=', $company_id], ['type', '=', ISC_INVOICE_NUMBER_RESET_TYPE]])->first();
+	public function resetManualInvoieNumberResetFlag(int $company_id) : void {
+		
+		$setting = $this->settings_section_repository->fetchSettings($company_id, ISC_INVOICE_NUMBER_RESET_TYPE);
 
 		if($setting){
 			$json = json_decode($setting->settings_json, true);
@@ -38,7 +44,7 @@ class InvoiceNumberService{
 	 */
 	public function getInvoiceNumber(string $invoice_number, int $company_id, int $timezone_offset_minutes) : string {
 
-		$invoice = Invoice::where([['company_id', '=', $company_id], ['invoice_number', '=', $invoice_number]])->orderBy('id', 'desc')->first();
+		$invoice = $this->invoice_repository->fetchInvoiceByNumber($invoice_number, $company_id, true);
 
 		if(!$invoice){
 			return $invoice_number;
@@ -48,9 +54,8 @@ class InvoiceNumberService{
 			return 'copy - '.$invoice->invoice_number.' original '.$invoice->id;
 		}
 		
-		$settings = new InvoiceSettingsService();
-		$settings->setCompany((int) $company_id);
-
+		$settings = $this->invoice_settings_service->setCompany((int) $company_id);
+		
 		return (new HandleInvoiceNumbers((int) $company_id, $settings->getInvoiceNumbers(), (int) $timezone_offset_minutes))->getNextInvoiceNumber();
 
 	}
