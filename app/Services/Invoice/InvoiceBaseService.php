@@ -4,11 +4,11 @@ namespace App\Services\Invoice;
 
 use App\Helpers\Sanitize;
 use App\Models\InvoiceCustomFieldValue;
-use App\Models\InvoiceItem;
 use App\Models\InvoicesCustomField;
 use App\Models\Product;
 use App\Modules\CustomFields\CustomFields;
 use App\Repositories\Invoice\InvoiceRepository;
+use App\Repositories\Product\ProductRepository;
 use App\Services\HandleInvoiceNumbers;
 use App\Services\Product\ProductFieldService;
 use Illuminate\Http\Request;
@@ -20,7 +20,9 @@ class InvoiceBaseService{
 		private InvoiceRepository $invoice_repository,
 		private InvoiceNumberService $invoice_number_service,
 		private InvoiceCalculationService $invoice_calculation_service,
-		private CustomFields $custom_fields
+		private CustomFields $custom_fields,
+		private ProductRepository $product_repository,
+		private InvoiceSettingsService $invoice_settings_service
 	){}
 
 	/**
@@ -68,7 +70,7 @@ class InvoiceBaseService{
 			
 		}
 
-		InvoiceItem::insert($invoice_items);
+		$this->invoice_repository->insertInvoiceItems($invoice_items);
 
 		$invoice_items = null;
 
@@ -95,7 +97,7 @@ class InvoiceBaseService{
 		}
 		
 		// Check which product IDs exist in database
-		$valid_product_ids = Product::where('company_id', $company_id)->whereIn('id', array_values($product_ids))->pluck('id')->toArray();
+		$valid_product_ids = $this->product_repository->fetchValidProductIdsByIds($company_id, $product_ids);
 		
 		// Filter rows - keep only those with valid product IDs
 		$filtered_rows = [];
@@ -216,7 +218,7 @@ class InvoiceBaseService{
 
 		$invoice_number = $this->getInvoiceNumber($invoice_number, $company_id, (int) $timezone_offset_minutes);
 		
-		$settings = new InvoiceSettingsService((int) $company_id);
+		$settings = $this->invoice_settings_service->setCompany((int) $company_id);
 		$patten_result = (new HandleInvoiceNumbers((int) $company_id, $settings->getInvoiceNumbers(), (int) $timezone_offset_minutes))->checkPatternWithSuffix($invoice_number);
 		$patten_matched = $patten_result['matched'];
 		

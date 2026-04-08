@@ -3,6 +3,7 @@
 namespace App\Repositories\Invoice;
 
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -79,6 +80,16 @@ class InvoiceRepository{
 
 		return $query->first();
 
+	}
+
+	/**
+	 * insertInvoiceItems function
+	 *
+	 * @param array $invoice_items
+	 * @return void
+	 */
+	public function insertInvoiceItems(array $invoice_items) : void {
+		InvoiceItem::insert($invoice_items);
 	}
 
 	

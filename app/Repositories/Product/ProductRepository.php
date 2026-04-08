@@ -60,4 +60,15 @@ class ProductRepository{
 		return Product::where('company_id', $company_id)->whereIn('id', $product_ids)->exists();
 	}
 
+	/**
+	 * fetchValidProductIdsByIds function
+	 *
+	 * @param integer $company_id
+	 * @param array $product_ids
+	 * @return array|null
+	 */
+	public function fetchValidProductIdsByIds(int $company_id, array $product_ids) : ?array {
+		return Product::where('company_id', $company_id)->whereIn('id', array_values($product_ids))->pluck('id')->toArray();
+	}
+
 }
