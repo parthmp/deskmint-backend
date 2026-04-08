@@ -108,4 +108,15 @@ class SettingsSectionRepository{
 		SettingsSection::where([['company_id', '=', $company_id], ['type', '=', $type]])->delete();
 	}
 
+	/**
+	 * fetchResultsWithMultipleTypes function
+	 *
+	 * @param integer $company_id
+	 * @param array $types
+	 * @return array|null
+	 */
+	public function fetchResultsWithMultipleTypes(int $company_id, array $types) : ?array {
+		return SettingsSection::where('company_id', '=', $company_id)->whereIn('type', $types)->get()->mapWithKeys(fn($s) => [$s->type => json_decode($s->settings_json, true)])->toArray();
+	}
+
 }

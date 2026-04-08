@@ -49,4 +49,15 @@ class ProductRepository{
 		return new Product();
 	}
 
+	/**
+	 * ifProductsExists function
+	 *
+	 * @param integer $company_id
+	 * @param array $product_ids
+	 * @return boolean
+	 */
+	public function ifProductsExists(int $company_id, array $product_ids) : bool {
+		return Product::where('company_id', $company_id)->whereIn('id', $product_ids)->exists();
+	}
+
 }

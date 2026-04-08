@@ -6,16 +6,20 @@ use App\Models\InvoicesCustomField;
 use App\Models\Product;
 use App\Modules\CustomFields\CustomFields;
 use App\Modules\CustomFields\Exceptions\InvalidCustomFieldsException;
+use App\Repositories\Product\ProductRepository;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use App\Services\Product\ProductFieldService;
 use App\Services\Invoice\InvoiceSettingsService;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
 
 class InvoiceValidationService extends ProductFieldService {
 
-	public function __construct(private CustomFields $custom_fields, private InvoiceSettingsService $invoice_settings_service){}
+	public function __construct(
+		private CustomFields $custom_fields, 
+		private InvoiceSettingsService $invoice_settings_service,
+		private ProductRepository $product_repository
+	){}
 
 	/**
 	 * validateInvoiceDetails function
@@ -111,7 +115,14 @@ class InvoiceValidationService extends ProductFieldService {
 
 	}
 
-	private function shouldHaveAtLeastOneRow(array $product_rows, int $company_id){
+	/**
+	 * shouldHaveAtLeastOneRow function
+	 *
+	 * @param array $product_rows
+	 * @param integer $company_id
+	 * @return boolean
+	 */
+	private function shouldHaveAtLeastOneRow(array $product_rows, int $company_id) : bool {
 
 		if(empty($product_rows)){
 			return false;
@@ -130,7 +141,7 @@ class InvoiceValidationService extends ProductFieldService {
 		}
 
 		// Check if at least one exists in database for this company
-		return Product::where('company_id', $company_id)->whereIn('id', $product_ids)->exists();
+		return $this->product_repository->ifProductsExists($company_id, $product_ids);
 
 	}
 	

@@ -3,6 +3,7 @@
 namespace App\Services\Invoice;
 
 use App\Models\SettingsSection;
+use App\Repositories\SettingsSection\SettingsSectionRepository;
 use App\Traits\SettingsDefault;
 
 class InvoiceSettingsService{
@@ -11,6 +12,10 @@ class InvoiceSettingsService{
 
 	private array $results = [];
 	private int $company_id = 0;
+
+	public function __construct(
+		private SettingsSectionRepository $settings_section_repository
+	){}
 
 	/**
 	 * setCompany function
@@ -21,7 +26,7 @@ class InvoiceSettingsService{
 	public function setCompany(int $company_id) : self {
 		
 		$this->company_id = $company_id;
-		$this->results = SettingsSection::where('company_id', '=', $company_id)->whereIn('type', [ISC_INVOICE_NUMBERS_TYPE, ISC_PRODUCT_COLUMNS_TYPE, ISC_INVOICE_TOTAL_FIELDS_TYPE])->get()->mapWithKeys(fn($s) => [$s->type => json_decode($s->settings_json, true)])->toArray();
+		$this->results = $this->settings_section_repository->fetchResultsWithMultipleTypes((int) $company_id, [ISC_INVOICE_NUMBERS_TYPE, ISC_PRODUCT_COLUMNS_TYPE, ISC_INVOICE_TOTAL_FIELDS_TYPE]);
 		return $this;
 	}
 
