@@ -1,5 +1,5 @@
 # docker/php/Dockerfile
-FROM php:8.3-fpm-bookworm
+FROM php:8.4-fpm-bookworm
 
 # Handle user permissions for local development added for WSL start
 ARG UID=1000
