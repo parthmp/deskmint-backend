@@ -11,4 +11,8 @@ class InvoiceItem extends Model {
 	use SoftDeletes, HasFactory;
 
     protected $table = 'invoice_items';
+
+	public function product(){
+		return $this->belongsTo(Product::class, 'product_id');
+	}
 }

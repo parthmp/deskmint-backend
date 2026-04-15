@@ -7,6 +7,7 @@ use App\Models\ClientCustomFieldValue;
 use App\Models\ClientsCustomField;
 use App\Models\Invoice;
 use App\Models\InvoiceCustomFieldValue;
+use App\Models\InvoiceItem;
 use App\Models\SettingsSection;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -67,6 +68,15 @@ class InvoiceDBOperations{
 	}
 
 	/**
+	 * fetchInvoiceProductCoulumnsSettings function
+	 *
+	 * @return SettingsSection|null
+	 */
+	public function fetchInvoiceProductCoulumnsSettings() : SettingsSection|null {
+		return SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_PRODUCT_COLUMNS_TYPE]])->first();
+	}
+
+	/**
 	 * fetchCompanyAddresSettings function
 	 *
 	 * @return SettingsSection|null
@@ -119,6 +129,15 @@ class InvoiceDBOperations{
 	 */
 	public function fetchCustomFieldValuesOfInvoice() : Collection|null {
 		return InvoiceCustomFieldValue::where([['invoice_id', '=', $this->invoice_id]])->withTrashed()->get();
+	}
+
+	/**
+	 * fetchInvoiceItems function
+	 *
+	 * @return Collection|null
+	 */
+	public function fetchInvoiceItems() : Collection|null {
+		return InvoiceItem::where([['invoice_id', '=', $this->invoice_id]])->withTrashed()->with('product')->get();
 	}
 
 }

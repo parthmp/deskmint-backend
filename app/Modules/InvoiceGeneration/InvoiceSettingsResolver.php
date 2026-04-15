@@ -2,6 +2,7 @@
 
 namespace App\Modules\InvoiceGeneration;
 
+use App\Models\Invoice;
 use App\Models\SettingsSection;
 use App\Traits\SettingsDefault;
 use Illuminate\Database\Eloquent\Collection;
@@ -132,6 +133,30 @@ class InvoiceSettingsResolver{
 		}
 
 		return json_decode($settings->settings_json, true);
+
+	}
+
+	/**
+	 * fetchProductRowsSettings function
+	 *
+	 * @param Invoice $invoice
+	 * @return array
+	 */
+	public function fetchProductRowsSettings(Invoice $invoice, int $company_id) : array {
+
+		$settings_snapshot = trim($invoice->settings_snapshot);
+
+		if($settings_snapshot !== ''){
+			return json_decode($settings_snapshot, true);
+		}
+
+		$settings_section = $this->invoice_db_operations->fetchInvoiceProductCoulumnsSettings();
+
+		if($settings_section){
+			return json_decode($settings_section->settings_json, true);
+		}
+
+		return $this->getDefaultProductColumnsSettings((int) $company_id);
 
 	}
 

@@ -4,7 +4,6 @@ namespace App\Modules\InvoiceGeneration;
 
 use App\Models\Invoice;
 use Exception;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -43,7 +42,7 @@ class InvoiceGenerator{
 		}catch(Exception $e){
 			Log::error("Unable to read file : {template_name}", ['template_name' => $template_name]);
 		}
-
+		return '';
 	}
 
 	/**
@@ -72,20 +71,23 @@ class InvoiceGenerator{
 			'invoice_data'				=>	$this->invoice_db_operations->fetchInvoiceRow(),
 			'total_fields_settings'		=>	$this->invoice_settings_resolver->fetchTotalFieldsDetails()
 		];
-
+		
 		$context['client_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfClient((int) $context['invoice_data']['client_id']);
 		$context['invoice_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfInvoice();
+
+		$context['product_rows_data'] = $this->invoice_settings_resolver->fetchProductRowsSettings($context['invoice_data'], (int) $this->company_id);
+		$context['invoice_items'] = $this->invoice_db_operations->fetchInvoiceItems();
 
 		return $context;
 	}
 
-	private function modifyInvoiceTemplate(){
+	private function modifyInvoiceTemplate() : string {
 		$contents = $this->fetchTemplateContents();
 		$renderer = new InvoiceRenderer($contents, $this->generateContextArrayForRenderer());
 		return $renderer->render();
 	}
 
-	public function generateInvoice(){
+	public function generateInvoice() : string {
 
 		/* generate invoice here */
 		//return $this->invoice_settings_resolver->fetchClientDetails();

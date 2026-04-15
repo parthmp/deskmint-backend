@@ -99,35 +99,39 @@ class InvoiceRenderer{
 
 		foreach($this->context['client_details_settings'] as $field){
 
-			$mapped = $field['mapped'];
+			if(isset($field['mapped'])){
+				
+				$mapped = $field['mapped'];
 			
-			if($field['type'] === 'normal'){
-				
-				$client_details_html .= '<p>';
-
-				if(strtolower($field['text']) === 'phone' || strtolower($field['text']) === 'gst/tax #' || strtolower($field['text']) === 'website'){
-					$client_details_html .= $field['text'].' :';
-				}else{
-					$client_details_html .= ' ';
-				}
-				
-				foreach($mapped as $mapped_field){
+				if($field['type'] === 'normal'){
 					
-					if(strtolower($field['text']) === 'country'){
-						$client_details_html .= ' '.$this->context['invoice_data']->client_wt->billing_country->country_name;
+					$client_details_html .= '<p>';
+
+					if(strtolower($field['text']) === 'phone' || strtolower($field['text']) === 'gst/tax #' || strtolower($field['text']) === 'website'){
+						$client_details_html .= $field['text'].' :';
 					}else{
-						$client_details_html .= ' '.$this->context['invoice_data']->client_wt[$mapped_field];
+						$client_details_html .= ' ';
 					}
 					
+					foreach($mapped as $mapped_field){
+						
+						if(strtolower($field['text']) === 'country'){
+							$client_details_html .= ' '.$this->context['invoice_data']->client_wt->billing_country->country_name;
+						}else{
+							$client_details_html .= ' '.$this->context['invoice_data']->client_wt[$mapped_field];
+						}
+						
+					}
+
+					$client_details_html .= '</p>';
+
+				}else{
+
+					$client_details_html .= $this->renderCustomFields($field, 'client');
+
 				}
-
-				$client_details_html .= '</p>';
-
-			}else{
-
-				$client_details_html .= $this->renderCustomFields($field, 'client');
-
 			}
+			
 
 		}
 
@@ -172,14 +176,14 @@ class InvoiceRenderer{
 				 * process additional custom company fields here.
 				 */
 				$company_details_html .= '<p>';
-
+				
 				foreach($this->context['additional_company_fields'] as $additional_company_field){
-					if($field['id_column'] === $additional_company_field->id){
+					if((int) $field['id_column'] === (int) $additional_company_field->id){
 						$company_details_html .= $field['text'].' : ';
 						$company_details_html .= $additional_company_field->value;
 					}
 				}
-
+				
 				$company_details_html .= '</p>';
 
 			}
@@ -240,8 +244,65 @@ class InvoiceRenderer{
 
 	}
 
+	private function renderProductRows() : self {
+
+		$product_columns_html = '<thead>';
+
+		//generate headers for the product rows table
+		$product_columns_html = '<tr>';
+
+		foreach($this->context['product_rows_data'] as $row){
+			$product_columns_html .= '<th>';
+			$product_columns_html .= $row['text'];
+			$product_columns_html .= '</th>';
+		}
+
+		$product_columns_html .= '</tr>';
+		$product_columns_html .= '</thead>';
+
+		$product_columns_html .= '<tbody>';
+
+		foreach($this->context['invoice_items'] as $item){
+			
+			$product_columns_html .= '<tr>';
+			
+
+			foreach($this->context['product_rows_data'] as $row){
+				$product_columns_html .= '<td>';
+
+				if($row['type'] === 'normal'){
+					$mapped = $row['mapped'];
+					if($mapped[0] === 'tax'){
+						//go for default tax from invoice_items table.
+					}else{
+						if($mapped[0] === 'product_id'){
+							$product_columns_html .= $item->product->product_name;
+						}else{
+							$product_columns_html .= $item->{$mapped[0]};
+						}
+						
+					}
+
+				}else{
+					//this is for custom fields.
+				}	
+
+				$product_columns_html .= '</td>';
+			}
+			
+
+			$product_columns_html .= '</tr>';
+		}
+
+		$product_columns_html .= '</tbody>';
+
+		$this->contents = str_ireplace('{{$render_product_rows}}', $product_columns_html, $this->contents);
+
+		return $this;
+	}
+
 	public function render(){
-		$this->renderClientDetails()->renderCompanyDetails()->renderInvoiceDetails();
+		$this->renderClientDetails()->renderCompanyDetails()->renderInvoiceDetails()->renderProductRows();
 		return $this->contents;
 	}
 
