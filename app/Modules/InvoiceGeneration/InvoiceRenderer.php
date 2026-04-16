@@ -250,7 +250,7 @@ class InvoiceRenderer{
 
 		//generate headers for the product rows table
 		$product_columns_html = '<tr>';
-
+		
 		foreach($this->context['product_rows_data'] as $row){
 			$product_columns_html .= '<th>';
 			$product_columns_html .= $row['text'];
@@ -268,12 +268,13 @@ class InvoiceRenderer{
 			
 
 			foreach($this->context['product_rows_data'] as $row){
+
 				$product_columns_html .= '<td>';
 
 				if($row['type'] === 'normal'){
 					$mapped = $row['mapped'];
 					if($mapped[0] === 'tax'){
-						//go for default tax from invoice_items table.
+						$product_columns_html .= (double) $item->tax.'%';
 					}else{
 						if($mapped[0] === 'product_id'){
 							$product_columns_html .= $item->product->product_name;
@@ -284,14 +285,24 @@ class InvoiceRenderer{
 					}
 
 				}else{
-					//this is for custom fields.
+					//for custom product row fields.
+					if((int) $row['tax'] === 1){
+
+						//for tax fields
+						$product_columns_html .= (double) $row['tax_rate'].'%';
+
+					}else{
+						$product_columns_html .= $row['text'];
+					}
 				}	
 
 				$product_columns_html .= '</td>';
+
 			}
 			
 
 			$product_columns_html .= '</tr>';
+
 		}
 
 		$product_columns_html .= '</tbody>';
