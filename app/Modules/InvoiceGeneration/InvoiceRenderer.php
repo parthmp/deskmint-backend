@@ -2,6 +2,8 @@
 
 namespace App\Modules\InvoiceGeneration;
 
+use App\Repositories\Company\CompanyRepository;
+use App\Services\CompanySettingsLogo\CompanySettingsLogoService;
 use Carbon\Carbon;
 
 class InvoiceRenderer{
@@ -9,6 +11,7 @@ class InvoiceRenderer{
 	private string $contents;
 	private array $context;
 	private int $time_offset_minutes;
+	private CompanySettingsLogoService $company_settings_logo_service;
 
 	/**
 	 * __construct function
@@ -21,6 +24,7 @@ class InvoiceRenderer{
 		$this->contents = $contents;
 		$this->context = $context;
 		$this->time_offset_minutes = $time_offset_minutes;
+		$this->company_settings_logo_service = new CompanySettingsLogoService(new CompanyRepository());
 	}
 
 	/**
@@ -105,7 +109,7 @@ class InvoiceRenderer{
 			
 				if($field['type'] === 'normal'){
 					
-					$client_details_html .= '<p>';
+					$client_details_html .= '<p class="'.strtolower(str_ireplace('#', 'number', str_ireplace(' ', '_', $field['text']))).'">';
 
 					if(strtolower($field['text']) === 'phone' || strtolower($field['text']) === 'gst/tax #' || strtolower($field['text']) === 'website'){
 						$client_details_html .= $field['text'].' :';
@@ -153,10 +157,11 @@ class InvoiceRenderer{
 		foreach($this->context['company_details_settings'] as $field){
 			
 			$mapped = $field['mapped'];
+			
 
 			if($field['type'] === 'normal'){
 
-				$company_details_html .= '<p>';
+				$company_details_html .= '<p class="'.strtolower(str_ireplace('#', 'number', str_ireplace(' ', '_', $field['text']))).'">';
 
 				if(strtolower($field['text']) === 'phone' || strtolower($field['text']) === 'GST - VAT number'){
 					$company_details_html .= $field['text'].' :';
@@ -203,7 +208,7 @@ class InvoiceRenderer{
 	 *
 	 * @return InvoiceRenderer
 	 */
-	private function renderInvoiceDetails() : InvoiceRenderer{
+	private function renderInvoiceDetails() : InvoiceRenderer {
 
 		$invoice_details_html = '';
 		
@@ -213,7 +218,7 @@ class InvoiceRenderer{
 			
 			if($field['type'] === 'normal'){
 				
-				$invoice_details_html .= '<p>';
+				$invoice_details_html .= '<p class="'.strtolower(str_ireplace('#', 'number', str_ireplace(' ', '_', $field['text']))).'">';
 
 				if(strtolower($field['text']) === 'phone' || strtolower($field['text']) === 'gst/tax #' || strtolower($field['text']) === 'website'){
 					$invoice_details_html .= $field['text'].' :';
@@ -224,7 +229,8 @@ class InvoiceRenderer{
 				foreach($mapped as $mapped_field){
 					$invoice_details_html .= $field['text'].' : '.$this->context['invoice_data'][$mapped_field];
 				}
-
+				
+				
 				$lowercase_field_text = trim(strtolower($field['text']));
 				if($lowercase_field_text === 'total' || $lowercase_field_text === 'balance due'){
 					$invoice_details_html .= ' '.$this->context['invoice_data']->client_wt->currency->code;
@@ -364,8 +370,74 @@ class InvoiceRenderer{
 		return $this;
 	}
 
+	/**
+	 * renderLogo function
+	 *
+	 * @return self
+	 */
+	private function renderLogo() : self {
+
+		$logo = '<img width="'.$this->context['general_settings']['logo_size'].'" src="'.$this->company_settings_logo_service->fetch($this->context['invoice_data']->company->id).'">';
+
+		$this->contents = str_ireplace('{{$render_logo}}', $logo, $this->contents);
+
+		return $this;
+
+	}
+
+	/**
+	 * modifyThemeColors function
+	 *
+	 * @return self
+	 */
+	private function modifyThemeColors() : self {
+
+		$primary = '#1f2937';
+		
+		if(isset($this->context['general_settings']['primary_color'])){
+			if(trim($this->context['general_settings']['primary_color']) !== ''){
+				$primary = $this->context['general_settings']['primary_color'];
+			}
+		}
+
+		$secondary = '#333';
+
+		if(isset($this->context['general_settings']['secondary_color'])){
+			if(trim($this->context['general_settings']['secondary_color']) !== ''){
+				$secondary = $this->context['general_settings']['secondary_color'];
+			}
+		}
+
+		$this->contents = str_ireplace('{{$render_primary_color}}', $primary, $this->contents);
+		$this->contents = str_ireplace('{{$render_secondary_color}}', $secondary, $this->contents);
+		return $this;
+	}
+
+	/**
+	 * modifyFontSize function
+	 *
+	 * @return self
+	 */
+	private function modifyFontSize() : self {
+
+		$font = 14;
+
+		if(isset($this->context['general_settings']['font_size'])){
+			if(trim($this->context['general_settings']['font_size']) !== ''){
+				$font = (int) $this->context['general_settings']['font_size'];
+			}
+		}
+
+		$font_inc = $font + 2;
+
+		$this->contents = str_ireplace('{{$render_font_size}}', $font.'px', $this->contents);
+		$this->contents = str_ireplace('{{$render_font_size_inc}}', $font_inc.'px', $this->contents);
+
+		return $this;
+	}
+
 	public function render(){
-		$this->renderClientDetails()->renderCompanyDetails()->renderInvoiceDetails()->renderProductRows()->renderTotals()->renderTerms()->renderFooter();
+		$this->renderLogo()->renderClientDetails()->renderCompanyDetails()->renderInvoiceDetails()->renderProductRows()->renderTotals()->renderTerms()->renderFooter()->modifyThemeColors()->modifyFontSize();
 		return $this->contents;
 	}
 

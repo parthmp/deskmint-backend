@@ -5,8 +5,8 @@
     <style>
         body {
             font-family: DejaVu Sans, Arial, sans-serif;
-            font-size: 12px;
-            color: #333;
+            font-size: {{$render_font_size}};
+            color: {{$render_secondary_color}};
         }
 
         table {
@@ -14,24 +14,19 @@
             border-collapse: collapse;
         }
 
-        .header {
-            background: #1f2937;
-            color: #fff;
-        }
-
-        .header td {
-            padding: 12px;
+        .ribbon {
+            background: {{$render_primary_color}};
         }
 
         .title {
-            font-size: 20px;
+            font-size: {{$render_font_size_inc}};
             font-weight: bold;
         }
 
         .items th {
             background: #e5e7eb;
             padding: 8px;
-            border-bottom: 2px solid #1f2937;
+            border-bottom: 2px solid {{$render_primary_color}};
         }
 
         .items td {
@@ -42,84 +37,62 @@
         .right {
             text-align: right;
         }
-
-        .total {
-            font-size: 14px;
-            font-weight: bold;
-            border-top: 2px solid #1f2937;
-        }
+		.invoice_number, .company_name, .name, .total_fields{
+			font-size: {{$render_font_size_inc}};
+			font-weight: bold;
+		}
     </style>
 </head>
 <body>
-
-<table class="header">
+<table cellpadding="10">
+	<tr>
+		<td align="right">{{$render_logo}}</td>
+	</tr>
+</table>
+<table cellpadding="10">
     <tr>
         <td>
 			{{$render_client_details}}
-            <!-- <p style="font-size: 26px;">{{ $company['name'] }}</p>
-            <p style="font-size: 16px;">{{ $company['name'] }}</p> -->
         </td>
-		 <td>
+		<td align="left">
 			{{$render_company_details}}
-            <!-- <p style="font-size: 26px;">{{ $company['name'] }}</p>
-            <p style="font-size: 16px;">{{ $company['name'] }}</p> -->
         </td>
-        <td class="right">
+        <td align="right">
 			{{$render_invoice_details}}
-            <!-- <div class="title">INVOICE</div>
-            #{{ $invoice['number'] }}<br>
-            {{ $invoice['date'] }} -->
         </td>
     </tr>
 </table>
 
-<br>
+<p class="ribbon">
+	<br>
+</p>
 
-<table class="items">
+<table class="items" cellpadding="10">
 	{{$render_product_rows}}
-    <!-- <thead>
-        <tr>
-            <th>Description</th>
-            <th class="right">Qty</th>
-            <th class="right">Rate</th>
-            <th class="right">Amount</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach ($items as $item)
-        <tr>
-            <td>{{ $item['name'] }}</td>
-            <td class="right">{{ $item['qty'] }}</td>
-            <td class="right">{{ $item['rate'] }}</td>
-            <td class="right">{{ $item['total'] }}</td>
-        </tr>
-        @endforeach
-    </tbody>
-    <tfoot>
-        <tr>
-            <td colspan="3" class="right total">Total</td>
-            <td class="right total">{{ $totals['grand'] }}</td>
-        </tr>
-    </tfoot> -->
 </table>
 <br>
-<table>
-	{{$render_total_fields}}
-	<!-- <tr>
-		<td>Total : 123 USD</td>
-	</tr>
+<span class="total_fields">
+	<table cellpadding="10">
+		<tr>
+			<td></td>
+			<td align="right">{{$render_total_fields}}</td>
+		</tr>
+	</table>
+	
+</span>
+<br>
+<br>
+<table cellpadding="10">
 	<tr>
-		<td>Total : 123</td>
+		<td><p>{{$render_terms}}</p></td>
 	</tr>
-	<tr>
-		<td>Total : 123</td>
-	</tr> -->
 </table>
 <br>
-<br>
-<p>{{$render_terms}}</p>
-<br>
-<p>{{$render_footer}}</p>
+<table cellpadding="10">
+	<tr>
+		<td><p>{{$render_footer}}</p></td>
+	</tr>
+</table>
 <br>
 <br>
 </body>
