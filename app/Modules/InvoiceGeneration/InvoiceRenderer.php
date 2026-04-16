@@ -312,8 +312,60 @@ class InvoiceRenderer{
 		return $this;
 	}
 
+	/**
+	 * renderTotals function
+	 *
+	 * @return self
+	 */
+	private function renderTotals() : self {
+
+		$currency_code = $this->context['invoice_data']->client_wt->currency->code;
+
+		$total_fields = '';
+
+		foreach($this->context['total_fields_settings'] as $field){
+			
+			$mapped = $field['mapped'][0];
+			$total_fields .= '<p>'.$field['text'].': '.(double) $this->context['invoice_data'][$mapped].' '.$currency_code.'</p>';
+
+		}
+
+		$this->contents = str_ireplace('{{$render_total_fields}}', $total_fields, $this->contents);
+
+		return $this;
+	}
+
+	/**
+	 * renderTerms function
+	 *
+	 * @return self
+	 */
+	private function renderTerms() : self {
+
+		$terms = $this->context['invoice_data']->company->invoice_terms;
+
+		$this->contents = str_ireplace('{{$render_terms}}', $terms, $this->contents);
+
+		return $this;
+
+	}
+
+	/**
+	 * renderFooter function
+	 *
+	 * @return self
+	 */
+	private function renderFooter() : self{
+
+		$footer = $this->context['invoice_data']->company->invoice_footer;
+
+		$this->contents = str_ireplace('{{$render_footer}}', $footer, $this->contents);
+
+		return $this;
+	}
+
 	public function render(){
-		$this->renderClientDetails()->renderCompanyDetails()->renderInvoiceDetails()->renderProductRows();
+		$this->renderClientDetails()->renderCompanyDetails()->renderInvoiceDetails()->renderProductRows()->renderTotals()->renderTerms()->renderFooter();
 		return $this->contents;
 	}
 

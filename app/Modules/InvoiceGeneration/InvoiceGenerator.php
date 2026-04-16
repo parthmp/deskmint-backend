@@ -46,15 +46,6 @@ class InvoiceGenerator{
 	}
 
 	/**
-	 * fetchInvoiceData function
-	 *
-	 * @return Invoice
-	 */
-	private function fetchInvoiceData() : Invoice {
-		return $this->invoice_db_operations->fetchInvoiceRow();
-	}
-
-	/**
 	 * generateContextArrayForRenderer function
 	 *
 	 * @return array
@@ -77,7 +68,7 @@ class InvoiceGenerator{
 
 		$context['product_rows_data'] = $this->invoice_settings_resolver->fetchProductRowsSettings($context['invoice_data'], (int) $this->company_id);
 		$context['invoice_items'] = $this->invoice_db_operations->fetchInvoiceItems();
-
+		
 		return $context;
 	}
 

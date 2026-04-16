@@ -239,7 +239,7 @@ class InvoiceBaseService{
 		$global_discount_amount = $totals['global_discount_amount'];
 
 		return [
-			'settings' 					=> $settings,
+			'settings' 					=>  $settings,
 			'client_id'					=>	$client_id,
 			'company_id'				=>	$company_id,
 			'invoice_number'			=>	$invoice_number,
@@ -270,6 +270,10 @@ class InvoiceBaseService{
 	 */
 	public function resetManualInvoieNumberResetFlag(int $company_id) : void {
 		$this->invoice_number_service->resetManualInvoieNumberResetFlag($company_id);
+	}
+
+	protected function calculateInvoiceTotals(array $rows) : array {
+
 	}
 
 	public function saveOrUpdate(Request $request, int $company_id) : void {
