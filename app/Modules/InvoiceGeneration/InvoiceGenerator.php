@@ -11,6 +11,7 @@ class InvoiceGenerator{
 
 	private int $company_id;
 	private int $invoice_id;
+	private string $contents;
 	private InvoiceSettingsResolver $invoice_settings_resolver;
 	private InvoiceDBOperations $invoice_db_operations;
 	
@@ -23,8 +24,9 @@ class InvoiceGenerator{
 	public function __construct(int $company_id, int $invoice_id){
 		$this->company_id = $company_id;
 		$this->invoice_id = $invoice_id;
-		$this->invoice_settings_resolver = new InvoiceSettingsResolver($company_id, $invoice_id);
-		$this->invoice_db_operations = new InvoiceDBOperations($company_id, $invoice_id);
+		$this->contents = '';
+		$this->invoice_settings_resolver = new InvoiceSettingsResolver($company_id, $this->invoice_id);
+		$this->invoice_db_operations = new InvoiceDBOperations($company_id, $this->invoice_id);
 	}
 
 	/**
@@ -72,18 +74,29 @@ class InvoiceGenerator{
 		return $context;
 	}
 
-	private function modifyInvoiceTemplate() : string {
-		$contents = $this->fetchTemplateContents();
-		$renderer = new InvoiceRenderer($contents, $this->generateContextArrayForRenderer());
-		return $renderer->render();
+	/**
+	 * modifyInvoiceTemplate function
+	 *
+	 * @return self
+	 */
+	public function modifyInvoiceTemplate() : self {
+		$this->contents = $this->fetchTemplateContents();
+		$renderer = new InvoiceRenderer($this->contents, $this->generateContextArrayForRenderer());
+		$this->contents = $renderer->render();
+		return $this;
 	}
 
-	public function generateInvoice() : string {
+	/**
+	 * getInvoiceHTML function
+	 *
+	 * @return string
+	 */
+	public function getInvoiceHTML() : string {
+		return $this->contents;
+	}
 
-		/* generate invoice here */
-		//return $this->invoice_settings_resolver->fetchClientDetails();
-		return $this->modifyInvoiceTemplate();
-
+	public function generatePDF(){
+		
 	}
 
 
