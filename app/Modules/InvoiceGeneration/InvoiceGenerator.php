@@ -6,6 +6,8 @@ use App\Models\Invoice;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\App;
 
 class InvoiceGenerator{
 
@@ -96,7 +98,9 @@ class InvoiceGenerator{
 	}
 
 	public function generatePDF(){
-		
+		$pdf = App::make('dompdf.wrapper');
+		$pdf->loadHTML($this->contents);
+		return $pdf->stream();
 	}
 
 

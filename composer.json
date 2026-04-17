@@ -10,7 +10,8 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-		"brick/math": "^0.14",
+        "barryvdh/laravel-dompdf": "^3.1",
+        "brick/math": "^0.14",
         "doctrine/dbal": "^4.3",
         "laravel/framework": "^13.0",
         "laravel/sanctum": "^4.0",

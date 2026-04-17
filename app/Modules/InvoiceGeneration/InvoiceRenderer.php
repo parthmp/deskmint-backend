@@ -377,8 +377,11 @@ class InvoiceRenderer{
 	 */
 	private function renderLogo() : self {
 
-		$logo = '<img width="'.$this->context['general_settings']['logo_size'].'" src="'.$this->company_settings_logo_service->fetch($this->context['invoice_data']->company->id).'">';
-
+		$storage_path = storage_path('app/public/logos/'.$this->context['invoice_data']->company_id.'/'.$this->context['invoice_data']->company_wt->logo);
+		$encoded = base64_encode(file_get_contents($storage_path));
+		$mime = mime_content_type($storage_path);
+		$logo = '<img width="'.$this->context['general_settings']['logo_size'].'" src="data:'.$mime.';base64, '.$encoded.'">';
+		
 		$this->contents = str_ireplace('{{$render_logo}}', $logo, $this->contents);
 
 		return $this;
