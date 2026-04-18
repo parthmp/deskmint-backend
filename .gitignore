@@ -19,6 +19,7 @@ docker.dev/.env
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/temp
 /vendor
 Homestead.json
 Homestead.yaml

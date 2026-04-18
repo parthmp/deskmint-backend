@@ -3,10 +3,10 @@
 namespace App\Modules\InvoiceGeneration;
 
 use App\Models\Invoice;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\App;
 
 class InvoiceGenerator{
@@ -16,6 +16,10 @@ class InvoiceGenerator{
 	private string $contents;
 	private InvoiceSettingsResolver $invoice_settings_resolver;
 	private InvoiceDBOperations $invoice_db_operations;
+	private mixed $pdf_object;
+	private int $time_offset_minutes;
+	private ?Invoice $invoice_data;
+	private string $filename = '';
 	
 	/**
 	 * __construct function
@@ -23,12 +27,38 @@ class InvoiceGenerator{
 	 * @param integer $company_id
 	 * @param integer $invoice_id
 	 */
-	public function __construct(int $company_id, int $invoice_id){
+	public function __construct(int $company_id, int $invoice_id, string $time_offset_minutes){
 		$this->company_id = $company_id;
 		$this->invoice_id = $invoice_id;
 		$this->contents = '';
 		$this->invoice_settings_resolver = new InvoiceSettingsResolver($company_id, $this->invoice_id);
 		$this->invoice_db_operations = new InvoiceDBOperations($company_id, $this->invoice_id);
+		$this->time_offset_minutes = $time_offset_minutes;
+	}
+
+	/**
+	 * Undocumented function
+	 *
+	 * @param string $date
+	 * @param boolean $show_time
+	 * @return string
+	 */
+	protected function formatDateTime(string $date, bool $show_time = false, $sql_format = false) : string {
+		
+		$date_obj = Carbon::parse($date);
+
+		if($this->time_offset_minutes < 0){
+			$date_obj->subMinutes(abs($this->time_offset_minutes));	
+		}else if($this->time_offset_minutes > 0){
+			$date_obj->addMinutes(abs($this->time_offset_minutes));	
+		}
+
+		if(!$sql_format){
+			return $show_time ? $date_obj->format('d-M-Y H:i:s') : $date_obj->format('d-M-Y');
+		}
+
+		return $show_time ? $date_obj->format('Y-m-d H:i:s') : $date_obj->format('Y-m-d');
+
 	}
 
 	/**
@@ -72,6 +102,8 @@ class InvoiceGenerator{
 
 		$context['product_rows_data'] = $this->invoice_settings_resolver->fetchProductRowsSettings($context['invoice_data'], (int) $this->company_id);
 		$context['invoice_items'] = $this->invoice_db_operations->fetchInvoiceItems();
+
+		$this->invoice_data = $context['invoice_data'];
 		
 		return $context;
 	}
@@ -97,10 +129,52 @@ class InvoiceGenerator{
 		return $this->contents;
 	}
 
-	public function generatePDF(){
-		$pdf = App::make('dompdf.wrapper');
-		$pdf->loadHTML($this->contents);
-		return $pdf->stream();
+	/**
+	 * generatePDF function
+	 *
+	 * @param string $pdf_path
+	 * @return self
+	 */
+	public function generatePDF(bool $save = false, bool $add_random = false) : self {
+
+		$this->pdf_object = App::make('dompdf.wrapper');
+		$this->pdf_object->loadHTML($this->contents);
+
+		$filename = $this->formatDateTime($this->invoice_data->created_at, true, true);
+		if($add_random){
+			$filename .= '_' . uniqid();
+		}
+
+		$filename .= '.pdf';
+		$filename = (string) str_ireplace([' ', ':', '-'], '_', $filename);
+		$this->filename = $filename;
+
+		if($save){
+
+			$disk = Storage::disk('temp_invoices');
+			$disk->put($filename, $this->pdf_object->output());
+			
+		}
+
+		return $this;
+	}
+	
+	/**
+	 * stream function
+	 *
+	 * @return mixed
+	 */
+	public function stream() : mixed {
+		return $this->pdf_object->stream();
+	}
+
+	/**
+	 * download function
+	 *
+	 * @return mixed
+	 */
+	public function download() : mixed {
+		return $this->pdf_object->download($this->filename);
 	}
 
 

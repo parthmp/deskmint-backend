@@ -6,7 +6,7 @@ use App\Repositories\Company\CompanyRepository;
 use App\Services\CompanySettingsLogo\CompanySettingsLogoService;
 use Carbon\Carbon;
 
-class InvoiceRenderer{
+class InvoiceRenderer extends InvoiceGenerator{
 
 	private string $contents;
 	private array $context;
@@ -25,27 +25,6 @@ class InvoiceRenderer{
 		$this->context = $context;
 		$this->time_offset_minutes = $time_offset_minutes;
 		$this->company_settings_logo_service = new CompanySettingsLogoService(new CompanyRepository());
-	}
-
-	/**
-	 * Undocumented function
-	 *
-	 * @param string $date
-	 * @param boolean $show_time
-	 * @return string
-	 */
-	private function formatDateTime(string $date, bool $show_time = false) : string {
-		
-		$date_obj = Carbon::parse($date);
-
-		if($this->time_offset_minutes < 0){
-			$date_obj->subMinutes(abs($this->time_offset_minutes));	
-		}else if($this->time_offset_minutes > 0){
-			$date_obj->addMinutes(abs($this->time_offset_minutes));	
-		}
-
-		return $show_time ? $date_obj->format('d-M-Y H:i:s') : $date_obj->format('d-M-Y');
-
 	}
 
 	/**
