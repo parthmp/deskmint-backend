@@ -20,6 +20,7 @@ class InvoiceGenerator{
 	private int $time_offset_minutes;
 	private ?Invoice $invoice_data;
 	private string $filename = '';
+	private string $disk = 'temp_invoices';
 	
 	/**
 	 * __construct function
@@ -136,6 +137,8 @@ class InvoiceGenerator{
 	 * @return self
 	 */
 	public function generatePDF(bool $save = false, bool $add_random = false) : self {
+		
+		$this->modifyInvoiceTemplate();
 
 		$this->pdf_object = App::make('dompdf.wrapper');
 		$this->pdf_object->loadHTML($this->contents);
@@ -151,7 +154,7 @@ class InvoiceGenerator{
 
 		if($save){
 
-			$disk = Storage::disk('temp_invoices');
+			$disk = Storage::disk($this->disk);
 			$disk->put($filename, $this->pdf_object->output());
 			
 		}
@@ -165,6 +168,11 @@ class InvoiceGenerator{
 	 * @return mixed
 	 */
 	public function stream() : mixed {
+
+		if($this->filename && Storage::disk($this->disk)->exists($this->filename)) {
+			return response()->file(Storage::disk($this->disk)->path($this->filename));
+		}
+		
 		return $this->pdf_object->stream();
 	}
 
@@ -174,8 +182,14 @@ class InvoiceGenerator{
 	 * @return mixed
 	 */
 	public function download() : mixed {
-		return $this->pdf_object->download($this->filename);
-	}
 
+		if($this->filename && Storage::disk($this->disk)->exists($this->filename)) {
+			return Storage::disk($this->disk)->download($this->filename);
+		}
+		
+		// Fallback to streaming from memory
+		return $this->pdf_object->download($this->filename);
+
+	}
 
 }
