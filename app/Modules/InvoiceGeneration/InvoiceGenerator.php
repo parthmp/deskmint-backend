@@ -168,6 +168,15 @@ class InvoiceGenerator{
 
 		return $this;
 	}
+
+	private function ifInvoiceDataAvailable() : bool {
+
+		if($this->filename && Storage::disk($this->disk)->exists($this->invoice_id.DIRECTORY_SEPARATOR.$this->filename)) {
+			return true;
+		}
+
+		return false;
+	}
 	
 	/**
 	 * stream function
@@ -176,7 +185,7 @@ class InvoiceGenerator{
 	 */
 	public function stream() : mixed {
 
-		if($this->filename && Storage::disk($this->disk)->exists($this->invoice_id.DIRECTORY_SEPARATOR.$this->filename)) {
+		if($this->ifInvoiceDataAvailable()) {
 			return response()->file(Storage::disk($this->disk)->path($this->invoice_id.DIRECTORY_SEPARATOR.$this->filename));
 		}
 		
@@ -190,12 +199,42 @@ class InvoiceGenerator{
 	 */
 	public function download() : mixed {
 
-		if($this->filename && Storage::disk($this->disk)->exists($this->invoice_id.DIRECTORY_SEPARATOR.$this->filename)) {
+		if($this->ifInvoiceDataAvailable()) {
 			return Storage::disk($this->disk)->download($this->invoice_id.DIRECTORY_SEPARATOR.$this->filename);
 		}
 		
 		// Fallback to streaming from memory
 		return $this->pdf_object->download($this->filename);
+
+	}
+
+	private function parseEmailContent(string $content) : string {
+
+		$currency = $this->invoice_data->client_wt->currency->code;
+
+		$search = [
+			'{$client_first_name}',
+			'{$client_last_name}',
+			'{$invoice_date}',
+			'{$due_date}',
+			'{$invoice_number}',
+			'{$payment_url}'
+		];
+
+		$replace = [
+			$this->invoice_data->client_wt->first_name,
+			$this->invoice_data->client_wt->last_name,
+			Carbon::parse($this->invoice_data->invoice_date)->format('d-M-Y'),
+			Carbon::parse($this->invoice_data->due_date)->format('d-M-Y'),
+			$this->invoice_data->invoice_number,
+			'this will be payment url soon'
+		];
+
+		$content = str_ireplace($search, $replace, $content);
+		$content = str_ireplace('{$invoice_total}', $this->invoice_data->total.' '.$currency, $content);
+		$content = str_ireplace('{$unpaid_balance}', $this->invoice_data->balance_due.' '.$currency, $content);
+		
+		return $content;
 
 	}
 
@@ -206,12 +245,17 @@ class InvoiceGenerator{
 	 */
 	public function sendEmail() : void {
 
+		if(!$this->ifInvoiceDataAvailable()){
+			Log::alert('Could not send invoice as an attachment. invoice #:'.$this->invoice_id);
+			throw new Exception('Could not send invoice as an attachment.');
+		}
+
 		$email_json = json_decode($this->invoice_content->settings_json);
 
 		Mail::to($this->invoice_data->client_wt->email)->send(new SendInvoice([
 			'disk'		=>	$this->disk,
 			'path'		=>  $this->invoice_id.DIRECTORY_SEPARATOR.$this->filename,
-			'content'	=>	$email_json->email_content_invoice
+			'content'	=>	$this->parseEmailContent($email_json->email_content_invoice)
 		]));
 	}
 

@@ -3,7 +3,7 @@
 @section('content')
 	<tr>
 		<td>
-			<p>{{ $mail_data['content'] }}</p>
+			<p>{!! nl2br(e($mail_data['content'])) !!}</p>
 		</td>
 	</tr>
 @endsection
