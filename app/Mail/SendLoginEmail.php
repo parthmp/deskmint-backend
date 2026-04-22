@@ -12,8 +12,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Request;
 
 
-class SendLoginEmail extends Mailable
-{
+class SendLoginEmail extends Mailable implements ShouldQueue {
     use Queueable, SerializesModels;
 
 	private $user;

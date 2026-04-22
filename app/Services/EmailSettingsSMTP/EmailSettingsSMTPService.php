@@ -6,6 +6,7 @@ use App\Models\SettingsSection;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use App\Traits\SettingsDefault;
 use Exception;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 
 /**
@@ -106,18 +107,24 @@ class EmailSettingsSMTPService{
 				$setting_record = $this->settings_section_repository->createObj($data['company_id'], $this->type);
 			}
 
-			
-			$json_string = json_encode([
+			$data = [
 				'host'					=>	$data['host'],
 				'port'					=>	$data['port'],
 				'username'				=>	$data['username'],
-				'password'				=>	encrypt($data['password']),
+				'password'				=>	$data['password'],
 				'encryption'			=>	$data['encryption'],
 				'mail_from_address'		=>	$data['mail_from_address'],
 				'mail_from_name'		=>	$data['mail_from_name'],
 				'reply_to_address'		=>	$data['reply_to_address'],
 				'test_email_address'	=>	$data['test_email_address']
-			]);
+			];
+
+			//clearing cache for custom smtp settings.
+			Cache::forget('smtp_settings');
+			
+			$data['password'] = encrypt($data['password']);
+			
+			$json_string = json_encode($data);
 
 			return $this->settings_section_repository->updateByObj($json_string, $setting_record);
 

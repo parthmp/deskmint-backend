@@ -7,6 +7,7 @@ use App\Http\Requests\EmailSettingsSMTP\CreateEmailSettingsSMTPRequest;
 use App\Http\Requests\GenericRequest;
 use App\Services\EmailSettingsSMTP\EmailSettingsSMTPService;
 use Exception;
+use Illuminate\Support\Facades\Cache;
 
 class EmailSettingsSMTPController extends Controller{
 

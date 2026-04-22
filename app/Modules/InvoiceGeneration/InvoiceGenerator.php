@@ -2,17 +2,23 @@
 
 namespace App\Modules\InvoiceGeneration;
 
+use App\Jobs\SendEmailJob;
 use App\Mail\SendInvoice;
 use App\Models\Invoice;
 use App\Models\SettingsSection;
+use App\Traits\CustomMailSettings;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
 class InvoiceGenerator{
+
+	use CustomMailSettings;
 
 	private int $company_id;
 	private int $invoice_id;
@@ -252,11 +258,19 @@ class InvoiceGenerator{
 
 		$email_json = json_decode($this->invoice_content->settings_json);
 
-		Mail::to($this->invoice_data->client_wt->email)->send(new SendInvoice([
+		$data = [
 			'disk'		=>	$this->disk,
 			'path'		=>  $this->invoice_id.DIRECTORY_SEPARATOR.$this->filename,
 			'content'	=>	$this->parseEmailContent($email_json->email_content_invoice)
-		]));
+		];
+
+		SendEmailJob::dispatch(
+			to: $this->invoice_data->client_wt->email,
+			to_name: $this->invoice_data->client_wt->first_name.' '.$this->invoice_data->client_wt->last_name,
+			mailable_class: \App\Mail\SendInvoice::class,
+			mailable_data: [$data],
+			smtp: $this->smtpSettings()
+		);
 	}
 
 }

@@ -9,9 +9,11 @@ use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Mail;
 
-class SendInvoice extends Mailable
-{
+class SendInvoice extends Mailable {
+	
     use Queueable, SerializesModels;
 
 	private array $mail_data;
@@ -57,4 +59,5 @@ class SendInvoice extends Mailable
 			Attachment::fromStorageDisk($this->mail_data['disk'], $this->mail_data['path'])
 		];
     }
+
 }

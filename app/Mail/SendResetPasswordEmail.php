@@ -11,7 +11,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Support\Facades\Request;
 
-class SendResetPasswordEmail extends Mailable
+class SendResetPasswordEmail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
