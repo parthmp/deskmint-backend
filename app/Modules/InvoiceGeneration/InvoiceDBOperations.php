@@ -140,4 +140,13 @@ class InvoiceDBOperations{
 		return InvoiceItem::where([['invoice_id', '=', $this->invoice_id]])->withTrashed()->with('product')->get();
 	}
 
+	/**
+	 * fetchEmailContentSettings function
+	 *
+	 * @return SettingsSection|null
+	 */
+	public function fetchEmailContentSettings() : ?SettingsSection {
+		return SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ESC_EMAIL_CONTENT_TYPE]])->first();
+	}
+
 }

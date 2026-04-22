@@ -2,12 +2,15 @@
 
 namespace App\Modules\InvoiceGeneration;
 
+use App\Mail\SendInvoice;
 use App\Models\Invoice;
+use App\Models\SettingsSection;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Mail;
 
 class InvoiceGenerator{
 
@@ -21,6 +24,7 @@ class InvoiceGenerator{
 	private ?Invoice $invoice_data;
 	private string $filename = '';
 	private string $disk = 'temp_invoices';
+	private SettingsSection $invoice_content;
 	
 	/**
 	 * __construct function
@@ -92,6 +96,7 @@ class InvoiceGenerator{
 			'client_details_settings'	=>	$this->invoice_settings_resolver->fetchClientDetails(),
 			'company_details_settings'	=>	$this->invoice_settings_resolver->fetchCompanyDetails(),
 			'additional_company_fields'	=>	$this->invoice_db_operations->fetchAdditionalCompanyFields(),
+			'invoice_content_settings'	=>	$this->invoice_db_operations->fetchEmailContentSettings(),
 			'company_address_settings'	=>	$this->invoice_settings_resolver->fetchCompanyAddressDetails(),
 			'invoice_details_settings'	=>	$this->invoice_settings_resolver->fetchInvoiceDetails(),
 			'invoice_data'				=>	$this->invoice_db_operations->fetchInvoiceRow(),
@@ -105,6 +110,7 @@ class InvoiceGenerator{
 		$context['invoice_items'] = $this->invoice_db_operations->fetchInvoiceItems();
 
 		$this->invoice_data = $context['invoice_data'];
+		$this->invoice_content = $context['invoice_content_settings'];
 		
 		return $context;
 	}
@@ -133,7 +139,8 @@ class InvoiceGenerator{
 	/**
 	 * generatePDF function
 	 *
-	 * @param string $pdf_path
+	 * @param boolean $save
+	 * @param boolean $add_random
 	 * @return self
 	 */
 	public function generatePDF(bool $save = false, bool $add_random = false) : self {
@@ -155,7 +162,7 @@ class InvoiceGenerator{
 		if($save){
 
 			$disk = Storage::disk($this->disk);
-			$disk->put($filename, $this->pdf_object->output());
+			$disk->put($this->invoice_id.DIRECTORY_SEPARATOR.$filename, $this->pdf_object->output());
 			
 		}
 
@@ -169,8 +176,8 @@ class InvoiceGenerator{
 	 */
 	public function stream() : mixed {
 
-		if($this->filename && Storage::disk($this->disk)->exists($this->filename)) {
-			return response()->file(Storage::disk($this->disk)->path($this->filename));
+		if($this->filename && Storage::disk($this->disk)->exists($this->invoice_id.DIRECTORY_SEPARATOR.$this->filename)) {
+			return response()->file(Storage::disk($this->disk)->path($this->invoice_id.DIRECTORY_SEPARATOR.$this->filename));
 		}
 		
 		return $this->pdf_object->stream();
@@ -183,13 +190,29 @@ class InvoiceGenerator{
 	 */
 	public function download() : mixed {
 
-		if($this->filename && Storage::disk($this->disk)->exists($this->filename)) {
-			return Storage::disk($this->disk)->download($this->filename);
+		if($this->filename && Storage::disk($this->disk)->exists($this->invoice_id.DIRECTORY_SEPARATOR.$this->filename)) {
+			return Storage::disk($this->disk)->download($this->invoice_id.DIRECTORY_SEPARATOR.$this->filename);
 		}
 		
 		// Fallback to streaming from memory
 		return $this->pdf_object->download($this->filename);
 
+	}
+
+	/**
+	 * sendEmail function
+	 *
+	 * @return void
+	 */
+	public function sendEmail() : void {
+
+		$email_json = json_decode($this->invoice_content->settings_json);
+
+		Mail::to($this->invoice_data->client_wt->email)->send(new SendInvoice([
+			'disk'		=>	$this->disk,
+			'path'		=>  $this->invoice_id.DIRECTORY_SEPARATOR.$this->filename,
+			'content'	=>	$email_json->email_content_invoice
+		]));
 	}
 
 }
