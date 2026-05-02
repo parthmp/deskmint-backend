@@ -12,7 +12,6 @@ use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\App;
-use PhpParser\Node\Expr\Cast\Double;
 
 class InvoiceGenerator{
 
@@ -222,7 +221,7 @@ class InvoiceGenerator{
 		
 		$payment = match($payment_gateway){
 
-			PAYMENT_PAYPAL => new Payment(new PayPal($data['client_id'], $data['app_id'], $data['secret'], $data['mode'], $data['currency'], (float) $data['amount'])),
+			PAYMENT_PAYPAL => new Payment(new PayPal($this->invoice_id, $data['client_id'], $data['app_id'], $data['secret'], $data['mode'], $data['currency'], (float) $data['amount'])),
 			//PAYMENT_STRIPE => new Stripe(),
 		};
 
