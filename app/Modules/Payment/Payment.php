@@ -11,9 +11,9 @@ class Payment{
 	/**
 	 * paymentURL function
 	 *
-	 * @return string
+	 * @return null|string
 	 */
-	public function paymentURL() : string {
+	public function paymentURL() : ?string {
 		return $this->payment_gateway->generateUrl();
 	}
 

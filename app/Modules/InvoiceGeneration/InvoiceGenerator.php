@@ -247,7 +247,25 @@ class InvoiceGenerator{
 			$payment_settings = json_decode($payment_settings['settings_json'], true);
 			$payment_settings['currency'] = $currency;
 			$payment_settings['amount'] = $this->invoice_data->total;
+			$payment_settings['secret'] = decrypt($payment_settings['secret']);
+			
 			$payment_gateway_url = $this->generatePaymentURL((int) $this->invoice_data->payment_method, $payment_settings);
+
+			if(!$payment_gateway_url){
+				logger('failed to create payment url');
+				//send an email to admin/someone here to notify the failure.
+				$data = [
+					'first_name'			=>	$this->invoice_data->client_wt->first_name,
+					'payment_gateway'		=> $this->invoice_data->payment_method === PAYMENT_PAYPAL ? 'PayPal' : 'Stripe'
+				];
+				SendEmailJob::dispatch(
+					to: $this->invoice_data->client_wt->email,
+					to_name: $this->invoice_data->client_wt->first_name.' '.$this->invoice_data->client_wt->last_name,
+					mailable_class: \App\Mail\SendFailedPaymentURLGenerationEmail::class,
+					mailable_data: [$data],
+					smtp: $this->smtpSettings()
+				);
+			}
 		}
 		
 

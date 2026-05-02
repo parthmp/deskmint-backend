@@ -71,14 +71,13 @@ class PayPal implements PaymentGatewayInterface{
 	 * @return string|null
 	 */
 	public function generateURL() : ?string {
-		
+		return null;
 		$provider = new PayPalClient($this->wireUpCreds());
-		//$provider->setApiCredentials($this->wireUpCreds());
-
-		//$paypal_token = $provider->getAccessToken();
+		
+		$paypal_token = $provider->getAccessToken();
 
 		$response = $provider->createOrder($this->orderData());
-		return json_encode($response).'====';
+		
 		if(isset($response['id']) && $response['id'] != null){
 			foreach($response['links'] as $link) {
 				if($link['rel'] === 'approve') {
