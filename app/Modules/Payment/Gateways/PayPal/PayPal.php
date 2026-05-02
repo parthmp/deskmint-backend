@@ -71,7 +71,7 @@ class PayPal implements PaymentGatewayInterface{
 	 * @return string|null
 	 */
 	public function generateURL() : ?string {
-		return null;
+		
 		$provider = new PayPalClient($this->wireUpCreds());
 		
 		$paypal_token = $provider->getAccessToken();

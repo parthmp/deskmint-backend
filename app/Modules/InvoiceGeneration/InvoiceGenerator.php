@@ -264,17 +264,44 @@ class InvoiceGenerator{
 
 	}
 
+	/**
+	 * replaceBetweenTags function
+	 *
+	 * @param string $text
+	 * @param string $starting_tag
+	 * @param string $ending_tag
+	 * @param string $new_content
+	 * @return string
+	 */
+	private function replaceBetweenTags(string $text, string $starting_tag, string $ending_tag, string $new_content) : string {
+
+		$startPos = strpos($text, $starting_tag);
+
+		if ($startPos === false) return $text;
+		
+		$endPos = strpos($text, $ending_tag, $startPos + strlen($starting_tag));
+
+		if ($endPos === false) return $text;
+		
+		$before = substr($text, 0, $startPos + strlen($starting_tag));
+		$after = substr($text, $endPos);
+		
+		return $before.$new_content.$after;
+
+	}
+
 	private function parseEmailContent(string $content) : string {
 
 		$currency = $this->invoice_data->client_wt->currency->code;
 		
 		$payment_gateway_url = '';
 		
-		if((int) $this->invoice_data->payment_method === PAYMENT_PAYPAL || (int) $this->invoice_data->payment_method === PAYMENT_STRIPE){
+		if((int) $this->invoice_data->payment_method !== PAYMENT_CASH && (int) $this->invoice_data->payment_method !== PAYMENT_NETBANKING){
 			
 			$payment_settings = $this->invoice_db_operations->fetchPaymentSettings((int) $this->invoice_data->payment_method);
 			
 			if(!$payment_settings){
+				logger('something went wrong with payment settings data -> '.json_encode($payment_settings));
 				throw new Exception("something went wrong");
 			}
 			
@@ -310,9 +337,15 @@ class InvoiceGenerator{
 			$payment_gateway_url
 		];
 
+		if((int) $this->invoice_data->payment_method === PAYMENT_CASH || (int) $this->invoice_data->payment_method === PAYMENT_NETBANKING){
+			$content = $this->replaceBetweenTags($content,  '[{online-payment-start}]', '[{online-payment-end}]', '');
+		}
+
 		$content = str_ireplace($search, $replace, $content);
 		$content = str_ireplace('{$invoice_total}', $this->invoice_data->total.' '.$currency, $content);
 		$content = str_ireplace('{$unpaid_balance}', $this->invoice_data->balance_due.' '.$currency, $content);
+		$content = str_ireplace('[{online-payment-start}]', '', $content);
+		$content = str_ireplace('[{online-payment-end}]', '', $content);
 		
 		return $content;
 
