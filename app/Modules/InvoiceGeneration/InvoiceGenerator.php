@@ -6,6 +6,8 @@ use App\Jobs\SendEmailJob;
 use App\Mail\SendInvoice;
 use App\Models\Invoice;
 use App\Models\SettingsSection;
+use App\Modules\Gateways\PayPal\PayPal;
+use App\Modules\Payment\Payment;
 use App\Traits\CustomMailSettings;
 use Carbon\Carbon;
 use Exception;
@@ -214,9 +216,29 @@ class InvoiceGenerator{
 
 	}
 
+	/**
+	 * generatePaymentURL function
+	 *
+	 * @return string|null
+	 */
+	private function generatePaymentURL(int $payment_gateway, array $data) : ?string {
+
+		$payment = match($payment_gateway){
+			PAYMENT_PAYPAL => new PayPal(),
+			//PAYMENT_STRIPE => new Stripe(),
+		};
+
+		return $payment->generateURL();
+		
+	}
+
 	private function parseEmailContent(string $content) : string {
 
 		$currency = $this->invoice_data->client_wt->currency->code;
+		
+		$payment_url = $this->generatePaymentURL((int) $this->invoice_data->payment_method, [
+			
+		]);
 
 		$search = [
 			'{$client_first_name}',

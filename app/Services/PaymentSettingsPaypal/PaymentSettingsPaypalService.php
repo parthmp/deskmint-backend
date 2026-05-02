@@ -67,6 +67,7 @@ class PaymentSettingsPaypalService{
 
 		$json = json_encode([
 			'client_id'	=>	$data['client_id'],
+			'app_id'	=>	$data['app_id'],
 			'secret'	=>	$secret,
 			'mode'		=>	$data['mode'],
 		]);

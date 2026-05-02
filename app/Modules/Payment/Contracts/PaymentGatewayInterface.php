@@ -7,8 +7,8 @@ interface PaymentGatewayInterface{
 	/**
 	 * generateUrl function
 	 *
-	 * @return string
+	 * @return string|null
 	 */
-	public function generateUrl() : string;
+	public function generateUrl() : ?string;
 
 }
