@@ -90,10 +90,10 @@ class SettingsSectionRepository{
 			$query->where('type', '=', PAYMENTS_PAYPAL_TYPE);
 			$query->orwhere('type', '=', PAYMENTS_STRIPE_TYPE);
 		})->get()->map(function($ele){
-			return $ele->type === PAYMENTS_PAYPAL_TYPE ? 'PayPal' : 'Stripe';
+			return $ele->type === PAYMENTS_PAYPAL_TYPE ? ['text' => 'PayPal', 'value' => PAYMENT_PAYPAL] : ['text' => 'Stripe' ,'value' => PAYMENT_STRIPE];
 		})->toArray();
 
-		return $gateways;
+		return array_merge([['text' => 'Cash', 'value' => PAYMENT_CASH], ['text' => 'Netbanking', 'value' => PAYMENT_NETBANKING]], $gateways);
 
 	}
 

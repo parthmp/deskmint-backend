@@ -33,3 +33,14 @@
 	
 	if(!defined('DISCOUNT_TYPE_AMOUNT')) define('DISCOUNT_TYPE_AMOUNT', 2); /* avoiding 0 and 1 and using 1 and 2 to avoid boolean confusion. */
 
+	/**
+	 * use these constants to compare values in db for payment gateway/methods.
+	 * start
+	 */
+	if(!defined('PAYMENT_CASH')) define('PAYMENT_CASH', 1);
+	if(!defined('PAYMENT_NETBANKING')) define('PAYMENT_NETBANKING', 2);
+	if(!defined('PAYMENT_PAYPAL')) define('PAYMENT_PAYPAL', 3);
+	if(!defined('PAYMENT_STRIPE')) define('PAYMENT_STRIPE', 4);
+	/**
+	 * end
+	 */
