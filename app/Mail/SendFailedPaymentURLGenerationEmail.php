@@ -17,7 +17,7 @@ class SendFailedPaymentURLGenerationEmail extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct(private string $first_name, private string $payment_method)
+    public function __construct(private array $data)
     {
         //
     }
@@ -28,7 +28,7 @@ class SendFailedPaymentURLGenerationEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Important: Check your payment gateway settings for '.$this->payment_method
+            subject: 'Important: Check your payment gateway settings for '.$this->data['payment_method']
         );
     }
 
@@ -38,10 +38,9 @@ class SendFailedPaymentURLGenerationEmail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view : 'emails.send_failed_payment_url_generation_email.blade',
+            view : 'emails.send_failed_payment_url_generation_email',
 			with : [
-				'name'				=>	$this->first_name,
-				'payment_method'	=>	$this->payment_method
+				'payment_method'	=>	$this->data['payment_method']
 			]
         );
     }

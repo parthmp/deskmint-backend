@@ -4,11 +4,11 @@ namespace App\Modules\InvoiceGeneration;
 
 use App\Models\AdditionalCompanyField;
 use App\Models\ClientCustomFieldValue;
-use App\Models\ClientsCustomField;
 use App\Models\Invoice;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoiceItem;
 use App\Models\SettingsSection;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -201,6 +201,22 @@ class InvoiceDBOperations{
 	 */
 	public function fetchPaymentSettings(int $payment_method) : ?array {
 		return $this->filterArray($payment_method === PAYMENT_PAYPAL ? PAYMENTS_PAYPAL_TYPE : PAYMENTS_STRIPE_TYPE);
+	}
+
+	/**
+	 * fetchAdminEmails function
+	 *
+	 * @return null|array
+	 */
+	public function fetchAdminEmails() : ?array {
+
+		$info = User::select('name', 'email')->get();
+		if($info->isEmpty()){
+			return null;
+		}
+		
+		return $info->toArray();
+
 	}
 
 }

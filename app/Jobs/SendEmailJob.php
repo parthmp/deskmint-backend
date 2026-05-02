@@ -18,7 +18,8 @@ class SendEmailJob implements ShouldQueue
 		public string $to_name,
 		public string $mailable_class,
 		public array $mailable_data,
-		public array $smtp
+		public array $smtp,
+		public ?array $cc = null
 	){}
 
     /**
@@ -36,7 +37,13 @@ class SendEmailJob implements ShouldQueue
 		]);
 
 		$mailable = (new $this->mailable_class(...$this->mailable_data))->from($this->smtp['from_address'], $this->smtp['from_name'] ?? null);
-		$mailer->to($this->to, $this->to_name)->send($mailable);
+		$mailer = $mailer->to($this->to, $this->to_name);
+
+		if($this->cc){
+			$mailer = $mailer->cc($this->cc);
+		}
+
+		$mailer->send($mailable);
 
 	}
 }

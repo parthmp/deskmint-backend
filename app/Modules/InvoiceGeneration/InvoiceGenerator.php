@@ -230,6 +230,40 @@ class InvoiceGenerator{
 		
 	}
 
+	/**
+	 * sendUrlGenerationFailedEmail function
+	 *
+	 * @return void
+	 */
+	private function sendUrlGenerationFailedEmail() : void {
+
+		$data = [
+			'payment_method'		=>  $this->invoice_data->payment_method === PAYMENT_PAYPAL ? 'PayPal' : 'Stripe'
+		];
+
+		$info = $this->invoice_db_operations->fetchAdminEmails();
+
+		if($info){
+
+			$first_email = $info[0]['email'];
+			$first_name = $info[0]['name'];
+
+			array_shift($info);
+
+			$info = array_values($info);
+
+			SendEmailJob::dispatch(
+				to: $first_email,
+				to_name: $first_name,
+				mailable_class: \App\Mail\SendFailedPaymentURLGenerationEmail::class,
+				mailable_data: [$data],
+				smtp: $this->smtpSettings(),
+				cc: $info
+			);
+		}
+
+	}
+
 	private function parseEmailContent(string $content) : string {
 
 		$currency = $this->invoice_data->client_wt->currency->code;
@@ -252,19 +286,8 @@ class InvoiceGenerator{
 			$payment_gateway_url = $this->generatePaymentURL((int) $this->invoice_data->payment_method, $payment_settings);
 
 			if(!$payment_gateway_url){
-				logger('failed to create payment url');
-				//send an email to admin/someone here to notify the failure.
-				$data = [
-					'first_name'			=>	$this->invoice_data->client_wt->first_name,
-					'payment_gateway'		=> $this->invoice_data->payment_method === PAYMENT_PAYPAL ? 'PayPal' : 'Stripe'
-				];
-				SendEmailJob::dispatch(
-					to: $this->invoice_data->client_wt->email,
-					to_name: $this->invoice_data->client_wt->first_name.' '.$this->invoice_data->client_wt->last_name,
-					mailable_class: \App\Mail\SendFailedPaymentURLGenerationEmail::class,
-					mailable_data: [$data],
-					smtp: $this->smtpSettings()
-				);
+				//send an email to admins to notify the failure.
+				$this->sendUrlGenerationFailedEmail();
 			}
 		}
 		
