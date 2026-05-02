@@ -3,10 +3,8 @@
 namespace App\Modules\InvoiceGeneration;
 
 use App\Jobs\SendEmailJob;
-use App\Mail\SendInvoice;
 use App\Models\Invoice;
-use App\Models\SettingsSection;
-use App\Modules\Gateways\PayPal\PayPal;
+use App\Modules\Payment\Gateways\PayPal\PayPal;
 use App\Modules\Payment\Payment;
 use App\Traits\CustomMailSettings;
 use Carbon\Carbon;
@@ -14,9 +12,7 @@ use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
+use PhpParser\Node\Expr\Cast\Double;
 
 class InvoiceGenerator{
 
@@ -223,33 +219,37 @@ class InvoiceGenerator{
 	 * @return string|null
 	 */
 	private function generatePaymentURL(int $payment_gateway, array $data) : ?string {
-
+		
 		$payment = match($payment_gateway){
-			PAYMENT_PAYPAL => new PayPal(),
+
+			PAYMENT_PAYPAL => new Payment(new PayPal($data['client_id'], $data['app_id'], $data['secret'], $data['mode'], $data['currency'], (float) $data['amount'])),
 			//PAYMENT_STRIPE => new Stripe(),
 		};
 
-		return $payment->generateURL();
+		return $payment->paymentURL();
 		
-	}
-
-	/**
-	 * fetchPaymentSettings function
-	 *
-	 * @param integer $payment_gateway
-	 * @return array
-	 */
-	private function fetchPaymentSettings(int $payment_gateway) : array {
-
 	}
 
 	private function parseEmailContent(string $content) : string {
 
 		$currency = $this->invoice_data->client_wt->currency->code;
 		
-		//$payment_settings = $this->fetchPaymentSettings((int) $this->invoice_data->payment_method);
-
-		//$payment_url = $this->generatePaymentURL((int) $this->invoice_data->payment_method, []);
+		$payment_gateway_url = '';
+		
+		if((int) $this->invoice_data->payment_method === PAYMENT_PAYPAL || (int) $this->invoice_data->payment_method === PAYMENT_STRIPE){
+			
+			$payment_settings = $this->invoice_db_operations->fetchPaymentSettings((int) $this->invoice_data->payment_method);
+			
+			if(!$payment_settings){
+				throw new Exception("something went wrong");
+			}
+			
+			$payment_settings = json_decode($payment_settings['settings_json'], true);
+			$payment_settings['currency'] = $currency;
+			$payment_settings['amount'] = $this->invoice_data->total;
+			$payment_gateway_url = $this->generatePaymentURL((int) $this->invoice_data->payment_method, $payment_settings);
+		}
+		
 
 		$search = [
 			'{$client_first_name}',
@@ -266,7 +266,7 @@ class InvoiceGenerator{
 			Carbon::parse($this->invoice_data->invoice_date)->format('d-M-Y'),
 			Carbon::parse($this->invoice_data->due_date)->format('d-M-Y'),
 			$this->invoice_data->invoice_number,
-			'this will be payment url soon'
+			$payment_gateway_url
 		];
 
 		$content = str_ireplace($search, $replace, $content);

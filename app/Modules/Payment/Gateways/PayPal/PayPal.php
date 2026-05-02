@@ -1,9 +1,8 @@
 <?php
 
-namespace App\Modules\Gateways\PayPal;
+namespace App\Modules\Payment\Gateways\PayPal;
 
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
-use PhpParser\Node\Expr\Cast\Double;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 
 class PayPal implements PaymentGatewayInterface{
@@ -14,7 +13,7 @@ class PayPal implements PaymentGatewayInterface{
 		private string $secret,
 		private string $mode,
 		private string $currency,
-		private Double $amount,
+		private float $amount,
 	){}
 
 	/**
@@ -29,6 +28,7 @@ class PayPal implements PaymentGatewayInterface{
 			'notify_url'		=>	env('APP_URL').PAYMENT_NOTIFICATION_URL,
 			'validate_ssl'		=>	true,
 			'mode'				=>	$this->mode,
+			'locale'			=>	'en_US',
 			'sandbox' => [
 				'client_id'         => $this->client_id,
 				'client_secret'     => $this->secret,
@@ -71,14 +71,14 @@ class PayPal implements PaymentGatewayInterface{
 	 * @return string|null
 	 */
 	public function generateURL() : ?string {
-
-		$provider = new PayPalClient;
-		$provider->setApiCredentials($this->wireUpCreds());
+		
+		$provider = new PayPalClient($this->wireUpCreds());
+		//$provider->setApiCredentials($this->wireUpCreds());
 
 		//$paypal_token = $provider->getAccessToken();
 
 		$response = $provider->createOrder($this->orderData());
-
+		return json_encode($response).'====';
 		if(isset($response['id']) && $response['id'] != null){
 			foreach($response['links'] as $link) {
 				if($link['rel'] === 'approve') {

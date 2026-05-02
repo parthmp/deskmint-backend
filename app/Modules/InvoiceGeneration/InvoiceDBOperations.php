@@ -49,7 +49,8 @@ class InvoiceDBOperations{
 			ISC_INVOICE_DETAILS_TYPE,
 			ISC_INVOICE_TOTAL_FIELDS_TYPE,
 			ESC_EMAIL_CONTENT_TYPE,
-			PAYMENTS_PAYPAL_TYPE
+			PAYMENTS_PAYPAL_TYPE,
+			PAYMENTS_STRIPE_TYPE
 		])->get()->toArray();
 
 		return array_values($settings_data);
@@ -198,8 +199,8 @@ class InvoiceDBOperations{
 	 *
 	 * @return array|null
 	 */
-	public function fetchPaymentSettings() : ?array {
-		return $this->filterArray(PAYMENTS_PAYPAL_TYPE);
+	public function fetchPaymentSettings(int $payment_method) : ?array {
+		return $this->filterArray($payment_method === PAYMENT_PAYPAL ? PAYMENTS_PAYPAL_TYPE : PAYMENTS_STRIPE_TYPE);
 	}
 
 }
