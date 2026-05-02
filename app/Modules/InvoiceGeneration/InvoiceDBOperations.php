@@ -19,6 +19,8 @@ class InvoiceDBOperations{
 	private int $company_id;
 	private int $invoice_id;
 
+	private array $data = [];
+
 	/**
 	 * __construct function
 	 *
@@ -28,6 +30,48 @@ class InvoiceDBOperations{
 	public function __construct(int $company_id, int $invoice_id){
 		$this->company_id = $company_id;
 		$this->invoice_id = $invoice_id;
+		$this->data = $this->fetchRequiredSettings();
+	}
+
+	/**
+	 * fetchRequiredSettings function
+	 *
+	 * @return array
+	 */
+	public function fetchRequiredSettings() : array {
+
+		$settings_data = SettingsSection::where([['company_id', '=', $this->company_id]])->whereIn('type', [
+			ISC_INVOICE_GENERAL_DETAILS_TYPE,
+			ISC_INVOICE_CLIENT_DETAILS_TYPE,
+			ISC_INVOICE_COMPANY_DETAILS_TYPE,
+			ISC_PRODUCT_COLUMNS_TYPE,
+			ISC_INVOICE_COMPANY_ADDRESS_TYPE,
+			ISC_INVOICE_DETAILS_TYPE,
+			ISC_INVOICE_TOTAL_FIELDS_TYPE,
+			ESC_EMAIL_CONTENT_TYPE,
+			PAYMENTS_PAYPAL_TYPE
+		])->get()->toArray();
+
+		return array_values($settings_data);
+	}
+
+	/**
+	 * filterArray function
+	 *
+	 * @param string $key
+	 * @return array|null
+	 */
+	private function filterArray(string $key) : ?array {
+		
+		$filtered = array_values(array_filter($this->data, function($item) use($key) {
+			return $item['type'] === $key;
+		}));
+		
+		if(!isset($filtered[0])){
+			return null;
+		}
+
+		return !empty($filtered[0]) ? $filtered[0] : null;
 	}
 
 	
@@ -36,8 +80,8 @@ class InvoiceDBOperations{
 	 *
 	 * @return SettingsSection|null
 	 */
-	public function fetchGeneralSettings() : SettingsSection|null {
-		return SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_INVOICE_GENERAL_DETAILS_TYPE]])->first();
+	public function fetchGeneralSettings() : array|null {
+		return $this->filterArray(ISC_INVOICE_GENERAL_DETAILS_TYPE);
 	}
 
 	/**
@@ -52,28 +96,28 @@ class InvoiceDBOperations{
 	/**
 	 * fetchClientDetailsSettings function
 	 *
-	 * @return SettingsSection|null
+	 * @return array|null
 	 */
-	public function fetchClientDetailsSettings() : SettingsSection|null {
-		return SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_INVOICE_CLIENT_DETAILS_TYPE]])->first();
+	public function fetchClientDetailsSettings() : array|null {
+		return $this->filterArray(ISC_INVOICE_CLIENT_DETAILS_TYPE);
 	}
 
 	/**
 	 * fetchCompanyDetailsSettings function
 	 *
-	 * @return SettingsSection|null
+	 * @return array|null
 	 */
-	public function fetchCompanyDetailsSettings() : SettingsSection|null {
-		return SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_INVOICE_COMPANY_DETAILS_TYPE]])->first();
+	public function fetchCompanyDetailsSettings() : array|null {
+		return $this->filterArray(ISC_INVOICE_COMPANY_DETAILS_TYPE);
 	}
 
 	/**
 	 * fetchInvoiceProductCoulumnsSettings function
 	 *
-	 * @return SettingsSection|null
+	 * @return array|null
 	 */
-	public function fetchInvoiceProductCoulumnsSettings() : SettingsSection|null {
-		return SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_PRODUCT_COLUMNS_TYPE]])->first();
+	public function fetchInvoiceProductCoulumnsSettings() : array|null {
+		return $this->filterArray(ISC_PRODUCT_COLUMNS_TYPE);
 	}
 
 	/**
@@ -81,26 +125,26 @@ class InvoiceDBOperations{
 	 *
 	 * @return SettingsSection|null
 	 */
-	public function fetchCompanyAddressSettings() : SettingsSection|null {
-		return SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_INVOICE_COMPANY_ADDRESS_TYPE]])->first();
+	public function fetchCompanyAddressSettings() : array|null {
+		return $this->filterArray(ISC_INVOICE_COMPANY_ADDRESS_TYPE);
 	}
 
 	/**
 	 * fetchCompanyInvoiceSettings function
 	 *
-	 * @return SettingsSection|null
+	 * @return array|null
 	 */
-	public function fetchInvoiceSettings() : SettingsSection|null {
-		return SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_INVOICE_DETAILS_TYPE]])->first();
+	public function fetchInvoiceSettings() : array|null {
+		return $this->filterArray(ISC_INVOICE_DETAILS_TYPE);
 	}
 
 	/**
 	 * fetchTotalFieldsSettings function
 	 *
-	 * @return SettingsSection|null
+	 * @return array|null
 	 */
-	public function fetchTotalFieldsSettings() : SettingsSection|null {
-		return SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_INVOICE_TOTAL_FIELDS_TYPE]])->first();
+	public function fetchTotalFieldsSettings() : array|null {
+		return $this->filterArray(ISC_INVOICE_TOTAL_FIELDS_TYPE);
 	}
 
 	/**
@@ -143,10 +187,19 @@ class InvoiceDBOperations{
 	/**
 	 * fetchEmailContentSettings function
 	 *
-	 * @return SettingsSection|null
+	 * @return array|null
 	 */
-	public function fetchEmailContentSettings() : ?SettingsSection {
-		return SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ESC_EMAIL_CONTENT_TYPE]])->first();
+	public function fetchEmailContentSettings() : ?array {
+		return $this->filterArray(ESC_EMAIL_CONTENT_TYPE);
+	}
+
+	/**
+	 * fetchPaymentSettings function
+	 *
+	 * @return array|null
+	 */
+	public function fetchPaymentSettings() : ?array {
+		return $this->filterArray(PAYMENTS_PAYPAL_TYPE);
 	}
 
 }

@@ -38,12 +38,12 @@ class InvoiceSettingsResolver{
 	public function fetchGeneral() : array {
 
 		$settings = $this->invoice_db_operations->fetchGeneralSettings();
-
+		
 		if(!$settings){
 			return $this->getDefaultInvoiceGeneralSettings();
 		}
 
-		return json_decode($settings->settings_json, true);
+		return json_decode($settings['settings_json'], true);
 
 	}
 
@@ -60,7 +60,7 @@ class InvoiceSettingsResolver{
 			return $this->getDefaultInvoiceClientDetailsSettings();
 		}
 
-		return json_decode($settings->settings_json, true);
+		return json_decode($settings['settings_json'], true);
 
 	}
 
@@ -78,7 +78,7 @@ class InvoiceSettingsResolver{
 			return $default['rows'];
 		}
 
-		return json_decode($settings->settings_json, true);
+		return json_decode($settings['settings_json'], true);
 
 	}
 
@@ -96,7 +96,7 @@ class InvoiceSettingsResolver{
 			return $default['rows'];
 		}
 
-		return json_decode($settings->settings_json, true);
+		return json_decode($settings['settings_json'], true);
 
 	}
 
@@ -114,7 +114,7 @@ class InvoiceSettingsResolver{
 			return $default['rows'];
 		}
 
-		return json_decode($settings->settings_json, true);
+		return json_decode($settings['settings_json'], true);
 
 	}
 
@@ -132,7 +132,7 @@ class InvoiceSettingsResolver{
 			return $default['rows'];
 		}
 
-		return json_decode($settings->settings_json, true);
+		return json_decode($settings['settings_json'], true);
 
 	}
 
@@ -153,7 +153,7 @@ class InvoiceSettingsResolver{
 		$settings_section = $this->invoice_db_operations->fetchInvoiceProductCoulumnsSettings();
 
 		if($settings_section){
-			return json_decode($settings_section->settings_json, true);
+			return json_decode($settings_section['settings_json'], true);
 		}
 
 		return $this->getDefaultProductColumnsSettings((int) $company_id);

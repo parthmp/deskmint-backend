@@ -32,7 +32,7 @@ class InvoiceGenerator{
 	private ?Invoice $invoice_data;
 	private string $filename = '';
 	private string $disk = 'temp_invoices';
-	private SettingsSection $invoice_content;
+	private array $invoice_content;
 	
 	/**
 	 * __construct function
@@ -110,6 +110,7 @@ class InvoiceGenerator{
 			'invoice_data'				=>	$this->invoice_db_operations->fetchInvoiceRow(),
 			'total_fields_settings'		=>	$this->invoice_settings_resolver->fetchTotalFieldsDetails()
 		];
+
 		
 		$context['client_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfClient((int) $context['invoice_data']['client_id']);
 		$context['invoice_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfInvoice();
@@ -232,13 +233,23 @@ class InvoiceGenerator{
 		
 	}
 
+	/**
+	 * fetchPaymentSettings function
+	 *
+	 * @param integer $payment_gateway
+	 * @return array
+	 */
+	private function fetchPaymentSettings(int $payment_gateway) : array {
+
+	}
+
 	private function parseEmailContent(string $content) : string {
 
 		$currency = $this->invoice_data->client_wt->currency->code;
 		
-		$payment_url = $this->generatePaymentURL((int) $this->invoice_data->payment_method, [
-			
-		]);
+		//$payment_settings = $this->fetchPaymentSettings((int) $this->invoice_data->payment_method);
+
+		//$payment_url = $this->generatePaymentURL((int) $this->invoice_data->payment_method, []);
 
 		$search = [
 			'{$client_first_name}',
@@ -278,7 +289,7 @@ class InvoiceGenerator{
 			throw new Exception('Could not send invoice as an attachment.');
 		}
 
-		$email_json = json_decode($this->invoice_content->settings_json);
+		$email_json = json_decode($this->invoice_content['settings_json']);
 
 		$data = [
 			'disk'		=>	$this->disk,
