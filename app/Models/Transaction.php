@@ -9,4 +9,9 @@ class Transaction extends Model
 {
 	use SoftDeletes;
     protected $table = 'transactions';
+
+	public function invoice_wt(){
+		return $this->belongsTo(Invoice::class, 'invoice_id')->withTrashed();
+	}
+
 }

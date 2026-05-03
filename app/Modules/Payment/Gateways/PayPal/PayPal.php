@@ -32,7 +32,8 @@ class PayPal implements PaymentGatewayInterface{
 		return [
 			'payment_action'	=>	'Sale',
 			'currency'			=>	$this->currency,
-			'notify_url'		=>	env('APP_URL').PAYMENT_NOTIFICATION_URL,
+			//'notify_url'		=>	env('APP_URL').PAYMENT_NOTIFICATION_URL,
+			'notify_url'		=>	'',
 			'validate_ssl'		=>	true,
 			'mode'				=>	$this->mode,
 			'locale'			=>	'en_US',
