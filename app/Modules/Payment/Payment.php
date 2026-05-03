@@ -17,4 +17,13 @@ class Payment{
 		return $this->payment_gateway->generateUrl();
 	}
 
+	/**
+	 * handlePayment function
+	 *
+	 * @return boolean
+	 */
+	public function handlePayment() : bool {
+		return $this->payment_gateway->handlePayment();
+	}
+
 }

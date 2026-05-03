@@ -11,4 +11,11 @@ interface PaymentGatewayInterface{
 	 */
 	public function generateUrl() : ?string;
 
+	/**
+	 * handlePayment function
+	 *
+	 * @return boolean
+	 */
+	public function handlePayment() : bool;
+
 }

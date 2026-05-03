@@ -5,6 +5,7 @@ namespace App\Modules\Payment\Gateways\PayPal;
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
 use App\Modules\Payment\DatabaseOperations;
 use App\Modules\Payment\Transactions;
+use Override;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 
 class PayPal implements PaymentGatewayInterface{
@@ -117,5 +118,13 @@ class PayPal implements PaymentGatewayInterface{
 		
    	}
 
+	/**
+	 * handlePayment function
+	 *
+	 * @return boolean
+	 */
+	public function handlePayment() : bool {
+		
+	}
 
 }

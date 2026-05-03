@@ -20,6 +20,7 @@ class CreatePaymentSettingsPayPalRequest extends FormRequest
 		$company_id = (int) Sanitize::input($this->input('company_id'));
 		$client_id = Sanitize::input($this->input('client_id'));
 		$app_id = Sanitize::input($this->input('app_id'));
+		$webhook_id = Sanitize::input($this->input('webhook_id'));
 		$secret = Sanitize::input($this->input('secret'));
 		$mode = Sanitize::input($this->input('mode'));
 
@@ -27,6 +28,7 @@ class CreatePaymentSettingsPayPalRequest extends FormRequest
 			'company_id'	=>		$company_id,
 			'client_id'		=>		$client_id,
 			'app_id'		=>		$app_id,
+			'webhook_id'	=>		$webhook_id,
 			'secret'		=>		$secret,
 			'mode'			=>		$mode
 		]);
@@ -44,6 +46,7 @@ class CreatePaymentSettingsPayPalRequest extends FormRequest
             'company_id'	=>	'required',
             'client_id'		=>	'required',
             'app_id'		=>	'required',
+            'webhook_id'	=>	'required',
 			'secret'		=>	'required',
 			'mode'			=>	'required|in:sandbox,live',
         ];

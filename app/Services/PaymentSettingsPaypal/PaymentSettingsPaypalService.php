@@ -66,10 +66,11 @@ class PaymentSettingsPaypalService{
 		}
 
 		$json = json_encode([
-			'client_id'	=>	$data['client_id'],
-			'app_id'	=>	$data['app_id'],
-			'secret'	=>	$secret,
-			'mode'		=>	$data['mode'],
+			'client_id'		=>	$data['client_id'],
+			'app_id'		=>	$data['app_id'],
+			'webhook_id'	=>	$data['webhook_id'],
+			'secret'		=>	$secret,
+			'mode'			=>	$data['mode'],
 		]);
 
 		return $this->settings_section_repository->updateByObj($json, $paypal_settings);

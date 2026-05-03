@@ -5,12 +5,14 @@ namespace App\Modules\Payment\Gateways\PayPal\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\SettingsSection;
 use App\Models\Transaction;
+use App\Modules\Payment\Gateways\PayPal\PayPal;
+use App\Modules\Payment\Payment;
 use Illuminate\Http\Request;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 
 class PayPalController extends Controller{
 
-	public function __construct(){}
+	public function __construct(private Payment $payment){}
 
     //test spgehetti code to see if it works as it should
 	public function handlePaymentWebhook(Request $request){
@@ -86,13 +88,5 @@ class PayPalController extends Controller{
 		return response('OK', 200);
 		
 	}
-
-	// public function handlePaymentSuccess(Request $request){
-	// 	logger(json_encode($request->all()));
-	// }
-
-	// public function handlePaymentFailure(Request $request){
-	// 	logger(json_encode($request->all()));
-	// }
 
 }
