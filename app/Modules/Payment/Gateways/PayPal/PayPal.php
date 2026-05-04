@@ -4,13 +4,14 @@ namespace App\Modules\Payment\Gateways\PayPal;
 
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
 use App\Modules\Payment\DatabaseOperations;
-use App\Modules\Payment\Transactions;
-use Override;
+use App\Modules\Payment\Exceptions\PaymentException;
+use Illuminate\Http\Request;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 
 class PayPal implements PaymentGatewayInterface{
 
-	private Transactions $transactions;
+	private DatabaseOperations $database_operations;
+	private PayPalClient $provider;
 
 	public function __construct(
 		private string $invoice_id,
@@ -21,7 +22,8 @@ class PayPal implements PaymentGatewayInterface{
 		private string $currency,
 		private float $amount
 	){
-		$this->transactions = new Transactions(new DatabaseOperations());
+		$this->database_operations = new DatabaseOperations();
+		$this->provider = new PayPalClient($this->wireUpCreds());
 	}
 
 	/**
@@ -81,14 +83,16 @@ class PayPal implements PaymentGatewayInterface{
 	 * @return boolean
 	 */
 	private function createTransaction(string $order_id) : bool {
-		return $this->transactions->create([
-			'invoice_id'			=>	$this->invoice_id,
-			'amount'				=>	$this->amount,
-			'payment_method'		=>	PAYMENT_PAYPAL,
-			'mode'					=>	$this->mode,
-			'token_id_identifier'	=>	$order_id,
-			'additional_details'	=>	null,
-			'is_success'			=>	0
+		return $this->database_operations->insertTransaction([
+			'invoice_id'					=>	$this->invoice_id,
+			'amount'						=>	$this->amount,
+			'payment_method'				=>	PAYMENT_PAYPAL,
+			'mode'							=>	$this->mode,
+			'token_id_identifier'			=>	$order_id,
+			'payment_approved_details'		=>	null,
+			'payment_captured_details'		=>	null,
+			'is_approved'					=>	0,
+			'is_payment_captured'			=>	0
 		]);
 	}
 
@@ -99,11 +103,9 @@ class PayPal implements PaymentGatewayInterface{
 	 */
 	public function generateURL() : ?string {
 		
-		$provider = new PayPalClient($this->wireUpCreds());
-		
-		$paypal_token = $provider->getAccessToken();
+		$paypal_token = $this->provider->getAccessToken();
 
-		$response = $provider->createOrder($this->orderData());
+		$response = $this->provider->createOrder($this->orderData());
 		
 		if(isset($response['id']) && $response['id'] != null){
 			foreach($response['links'] as $link) {
@@ -118,13 +120,51 @@ class PayPal implements PaymentGatewayInterface{
 		
    	}
 
+	private function verifyAuthenticity(Request $request, string $webhook_id) : bool {
+		
+		$this->provider->getAccessToken();
+
+		$verified = $this->provider->verifyWebHook([
+			'transmission_id'   => $request->header('PAYPAL-TRANSMISSION-ID'),
+			'transmission_time' => $request->header('PAYPAL-TRANSMISSION-TIME'),
+			'cert_url'          => $request->header('PAYPAL-CERT-URL'),
+			'auth_algo'         => $request->header('PAYPAL-AUTH-ALGO'),
+			'transmission_sig'  => $request->header('PAYPAL-TRANSMISSION-SIG'),
+			'webhook_id'        => $webhook_id,
+			'webhook_event'     => $request->all()
+		]);
+
+		if(isset($verified['verification_status'])){
+			return $verified['verification_status'] === 'SUCCESS';
+		}
+
+		return false;
+
+	}
+
 	/**
 	 * handlePayment function
 	 *
 	 * @return boolean
 	 */
-	public function handlePayment() : bool {
+	public function handlePayment(array $data, Request $request) : bool {
+
+		if(!$this->verifyAuthenticity($request, $data['webhook_id'])){
+			throw new PaymentException('unauthorized', 'unauthorized', 401);
+		}
+
+		$event_type = $data['event_type'] ?? null;
+
+		if($event_type !== 'CHECKOUT.ORDER.APPROVED' && $event_type !== 'PAYMENT.CAPTURE.COMPLETED'){
+			throw new PaymentException('Invalid data provided', 'invalid_event_type', config('global.error_code'));
+		}
+
+		if($event_type === 'CHECKOUT.ORDER.APPROVED'){
+			$this->provider->capturePaymentOrder($data['order_id']);
+		}
 		
+		return $this->database_operations->updatePaymentTransaction($data);
+
 	}
 
 }

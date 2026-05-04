@@ -2,6 +2,8 @@
 
 namespace App\Modules\Payment\Contracts;
 
+use Illuminate\Http\Request;
+
 interface PaymentGatewayInterface{
 
 	/**
@@ -14,8 +16,9 @@ interface PaymentGatewayInterface{
 	/**
 	 * handlePayment function
 	 *
+	 * @param array $data
 	 * @return boolean
 	 */
-	public function handlePayment() : bool;
+	public function handlePayment(array $data, Request $request) : bool;
 
 }
