@@ -2,9 +2,15 @@
 
 namespace App\Modules\Payment;
 
+use App\Models\Invoice;
 use App\Models\Transaction;
 use App\Modules\Payment\Exceptions\PaymentException;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Brick\Math\BigDecimal;
+use Brick\Math\BigInteger;
+use Brick\Math\RoundingMode;
 
 class DatabaseOperations{
 
@@ -119,6 +125,32 @@ class DatabaseOperations{
 	}
 
 	/**
+	 * markInvoicePaid function
+	 *
+	 * @param integer $invoice_id
+	 * @return boolean
+	 */
+	private function markInvoicePaidnDeduct(int $invoice_id, float $amount) : bool {
+		
+		$invoice = Invoice::where('id', $invoice_id)->first();
+
+		$amount_paid = BigDecimal::of($amount);
+		$amount_balance_due = BigDecimal::of($invoice->balance_due);
+
+		$left = $amount_balance_due->minus($amount_paid);
+
+		$is_paid = ($amount_paid->isEqualTo($amount_balance_due) || $amount_paid->isGreaterThan($amount_balance_due)) ? 1 : 0;
+
+		$left = $left->toScale(2, RoundingMode::HALF_UP)->__toString();
+
+		$invoice->is_paid = $is_paid;
+		$invoice->balance_due = $left;
+
+		return $invoice->save();
+
+	}
+
+	/**
 	 * updatePaymentTransaction function
 	 *
 	 * @param array $data
@@ -126,31 +158,46 @@ class DatabaseOperations{
 	 */
 	public function updatePaymentTransaction(array $data) : bool {
 		
-		$event_type = $data['event_type'] ?? null;
+		try {
 
-		$order_id = $this->findOrderId($data, $event_type);
+			$event_type = $data['event_type'] ?? null;
 
-		$transaction = Transaction::where('token_id_identifier', '=', $order_id);
+			$order_id = $this->findOrderId($data, $event_type);
 
-		$affected = 0;
+			$transaction = Transaction::where('token_id_identifier', '=', $order_id)->first();
 
-		if($event_type === 'CHECKOUT.ORDER.APPROVED'){
-			
-			$affected = $transaction->update([
-				'is_approved'				=>	1,
-				'payment_approved_details'	=>	json_encode($data)
-			]);
+			if(!$transaction){
+				Log::error('Payment update failed $transaction was null');
+				throw new PaymentException('failed to update database', 'db_failed', config('global.error_code'));
+			}
 
-		}else if($event_type === 'PAYMENT.CAPTURE.COMPLETED'){
+			$saved = false;
 
-			$affected = $transaction->update([
-				'is_payment_captured'		=>	1,
-				'payment_captured_details'	=>	json_encode($data)
-			]);
+			if($event_type === 'CHECKOUT.ORDER.APPROVED'){
+				
+				$transaction->is_approved = 1;
+				$transaction->payment_approved_details = json_encode($data);
+				$saved = $transaction->save();
+
+			}else if($event_type === 'PAYMENT.CAPTURE.COMPLETED'){
+
+				$transaction->is_payment_captured = 1;
+				$transaction->payment_captured_details = json_encode($data);
+				$saved = $transaction->save();
+
+				$this->markInvoicePaidnDeduct((int) $transaction->invoice_id, (float) $data['resource']['amount']['value']);
+
+			}
+
+			return $saved;
+
+		}catch(\Exception $e){
+
+			Log::error('Payment update failed', ['error' => $e->getMessage()]);
+
+			return false;
 
 		}
-
-		return $affected > 0;
 
 	}
 

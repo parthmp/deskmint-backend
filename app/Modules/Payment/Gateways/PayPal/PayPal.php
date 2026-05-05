@@ -5,6 +5,7 @@ namespace App\Modules\Payment\Gateways\PayPal;
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
 use App\Modules\Payment\DatabaseOperations;
 use App\Modules\Payment\Exceptions\PaymentException;
+use Exception;
 use Illuminate\Http\Request;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 
@@ -159,12 +160,20 @@ class PayPal implements PaymentGatewayInterface{
 			throw new PaymentException('Invalid data provided', 'invalid_event_type', config('global.error_code'));
 		}
 
-		if($event_type === 'CHECKOUT.ORDER.APPROVED'){
-			$this->provider->capturePaymentOrder($data['order_id']);
+		try{
+
+			if($event_type === 'CHECKOUT.ORDER.APPROVED'){
+				$this->provider->capturePaymentOrder($data['order_id']);
+			}
+		
+		}catch(Exception $e){
+			throw new Exception('something went wrong!');
 		}
+
 		
 		return $this->database_operations->updatePaymentTransaction($data);
 
+		
 	}
 
 }
