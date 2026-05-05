@@ -289,6 +289,12 @@ class InvoiceGenerator{
 
 	}
 
+	/**
+	 * parseEmailContent function
+	 *
+	 * @param string $content
+	 * @return string
+	 */
 	private function parseEmailContent(string $content) : string {
 
 		$currency = $this->invoice_data->client_wt->currency->code;
@@ -306,7 +312,7 @@ class InvoiceGenerator{
 			
 			$payment_settings = json_decode($payment_settings['settings_json'], true);
 			$payment_settings['currency'] = $currency;
-			$payment_settings['amount'] = $this->invoice_data->total;
+			$payment_settings['amount'] = $this->invoice_data->balance_due;
 			$payment_settings['secret'] = decrypt($payment_settings['secret']);
 			
 			$payment_gateway_url = $this->generatePaymentURL((int) $this->invoice_data->payment_method, $payment_settings);

@@ -26,7 +26,6 @@ class PayPalController extends Controller{
 			$settings = $this->database_operations->fetchPayPalSettings($data);
 			$webhook_data = $settings['webhook_data'];
 			
-
 			$payment = new Payment(new PayPal(
 												$webhook_data['invoice_id'], 
 												$settings['settings']['client_id'], 
@@ -34,7 +33,7 @@ class PayPalController extends Controller{
 												decrypt($settings['settings']['secret']), 
 												$settings['settings']['mode'], 
 												$webhook_data['currency_code'],
-												$webhook_data['total'],
+												$webhook_data['balance_due'],
 											)
 									);
 			$data['webhook_id'] = $settings['settings']['webhook_id'];

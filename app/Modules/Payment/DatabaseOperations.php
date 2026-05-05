@@ -86,7 +86,7 @@ class DatabaseOperations{
 						'currencies.code as currency_code',
 						'invoices.company_id as company_id',
 						'invoices.id as invoice_id',
-						'invoices.total as total'
+						'invoices.balance_due as balance_due'
 					)
 			->first();
 	}
@@ -142,7 +142,7 @@ class DatabaseOperations{
 		$is_paid = ($amount_paid->isEqualTo($amount_balance_due) || $amount_paid->isGreaterThan($amount_balance_due)) ? 1 : 0;
 
 		$left = $left->toScale(2, RoundingMode::HALF_UP)->__toString();
-
+		
 		$invoice->is_paid = $is_paid;
 		$invoice->balance_due = $left;
 
