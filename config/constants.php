@@ -46,5 +46,5 @@
 	 */
 
 	//if(!defined('PAYMENT_NOTIFICATION_URL')) define('PAYMENT_NOTIFICATION_URL', '/api/record-payment');
-	if(!defined('PAYMENT_CANCEL_URL')) define('PAYMENT_CANCEL_URL', '/payment-cancel');
-	if(!defined('PAYMENT_SUCCESS_URL')) define('PAYMENT_SUCCESS_URL', '/payment-success');
+	if(!defined('PAYMENT_CANCEL_URL')) define('PAYMENT_CANCEL_URL', '/payments/payment-cancel');
+	if(!defined('PAYMENT_SUCCESS_URL')) define('PAYMENT_SUCCESS_URL', '/payments/payment-success');
