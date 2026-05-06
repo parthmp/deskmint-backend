@@ -47,7 +47,9 @@ class PaymentSettingsPaypalControllerTest extends TestCase{
 			'company_id' 	=> $company_id,
 			'client_id'		=>	'   ',
 			'secret'		=>	'   ',
-			'mode'			=>	'   '
+			'mode'			=>	'   ',
+			'webhook_id'	=>	'   ',
+			'app_id'		=>	'   '
 		], $c['headers']);
 
 		$response->assertStatus((int) config('global.error_code'));
@@ -56,7 +58,7 @@ class PaymentSettingsPaypalControllerTest extends TestCase{
 		
 		$this->assertArrayHasKey('message', $json);
 		$this->assertArrayHasKey('errors', $json);
-		$this->assertEquals(3, count($json['errors']));
+		$this->assertEquals(5, count($json['errors']));
 		
 
 	}
@@ -76,7 +78,7 @@ class PaymentSettingsPaypalControllerTest extends TestCase{
 		$json = $response->json();
 		$this->assertArrayHasKey('message', $json);
 		$this->assertArrayHasKey('errors', $json);
-		$this->assertEquals(3, count($json['errors']));
+		$this->assertEquals(5, count($json['errors']));
 		
 
 	}
@@ -100,7 +102,7 @@ class PaymentSettingsPaypalControllerTest extends TestCase{
 		
 		$this->assertArrayHasKey('message', $json);
 		$this->assertArrayHasKey('errors', $json);
-		$this->assertEquals(1, count($json['errors']));
+		$this->assertEquals(3, count($json['errors']));
 
 	}
 
@@ -113,10 +115,14 @@ class PaymentSettingsPaypalControllerTest extends TestCase{
 		$client_id = 'abc 123';
 		$secret = 'secret api key';
 		$mode = 'sandbox';
+		$app_id = 'app id';
+		$webhook_id = 'webhook id';
 
 		$response = $this->post($this->url, [
 			'company_id' 	=>	$company_id,
 			'client_id'		=>	$client_id,
+			'app_id'		=>	$app_id,
+			'webhook_id'	=>	$webhook_id,
 			'secret'		=>	$secret,
 			'mode'			=>	$mode
 		], $c['headers']);
@@ -164,11 +170,15 @@ class PaymentSettingsPaypalControllerTest extends TestCase{
 		$client_id = 'abc 123';
 		$secret = 'secret api key';
 		$mode = 'sandbox';
+		$app_id = 'app id';
+		$webhook_id = 'webhook id';
 
 		$this->post($this->url, [
 			'company_id' 	=>	$company_id,
 			'client_id'		=>	$client_id,
 			'secret'		=>	$secret,
+			'app_id'		=>	$app_id,
+			'webhook_id'	=>	$webhook_id,
 			'mode'			=>	$mode
 		], $c['headers']);
 
@@ -176,6 +186,8 @@ class PaymentSettingsPaypalControllerTest extends TestCase{
 			'company_id' 	=>	$company_id,
 			'client_id'		=>	$client_id.' ov',
 			'secret'		=>	$secret.' ov',
+			'app_id'		=>	$app_id.' edited',
+			'webhook_id'	=>	$webhook_id.' edited',
 			'mode'			=>	$mode
 		], $c['headers']);
 
@@ -209,6 +221,8 @@ class PaymentSettingsPaypalControllerTest extends TestCase{
 		$this->assertEquals(PAYMENTS_PAYPAL_TYPE, $paypal_settings['type']);
 		$this->assertEquals($client_id.' ov', $settings_json['client_id']);
 		$this->assertEquals($mode, $settings_json['mode']);
+		$this->assertEquals($app_id.' edited', $settings_json['app_id']);
+		$this->assertEquals($webhook_id.' edited', $settings_json['webhook_id']);
 		$this->assertNotEquals($secret, $settings_json['secret']);
 
 	}
@@ -222,12 +236,16 @@ class PaymentSettingsPaypalControllerTest extends TestCase{
 		$client_id = 'abc 123';
 		$secret = 'secret api key';
 		$mode = 'sandbox';
+		$app_id = 'app id';
+		$webhook_id = 'webhook id';
 
 		$response = $this->post($this->url, [
 			'company_id' 	=>	$company_id,
 			'client_id'		=>	$client_id,
 			'secret'		=>	$secret,
-			'mode'			=>	$mode
+			'mode'			=>	$mode,
+			'app_id'		=>	$app_id,
+			'webhook_id'	=>	$webhook_id,
 		], $c['headers']);
 
 		$response->assertStatus(200);

@@ -74,8 +74,13 @@ class PaymentSettingsTest extends TestCase{
 		$response->assertStatus(200);
 
 		$json = $response->json();
+		
+		$this->assertNotEmpty($json);
 
-		$this->assertEmpty($json);
+		$this->assertArrayHasKey('text', $json[0]);
+		$this->assertArrayHasKey('text', $json[1]);
+		$this->assertEquals('Cash', $json[0]['text']);
+		$this->assertEquals('Netbanking', $json[1]['text']);
 
 	}
 
@@ -98,8 +103,9 @@ class PaymentSettingsTest extends TestCase{
 		$response->assertStatus(200);
 
 		$json = $response->json();
-
-		$this->assertContains('paypal', $json);
+		
+		$this->assertEquals('PayPal', $json[2]['text']);
+		$this->assertEquals(3, $json[2]['value']);
 
 	}
 
@@ -122,8 +128,8 @@ class PaymentSettingsTest extends TestCase{
 		$response->assertStatus(200);
 
 		$json = $response->json();
-
-		$this->assertContains('stripe', $json);
+		$this->assertEquals('Stripe', $json[2]['text']);
+		$this->assertEquals(4, $json[2]['value']);
 
 	}
 
@@ -148,9 +154,12 @@ class PaymentSettingsTest extends TestCase{
 		$response->assertStatus(200);
 
 		$json = $response->json();
+		
+		$this->assertEquals('PayPal', $json[2]['text']);
+		$this->assertEquals(3, $json[2]['value']);
+		$this->assertEquals('Stripe', $json[3]['text']);
+		$this->assertEquals(4, $json[3]['value']);
 
-		$this->assertContains('stripe', $json);
-		$this->assertContains('paypal', $json);
 
 	}
 
