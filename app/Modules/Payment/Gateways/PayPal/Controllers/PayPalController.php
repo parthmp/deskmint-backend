@@ -22,7 +22,6 @@ class PayPalController extends Controller{
 		$data = $request->all();
 
 		try{
-
 			$settings = $this->database_operations->fetchPayPalSettings($data);
 			$webhook_data = $settings['webhook_data'];
 			
@@ -42,13 +41,10 @@ class PayPalController extends Controller{
 			$payment->handlePayment($data, $request);
 
 		}catch(PaymentException $e){
-
 			return response($e->getMessage(), $e->getCode());
 
 		}catch(Exception $e){
-
 			return General::wentWrong();
-
 		}
 
 		

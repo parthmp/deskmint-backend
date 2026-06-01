@@ -123,8 +123,12 @@ class PayPal implements PaymentGatewayInterface{
 
 	private function verifyAuthenticity(Request $request, string $webhook_id) : bool {
 		
-		$this->provider->getAccessToken();
+		// if($this->mode === 'sandbox'){
+		// 	return true;
+		// }
 
+		$this->provider->getAccessToken();
+		
 		$verified = $this->provider->verifyWebHook([
 			'transmission_id'   => $request->header('PAYPAL-TRANSMISSION-ID'),
 			'transmission_time' => $request->header('PAYPAL-TRANSMISSION-TIME'),
@@ -135,6 +139,7 @@ class PayPal implements PaymentGatewayInterface{
 			'webhook_event'     => $request->all()
 		]);
 
+		
 		if(isset($verified['verification_status'])){
 			return $verified['verification_status'] === 'SUCCESS';
 		}
@@ -155,13 +160,13 @@ class PayPal implements PaymentGatewayInterface{
 		}
 
 		$event_type = $data['event_type'] ?? null;
-
+		
 		if($event_type !== 'CHECKOUT.ORDER.APPROVED' && $event_type !== 'PAYMENT.CAPTURE.COMPLETED'){
 			throw new PaymentException('Invalid data provided', 'invalid_event_type', config('global.error_code'));
 		}
 
 		try{
-
+			
 			if($event_type === 'CHECKOUT.ORDER.APPROVED'){
 				$this->provider->capturePaymentOrder($data['order_id']);
 			}
