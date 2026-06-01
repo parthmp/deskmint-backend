@@ -15,6 +15,7 @@ use App\Repositories\Currency\CurrencyRepository;
 use App\Repositories\Industry\IndustryRepository;
 use App\Services\Client\Exceptions\ClientException;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -190,14 +191,14 @@ class ClientFetchService{
 	private function processDataTable(array $clients_flat_columns, array $data, array $searchable_dates, array $searchable_columns, int $company_id) : LengthAwarePaginator {
 		
 		$joins = $this->getJoins($clients_flat_columns);
-
+		
 		$fields = $this->datatable->setVars($data)->setModel(Client::class)->skipColumns(['deleted_at', 'updated_at'])->setDatesColumns($searchable_dates)->setCompanyId($company_id)->setJoins($joins)->setSearchableColumns($searchable_columns)->setRewrites([
 			'clients.send_reminders' => [
 				0	=>	'No',
 				1	=>	"Yes"
 			]
 		])->results();
-
+		
 		$fields->each(function($ele){
 			
 			if((int)$ele->send_reminders === 0){
@@ -340,7 +341,7 @@ class ClientFetchService{
 		$data['date_range'] = $request->input('date_range');
 		
 		$fields = $this->processDataTable($clients_flat_columns, $data, $searchable_dates, $searchable_columns, $company_id);
-
+		
 		$rows = $fields->items();
 		
 		for($z = 0 ; $z < count($rows) ; $z++){

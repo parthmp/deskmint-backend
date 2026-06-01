@@ -91,7 +91,8 @@ class InvoiceDBOperations{
 	 * @return Invoice|null
 	 */
 	public function fetchInvoiceRow() : Invoice|null {
-		return Invoice::where('id', '=', $this->invoice_id)->withTrashed()->first();
+		//return Invoice::where('id', '=', $this->invoice_id)->withTrashed()->first();
+		return Invoice::where('id', '=', $this->invoice_id)->withTrashed()->with(['client_wt.billing_country', 'client_wt.currency'])->first();
 	}
 
 	/**
@@ -155,7 +156,8 @@ class InvoiceDBOperations{
 	 * @return Collection|null
 	 */
 	public function fetchCustomFieldValuesOfClient(int $client_id) : Collection|null {
-		return ClientCustomFieldValue::where([['client_id', '=', $client_id]])->withTrashed()->get();
+		//return ClientCustomFieldValue::where([['client_id', '=', $client_id]])->withTrashed()->get();
+		return ClientCustomFieldValue::where('client_id', $client_id)->withTrashed()->with(['clients_custom_field_wt.custom_field_type_wt'])->get();
 	}
 
 	/**
@@ -173,7 +175,8 @@ class InvoiceDBOperations{
 	 * @return Collection|null
 	 */
 	public function fetchCustomFieldValuesOfInvoice() : Collection|null {
-		return InvoiceCustomFieldValue::where([['invoice_id', '=', $this->invoice_id]])->withTrashed()->get();
+		//return InvoiceCustomFieldValue::where([['invoice_id', '=', $this->invoice_id]])->withTrashed()->get();
+		return InvoiceCustomFieldValue::where([['invoice_id', '=', $this->invoice_id]])->withTrashed()->with(['invoices_custom_field_wt.custom_field_type_wt'])->get();
 	}
 
 	/**

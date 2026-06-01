@@ -19,10 +19,15 @@ class DatabaseOperations{
 	 */
 	public function getDBCustomFields(int $db_id, string $custom_fields_model, int $company_id, bool $add, string $type) : Collection {
 		
-		$db_custom_fields = $custom_fields_model::where('company_id', $company_id)->whereHas('customFieldType')->with(['customFieldValue' => function($query) use ($db_id, $type) {
-        	$query->where($type . '_id', $db_id);
-    	}])->get();
+		// $db_custom_fields = $custom_fields_model::where('company_id', $company_id)->whereHas('customFieldType')->with(['customFieldValue' => function($query) use ($db_id, $type) {
+        // 	$query->where($type . '_id', $db_id);
+    	// }])->get();
 
+		$db_custom_fields = $custom_fields_model::where('company_id', $company_id)->whereHas('customFieldType')->with([
+        'customFieldType',
+        'customFieldValue' => function($query) use ($db_id, $type) {
+            $query->where($type . '_id', $db_id);
+        }])->get();
 
 		return $db_custom_fields;
 

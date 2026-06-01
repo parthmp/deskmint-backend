@@ -31,8 +31,8 @@ class Validation{
 
 		$company_id = Sanitize::input($request->input('company_id'));
 
-		$db_custom_fields = $model::where('company_id', '=', $company_id)->whereHas('customFieldType')->get();
-		
+		//$db_custom_fields = $model::where('company_id', '=', $company_id)->whereHas('customFieldType')->get();
+		$db_custom_fields = $model::where('company_id', '=', $company_id)->whereHas('customFieldType')->with('customFieldType')->get();
 		if($db_custom_fields->isEmpty()){
 			return true;
 		}

@@ -188,7 +188,7 @@ class DataTable{
 		$this->selects = array_map(function($column) {
 			return "{$this->table}.{$column}";
 		}, $this->selects);
-
+		
 		return $this;
 
 	}
@@ -316,16 +316,16 @@ class DataTable{
 	 *
 	 * @return LengthAwarePaginator
 	 */
-	public function results() : LengthAwarePaginator {
+	public function results() : mixed {
 
 		$this->setPaginate()->setFields()->executeJoins()->executeCompanyId()->executeDateRange()->executeSearchTerm()->setPaginateSortedColumns()->executeRewrites();
 		
 		if($this->paginate){
-			$fields = $this->fields->orderBy($this->table.'.id', 'desc')->paginate($this->per_page, ['*'], 'page', (int)$this->current_page);
+			$fields = $this->fields->orderBy($this->table.'.id', 'desc')->paginate($this->per_page, ["{$this->table}.*"], 'page', (int)$this->current_page);
 		}else{
-			$fields = $this->fields->orderBy($this->table.'.id', 'desc')->paginate($this->per_page, ['*'], 'page', (int)$this->current_page);
+			$fields = $this->fields->orderBy($this->table.'.id', 'desc')->paginate($this->per_page, ["{$this->table}.*"], 'page', (int)$this->current_page);
 		}
-
+		
 		return $fields;
 
 	}
