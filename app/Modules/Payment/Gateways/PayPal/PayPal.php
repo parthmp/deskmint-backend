@@ -7,6 +7,7 @@ use App\Modules\Payment\DatabaseOperations;
 use App\Modules\Payment\Exceptions\PaymentException;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 
 class PayPal implements PaymentGatewayInterface{
@@ -25,6 +26,7 @@ class PayPal implements PaymentGatewayInterface{
 	){
 		$this->database_operations = new DatabaseOperations();
 		$this->provider = new PayPalClient($this->wireUpCreds());
+		$token = $this->provider->getAccessToken();
 	}
 
 	/**
@@ -104,10 +106,8 @@ class PayPal implements PaymentGatewayInterface{
 	 */
 	public function generateURL() : ?string {
 		
-		$paypal_token = $this->provider->getAccessToken();
-
 		$response = $this->provider->createOrder($this->orderData());
-		
+
 		if(isset($response['id']) && $response['id'] != null){
 			foreach($response['links'] as $link) {
 				if($link['rel'] === 'approve'){
@@ -121,30 +121,20 @@ class PayPal implements PaymentGatewayInterface{
 		
    	}
 
+	/**
+	 * verifyAuthenticity function
+	 *
+	 * @param Request $request
+	 * @param string $webhook_id
+	 * @return boolean
+	 */
 	private function verifyAuthenticity(Request $request, string $webhook_id) : bool {
-		
-		// if($this->mode === 'sandbox'){
-		// 	return true;
-		// }
 
-		$this->provider->getAccessToken();
-		
-		$verified = $this->provider->verifyWebHook([
-			'transmission_id'   => $request->header('PAYPAL-TRANSMISSION-ID'),
-			'transmission_time' => $request->header('PAYPAL-TRANSMISSION-TIME'),
-			'cert_url'          => $request->header('PAYPAL-CERT-URL'),
-			'auth_algo'         => $request->header('PAYPAL-AUTH-ALGO'),
-			'transmission_sig'  => $request->header('PAYPAL-TRANSMISSION-SIG'),
-			'webhook_id'        => $webhook_id,
-			'webhook_event'     => $request->all()
-		]);
+		$headers = collect($request->headers->all())->map(fn($value) => $value[0])->all();
 
-		
-		if(isset($verified['verification_status'])){
-			return $verified['verification_status'] === 'SUCCESS';
-		}
+		$valid = $this->provider->verifyWebHookLocally($headers, $webhook_id, $request->getContent());
 
-		return false;
+		return $valid;
 
 	}
 
@@ -161,13 +151,13 @@ class PayPal implements PaymentGatewayInterface{
 
 		$event_type = $data['event_type'] ?? null;
 		
-		if($event_type !== 'CHECKOUT.ORDER.APPROVED' && $event_type !== 'PAYMENT.CAPTURE.COMPLETED'){
+		if((string) $event_type !== 'CHECKOUT.ORDER.APPROVED' && (string) $event_type !== 'PAYMENT.CAPTURE.COMPLETED' && (string) $event_type !== 'PAYMENT.CAPTURE.PENDING'){
 			throw new PaymentException('Invalid data provided', 'invalid_event_type', config('global.error_code'));
 		}
 
 		try{
 			
-			if($event_type === 'CHECKOUT.ORDER.APPROVED'){
+			if((string) $event_type === 'CHECKOUT.ORDER.APPROVED'){
 				$this->provider->capturePaymentOrder($data['order_id']);
 			}
 		

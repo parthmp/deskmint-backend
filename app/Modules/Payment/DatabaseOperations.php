@@ -66,6 +66,7 @@ class DatabaseOperations{
 		return match($event_type) {
 			'CHECKOUT.ORDER.APPROVED'   => $data['resource']['id'],
 			'PAYMENT.CAPTURE.COMPLETED' => $data['resource']['supplementary_data']['related_ids']['order_id'],
+			'PAYMENT.CAPTURE.PENDING' 	=> $data['resource']['supplementary_data']['related_ids']['order_id'],
 			default                     => null
 		};
 
@@ -100,9 +101,9 @@ class DatabaseOperations{
 	public function fetchPayPalSettings(array $data) : array {
 
 		$event_type = $data['event_type'] ?? null;
-
+		
 		$order_id = $this->findOrderId($data, $event_type);
-
+		
 		if(!$order_id){
 			throw new PaymentException('Invalid data provided', 'invalid_order_id', config('global.error_code'));
 		}
@@ -186,6 +187,15 @@ class DatabaseOperations{
 				$saved = $transaction->save();
 
 				$this->markInvoicePaidnDeduct((int) $transaction->invoice_id, (float) $data['resource']['amount']['value']);
+
+			}else if($event_type === 'PAYMENT.CAPTURE.PENDING'){
+
+				$transaction->is_echeck = ($data['resource']['status_details']['reason'] === 'ECHECK') ? 1 : 0;
+				$transaction->echeck_pending_details = ($data['resource']['status_details']['reason'] === 'ECHECK') ? json_encode($data) : null;
+				
+				$transaction->is_pending = 1;
+
+				$saved = $transaction->save();
 
 			}
 
