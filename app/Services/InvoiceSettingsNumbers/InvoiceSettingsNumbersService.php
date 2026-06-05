@@ -14,7 +14,7 @@ class InvoiceSettingsNumbersService{
 
 	use SettingsDefault;
 
-	private $type = ISC_INVOICE_NUMBERS_TYPE;
+	private string $type = ISC_INVOICE_NUMBERS_TYPE;
 
 	public function __construct(private SettingsSectionRepository $settings_section_repository){}
 

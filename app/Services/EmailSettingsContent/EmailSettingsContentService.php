@@ -14,7 +14,7 @@ class EmailSettingsContentService{
 
 	use SettingsDefault;
 
-	private $type = ESC_EMAIL_CONTENT_TYPE;
+	private string $type = ESC_EMAIL_CONTENT_TYPE;
 
 	/**
 	 * __construct function

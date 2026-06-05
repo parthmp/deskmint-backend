@@ -14,11 +14,11 @@ use Brick\Math\RoundingMode;
 
 class DatabaseOperations{
 
-	private SettingsSectionRepository $settings_section_repository;
+	//private SettingsSectionRepository $settings_section_repository;
 
-	public function __construct()
+	public function __construct(private SettingsSectionRepository $settings_section_repository)
 	{
-		$this->settings_section_repository = new SettingsSectionRepository();
+		//$this->settings_section_repository = new SettingsSectionRepository();
 	}
 	
 	/**

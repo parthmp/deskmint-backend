@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 class InvoiceSettingsAPFService{
 
-	private $type = ISC_PRODUCT_COLUMNS_TYPE;
+	private string $type = ISC_PRODUCT_COLUMNS_TYPE;
 
 	public function __construct(private InvoiceSettingsAPFRepository $invoice_settings_apf_repository, private SettingsSectionRepository $settings_section_repository){}
 

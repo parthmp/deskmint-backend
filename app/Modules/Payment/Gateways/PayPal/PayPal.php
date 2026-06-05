@@ -5,6 +5,7 @@ namespace App\Modules\Payment\Gateways\PayPal;
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
 use App\Modules\Payment\DatabaseOperations;
 use App\Modules\Payment\Exceptions\PaymentException;
+use App\Repositories\SettingsSection\SettingsSectionRepository;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -22,9 +23,10 @@ class PayPal implements PaymentGatewayInterface{
 		private string $secret,
 		private string $mode,
 		private string $currency,
-		private float $amount
+		private float $amount,
+		?DatabaseOperations $database_operations = null
 	){
-		$this->database_operations = new DatabaseOperations();
+		$this->database_operations = $database_operations ?? new DatabaseOperations(new SettingsSectionRepository());
 		$this->provider = new PayPalClient($this->wireUpCreds());
 		$token = $this->provider->getAccessToken();
 	}

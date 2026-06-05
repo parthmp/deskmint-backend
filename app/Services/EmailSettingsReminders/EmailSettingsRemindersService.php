@@ -14,7 +14,7 @@ class EmailSettingsRemindersService{
 
 	use SettingsDefault;
 
-	private $type = ESC_EMAIL_REMINDERS_TYPE;
+	private string $type = ESC_EMAIL_REMINDERS_TYPE;
 
 	/**
 	 * __construct function

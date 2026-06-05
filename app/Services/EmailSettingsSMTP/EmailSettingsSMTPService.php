@@ -16,7 +16,7 @@ class EmailSettingsSMTPService{
 
 	use SettingsDefault;
 
-	private $type = ESC_EMAIL_SMTP_TYPE;
+	private string $type = ESC_EMAIL_SMTP_TYPE;
 	
 	/**
 	 * __construct function

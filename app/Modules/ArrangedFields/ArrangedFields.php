@@ -18,10 +18,10 @@ class ArrangedFields{
 	private SettingsSectionRepository $settings_section_repository;
 	private array $data;
 	
-	public function __construct(ArrangedFieldsInterface $obj, array $data){
+	public function __construct(ArrangedFieldsInterface $obj, array $data, ?SettingsSectionRepository $settings_section_repository = null){
 		$this->arranged_object = $obj;
 		$this->data = $data;
-		$this->settings_section_repository = new SettingsSectionRepository();
+		$this->settings_section_repository = $settings_section_repository ?? new SettingsSectionRepository();
 	}
 
 	public function fetchArrangedFieldsData(string $model = ''){

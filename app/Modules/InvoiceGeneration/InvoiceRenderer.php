@@ -20,11 +20,11 @@ class InvoiceRenderer extends InvoiceGenerator{
 	 * @param array $context
 	 * @param integer $time_offset_minutes
 	 */
-	public function __construct(string $contents, array $context, int $time_offset_minutes = 0){
+	public function __construct(string $contents, array $context, int $time_offset_minutes = 0, ?CompanySettingsLogoService $company_settings_logo_service = null){
 		$this->contents = $contents;
 		$this->context = $context;
 		$this->time_offset_minutes = $time_offset_minutes;
-		$this->company_settings_logo_service = new CompanySettingsLogoService(new CompanyRepository());
+		$this->company_settings_logo_service = $company_settings_logo_service ?? new CompanySettingsLogoService(new CompanyRepository());
 	}
 
 	/**
