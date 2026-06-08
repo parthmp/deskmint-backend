@@ -51,7 +51,7 @@ class PaymentSettingsStripeControllerTest extends TestCase{
 		
 		$this->assertArrayHasKey('message', $json);
 		$this->assertArrayHasKey('errors', $json);
-		$this->assertEquals(1, count($json['errors']));
+		$this->assertEquals(2, count($json['errors']));
 		
 	}
 
@@ -72,7 +72,28 @@ class PaymentSettingsStripeControllerTest extends TestCase{
 		$json = $response->json();
 		$this->assertArrayHasKey('message', $json);
 		$this->assertArrayHasKey('errors', $json);
-		$this->assertEquals(1, count($json['errors']));
+		$this->assertEquals(2, count($json['errors']));
+		
+	}
+
+	public function test_if_it_fails_to_save_settings_for_stripe_payments_settings_3(){
+
+		$c = $this->set_access('whatever');
+
+		$company_id = $this->createTemporaryCompany();
+
+		$response = $this->post($this->url, [
+			'company_id' 			=>  $company_id,
+			'secret'				=>	'',
+			'webhook_secret'		=>	''
+		], $c['headers']);
+
+		$response->assertStatus((int) config('global.error_code'));
+
+		$json = $response->json();
+		$this->assertArrayHasKey('message', $json);
+		$this->assertArrayHasKey('errors', $json);
+		$this->assertEquals(2, count($json['errors']));
 		
 	}
 
@@ -84,10 +105,12 @@ class PaymentSettingsStripeControllerTest extends TestCase{
 		$company_id = $this->createTemporaryCompany();
 
 		$secret = 'secret api key';
+		$webhook_secret = 'secret webhook api key';
 
 		$response = $this->post($this->url, [
-			'company_id' 	=>  $company_id,
-			'secret'		=>	$secret,
+			'company_id' 			=>  $company_id,
+			'secret'				=>	$secret,
+			'webhook_secret'		=>	$webhook_secret,
 		], $c['headers']);
 
 		$response->assertStatus(200);
@@ -109,6 +132,7 @@ class PaymentSettingsStripeControllerTest extends TestCase{
 		$json = $response->json();
 		
 		$this->assertEquals($secret, $json['secret']);
+		$this->assertEquals($webhook_secret, $json['webhook_secret']);
 
 		/* test for encryption */
 		$stripe_settings = SettingsSection::where([['company_id', '=', $company_id], ['type', '=', PAYMENTS_STRIPE_TYPE]])->first()->toArray();
@@ -117,6 +141,7 @@ class PaymentSettingsStripeControllerTest extends TestCase{
 
 		$this->assertEquals(PAYMENTS_STRIPE_TYPE, $stripe_settings['type']);
 		$this->assertNotEquals($secret, $settings_json['secret']);
+		$this->assertNotEquals($webhook_secret, $settings_json['webhook_secret']);
 	}
 
 
@@ -127,15 +152,18 @@ class PaymentSettingsStripeControllerTest extends TestCase{
 		$company_id = $this->createTemporaryCompany();
 
 		$secret = 'secret api key';
+		$webhook_secret = 'webhook secret api key';
 
 		$this->post($this->url, [
-			'company_id' 	=>	$company_id,
-			'secret'		=>	$secret
+			'company_id' 			=>	$company_id,
+			'secret'				=>	$secret,
+			'webhook_secret'		=>	$webhook_secret
 		], $c['headers']);
 
 		$response = $this->post($this->url, [
-			'company_id' 	=>	$company_id,
-			'secret'		=>	$secret.' ov'
+			'company_id' 			=>	$company_id,
+			'secret'				=>	$secret.' ov',
+			'webhook_secret'		=>	$webhook_secret.' ov'
 		], $c['headers']);
 
 		$response->assertStatus(200);
@@ -157,6 +185,7 @@ class PaymentSettingsStripeControllerTest extends TestCase{
 		$json = $response->json();
 		
 		$this->assertEquals($secret.' ov', $json['secret']);
+		$this->assertEquals($webhook_secret.' ov', $json['webhook_secret']);
 
 		/* test for encryption */
 		$stripe_settings = SettingsSection::where([['company_id', '=', $company_id], ['type', '=', PAYMENTS_STRIPE_TYPE]])->first()->toArray();
@@ -165,6 +194,7 @@ class PaymentSettingsStripeControllerTest extends TestCase{
 
 		$this->assertEquals(PAYMENTS_STRIPE_TYPE, $stripe_settings['type']);
 		$this->assertNotEquals($secret, $settings_json['secret']);
+		$this->assertNotEquals($webhook_secret, $settings_json['webhook_secret']);
 
 	}
 
@@ -175,10 +205,12 @@ class PaymentSettingsStripeControllerTest extends TestCase{
 		$company_id = $this->createTemporaryCompany();
 
 		$secret = 'secret api key';
+		$webhook_secret = 'webhook secret api key';
 
 		$response = $this->post($this->url, [
-			'company_id' 	=>	$company_id,
-			'secret'		=>	$secret
+			'company_id' 			=>	$company_id,
+			'secret'				=>	$secret,
+			'webhook_secret'		=>	$webhook_secret
 		], $c['headers']);
 
 		$response->assertStatus(200);
@@ -220,8 +252,9 @@ class PaymentSettingsStripeControllerTest extends TestCase{
 		$response->assertStatus(200);
 
 		$json = $response->json();
-
+		
 		$this->assertEmpty($json['secret']);
+		$this->assertEmpty($json['webhook_secret']);
 	}
 
 }

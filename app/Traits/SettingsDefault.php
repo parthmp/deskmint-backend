@@ -707,7 +707,8 @@
 		public function getDefaultStripeSettings() : array {
 
 			return [
-				'secret'	=>	''
+				'secret'			=>	'',
+				'webhook_secret'	=>	''
 			];
 
 		}
