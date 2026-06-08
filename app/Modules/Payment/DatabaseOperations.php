@@ -126,6 +126,47 @@ class DatabaseOperations{
 	}
 
 	/**
+	 * fetchStripeSettings function
+	 *
+	 * @param array $data
+	 * @return array
+	 */
+	public function fetchStripeSettings(array $data) : array {
+
+		$event_type = $data['type'] ?? null;
+
+		if($event_type !== ''){
+
+		}
+
+		if(!isset($data['data']['object']['metadata']['payment_id'])){
+			throw new PaymentException('Invalid data provided', 'unsupported_event', config('global.error_code'));
+		}
+		
+		$order_id = $data['data']['object']['metadata']['payment_id'];
+
+		if(!$order_id){
+			throw new PaymentException('Invalid data provided', 'invalid_order_id', config('global.error_code'));
+		}
+
+		$webhook_data = $this->fetchRequiredDataForWebhook($order_id);
+
+		if(!$webhook_data){
+			throw new PaymentException('Invalid data provided', 'invalid_data', config('global.error_code'));
+		}
+
+		$settings = $this->settings_section_repository->fetchSettings($webhook_data->company_id, PAYMENTS_STRIPE_TYPE, true);
+
+		return [
+			'order_id'				=>	$order_id,
+			'event_type'			=>	$event_type,
+			'webhook_data'			=>	$webhook_data,
+			'settings'				=>	$settings
+		];
+
+	}
+
+	/**
 	 * markInvoicePaid function
 	 *
 	 * @param integer $invoice_id
@@ -208,6 +249,35 @@ class DatabaseOperations{
 			return false;
 
 		}
+
+	}
+
+	/**
+	 * updateStripePaymentTransaction function
+	 *
+	 * @param array $data
+	 * @return boolean
+	 */
+	public function updateStripePaymentTransaction(array $data) : bool {
+
+		$order_id = $data['order_id'];
+
+		$transaction = Transaction::where('token_id_identifier', '=', $order_id)->first();
+
+		if(!$transaction){
+			Log::error('Payment update failed $transaction was null');
+			throw new PaymentException('failed to update database', 'db_failed', config('global.error_code'));
+		}
+	
+		$transaction->is_approved = 1;
+		$transaction->is_payment_captured = 1;
+		$transaction->payment_captured_details = json_encode($data);
+		$transaction->save();
+		
+		$amount = (int) $data['data']['object']['amount_total'];
+		$amount = BigDecimal::of($amount)->dividedBy(100, 2, RoundingMode::HALF_UP)->toFloat();
+
+		return $transaction->save() && $this->markInvoicePaidnDeduct((int) $transaction->invoice_id, $amount);
 
 	}
 
