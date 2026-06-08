@@ -5,6 +5,7 @@ namespace App\Modules\InvoiceGeneration;
 use App\Jobs\SendEmailJob;
 use App\Models\Invoice;
 use App\Modules\Payment\Gateways\PayPal\PayPal;
+use App\Modules\Payment\Gateways\Stripe\Stripe;
 use App\Modules\Payment\Payment;
 use App\Traits\CustomMailSettings;
 use Carbon\Carbon;
@@ -222,7 +223,7 @@ class InvoiceGenerator{
 		$payment = match($payment_gateway){
 
 			PAYMENT_PAYPAL => new Payment(new PayPal($this->invoice_id, $data['client_id'], $data['app_id'], $data['secret'], $data['mode'], $data['currency'], (float) $data['amount'])),
-			//PAYMENT_STRIPE => new Stripe(),
+			PAYMENT_STRIPE => new Payment(new Stripe($this->invoice_id, $data['secret'], $data['currency'], (float) $data['amount'])),
 		};
 
 		return $payment->paymentURL();

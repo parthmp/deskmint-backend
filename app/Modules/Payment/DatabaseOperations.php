@@ -211,4 +211,14 @@ class DatabaseOperations{
 
 	}
 
+	/**
+	 * fetchInvoiceById function
+	 *
+	 * @param integer $invoice_id
+	 * @return ?Invoice
+	 */
+	public function fetchInvoiceById(int $invoice_id) : ?Invoice {
+		return Invoice::where('id', '=', $invoice_id)->first();
+	}
+
 }

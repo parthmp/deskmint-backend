@@ -1,9 +1,11 @@
 <?php
 
 use App\Modules\Payment\Gateways\PayPal\Controllers\PayPalController;
+use App\Modules\Payment\Gateways\PayPal\Controllers\StripeController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('paypal/webhook', [PayPalController::class, 'handlePaymentWebhook']);
+Route::post('stripe/webhook', [StripeController::class, 'handlePaymentWebhook']);
 
 Route::get('/payment-cancel', function(){
 	return view('payment_info', ['type' => 'fail']);

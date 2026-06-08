@@ -19,10 +19,12 @@ class CreatePaymentSettingsStripeRequest extends FormRequest
 
 		$company_id = (int) Sanitize::input($this->input('company_id'));
 		$secret = Sanitize::input($this->input('secret'));
+		$webhook_secret = Sanitize::input($this->input('webhook_secret'));
 
 		$this->merge([
-			'company_id'	=>	$company_id,
-			'secret'		=>	$secret
+			'company_id'			=>	$company_id,
+			'secret'				=>	$secret,
+			'webhook_secret'		=>	$webhook_secret
 		]);
 
 	}
@@ -35,8 +37,9 @@ class CreatePaymentSettingsStripeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_id'	=>	'required',
-            'secret'		=>	'required'
+            'company_id'			=>	'required',
+            'secret'				=>	'required',
+            'webhook_secret'		=>	'required'
         ];
     }
 }

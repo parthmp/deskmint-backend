@@ -13,7 +13,7 @@ class PaymentSettingsStripeService{
 
 	use SettingsDefault;
 
-	private $type = PAYMENTS_STRIPE_TYPE;
+	private string $type = PAYMENTS_STRIPE_TYPE;
 
 	public function __construct(private SettingsSectionRepository $settings_section_repository){}
 
@@ -35,8 +35,10 @@ class PaymentSettingsStripeService{
 		
 		try{
 			$json['secret'] = decrypt($json['secret']);
+			$json['webhook_secret'] = decrypt($json['webhook_secret']);
 		}catch(Exception $e){
 			$json['secret'] = '';
+			$json['webhook_secret'] = '';
 		}
 
 		return $json;
@@ -52,6 +54,7 @@ class PaymentSettingsStripeService{
 	public function update(array $data) : bool {
 
 		$secret = encrypt($data['secret']);
+		$webhook_secret = encrypt($data['webhook_secret']);
 
 		$stripe_settings = $this->settings_section_repository->fetchSettings($data['company_id'], $this->type);
 
@@ -60,7 +63,8 @@ class PaymentSettingsStripeService{
 		}
 
 		$json = json_encode([
-			'secret'	=>	$secret,
+			'secret'			=>	$secret,
+			'webhook_secret'	=>	$webhook_secret,
 		]);
 
 		return $this->settings_section_repository->updateByObj($json, $stripe_settings);

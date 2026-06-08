@@ -92,5 +92,4 @@ class InvoiceRepository{
 		InvoiceItem::insert($invoice_items);
 	}
 
-	
 }
