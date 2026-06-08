@@ -9,10 +9,18 @@ use App\Modules\Payment\Gateways\Stripe\Stripe;
 use App\Modules\Payment\Payment;
 use App\Traits\CustomMailSettings;
 use Carbon\Carbon;
+use DateTime;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\App;
+use Einvoicing\Identifier;
+use Einvoicing\Invoice as EInvoice;
+use Einvoicing\InvoiceLine;
+use Einvoicing\Party;
+use Einvoicing\Presets;
+use Einvoicing\Writers\UblWriter;
+
 
 class InvoiceGenerator{
 
@@ -172,6 +180,53 @@ class InvoiceGenerator{
 		}
 
 		return $this;
+	}
+
+	public function generateEInvoice() : self {
+		
+		$created_at = $this->formatDateTime($this->invoice_data->created_at, false, true);
+		$due_date = Carbon::create($this->invoice_data->due_date);
+		$due_date = $due_date->format('Y-m-d');
+
+		// Create PEPPOL invoice instance
+		$inv = new EInvoice(Presets\Peppol::class);
+		$inv->setNumber($this->invoice_data->invoice_number)
+			->setIssueDate(new DateTime($created_at))
+			->setDueDate(new DateTime($due_date));
+
+		// Set seller
+		$seller = new Party();
+		$seller->setElectronicAddress(new Identifier('9482348239847239874', '0088'))
+			->setCompanyId(new Identifier('AH88726', '0183'))
+			->setName('Seller Name Ltd.')
+			->setTradingName('Seller Name')
+			->setVatNumber('ESA00000000')
+			->setAddress(['Fake Street 123', 'Apartment Block 2B'])
+			->setCity('Springfield')
+			->setCountry('DE');
+		$inv->setSeller($seller);
+
+		// Set buyer
+		$buyer = new Party();
+		$buyer->setElectronicAddress(new Identifier('ES12345', '0002'))
+			->setName('Buyer Name Ltd.')
+			->setCountry('FR');
+		$inv->setBuyer($buyer);
+
+		// Add a product line
+		$line = new InvoiceLine();
+		$line->setName('Product Name')
+			->setPrice(100)
+			->setVatRate(16)
+			->setQuantity(1);
+		$inv->addLine($line);
+
+		$writer = new UblWriter();
+		$xml = $writer->export($inv);
+		$disk = Storage::disk($this->disk);
+		$disk->put($this->invoice_id.DIRECTORY_SEPARATOR."test", $xml);
+		return $this;
+
 	}
 
 	private function ifInvoiceDataAvailable() : bool {
