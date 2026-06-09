@@ -146,6 +146,12 @@ class ClientBaseService{
 
 				$peppol_identifier = Sanitize::input($request->input('peppol.identifier') ?? '');
 				$peppol_scheme = Sanitize::input($request->input('peppol.scheme') ?? '');
+				$e_invoice_enabled = 0;
+				$temp_e_invoice = Sanitize::input($request->input('settings.e_invoice_value'));
+				if((int) $temp_e_invoice === 1){
+					$e_invoice_enabled = 1;
+				}
+
 
 				$data = [
 					'company_id'				=>	$company_id,
@@ -176,6 +182,7 @@ class ClientBaseService{
 					'industry_id'				=>	$industry_id,
 					'peppol_identifier'			=>	$peppol_identifier,
 					'peppol_scheme'				=>	$peppol_scheme,
+					'e_invoice_enabled'			=>	$e_invoice_enabled,
 				];
 
 				[$saved, $client_id] = $this->client_repository->createOrUpdate($client, $data);

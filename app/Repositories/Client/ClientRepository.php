@@ -130,6 +130,8 @@ class ClientRepository{
 
 		$client->peppol_identifier = $data['peppol_identifier'];
 		$client->peppol_scheme = $data['peppol_scheme'];
+		
+		$client->e_invoice_enabled = $data['e_invoice_enabled'];
 		$saved = $client->save();
 
 		return [$saved, $client->id];
