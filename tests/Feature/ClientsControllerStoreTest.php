@@ -88,6 +88,74 @@ class ClientsControllerStoreTest extends TestCase{
 
 	}
 
+	public function test_if_it_stores_client_with_valid_data_with_no_custom_fields_with_peppol_fields() : void{
+		
+		$device = 'device 123';
+
+		$c = $this->set_access($device);
+
+		$company_id = $this->set_default_company();
+
+		$country = Country::inRandomOrder()->first();
+		$this->setCustomFieldTypes();
+		
+		$currency = Currency::inRandomOrder()->first();
+		$industry = Industry::inRandomOrder()->first();
+
+		$data = $this->clientStoreData($currency, $country, $industry, $company_id);
+		$data['personal_info']['client_company_name'] = 'abc llc';
+		$data['peppol']['identifier'] = 'inc';
+		$data['peppol']['scheme'] = 'sch';
+		
+		$response = $this->post('/api/manage-clients', $data, $c['headers']);
+		
+		$response->assertStatus(200);
+
+		$this->arrayHasKey('validity', $response);
+		$this->assertEquals('client_saved', $response['validity']);
+
+		/* test for a few clients fields */
+		$client = Client::orderBy('id', 'desc')->first();
+		
+		$this->assertEquals($company_id, $client->company_id);
+		$this->assertEquals('test lastname', $client->last_name);
+		$this->assertEquals('123', $client->billing_postal_code);
+		$this->assertEquals('1234', $client->shipping_postal_code);
+		$this->assertEquals($currency->id, $client->currency_id);
+		$this->assertEquals($industry->id, $client->industry_id);
+		$this->assertEquals('test state', $client->billing_state);
+		$this->assertEquals('test city here s', $client->shipping_city);
+		$this->assertEquals('10-50', $client->size);
+		$this->assertEquals(7, $client->payment_terms);
+		$this->assertEquals('abc llc', $client->client_company_name);
+		$this->assertEquals('inc', $client->peppol_identifier);
+		$this->assertEquals('sch', $client->peppol_scheme);
+
+		/* test for contact info */
+		$client_contact_info = ClientContactInfo::where('client_id', '=', $client->id)->get();
+		$this->assertEquals(2, count($client_contact_info));
+		
+		$this->assertEquals('test firstname 500', $client_contact_info[0]->first_name);
+		$this->assertEquals('test last name 500', $client_contact_info[0]->last_name);
+		$this->assertEquals('some@th500ing.com', $client_contact_info[0]->email);
+		$this->assertEmpty($client_contact_info[0]->phone);
+
+		$this->assertEquals('test firstname 600', $client_contact_info[1]->first_name);
+		$this->assertEquals('test last name 600', $client_contact_info[1]->last_name);
+		$this->assertEquals('some@th600ing.com', $client_contact_info[1]->email);
+		$this->assertEquals(1234567600, (int)$client_contact_info[1]->phone);
+
+
+		/* check for custom fields here */
+		$columns_clients_flat = Schema::getColumnListing('clients_flat');
+		$this->assertEquals(4, count($columns_clients_flat));
+
+		/* now make sure row inserted in client_flat table */
+		$clients_flat_row = DB::table('clients_flat')->where('client_id', '=', $client->id)->first();
+		$this->assertNotEmpty($clients_flat_row);
+
+	}
+
 
 	public function test_if_it_stores_client_with_valid_data_with_all_custom_fields_123():void{
 		Client::truncate();
