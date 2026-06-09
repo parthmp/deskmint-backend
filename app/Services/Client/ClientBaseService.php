@@ -6,6 +6,7 @@ use App\Helpers\Sanitize;
 use App\Models\ClientCustomFieldValue;
 use App\Models\ClientsCustomField;
 use App\Modules\CustomFields\CustomFields;
+use App\Modules\CustomFields\Exceptions\InvalidCustomFieldsException;
 use App\Repositories\Client\ClientContactInfoRepository;
 use App\Repositories\Client\ClientRepository;
 use App\Services\Client\Exceptions\ClientException;
@@ -101,6 +102,7 @@ class ClientBaseService{
 			try{
 
 				$company_id = Sanitize::input($request->input('company_id'));
+				$client_company_name = Sanitize::input($request->input('personal_info.client_company_name') ?? '');
 				$personal_info_first_name = Sanitize::input($request->input('personal_info.first_name.value'));
 				$personal_info_last_name = Sanitize::input($request->input('personal_info.last_name.value'));
 				$personal_info_tax_id = Sanitize::input($request->input('personal_info.tax_id.value').'');
@@ -142,8 +144,12 @@ class ClientBaseService{
 					$client = $this->client_repository->createEmpty();
 				}
 
+				$peppol_identifier = Sanitize::input($request->input('peppol.identifier') ?? '');
+				$peppol_scheme = Sanitize::input($request->input('peppol.scheme') ?? '');
+
 				$data = [
 					'company_id'				=>	$company_id,
+					'client_company_name'		=>	$client_company_name,
 					'personal_info_first_name'	=>	$personal_info_first_name,
 					'personal_info_last_name'	=>	$personal_info_last_name,
 					'personal_info_tax_id'		=>	$personal_info_tax_id,
@@ -167,7 +173,9 @@ class ClientBaseService{
 					'quote_valid_days'			=>	$quote_valid_days,
 					'send_reminders'			=>	$send_reminders,
 					'size'						=>	$size,
-					'industry_id'				=>	$industry_id
+					'industry_id'				=>	$industry_id,
+					'peppol_identifier'			=>	$peppol_identifier,
+					'peppol_scheme'				=>	$peppol_scheme,
 				];
 
 				[$saved, $client_id] = $this->client_repository->createOrUpdate($client, $data);
@@ -187,7 +195,7 @@ class ClientBaseService{
 				throw new Exception();
 			}
 
-		}catch(ClientException $e){
+		}catch(ClientException|InvalidCustomFieldsException $e){
 			throw new ClientException($e->getMessage(), $e->getValidity(), $e->getCode(), $e->getTab());
 		}
 

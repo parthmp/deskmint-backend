@@ -99,6 +99,7 @@ class ClientRepository{
 	public function createOrUpdate(Client $client, array $data) : array {
 
 		$client->company_id = $data['company_id'];
+		$client->client_company_name = $data['client_company_name'];
 		$client->first_name = $data['personal_info_first_name'];
 		$client->last_name = $data['personal_info_last_name'];
 		$client->tax_number = $data['personal_info_tax_id'];
@@ -126,6 +127,9 @@ class ClientRepository{
 		$client->send_reminders = $data['send_reminders'];
 		$client->size = $data['size'];
 		$client->industry_id = $data['industry_id'];
+
+		$client->peppol_identifier = $data['peppol_identifier'];
+		$client->peppol_scheme = $data['peppol_scheme'];
 		$saved = $client->save();
 
 		return [$saved, $client->id];

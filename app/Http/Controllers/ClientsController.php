@@ -107,7 +107,7 @@ class ClientsController extends Controller{
 			$this->client_service->update($request);
 			return response(['message' => 'Client updated successfully', 'validity' => 'client_updated'], 200);
 		}catch(ClientException $e){
-			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
 		}catch(Exception $e){
 			return General::wentWrong();
 		}
