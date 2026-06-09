@@ -14,12 +14,11 @@
 		public function getDefaultInvoiceGeneralSettings() : array{
 
 			return [
-				'template'				=>	'plain',
-				'font_size'				=>	16,
+				'template'				=>	'stylish',
+				'font_size'				=>	12,
 				'logo_size'				=>	100,
 				'primary_color'			=>	'#055f40',
-				'secondary_color'		=>	'#118b65',
-				'e_invoice_on'			=>	false
+				'secondary_color'		=>	'#118b65'
 			];
 
 		}
@@ -67,55 +66,62 @@
 				'rows' => [
 					[
 						'id'		=>	1,
+						'text'		=>	'Client company name',
+						'value'		=>	General::replaceWithUnderscores('Client comapany name'),
+						'mapped'	=>	['client_company_name'], /* from db */
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	2,
 						'text'		=>	'Name',
 						'value'		=>	General::replaceWithUnderscores('Name'),
 						'mapped'	=>	['first_name', 'last_name'], /* from db */
 						'type'		=>	'normal'
 					],
 					[
-						'id'		=>	2,
+						'id'		=>	3,
 						'text'		=>	'GST/TAX #',
 						'value'		=>	General::replaceWithUnderscores('GST/TAX #'),
 						'mapped'	=>	['tax_number'],
 						'type'		=>	'normal'
 					],
 					[
-						'id'		=>	3,
+						'id'		=>	4,
 						'text'		=>	'Street',
 						'value'		=>	General::replaceWithUnderscores('Street'),
 						'mapped'	=>	['billing_street'],
 						'type'		=>	'normal'
 					],
 					[
-						'id'		=>	4,
+						'id'		=>	5,
 						'text'		=>	'Apt/Suite',
 						'value'		=>	General::replaceWithUnderscores('Apt/Suite'),
 						'mapped'	=>	['billing_apt'],
 						'type'		=>	'normal'
 					],
 					[
-						'id'		=>	5,
+						'id'		=>	6,
 						'text'		=>	'City - State - Postal',
 						'value'		=>	General::replaceWithUnderscores('City - State - Postal'),
 						'mapped'	=>	['billing_city', 'billing_state', 'billing_postal_code'],
 						'type'		=>	'normal'
 					],
 					[
-						'id'		=>	6,
+						'id'		=>	7,
 						'text'		=>	'Country',
 						'value'		=>	General::replaceWithUnderscores('Country'),
 						'mapped'	=>	['billing_country_id'],
 						'type'		=>	'normal'
 					],
 					[
-						'id'		=>	7,
+						'id'		=>	8,
 						'text'		=>	'Phone',
 						'value'		=>	General::replaceWithUnderscores('Phone'),
 						'mapped'	=>	['phone'],
 						'type'		=>	'normal'
 					],
 					[
-						'id'		=>	8,
+						'id'		=>	9,
 						'text'		=>	'Email',
 						'value'		=>	General::replaceWithUnderscores('Email'),
 						'mapped'	=>	['email'],
