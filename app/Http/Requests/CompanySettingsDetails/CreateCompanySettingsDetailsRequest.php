@@ -19,6 +19,8 @@ class CreateCompanySettingsDetailsRequest extends FormRequest
 
 		$company_id = Sanitize::input($this->input('company_id'));
 		$company_name = Sanitize::input($this->input('company_name'));
+		$company_identifier = Sanitize::input($this->input('company_identifier') ?? '');
+		$scheme = Sanitize::input($this->input('scheme') ?? '');
 
 		$size = '';
 		if($this->filled('size')){
@@ -56,15 +58,17 @@ class CreateCompanySettingsDetailsRequest extends FormRequest
 		}
 
 		$this->merge([
-			'company_id'		=>	$company_id,
-			'company_name'		=>	$company_name,
-			'size'				=>	$size,
-			'id_number'			=>	$id_number,
-			'gst'				=>	$gst,
-			'classification'	=>	$classification,
-			'website'			=>	$website,
-			'email'				=>	$email,
-			'phone'				=>	$phone
+			'company_id'			=>	$company_id,
+			'company_name'			=>	$company_name,
+			'company_identifier'	=>	$company_identifier,
+			'scheme'				=>	$scheme,
+			'size'					=>	$size,
+			'id_number'				=>	$id_number,
+			'gst'					=>	$gst,
+			'classification'		=>	$classification,
+			'website'				=>	$website,
+			'email'					=>	$email,
+			'phone'					=>	$phone
 		]);
 
 	}
@@ -77,15 +81,17 @@ class CreateCompanySettingsDetailsRequest extends FormRequest
     public function rules(): array
     {
         return [
-			'company_id'		=>	'required',
-            'company_name'		=>	'required',
-            'size'				=>	'sometimes',
-            'id_number'			=>	'sometimes',
-            'gst'				=>	'sometimes',
-            'classification'	=>	'sometimes',
-            'website'			=>	'sometimes',
-            'email'				=>	'sometimes',
-            'phone'				=>	'sometimes'
+			'company_id'			=>	'required',
+            'company_name'			=>	'required',
+            'size'					=>	'sometimes',
+            'id_number'				=>	'sometimes',
+            'gst'					=>	'sometimes',
+            'classification'		=>	'sometimes',
+            'website'				=>	'sometimes',
+            'email'					=>	'sometimes',
+            'phone'					=>	'sometimes',
+            'company_identifier'	=>	'sometimes',
+            'scheme'				=>	'sometimes'
         ];
     }
 }

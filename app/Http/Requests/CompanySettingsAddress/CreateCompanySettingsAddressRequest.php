@@ -22,37 +22,17 @@ class CreateCompanySettingsAddressRequest extends FormRequest
 	 */
 	protected function prepareForValidation(){
 
-		$address_street = '';
-		if($this->filled('address_street')){
-			$address_street = Sanitize::input($this->input('address_street'));
-		}
 
-		$apt = '';
-		if($this->filled('apt')){
-			$apt = Sanitize::input($this->input('apt'));
-		}
-
-		$city = '';
-		if($this->filled('city')){
-			$city = Sanitize::input($this->input('city'));
-		}
-
-		$state = '';
-		if($this->filled('state')){
-			$state = Sanitize::input($this->input('state'));
-		}
-
-		$postal_code = '';
-		if($this->filled('postal_code')){
-			$postal_code = Sanitize::input($this->input('postal_code'));
-		}
-
-		$country_id = null;
-		if($this->filled('country_id')){
-			$country_id = Sanitize::input($this->input('country_id'));
-		}
-
+		$address_street = Sanitize::input($this->input('address_street'));
+		$apt = Sanitize::input($this->input('apt'));
+		$city = Sanitize::input($this->input('city'));
+		$state = Sanitize::input($this->input('state'));
+		$postal_code = Sanitize::input($this->input('postal_code'));
+		$country_id = Sanitize::input($this->input('country_id'));
 		$company_id = Sanitize::input($this->input('company_id'));
+		$identifier = Sanitize::input($this->input('identifier') ?? '');
+		$scheme = Sanitize::input($this->input('scheme') ?? '');
+		
 
 		$this->merge([
 			'address_street'	=>	$address_street,
@@ -62,6 +42,8 @@ class CreateCompanySettingsAddressRequest extends FormRequest
 			'postal_code'		=>	$postal_code,
 			'country_id'		=>	$country_id,
 			'company_id'		=>	$company_id,
+			'identifier'		=>	$identifier,
+			'scheme'			=>	$scheme,
 		]);
 	}
 
@@ -73,13 +55,14 @@ class CreateCompanySettingsAddressRequest extends FormRequest
     public function rules() : array {
         return [
             'company_id'		=>	'required',
-            'address_street'	=>	'sometimes',
-            'apt'				=>	'sometimes',
-            'city'				=>	'sometimes',
-            'state'				=>	'sometimes',
-            'postal_code'		=>	'sometimes',
-            'country_id'		=>	'sometimes',
-            'address_street'	=>	'sometimes'
+            'address_street'	=>	'required',
+            'apt'				=>	'required',
+            'city'				=>	'required',
+            'state'				=>	'required',
+            'postal_code'		=>	'required',
+            'country_id'		=>	'required',
+            'identifier'		=>	'sometimes',
+            'scheme'			=>	'sometimes',
         ];
     }
 }

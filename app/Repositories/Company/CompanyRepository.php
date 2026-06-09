@@ -65,6 +65,8 @@ class CompanyRepository{
 		$company->state = $data['state'];
 		$company->postal_code = $data['postal_code'];
 		$company->country_id = $data['country_id'];
+		$company->address_identifier = $data['identifier'];
+		$company->address_scheme = $data['scheme'];
 		return $company->save();
 
 	}
@@ -86,6 +88,9 @@ class CompanyRepository{
 		$company->website = $data['website'];
 		$company->email = $data['email'];
 		$company->phone = $data['phone'];
+
+		$company->company_identifier = $data['company_identifier'];
+		$company->scheme = $data['scheme'];
 
 		return $company->save();
 

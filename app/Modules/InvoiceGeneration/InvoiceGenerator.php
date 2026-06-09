@@ -193,6 +193,7 @@ class InvoiceGenerator{
 		$inv->setNumber($this->invoice_data->invoice_number)
 			->setIssueDate(new DateTime($created_at))
 			->setDueDate(new DateTime($due_date));
+			//->setCurrency();
 
 		// Set seller
 		$seller = new Party();
