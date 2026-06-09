@@ -188,23 +188,35 @@ class InvoiceGenerator{
 		$due_date = Carbon::create($this->invoice_data->due_date);
 		$due_date = $due_date->format('Y-m-d');
 
+		$company = $this->invoice_db_operations->fetchDefaultCompanyById($this->company_id);
+
 		// Create PEPPOL invoice instance
 		$inv = new EInvoice(Presets\Peppol::class);
 		$inv->setNumber($this->invoice_data->invoice_number)
 			->setIssueDate(new DateTime($created_at))
-			->setDueDate(new DateTime($due_date));
-			//->setCurrency();
+			->setDueDate(new DateTime($due_date))
+			->setCurrency($this->invoice_data->client_wt->currency->code);
 
 		// Set seller
 		$seller = new Party();
-		$seller->setElectronicAddress(new Identifier('9482348239847239874', '0088'))
-			->setCompanyId(new Identifier('AH88726', '0183'))
-			->setName('Seller Name Ltd.')
-			->setTradingName('Seller Name')
-			->setVatNumber('ESA00000000')
-			->setAddress(['Fake Street 123', 'Apartment Block 2B'])
-			->setCity('Springfield')
-			->setCountry('DE');
+
+		if(trim($company->address_identifier) !== '' && trim($company->address_scheme) !== ''){
+			$seller = $seller->setElectronicAddress(new Identifier($company->address_identifier, $company->address_scheme));
+		}
+
+		if(trim($company->company_identifier) !== '' && trim($company->scheme) !== ''){
+			$seller = $seller->setCompanyId(new Identifier($company->company_identifier, $company->scheme));
+		}
+
+		$seller = $seller->setName($company->company_name);
+
+		if($company->gst_vat_number !== ''){
+			$seller = $seller->setVatNumber($company->gst_vat_number);
+		}
+			
+			// ->setAddress(['Fake Street 123', 'Apartment Block 2B'])
+			// ->setCity('Springfield')
+			// ->setCountry('DE');
 		$inv->setSeller($seller);
 
 		// Set buyer

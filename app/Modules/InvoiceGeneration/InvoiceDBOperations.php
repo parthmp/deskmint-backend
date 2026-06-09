@@ -4,11 +4,13 @@ namespace App\Modules\InvoiceGeneration;
 
 use App\Models\AdditionalCompanyField;
 use App\Models\ClientCustomFieldValue;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoiceItem;
 use App\Models\SettingsSection;
 use App\Models\User;
+use App\Repositories\Company\CompanyRepository;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -27,7 +29,7 @@ class InvoiceDBOperations{
 	 * @param integer $company_id
 	 * @param integer $invoice_id
 	 */
-	public function __construct(int $company_id, int $invoice_id){
+	public function __construct(int $company_id, int $invoice_id, private CompanyRepository $company_repository){
 		$this->company_id = $company_id;
 		$this->invoice_id = $invoice_id;
 		$this->data = $this->fetchRequiredSettings();
@@ -220,6 +222,16 @@ class InvoiceDBOperations{
 		
 		return $info->toArray();
 
+	}
+
+	/**
+	 * fetchDefaultCompanyById function
+	 *
+	 * @param integer $company_id
+	 * @return Company|null
+	 */
+	public function fetchDefaultCompanyById(int $company_id) : ?Company {
+		return $this->company_repository->fetchDefaultById($company_id);
 	}
 
 }
