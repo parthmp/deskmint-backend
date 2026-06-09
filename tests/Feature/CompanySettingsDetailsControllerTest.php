@@ -171,4 +171,129 @@ class CompanySettingsDetailsControllerTest extends TestCase{
 
 	}
 
+
+	public function test_to_see_if_it_saves_company_details_with_all_fields_filled_peppol() : void {
+
+		$device = 'device 123';
+		$c = $this->set_access($device);
+		$company_id = $this->createTemporaryCompany();
+
+		$response = $this->post('/api/manage-company-settings-details', [
+			'company_id'		=>		$company_id,
+			'company_name'		=>		'something else here new  ',
+			'size'				=>		'1-20',
+			'id_number'			=>		'123',
+			'gst'				=>		'GST456',
+			'classification'	=>		'CLS789',
+			'website'			=>		'https://bla.com',
+			'email'				=>		'what@ever.com',
+			'phone'				=>		'+123469870',
+			'company_identifier'				=>		'c ind',
+			'scheme'				=>		'c sch',
+		], $c['headers']);
+
+		$json = $response->json();
+		
+		$response->assertStatus(200);
+		$this->assertArrayHasKey('validity', $json);
+		$this->assertEquals('saved_success', $json['validity']);
+		
+		/* now fetch to check the data */
+		$params = http_build_query([
+			'company_id' 		=> $company_id
+		]);
+
+		$response = $this->withHeaders($c['headers'])->get('/api/manage-company-settings-details?'.$params);
+		$response->assertStatus(200);
+
+		$json = $response->json();
+
+		$this->assertNotEmpty($json['company_name']);
+		$this->assertEquals('something else here new', $json['company_name']);
+		$this->assertEquals('1-20', $json['size']);
+		$this->assertEquals('123', $json['id_number']);
+		$this->assertEquals('GST456', $json['gst_vat_number']);
+		$this->assertEquals('CLS789', $json['classification']);
+		$this->assertEquals('https://bla.com', $json['website']);
+		$this->assertEquals('what@ever.com', $json['email']);
+		$this->assertEquals('c ind', $json['company_identifier']);
+		$this->assertEquals('c sch', $json['scheme']);
+
+		
+
+	}
+
+	public function test_to_see_if_it_updates_company_details_with_all_fields_filled_peppol() : void {
+
+		$device = 'device 123';
+		$c = $this->set_access($device);
+		$company_id = $this->createTemporaryCompany();
+
+		$response = $this->post('/api/manage-company-settings-details', [
+			'company_id'		=>		$company_id,
+			'company_name'		=>		'something else here new  ',
+			'size'				=>		'1-20',
+			'id_number'			=>		'123',
+			'gst'				=>		'GST456',
+			'classification'	=>		'CLS789',
+			'website'			=>		'https://bla.com',
+			'email'				=>		'what@ever.com',
+			'phone'				=>		'+123469870',
+			'company_identifier'				=>		'c ind',
+			'scheme'				=>		'c sch',
+		], $c['headers']);
+
+		$json = $response->json();
+		
+		$response->assertStatus(200);
+		$this->assertArrayHasKey('validity', $json);
+		$this->assertEquals('saved_success', $json['validity']);
+
+		//update
+		$response = $this->post('/api/manage-company-settings-details', [
+			'company_id'		=>		$company_id,
+			'company_name'		=>		'something else here new ov',
+			'size'				=>		'1-20 ov',
+			'id_number'			=>		'123 ov',
+			'gst'				=>		'GST456 ov',
+			'classification'	=>		'CLS789 ov',
+			'website'			=>		'https://bla.in',
+			'email'				=>		'what@ever.comov',
+			'phone'				=>		'+12346987055',
+			'company_identifier'				=>		'c ind ov',
+			'scheme'				=>		'c sch ov',
+		], $c['headers']);
+
+		$json = $response->json();
+		
+		$response->assertStatus(200);
+		$this->assertArrayHasKey('validity', $json);
+		$this->assertEquals('saved_success', $json['validity']);
+		
+		/* now fetch to check the data */
+		$params = http_build_query([
+			'company_id' 		=> $company_id
+		]);
+
+		$response = $this->withHeaders($c['headers'])->get('/api/manage-company-settings-details?'.$params);
+		$response->assertStatus(200);
+
+		$json = $response->json();
+
+		$this->assertNotEmpty($json['company_name']);
+		$this->assertEquals('something else here new ov', $json['company_name']);
+		$this->assertEquals('1-20 ov', $json['size']);
+		$this->assertEquals('123 ov', $json['id_number']);
+		$this->assertEquals('GST456 ov', $json['gst_vat_number']);
+		$this->assertEquals('CLS789 ov', $json['classification']);
+		$this->assertEquals('https://bla.in', $json['website']);
+		$this->assertEquals('what@ever.comov', $json['email']);
+		$this->assertEquals('c ind ov', $json['company_identifier']);
+		$this->assertEquals('c sch ov', $json['scheme']);
+
+		
+
+	}
+
+
 }
