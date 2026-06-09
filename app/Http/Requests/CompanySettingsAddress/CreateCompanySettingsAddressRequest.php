@@ -60,7 +60,7 @@ class CreateCompanySettingsAddressRequest extends FormRequest
             'city'				=>	'required',
             'state'				=>	'required',
             'postal_code'		=>	'required',
-            'country_id'		=>	'required',
+            'country_id'		=>	'required|exists:countries,id',
             'identifier'		=>	'sometimes',
             'scheme'			=>	'sometimes',
         ];
