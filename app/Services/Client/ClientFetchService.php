@@ -196,6 +196,10 @@ class ClientFetchService{
 			'clients.send_reminders' => [
 				0	=>	'No',
 				1	=>	"Yes"
+			],
+			'clients.e_invoice_enabled' => [
+				0	=>	'No',
+				1	=>	"Yes"
 			]
 		])->results();
 		
@@ -209,6 +213,20 @@ class ClientFetchService{
 				];
 			}else{
 				$ele->send_reminders = [
+					'type'		=>	'label',
+					'highlight'	=>	'success',
+					'text'		=>	'Yes'
+				];
+			}
+
+			if((int)$ele->e_invoice_enabled === 0){
+				$ele->e_invoice_enabled = [
+					'type'		=>	'label',
+					'highlight'	=>	'error',
+					'text'		=>	'No'
+				];
+			}else{
+				$ele->e_invoice_enabled = [
 					'type'		=>	'label',
 					'highlight'	=>	'success',
 					'text'		=>	'Yes'
