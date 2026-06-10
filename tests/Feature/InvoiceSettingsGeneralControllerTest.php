@@ -45,12 +45,11 @@ class InvoiceSettingsGeneralControllerTest extends TestCase{
 		$json = $response->json();
 
 		$this->assertEquals([
-				'template'				=>	'plain',
-				'font_size'				=>	16,
+				'template'				=>	'stylish',
+				'font_size'				=>	12,
 				'logo_size'				=>	100,
 				'primary_color'			=>	'#055f40',
-				'secondary_color'		=>	'#118b65',
-				'e_invoice_on'			=>	false
+				'secondary_color'		=>	'#118b65'
 			], $json['settings']);
 			
 		$this->assertTrue(in_array('bla', $json['templates']));

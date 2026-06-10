@@ -259,7 +259,7 @@ class InvoiceRenderer extends InvoiceGenerator{
 				if($row['type'] === 'normal'){
 					$mapped = $row['mapped'];
 					if($mapped[0] === 'tax'){
-						$product_columns_html .= (double) $item->tax.'%';
+						$product_columns_html .= (float) $item->tax.'%';
 					}else{
 						if($mapped[0] === 'product_id'){
 							$product_columns_html .= $item->product->product_name;
@@ -274,7 +274,7 @@ class InvoiceRenderer extends InvoiceGenerator{
 					if((int) $row['tax'] === 1){
 
 						//for tax fields
-						$product_columns_html .= (double) $row['tax_rate'].'%';
+						$product_columns_html .= (float) $row['tax_rate'].'%';
 
 					}else{
 						$product_columns_html .= $row['text'];

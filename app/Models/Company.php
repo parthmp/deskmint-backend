@@ -15,4 +15,8 @@ class Company extends Model
 		return $this->hasMany(AdditionalCompanyField::class, 'company_id', 'id');
 	}
 
+	public function country(){
+		return $this->belongsTo(Country::class, 'country_id', 'id');
+	}
+
 }

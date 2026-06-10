@@ -22,14 +22,14 @@ class InvoiceDBOperations{
 	private int $invoice_id;
 
 	private array $data = [];
-
+	
 	/**
 	 * __construct function
 	 *
 	 * @param integer $company_id
 	 * @param integer $invoice_id
 	 */
-	public function __construct(int $company_id, int $invoice_id, private CompanyRepository $company_repository){
+	public function __construct(int $company_id, int $invoice_id){
 		$this->company_id = $company_id;
 		$this->invoice_id = $invoice_id;
 		$this->data = $this->fetchRequiredSettings();
@@ -231,7 +231,7 @@ class InvoiceDBOperations{
 	 * @return Company|null
 	 */
 	public function fetchDefaultCompanyById(int $company_id) : ?Company {
-		return $this->company_repository->fetchDefaultById($company_id);
+		return Company::where([['id', '=', $company_id], ['default', '=', 1]])->with('country')->first();
 	}
 
 }

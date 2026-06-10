@@ -16,13 +16,13 @@ class SendInvoice extends Mailable {
 	
     use Queueable, SerializesModels;
 
-	private array $mail_data;
-
+	private array $data;
+	
     /**
      * Create a new message instance.
      */
-    public function __construct(array $mail_data){
-        $this->mail_data = $mail_data;
+    public function __construct(array $data){
+        $this->data = $data;
     }
 
     /**
@@ -43,7 +43,7 @@ class SendInvoice extends Mailable {
         return new Content(
             view : 'emails.send_invoice',
 			with : [
-				'mail_data'	=>	$this->mail_data
+				'mail_data'	=>	$this->data
 			]
         );
     }
@@ -55,9 +55,13 @@ class SendInvoice extends Mailable {
      */
     public function attachments(): array
     {
-        return [
-			Attachment::fromStorageDisk($this->mail_data['disk'], $this->mail_data['path'])
-		];
+		$local_attachments = [];
+		foreach($this->data['attachments'] as $attachment){
+			$local_attachments[] = Attachment::fromStorageDisk($attachment['disk'], $attachment['path']);
+		}
+
+        return $local_attachments;
+
     }
 
 }

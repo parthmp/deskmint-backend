@@ -344,7 +344,7 @@ class InvoiceSettingsClientDetailsControllerTest extends TestCase{
 		$response = $this->withHeaders($c['headers'])->get('/api/manage-invoice-settings-client-details?'. $params);
 		$json = $response->json();
 		
-		$this->assertEquals(12, count($json['dropdown']));
+		$this->assertEquals(13, count($json['dropdown']));
 		$this->assertEquals(2, count($json['rows']));
 	}
 

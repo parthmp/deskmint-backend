@@ -20,7 +20,7 @@ use Einvoicing\InvoiceLine;
 use Einvoicing\Party;
 use Einvoicing\Presets;
 use Einvoicing\Writers\UblWriter;
-
+use Illuminate\Database\Eloquent\Collection;
 
 class InvoiceGenerator{
 
@@ -37,6 +37,8 @@ class InvoiceGenerator{
 	private string $filename = '';
 	private string $disk = 'temp_invoices';
 	private array $invoice_content;
+	private array $product_rows_data;
+	private ?Collection $invoice_items;
 	
 	/**
 	 * __construct function
@@ -124,6 +126,8 @@ class InvoiceGenerator{
 
 		$this->invoice_data = $context['invoice_data'];
 		$this->invoice_content = $context['invoice_content_settings'];
+		$this->invoice_items = $context['invoice_items'];
+		$this->product_rows_data = $context['product_rows_data'];
 		
 		return $context;
 	}
@@ -213,38 +217,113 @@ class InvoiceGenerator{
 		if($company->gst_vat_number !== ''){
 			$seller = $seller->setVatNumber($company->gst_vat_number);
 		}
-			
-			// ->setAddress(['Fake Street 123', 'Apartment Block 2B'])
-			// ->setCity('Springfield')
-			// ->setCountry('DE');
+
+		$seller_company_address = [];
+
+		if($company->apt !== ''){
+			$seller_company_address[] = $company->apt;
+		}
+
+		if($company->address_street !== ''){
+			$seller_company_address[] = $company->address_street;
+		}
+
+		if(!empty($seller_company_address)){
+			$seller = $seller->setAddress($seller_company_address);
+		}
+
+		if($company->city !== ''){
+			$seller = $seller->setCity($company->city);
+		}
+
+		if($company->city !== ''){
+			$seller = $seller->setCity($company->city);
+		}
+
+		if($company->country_id){
+			$seller = $seller->setCountry($company->country->country_code);
+		}
+		
+
 		$inv->setSeller($seller);
 
 		// Set buyer
 		$buyer = new Party();
-		$buyer->setElectronicAddress(new Identifier('ES12345', '0002'))
-			->setName('Buyer Name Ltd.')
-			->setCountry('FR');
+
+		if($this->invoice_data->client_wt->peppol_identifier !== '' && $this->invoice_data->client_wt->peppol_scheme !== ''){
+			$buyer = $buyer->setElectronicAddress(new Identifier($this->invoice_data->client_wt->peppol_identifier, $this->invoice_data->client_wt->peppol_scheme));
+		}
+
+		$buyer_name = ($this->invoice_data->client_wt->client_company_name !== '') ? $this->invoice_data->client_wt->client_company_name : $this->invoice_data->client_wt->first_name.' '.$this->invoice_data->client_wt->last_name;
+
+		$buyer = $buyer->setName($buyer_name)->setCountry($this->invoice_data->client_wt->billing_country->country_code);
+
 		$inv->setBuyer($buyer);
 
 		// Add a product line
-		$line = new InvoiceLine();
-		$line->setName('Product Name')
-			->setPrice(100)
-			->setVatRate(16)
-			->setQuantity(1);
-		$inv->addLine($line);
+		foreach($this->invoice_items as $item){
+
+			$line = new InvoiceLine();
+			$line = $line->setName($item->product->product_name)->setPrice($item->unit_price)->setQuantity($item->quantity);
+
+			$vat_rate = 0;
+
+			foreach($this->product_rows_data as $row){
+				
+				if($row['type'] === 'normal'){
+					$mapped = $row['mapped'];
+					if($mapped[0] === 'tax'){
+						$vat_rate += (float) $item->tax;
+					}
+
+				}else{
+					//for custom product row fields.
+					if((int) $row['tax'] === 1){
+
+						//for tax fields
+						$vat_rate += (float) $row['tax_rate'];
+
+					}
+				}
+
+			}
+
+			$line->setVatRate($vat_rate);
+			$inv->addLine($line);
+			
+		}
 
 		$writer = new UblWriter();
 		$xml = $writer->export($inv);
 		$disk = Storage::disk($this->disk);
-		$disk->put($this->invoice_id.DIRECTORY_SEPARATOR."test", $xml);
+		$filename = str_ireplace('pdf', 'xml', $this->filename);
+		$disk->put($this->invoice_id.DIRECTORY_SEPARATOR.$filename, $xml);
 		return $this;
 
 	}
 
+	/**
+	 * ifInvoiceDataAvailable function
+	 *
+	 * @return boolean
+	 */
 	private function ifInvoiceDataAvailable() : bool {
 
 		if($this->filename && Storage::disk($this->disk)->exists($this->invoice_id.DIRECTORY_SEPARATOR.$this->filename)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * ifEInvoiceAvailable function
+	 *
+	 * @return boolean
+	 */
+	private function ifEInvoiceAvailable() : bool {
+		$filename = str_ireplace('pdf', 'xml', $this->filename);
+		if($filename && Storage::disk($this->disk)->exists($this->invoice_id.DIRECTORY_SEPARATOR.$filename)) {
 			return true;
 		}
 
@@ -439,10 +518,19 @@ class InvoiceGenerator{
 
 		$email_json = json_decode($this->invoice_content['settings_json']);
 
+		$attachments = [];
+
+		$attachments[] = ['disk' => $this->disk, 'path' => $this->invoice_id.DIRECTORY_SEPARATOR.$this->filename];
+
+		if($this->ifEInvoiceAvailable()){
+			$xml_invoice = str_ireplace('pdf', 'xml', $this->invoice_id.DIRECTORY_SEPARATOR.$this->filename);
+			$attachments[] = ['disk' => $this->disk, 'path' => $xml_invoice];
+		}
+
+
 		$data = [
-			'disk'		=>	$this->disk,
-			'path'		=>  $this->invoice_id.DIRECTORY_SEPARATOR.$this->filename,
-			'content'	=>	$this->parseEmailContent($email_json->email_content_invoice)
+			'attachments'	=>  $attachments,
+			'content'		=>	$this->parseEmailContent($email_json->email_content_invoice)
 		];
 
 		SendEmailJob::dispatch(
