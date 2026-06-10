@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Jobs;
+
+use App\Services\Invoice\InvoiceService;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Queue\Queueable;
+
+class GenerateInvoiceJob implements ShouldQueue
+{
+    use Queueable;
+
+    /**
+     * Create a new job instance.
+     */
+    public function __construct(
+		private int $company_id,
+		private int $invoice_id,
+		private string $timezone_offset_minutes,
+		private InvoiceService $invoice_service
+	){}
+
+    /**
+     * Execute the job.
+     */
+    public function handle(): void
+    {
+        $this->invoice_service->sendInvoice($this->company_id, $this->invoice_id, $this->timezone_offset_minutes);
+    }
+}

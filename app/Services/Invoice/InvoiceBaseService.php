@@ -276,7 +276,14 @@ class InvoiceBaseService{
 
 	}
 
-	public function saveOrUpdate(Request $request, int $company_id) : void {
+	/**
+	 * saveOrUpdate function
+	 *
+	 * @param Request $request
+	 * @param integer $company_id
+	 * @return integer
+	 */
+	public function saveOrUpdate(Request $request, int $company_id) : int {
 
 		$invoice_id = $this->insertInvoice($request, $this->getInvoiceInsertData($request));
 
@@ -285,6 +292,8 @@ class InvoiceBaseService{
 
 		/* override manual reset here */
 		$this->resetManualInvoieNumberResetFlag($company_id);
+
+		return $invoice_id;
 
 	}
 

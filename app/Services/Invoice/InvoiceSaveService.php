@@ -11,10 +11,10 @@ class InvoiceSaveService extends InvoiceBaseService{
 	 *
 	 * @param Request $request
 	 * @param integer $company_id
-	 * @return boolean
+	 * @return integer
 	 */
-	public function save(Request $request, int $company_id) : void {
-		$this->saveOrUpdate($request, $company_id);
+	public function save(Request $request, int $company_id) : int {
+		return $this->saveOrUpdate($request, $company_id);
 	}
 
 }

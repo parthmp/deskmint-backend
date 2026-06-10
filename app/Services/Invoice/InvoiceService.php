@@ -2,7 +2,9 @@
 
 namespace App\Services\Invoice;
 
+use App\Modules\InvoiceGeneration\InvoiceGenerator;
 use App\Repositories\Client\ClientRepository;
+use App\Repositories\Invoice\InvoiceRepository;
 use App\Repositories\Product\ProductRepository;
 use Illuminate\Http\Request;
 
@@ -13,7 +15,8 @@ class InvoiceService{
 		private ClientRepository $client_repository,
 		private ProductRepository $product_repository,
 		private InvoiceValidationService $invoice_validation_service,
-		private InvoiceSaveService  $invoice_save_service
+		private InvoiceSaveService  $invoice_save_service,
+		private InvoiceRepository $invoice_repository
 	){}
 
 	/**
@@ -96,10 +99,24 @@ class InvoiceService{
 	 *
 	 * @param Request $request
 	 * @param integer $company_id
-	 * @return boolean
+	 * @return integer
 	 */
-	public function save(Request $request, int $company_id) : void {
-		$this->invoice_save_service->save($request, $company_id);
+	public function save(Request $request, int $company_id) : int {
+		return $this->invoice_save_service->save($request, $company_id);
+	}
+
+	
+	public function sendInvoice(int $company_id, int $invoice_id, string $time_offset_minutes) : void {
+		
+		$invoice_generator = new InvoiceGenerator((int) $company_id, (int) $invoice_id, (string) $time_offset_minutes);
+		$invoice_generator = $invoice_generator->generatePDF(save:true, add_random:true);
+
+		if($this->invoice_repository->ifEInvoiceIsOn($invoice_id)){
+			$invoice_generator = $invoice_generator->generateEInvoice();
+		}
+		
+		$invoice_generator->sendEmail();
+
 	}
 
 }

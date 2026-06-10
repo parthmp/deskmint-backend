@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class InvoiceRepository{
 
@@ -90,6 +91,19 @@ class InvoiceRepository{
 	 */
 	public function insertInvoiceItems(array $invoice_items) : void {
 		InvoiceItem::insert($invoice_items);
+	}
+
+	/**
+	 * ifEInvoiceOn function
+	 *
+	 * @param integer $invoice_id
+	 * @return boolean
+	 */
+	public function ifEInvoiceIsOn(int $invoice_id) : bool {
+
+		$query = DB::table('invoices')->select('clients.e_invoice_enabled')->join('clients', 'clients.id', '=', 'invoices.client_id')->where('invoices.id', '=', $invoice_id)->first();
+		return (int) $query->e_invoice_enabled === 1;
+
 	}
 
 }

@@ -116,10 +116,10 @@ class InvoiceGenerator{
 			'invoice_data'				=>	$this->invoice_db_operations->fetchInvoiceRow(),
 			'total_fields_settings'		=>	$this->invoice_settings_resolver->fetchTotalFieldsDetails()
 		];
-
 		
 		$context['client_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfClient((int) $context['invoice_data']['client_id']);
-		$context['invoice_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfInvoice();
+
+		$context['invoice_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfInvoice() ?? [];
 
 		$context['product_rows_data'] = $this->invoice_settings_resolver->fetchProductRowsSettings($context['invoice_data'], (int) $this->company_id);
 		$context['invoice_items'] = $this->invoice_db_operations->fetchInvoiceItems();
@@ -186,6 +186,11 @@ class InvoiceGenerator{
 		return $this;
 	}
 
+	/**
+	 * generateEInvoice function
+	 *
+	 * @return self
+	 */
 	public function generateEInvoice() : self {
 		
 		$created_at = $this->formatDateTime($this->invoice_data->created_at, false, true);
@@ -236,9 +241,10 @@ class InvoiceGenerator{
 			$seller = $seller->setCity($company->city);
 		}
 
-		if($company->city !== ''){
-			$seller = $seller->setCity($company->city);
+		if($company->postal_code !== ''){
+			$seller = $seller->setPostalCode($company->postal_code);
 		}
+
 
 		if($company->country_id){
 			$seller = $seller->setCountry($company->country->country_code);
@@ -256,7 +262,11 @@ class InvoiceGenerator{
 
 		$buyer_name = ($this->invoice_data->client_wt->client_company_name !== '') ? $this->invoice_data->client_wt->client_company_name : $this->invoice_data->client_wt->first_name.' '.$this->invoice_data->client_wt->last_name;
 
-		$buyer = $buyer->setName($buyer_name)->setCountry($this->invoice_data->client_wt->billing_country->country_code);
+		$buyer = $buyer->setName($buyer_name)
+						->setCountry($this->invoice_data->client_wt->billing_country->country_code)
+						->setPostalCode($this->invoice_data->client_wt->billing_postal_code)
+						->setAddress([$this->invoice_data->client_wt->billing_apt, $this->invoice_data->client_wt->billing_street])
+						->setCity($this->invoice_data->client_wt->billing_city);
 
 		$inv->setBuyer($buyer);
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Http\Requests\Product\SearchProductRequest;
+use App\Jobs\GenerateInvoiceJob;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoicesCustomField;
 use App\Modules\CustomFields\CustomFields;
@@ -80,8 +81,20 @@ class InvoiceController extends Controller{
 
 			try{
 
-				$this->invoice_service->save($request, $company_id);
-				return response(['message' => 'Invoice created successfully', 'validator' => 'invalid_created'], 200);
+				$invoice_id = $this->invoice_service->save($request, $company_id);
+
+				$message = 'Invoice created successfully';
+
+				//send invoice in email if the setting is switched on.
+				//should check for e invoice setting before sending xml in invoice servie class.
+				$do_send = (bool) Sanitize::input($request->input('settings.send_invoice_in_email'));
+				if($do_send){
+					$timezone_offset_minutes = Sanitize::input($request->input('timezone_offset_minutes'));
+					GenerateInvoiceJob::dispatch($company_id, $invoice_id, $timezone_offset_minutes, $this->invoice_service);
+					$message .= ' and invoice has been sent';
+				}
+
+				return response(['message' => $message, 'validator' => 'invalid_created'], 200);
 
 			}catch(Exception $e){
 				return General::wentWrong();
