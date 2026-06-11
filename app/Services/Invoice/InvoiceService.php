@@ -119,4 +119,8 @@ class InvoiceService{
 
 	}
 
+	public function fetchIndex(int $company_id){
+		return $this->invoice_fetch_service->fetchIndex($company_id);
+	}
+
 }

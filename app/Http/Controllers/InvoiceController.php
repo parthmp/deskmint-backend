@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\General;
 use App\Helpers\Sanitize;
+use App\Http\Requests\GenericRequest;
 use App\Http\Requests\Product\SearchProductRequest;
 use App\Jobs\GenerateInvoiceJob;
 use App\Models\InvoiceCustomFieldValue;
@@ -64,6 +65,12 @@ class InvoiceController extends Controller{
 		
 	}
 
+	public function index(GenericRequest $request){
+
+		return 
+
+	}
+
 	
 	/**
 	 * store function
@@ -101,7 +108,7 @@ class InvoiceController extends Controller{
 			}
 			
 		}catch(InvoiceException $e){
-			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
 		}catch(Exception $e){
 			return General::wentWrong();
 		}

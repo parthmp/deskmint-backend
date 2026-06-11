@@ -142,7 +142,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-invoices/fetch-clients', [InvoiceController::class, 'searchClients']);
 	Route::get('manage-invoices/fetch-initial-data', [InvoiceController::class, 'fetchInitialData']);
 	Route::get('manage-invoices/fetch-products', [InvoiceController::class, 'fetchProducts']);
-	Route::post('manage-invoices', [InvoiceController::class, 'store']);
+	//Route::post('manage-invoices', [InvoiceController::class, 'store']);
+	Route::resource('manage-invoices', InvoiceController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));;
 
 	Route::get('manage-email-settings-content', [EmailSettingsContentController::class, 'show']);
 	Route::post('manage-email-settings-content', [EmailSettingsContentController::class, 'upsert']);
