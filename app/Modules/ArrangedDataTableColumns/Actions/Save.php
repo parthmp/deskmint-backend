@@ -30,9 +30,11 @@ class Save{
 	 * @param string $feature_name
 	 * @param string $original_table
 	 * @param string $type
+	 * @param array $additional_fields
+	 * @param array $date_fields
 	 * @return boolean
 	 */
-	public function saveArrangedColumnsData(Request $request, string $custom_fields_model, string $feature_name, string $original_table, string $type) : bool {
+	public function saveArrangedColumnsData(Request $request, string $custom_fields_model, string $feature_name, string $original_table, string $type, array $additional_fields = [], $date_fields = []) : bool {
 		
 		$validated = $this->validation->validatePostedColumns($request);
 		if(!$validated){
@@ -48,20 +50,27 @@ class Save{
 		}
 
 		$general_columns = Schema::getColumnListing($original_table);
+		
 		$general_columns = array_values(array_diff($general_columns, ['deleted_at', 'updated_at']));
 		
 		$general_custom_column_ids = $custom_fields_model::where('company_id', '=', $company_id)->pluck('id')->toArray();
+
+		$additional_fields_names = [];
+
+		if(!empty($additional_fields)){
+			$additional_fields_names = array_column($additional_fields, 'label');
+		}
 
 		for($z = 0 ; $z < count($columns) ; $z++){
 			if(!isset($columns[$z][$type.'s_custom_fields_id'])){
 				$columns[$z][$type.'s_custom_fields_id'] = '-';
 			}
-			if(!in_array($columns[$z]['label'], $general_columns) && !in_array($columns[$z][$type.'s_custom_fields_id'], $general_custom_column_ids)){
+			if(!in_array($columns[$z]['label'], $general_columns) && !in_array($columns[$z][$type.'s_custom_fields_id'], $general_custom_column_ids) && !in_array($columns[$z]['label'], $additional_fields_names)){
 				throw new InvalidDataProvidedException("Invalid data provided", "invalid_request", config('global.error_code'));
 			}
 
 		}
-		
+		logger($columns);
 		try{
 
 			$columns = json_encode($columns);

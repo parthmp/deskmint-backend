@@ -51,9 +51,10 @@ class Fetch{
 	 * @param string $custom_fields_model
 	 * @param integer $company_id
 	 * @param array $table_columns
+	 * @param array $additional_fields
 	 * @return array
 	 */
-	private function parseSavedData(string $columns_json, string $type, string $custom_fields_model, int $company_id, array $table_columns) : array {
+	private function parseSavedData(string $columns_json, string $type, string $custom_fields_model, int $company_id, array $table_columns, array $additional_fields = []) : array {
 
 		$user_fields = [];
 
@@ -68,9 +69,16 @@ class Fetch{
 
 		$general_custom_columns_ids = $this->database_operations->setModel($custom_fields_model)->pluckIdsByCompanyIdC($company_id);
 		
+		$additional_fields_flattern = [];
+		
+		if(!empty($additional_fields)){
+			$additional_fields_flattern = array_column($additional_fields, 'label');
+			//$table_columns = array_merge($table_columns, ...$additional_fields);
+		}
+
 		foreach($fields_json as $field){
 
-			if(in_array($field['label'], $table_columns) || in_array($field[$type.'s_custom_fields_id'], $general_custom_columns_ids)){
+			if(in_array($field['label'], $table_columns) || in_array($field[$type.'s_custom_fields_id'], $general_custom_columns_ids) || in_array($field['label'], $additional_fields_flattern)){
 				$user_fields[] = $field;
 			}
 
@@ -209,9 +217,10 @@ class Fetch{
 	 * @param array $columns
 	 * @param array $custom_columns
 	 * @param string $type
+	 * @param array $additional_fields
 	 * @return array
 	 */
-	private function nonUserDataColumns(array $columns, array $custom_columns, string $type) : array {
+	private function nonUserDataColumns(array $columns, array $custom_columns, string $type, array $additional_fields = []) : array {
 
 		$counter = 1;
 
@@ -241,6 +250,30 @@ class Fetch{
 			$merged[] = $to_push;
 
 		}
+
+		/**
+		 * add additional fields here start
+		 */
+
+		foreach($additional_fields as $additional_field){
+			
+			$to_push = [];
+
+			$to_push['id'] = $counter++;
+			$to_push['label'] = $additional_field['label'];
+			$to_push['text'] = $additional_field['text'];
+			$to_push['type'] = 'normal';
+			$to_push['is_date'] = (isset($additional_field['is_date']) && $additional_field['is_date'] === true);
+			$to_push['searchable'] = (isset($additional_field['searchable']) && $additional_field['searchable'] === true);;
+			$to_push['show'] = false;
+
+			$merged[] = $to_push;
+
+		}
+
+		/**
+		 * end
+		 */
 		
 		for($z = 0 ; $z < count($custom_columns) ; $z++){
 
@@ -277,9 +310,11 @@ class Fetch{
 	 * @param string $original_table
 	 * @param string $custom_fields_model
 	 * @param string $type
+	 * @param array $remove_columns
+	 * @param array $additional_fields
 	 * @return array
 	 */
-	public function fetchArrangedColumnsData(Request $request, string $feature_name, string $original_table, string $custom_fields_model, string $type) : array {
+	public function fetchArrangedColumnsData(Request $request, string $feature_name, string $original_table, string $custom_fields_model, string $type, array $remove_columns = [], array $additional_fields = []) : array {
 		
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 
@@ -288,7 +323,12 @@ class Fetch{
 
 		/* fetch all fields */
 		$table_columns = Schema::getColumnListing($original_table);
+		
 		$table_columns = array_values(array_diff($table_columns, ['deleted_at', 'updated_at']));
+
+		if(!empty($remove_columns)){
+			$table_columns = array_values(array_diff($table_columns, $remove_columns));
+		}
 		
 		$general_custom_columns = $this->database_operations->setModel($custom_fields_model)->fetchGeneralCustomColumns($company_id);
 
@@ -297,7 +337,7 @@ class Fetch{
 		/* handle userdata here */
 		if($user_data){
 
-			$temp = $this->parseSavedData($user_data->columns_json, $type, $custom_fields_model, $company_id, $table_columns);
+			$temp = $this->parseSavedData($user_data->columns_json, $type, $custom_fields_model, $company_id, $table_columns, $additional_fields);
 			$user_fields = $temp['user_fields'];
 			$saved_ids_custom = $temp['saved_ids_custom'];
 			$counter = $temp['counter'];
@@ -309,7 +349,7 @@ class Fetch{
 			return $user_fields;
 			
 		}else{
-			return $this->nonUserDataColumns($table_columns, $general_custom_columns, $type);
+			return $this->nonUserDataColumns($table_columns, $general_custom_columns, $type, $additional_fields);
 		}
 		
 

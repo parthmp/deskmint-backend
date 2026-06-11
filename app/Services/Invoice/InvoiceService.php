@@ -119,8 +119,14 @@ class InvoiceService{
 
 	}
 
-	public function fetchIndex(int $company_id){
-		return $this->invoice_fetch_service->fetchIndex($company_id);
+	/**
+	 * fetchIndex function
+	 *
+	 * @param Request $request
+	 * @return array
+	 */
+	public function fetchIndex(Request $request) : array {
+		return $this->invoice_fetch_service->fetchIndex($request);
 	}
 
 }

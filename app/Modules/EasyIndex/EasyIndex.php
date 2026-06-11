@@ -174,9 +174,12 @@ class EasyIndex{
 		return match($temp_label){
 			'company_id'				=>		'companies.company_name',
 			'currency_id'				=>		'currencies.currency',
+			'c_code'					=>		'currencies.code',
 			'billing_country_id'		=>		'b_countries.country_name',
 			'shipping_country_id'		=>		's_countries.country_name',
 			'industry_id'				=>		'industries.industry_name',
+			'first_name'				=>		'clients.first_name',
+			'last_name'					=>		'clients.last_name',
 			default						=>		$type.'s.'.$default_label
 		};
 
@@ -294,11 +297,11 @@ class EasyIndex{
 						$show_columns = array_merge($show_columns, $this->processCustomColumns($clients_custom_columns, $user_data[$z][$this->type.'s_custom_fields_id'], $this->type));
 					}
 				}
-
+				
 				if($user_data[$z]['type'] === 'normal'){
 					if($user_data[$z]['searchable'] === true){
 						if($user_data[$z]['is_date'] === true){
-							$searchable_dates[] = 'clients.'.$user_data[$z]['label'];
+							$searchable_dates[] = $this->type.'s.'.$user_data[$z]['label'];
 						}else{
 
 							$searchable_columns[] = $this->processTempLabelForSearchables($temp_label2, $user_data[$z]['label'], $this->type);
@@ -392,8 +395,8 @@ class EasyIndex{
 			'text'	=>	'Actions'
 		]);
 		$table_data = [
-			'columns' => $show_columns,
-			'rows' => $fields->items()
+			'columns' 	=> $show_columns,
+			'rows' 		=> $fields->items()
 		];
 		
 		$total_pages = $fields->lastPage();

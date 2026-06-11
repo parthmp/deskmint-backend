@@ -9,6 +9,8 @@ use App\Http\Requests\Product\SearchProductRequest;
 use App\Jobs\GenerateInvoiceJob;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoicesCustomField;
+use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
+use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
 use App\Modules\CustomFields\CustomFields;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use App\Services\Invoice\InvoiceService;
@@ -20,8 +22,34 @@ use Illuminate\Http\Request;
  */
 class InvoiceController extends Controller{
 
+	private array $additional_fields = [
+		[
+			'label'			=>	'first_name',
+			'text'			=>	'First name'
+		],
+		[
+			'label'			=>	'last_name',
+			'text'			=>	'Last name'
+		],
+		[
+			'label'			=>	'client_company',
+			'text'			=>	'Client company'
+		],
+		[
+			'label'			=>	'c_code',
+			'text'			=>	'Currency'
+		]
+	];
+
+	private array $date_fields = [
+		'due_date',
+		'invoice_date',
+		'created_at'
+	];
+
 	public function __construct(
-		private InvoiceService $invoice_service
+		private InvoiceService $invoice_service,
+		private ArrangedDataTableColumns $arranged_data_table_columns
 	){}
     
 
@@ -65,9 +93,27 @@ class InvoiceController extends Controller{
 		
 	}
 
-	public function index(GenericRequest $request){
+	public function fetchArrangedColumns(Request $request){
+		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'invoices', 'invoices', InvoicesCustomField::class, 'invoice', remove_columns:['invoice_terms', 'send_email', 'pattern_matched', 'scan_chars', 'settings_snapshot', 'client_id', 'company_id'], additional_fields: $this->additional_fields);
+	}
+	
 
-		return 
+	public function saveArrangedColumns(Request $request){
+
+		//try{
+			$this->arranged_data_table_columns->saveArrangedColumnsData($request, InvoicesCustomField::class, 'invoices', 'invoices', 'invoice', $this->additional_fields, $this->date_fields);
+			return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
+		// }catch(InvalidDataProvidedException $e){
+		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
+
+	}
+
+	public function index(Request $request){
+
+		return $this->invoice_service->fetchIndex($request);
 
 	}
 
