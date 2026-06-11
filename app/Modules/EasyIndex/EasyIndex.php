@@ -1,6 +1,6 @@
 <?php
 
-namespace App\HelperClasses;
+namespace App\Modules\EasyIndex;
 
 use App\Helpers\General;
 use App\Helpers\Sanitize;
@@ -23,7 +23,7 @@ class EasyIndex{
 	private array $default_columns = [
 		'searchable_columns'	=>	[],
 		'searchable_dates'		=>	[],
-		'show columns'			=>	[], //must have label and text for each element
+		'show_columns'			=>	[], //must have label and text for each element
 	];
 
 	private string $model;
@@ -92,7 +92,7 @@ class EasyIndex{
 	 * @return self
 	 */
 	public function setRequest(Request $request) : self{
-		$this->$request = $request;
+		$this->request = $request;
 		return $this;
 	}
 
@@ -103,7 +103,7 @@ class EasyIndex{
 	 * @return self
 	 */
 	public function setDefaultColumns(array $default_columns) : self {
-		$this->$default_columns = $default_columns;
+		$this->default_columns = $default_columns;
 		return $this;
 	}
 
@@ -181,54 +181,6 @@ class EasyIndex{
 		};
 
 	}
-
-	// private function getJoins(array $clients_flat_columns) : array {
-	// 	return [
-	// 				[
-	// 					'table' => 'clients_flat',
-	// 					'first' => 'clients.id',
-	// 					'operator' => '=',
-	// 					'second' => 'clients_flat.client_id',
-	// 					'columns' => $clients_flat_columns
-	// 				],
-	// 				[
-	// 					'table' => 'companies',
-	// 					'first' => 'clients.company_id',
-	// 					'operator' => '=',
-	// 					'second' => 'companies.id',
-	// 					'columns' => ['companies.company_name as company_name']
-	// 				],
-	// 				[
-	// 					'table' => 'currencies',
-	// 					'first' => 'clients.currency_id',
-	// 					'operator' => '=',
-	// 					'second' => 'currencies.id',
-	// 					'columns' => ['currencies.currency as currency']
-	// 				],
-	// 				[
-	// 					'table' => 'countries as b_countries',
-	// 					'first' => 'clients.billing_country_id',
-	// 					'operator' => '=',
-	// 					'second' => 'b_countries.id',
-	// 					'columns' => ['b_countries.country_name as b_country_name']
-	// 				],
-	// 				[
-	// 					'table' => 'countries as s_countries',
-	// 					'first' => 'clients.shipping_country_id',
-	// 					'operator' => '=',
-	// 					'second' => 's_countries.id',
-	// 					'columns' => ['s_countries.country_name as s_country_name']
-	// 				],
-	// 				[
-	// 					'table' => 'industries',
-	// 					'first' => 'clients.industry_id',
-	// 					'operator' => '=',
-	// 					'second' => 'industries.id',
-	// 					'columns' => ['industries.industry_name as industry_name']
-	// 				]
-	// 			];
-
-	// }
 
 	private function processDataTable(array $clients_flat_columns, array $data, array $searchable_dates, array $searchable_columns, int $company_id, array $joins) : LengthAwarePaginator {
 		
@@ -393,33 +345,11 @@ class EasyIndex{
 			}
 
 			foreach($this->default_columns['show_columns'] as $show_column){
-				array_push($show_column, [
+				array_push($show_columns, [
 					'label'	=>	$show_column['label'],
 					'text'	=>	$show_column['text'],
 				]);
 			}
-
-			// array_push($searchable_columns, 'clients.first_name');
-			// array_push($searchable_columns, 'clients.last_name');
-			// array_push($searchable_columns, 'clients.email');
-			// array_push($searchable_dates, 'clients.created_at');
-
-			// array_push($show_columns, [
-			// 	'label'	=>	'first_name',
-			// 	'text'	=>	'First name',
-			// ]);
-			// array_push($show_columns, [
-			// 	'label'	=>	'last_name',
-			// 	'text'	=>	'Last name',
-			// ]);
-			// array_push($show_columns, [
-			// 	'label'	=>	'email',
-			// 	'text'	=>	'Email',
-			// ]);
-			// array_push($show_columns, [
-			// 	'label'	=>	'created_at',
-			// 	'text'	=>	'Added on',
-			// ]);
 
 		}
 		
