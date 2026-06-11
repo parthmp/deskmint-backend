@@ -26,6 +26,8 @@ class EasyIndex{
 		'show_columns'			=>	[], //must have label and text for each element
 	];
 
+	private array $map_additional_searchables = [];
+
 	private string $model;
 
 	public function __construct(private ArrangedDBperations $arranged_db_operations, private CustomFields $custom_fields, private DataTable $datatable){}
@@ -107,6 +109,18 @@ class EasyIndex{
 		return $this;
 	}
 
+
+	/**
+	 * setAdditionalSearchables function
+	 *
+	 * @param array $additional_searchables
+	 * @return self
+	 */
+	public function setAdditionalSearchables(array $additional_searchables) : self {
+		$this->map_additional_searchables = $additional_searchables;
+		return $this;
+	}
+
 	/**
 	 * setModel function
 	 *
@@ -127,7 +141,6 @@ class EasyIndex{
 	private function processTempLabel(string $temp_label) : string {
 
 		/* handle edge cases here */
-
 		return match($temp_label){
 			'company_id'				=>		'company_name',
 			'currency_id'				=>		'currency',
@@ -170,21 +183,18 @@ class EasyIndex{
 	}
 
 	private function processTempLabelForSearchables(string $temp_label, string $default_label, string $type) : string {
-		/**
-		 * this is for seacharble modifications, if this grows too big, split it and rewrite it.
-		 */
-		return match($temp_label){
+
+		$default = [
 			'company_id'				=>		'companies.company_name',
 			'currency_id'				=>		'currencies.currency',
-			'c_code'					=>		'currencies.code',
 			'billing_country_id'		=>		'b_countries.country_name',
 			'shipping_country_id'		=>		's_countries.country_name',
-			'industry_id'				=>		'industries.industry_name',
-			'first_name'				=>		'clients.first_name',
-			'last_name'					=>		'clients.last_name',
-			'client_company'			=>		'clients.client_company_name',
-			default						=>		$type.'s.'.$default_label
-		};
+			'industry_id'				=>		'industries.industry_name'
+		];
+
+		$merged = array_merge($default, $this->map_additional_searchables);
+
+		return $merged[$temp_label] ?? $type.'s.'.$default_label;
 
 	}
 

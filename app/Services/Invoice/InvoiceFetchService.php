@@ -149,7 +149,12 @@ class InvoiceFetchService{
 				],
 			];
 
-		return $this->easy_index->setType('invoice')->setCustomFieldClass(InvoicesCustomField::class)->setJoins($joins)->setExceptionClass(InvoiceException::class)->setRequest($request)->setDefaultColumns($default_columns)->setModel(Invoice::class)->fetchIndex();
+		return $this->easy_index->setType('invoice')->setCustomFieldClass(InvoicesCustomField::class)->setJoins($joins)->setExceptionClass(InvoiceException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
+			'c_code'				=>		'currencies.code',
+			'first_name'			=>		'clients.first_name',
+			'last_name'				=>		'clients.last_name',
+			'client_company'		=>		'clients.client_company_name'
+		])->setModel(Invoice::class)->fetchIndex();
 	}
 
 }
