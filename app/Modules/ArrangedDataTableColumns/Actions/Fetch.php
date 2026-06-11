@@ -70,7 +70,7 @@ class Fetch{
 		$general_custom_columns_ids = $this->database_operations->setModel($custom_fields_model)->pluckIdsByCompanyIdC($company_id);
 		
 		$additional_fields_flattern = [];
-		
+
 		if(!empty($additional_fields)){
 			$additional_fields_flattern = array_column($additional_fields, 'label');
 			//$table_columns = array_merge($table_columns, ...$additional_fields);
@@ -220,12 +220,14 @@ class Fetch{
 	 * @param array $additional_fields
 	 * @return array
 	 */
-	private function nonUserDataColumns(array $columns, array $custom_columns, string $type, array $additional_fields = []) : array {
+	private function nonUserDataColumns(array $columns, string $table_name, array $custom_columns, string $type, array $additional_fields = []) : array {
 
 		$counter = 1;
 
 		$merged = [];
 
+		$date_columns = collect(Schema::getColumns($table_name))->filter(fn($col) => in_array($col['type_name'], ['date', 'datetime', 'timestamp']))->pluck('name')->values()->all();
+		
 		for($z = 0 ; $z < count($columns) ; $z++){
 
 			$to_push = [];
@@ -233,7 +235,7 @@ class Fetch{
 			$to_push['label'] = $columns[$z];
 			$to_push['text'] = General::NormalizeColumnName($columns[$z]);
 			$to_push['type'] = 'normal';
-			$to_push['is_date'] = false;
+			$to_push['is_date'] = in_array($columns[$z], $date_columns);
 			$to_push['searchable'] = false;
 			$to_push['show'] = false;
 
@@ -349,7 +351,7 @@ class Fetch{
 			return $user_fields;
 			
 		}else{
-			return $this->nonUserDataColumns($table_columns, $general_custom_columns, $type, $additional_fields);
+			return $this->nonUserDataColumns($table_columns, $original_table, $general_custom_columns, $type, $additional_fields);
 		}
 		
 

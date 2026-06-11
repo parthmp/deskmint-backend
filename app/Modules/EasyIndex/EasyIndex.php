@@ -170,7 +170,9 @@ class EasyIndex{
 	}
 
 	private function processTempLabelForSearchables(string $temp_label, string $default_label, string $type) : string {
-
+		/**
+		 * this is for seacharble modifications, if this grows too big, split it and rewrite it.
+		 */
 		return match($temp_label){
 			'company_id'				=>		'companies.company_name',
 			'currency_id'				=>		'currencies.currency',
@@ -180,6 +182,7 @@ class EasyIndex{
 			'industry_id'				=>		'industries.industry_name',
 			'first_name'				=>		'clients.first_name',
 			'last_name'					=>		'clients.last_name',
+			'client_company'			=>		'clients.client_company_name',
 			default						=>		$type.'s.'.$default_label
 		};
 
