@@ -100,14 +100,14 @@ class InvoiceController extends Controller{
 
 	public function saveArrangedColumns(Request $request){
 
-		//try{
+		try{
 			$this->arranged_data_table_columns->saveArrangedColumnsData($request, InvoicesCustomField::class, 'invoices', 'invoices', 'invoice', $this->additional_fields, $this->date_fields);
 			return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
-		// }catch(InvalidDataProvidedException $e){
-		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
-		// }catch(Exception $e){
-		// 	return General::wentWrong();
-		// }
+		}catch(InvalidDataProvidedException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 	}
 

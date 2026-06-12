@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 
 class ClientsController extends Controller{
 
+	
 	public function __construct(private ArrangedDataTableColumns $arranged_data_table_columns, private ClientService $client_service){}
 
 	public function fetchClientsCustomFields(Request $request){
@@ -38,13 +39,13 @@ class ClientsController extends Controller{
 
 	public function index(Request $request){
 		
-		try{
+		//try{
 			return $this->client_service->fetchIndex($request);
-		}catch(ClientException $e){
-			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
+		// }catch(ClientException $e){
+		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
 		
 	}
 

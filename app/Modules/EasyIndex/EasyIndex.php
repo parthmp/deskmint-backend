@@ -28,6 +28,8 @@ class EasyIndex{
 
 	private array $map_additional_searchables = [];
 
+	private array $rewrites = [];
+
 	private string $model;
 
 	public function __construct(private ArrangedDBperations $arranged_db_operations, private CustomFields $custom_fields, private DataTable $datatable){}
@@ -122,6 +124,17 @@ class EasyIndex{
 	}
 
 	/**
+	 * setRewrites function
+	 *
+	 * @param array $rewrites
+	 * @return self
+	 */
+	public function setRewrites(array $rewrites) : self {
+		$this->rewrites = $rewrites;
+		return $this;
+	}
+
+	/**
 	 * setModel function
 	 *
 	 * @param string $model
@@ -202,48 +215,28 @@ class EasyIndex{
 		
 		$joins = $this->getJoins($clients_flat_columns);
 
-		$fields = $this->datatable->setVars($data)->setModel($this->model)->skipColumns(['deleted_at', 'updated_at'])->setDatesColumns($searchable_dates)->setCompanyId($company_id)->setJoins($joins)->setSearchableColumns($searchable_columns)->setRewrites([
-			'clients.send_reminders' => [
-				0	=>	'No',
-				1	=>	"Yes"
-			],
-			'clients.e_invoice_enabled' => [
-				0	=>	'No',
-				1	=>	"Yes"
-			]
-		])->results();
+		$fields = $this->datatable->setVars($data)->setModel($this->model)->skipColumns(['deleted_at', 'updated_at'])->setDatesColumns($searchable_dates)->setCompanyId($company_id)->setJoins($joins)->setSearchableColumns($searchable_columns);
 		
-		$fields->each(function($ele){
-			
-			if((int)$ele->send_reminders === 0){
-				$ele->send_reminders = [
-					'type'		=>	'label',
-					'highlight'	=>	'error',
-					'text'		=>	'No'
-				];
-			}else{
-				$ele->send_reminders = [
-					'type'		=>	'label',
-					'highlight'	=>	'success',
-					'text'		=>	'Yes'
-				];
-			}
+		if(!empty($this->rewrites['data'])){
+			$fields = $fields->setRewrites($this->rewrites['data']);
+		}
+		
+		$fields = $fields->results();
+		
+		if(!empty($this->rewrites['ui'])){
 
-			if((int)$ele->e_invoice_enabled === 0){
-				$ele->e_invoice_enabled = [
-					'type'		=>	'label',
-					'highlight'	=>	'error',
-					'text'		=>	'No'
-				];
-			}else{
-				$ele->e_invoice_enabled = [
-					'type'		=>	'label',
-					'highlight'	=>	'success',
-					'text'		=>	'Yes'
-				];
-			}
+			$fields->each(function($ele){
+				
+				foreach($this->rewrites['ui'] as $ui_key => $ui_element){
+					if($ele->{$ui_key} == $ele->{$ui_element['match_value']}){
+						$ele->{$ui_key} = $ui_element['matched'];
+					}else{
+						$ele->{$ui_key} = $ui_element['not_matched'];
+					}
+				}
 
-		});
+			});
+		}
 
 		return $fields;
 	}

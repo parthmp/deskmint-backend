@@ -140,7 +140,50 @@ class ClientFetchService{
 				],
 			];
 
-		return $this->easy_index->setType('client')->setCustomFieldClass(ClientsCustomField::class)->setJoins($joins)->setExceptionClass(ClientException::class)->setRequest($request)->setDefaultColumns($default_columns)->setModel(Client::class)->fetchIndex();
+			$rewrites = [
+				'data' => [
+					'clients.send_reminders' => [
+						0	=>	'No',
+						1	=>	"Yes"
+					],
+					'clients.e_invoice_enabled' => [
+						0	=>	'No',
+						1	=>	"Yes"
+					]
+				],
+
+				'ui'	=>	[
+					'send_reminders'	=>	[
+						'match_value'	=>	0,
+						'matched'	=>	[
+							'type'			=>	'label',
+							'highlight'		=>	'error',
+							'text'			=>	'No',
+						],
+						'not_matched'	=>	[
+							'type'		=>	'label',
+							'highlight'	=>	'success',
+							'text'		=>	'Yes'
+						]
+					],
+					'e_invoice_enabled'	=>	[
+						'match_value'	=>	0,
+						'matched'	=>	[
+							'type'		=>	'label',
+							'highlight'	=>	'error',
+							'text'		=>	'No'
+						],
+						'not_matched'	=>	[
+							'type'		=>	'label',
+							'highlight'	=>	'success',
+							'text'		=>	'Yes'
+						]
+					]
+				]
+			];
+
+
+		return $this->easy_index->setType('client')->setCustomFieldClass(ClientsCustomField::class)->setJoins($joins)->setExceptionClass(ClientException::class)->setRequest($request)->setDefaultColumns($default_columns)->setRewrites($rewrites)->setModel(Client::class)->fetchIndex();
 	}
 
 	
