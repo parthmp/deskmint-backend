@@ -149,12 +149,88 @@ class InvoiceFetchService{
 				],
 			];
 
+			$rewrites = [
+				'data' => [
+					'invoices.discount_type' => [
+						1	=>	'Percentage',
+						2	=>	"Amount"
+					],
+					'invoices.is_paid' => [
+						0	=>	'No',
+						1	=>	"Yes"
+					],
+					'invoices.payment_method' => [
+						1	=>	'Cash',
+						2	=>	'Netbanking',
+						3	=>	'PayPal',
+						4	=>	'Stripe',
+					]
+				],
+				'ui'	=>	[
+					'discount_type'	=>	[
+						[
+							'type'			=>	'label',
+							'highlight'		=>	'success',
+							'text'			=>	'Percentage',
+							'value'			=>	1,
+						],
+						[
+							'type'			=>	'label',
+							'highlight'		=>	'success',
+							'text'			=>	'Amount',
+							'value'			=>	2,
+						]
+					],
+					'is_paid'	=>	[
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'error',
+							'text'		=>	'No',
+							'value'		=>	0,
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'success',
+							'text'		=>	'Yes',
+							'value'		=>	1
+						]
+					],
+					'payment_method'	=>	[
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'info',
+							'text'		=>	'Cash',
+							'value'		=>	1,
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'info',
+							'text'		=>	'Netbanking',
+							'value'		=>	2
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'info',
+							'text'		=>	'PayPal',
+							'value'		=>	3
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'info',
+							'text'		=>	'Stripe',
+							'value'		=>	4
+						]
+					]
+				]
+
+			];
+
 		return $this->easy_index->setType('invoice')->setCustomFieldClass(InvoicesCustomField::class)->setJoins($joins)->setExceptionClass(InvoiceException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
 			'c_code'				=>		'currencies.code',
 			'first_name'			=>		'clients.first_name',
 			'last_name'				=>		'clients.last_name',
 			'client_company'		=>		'clients.client_company_name'
-		])->setModel(Invoice::class)->fetchIndex();
+		])->setRewrites($rewrites)->setModel(Invoice::class)->fetchIndex();
 	}
 
 }

@@ -228,11 +228,14 @@ class EasyIndex{
 			$fields->each(function($ele){
 				
 				foreach($this->rewrites['ui'] as $ui_key => $ui_element){
-					if($ele->{$ui_key} == $ele->{$ui_element['match_value']}){
-						$ele->{$ui_key} = $ui_element['matched'];
-					}else{
-						$ele->{$ui_key} = $ui_element['not_matched'];
+
+					foreach($ui_element as $d_ele){
+						if($ele->{$ui_key} == $d_ele['value']){
+							$ele->{$ui_key} = $d_ele;
+						}
 					}
+
+					
 				}
 
 			});

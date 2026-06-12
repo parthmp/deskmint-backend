@@ -154,29 +154,31 @@ class ClientFetchService{
 
 				'ui'	=>	[
 					'send_reminders'	=>	[
-						'match_value'	=>	0,
-						'matched'	=>	[
+						[
 							'type'			=>	'label',
 							'highlight'		=>	'error',
 							'text'			=>	'No',
+							'value'			=>	0,
 						],
-						'not_matched'	=>	[
-							'type'		=>	'label',
-							'highlight'	=>	'success',
-							'text'		=>	'Yes'
+						[
+							'type'			=>	'label',
+							'highlight'		=>	'success',
+							'text'			=>	'Yes',
+							'value'			=>	1,
 						]
 					],
 					'e_invoice_enabled'	=>	[
-						'match_value'	=>	0,
-						'matched'	=>	[
+						[
 							'type'		=>	'label',
 							'highlight'	=>	'error',
-							'text'		=>	'No'
+							'text'		=>	'No',
+							'value'		=>	0,
 						],
-						'not_matched'	=>	[
+						[
 							'type'		=>	'label',
 							'highlight'	=>	'success',
-							'text'		=>	'Yes'
+							'text'		=>	'Yes',
+							'value'		=>	1
 						]
 					]
 				]
