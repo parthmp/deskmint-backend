@@ -86,7 +86,6 @@ class InvoiceSettingsAPFService{
 		for($z = 0 ; $z < count($fields) ; $z++){
 
 			for($x = 0 ; $x < count($old_json) ; $x++){
-
 				if(($old_json[$x]['type'] === 'custom' && (int) $old_json[$x]['id_column'] === (int) $fields[$z]['id']) && ($old_json[$x]['text'] !== $fields[$z]['label'] || $old_json[$x]['type'] !== $fields[$z]['type'] || (int) $old_json[$x]['tax_rate'] !== (int) $fields[$z]['tax_rate'])){
 					
 					$old_json[$x] = [
@@ -95,7 +94,7 @@ class InvoiceSettingsAPFService{
 						'text'		=>	$fields[$z]['label'],
 						'type'		=>	'custom',
 						'value'		=>	$fields[$z]['label'],
-						'mapped'	=>	null,
+						'mapped'	=>	'',
 						'tax_rate'	=>	$fields[$z]['tax_rate'],
 						'id_column'	=>	$fields[$z]['id']
 					];

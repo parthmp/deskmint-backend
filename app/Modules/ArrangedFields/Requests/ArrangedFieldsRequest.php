@@ -26,18 +26,18 @@ class ArrangedFieldsRequest extends FormRequest
 			foreach($this->input('rows') as $row){
 
 				$temp = [];
-				$temp['id'] = Sanitize::input($row['id']);
+				$temp['id'] = (int) Sanitize::input($row['id']);
 				$temp['text'] = Sanitize::input($row['text']);
 				$temp['value'] = isset($row['value']) ? Sanitize::input($row['value']) : null;
 				$temp['type'] = isset($row['type']) ? Sanitize::input($row['type']) : null;
 				
 				
 				if(isset($row['tax'])){
-					$temp['tax'] = Sanitize::input($row['tax']);
+					$temp['tax'] = (bool) Sanitize::input($row['tax']);
 				}
 
 				if(isset($row['tax_rate'])){
-					$temp['tax_rate'] = Sanitize::input($row['tax_rate']);
+					$temp['tax_rate'] = (float) Sanitize::input($row['tax_rate']);
 				}
 
 				if(isset($row['mapped'])){
@@ -60,7 +60,7 @@ class ArrangedFieldsRequest extends FormRequest
 				}
 
 				if(isset($row['id_column'])){
-					$temp['id_column'] = Sanitize::input($row['id_column']);
+					$temp['id_column'] = (int) Sanitize::input($row['id_column']);
 				}
 
 				$rows[] = $temp;
