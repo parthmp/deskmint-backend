@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
+use App\Http\Requests\Invoice\FetchInvoiceRequest;
 use App\Http\Requests\Product\SearchProductRequest;
 use App\Jobs\GenerateInvoiceJob;
 use App\Models\InvoiceCustomFieldValue;
@@ -113,7 +114,14 @@ class InvoiceController extends Controller{
 
 	public function index(Request $request){
 
-		return $this->invoice_service->fetchIndex($request);
+		try{
+			return $this->invoice_service->fetchIndex($request);
+		}catch(InvoiceException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+		
 
 	}
 
@@ -158,6 +166,25 @@ class InvoiceController extends Controller{
 		}catch(Exception $e){
 			return General::wentWrong();
 		}
+
+	}
+
+	public function show(FetchInvoiceRequest $request, int $invoice_id){
+
+		$data = $request->validated();
+
+		//try{
+
+			$invoice_id = (int) Sanitize::input($invoice_id);
+			return $this->invoice_service->fetchInvoice($data['company_id'], $invoice_id, $data['timezone_offset_minutes']);
+
+		// }catch(InvoiceException $e){
+		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
+
+		
 
 	}
 

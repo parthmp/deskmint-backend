@@ -330,4 +330,26 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 			return $company;
 		}
 
+		/**
+		 * convertTimezone function
+		 *
+		 * @param integer $timezone_offset_minutes
+		 * @param string $date
+		 * @param boolean $dateonly
+		 * @return string
+		 */
+		public static function convertTimezone(int $timezone_offset_minutes, string $date, bool $dateonly = false) : string {
+			
+			$carbon = Carbon::create($date);
+
+			if($timezone_offset_minutes < 0){
+				$carbon = $carbon->subMinutes(abs($timezone_offset_minutes));
+			}else{
+				$carbon = $carbon->addMinutes(abs($timezone_offset_minutes));
+			}
+
+			return ($dateonly) ? $carbon->format('Y-m-d') : $carbon->format('Y-m-d H:i:s');
+
+		}
+
 	}

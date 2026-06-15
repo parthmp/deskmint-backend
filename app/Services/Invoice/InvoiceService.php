@@ -129,4 +129,16 @@ class InvoiceService{
 		return $this->invoice_fetch_service->fetchIndex($request);
 	}
 
+	/**
+	 * fetchInvoice function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param integer $timezone_offset_minutes
+	 * @return array
+	 */
+	public function fetchInvoice(int $company_id, int $invoice_id, int $timezone_offset_minutes) : array {
+		return $this->invoice_fetch_service->fetchInvoice($company_id, $invoice_id, $timezone_offset_minutes);
+	}
+
 }

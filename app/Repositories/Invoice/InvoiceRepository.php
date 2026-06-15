@@ -106,4 +106,28 @@ class InvoiceRepository{
 
 	}
 
+	/**
+	 * fetchById function
+	 *
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function fetchById(int $invoice_id) : array {
+		//return Invoice::where('id', '=', $invoice_id)->with('client_wt')->first();
+		return (array) DB::table('invoices')->select('invoices.*', 'currencies.id as currency_id', 'currencies.code as currency_code', 'clients.first_name', 'clients.last_name')->join('clients', 'clients.id', 'invoices.client_id')->join('currencies', 'currencies.id', '=', 'clients.currency_id')->where('invoices.id', '=', $invoice_id)->first();
+	}
+
+	/**
+	 * fetchCustomProductColumnValues function
+	 *
+	 * @param integer $invoice_id
+	 * @param integer $company_id
+	 * @return array
+	 */
+	public function fetchCustomProductColumnValues(int $invoice_id, int $company_id) : array {
+
+		return DB::table('additional_product_columns_field_values as apcv')->select('apcv.value', 'apcv.apc_field_id', 'apc.label', 'apc.type')->join('additional_product_columns_fields as apc', 'apc.id', '=', 'apcv.apc_field_id')->where([['apcv.invoice_id', '=', $invoice_id], ['apc.company_id', '=', $company_id]])->get()->toArray();
+
+	}
+
 }

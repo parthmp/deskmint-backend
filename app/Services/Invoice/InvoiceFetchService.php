@@ -2,14 +2,18 @@
 
 namespace App\Services\Invoice;
 
+use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\Invoice;
+use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoicesCustomField;
 use App\Modules\CustomFields\CustomFields;
 use App\Modules\EasyIndex\EasyIndex;
+use App\Repositories\Invoice\InvoiceRepository;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use App\Services\HandleInvoiceNumbers;
 use App\Services\Invoice\Exceptions\InvoiceException;
+use Generator;
 use Illuminate\Http\Request;
 
 class InvoiceFetchService{
@@ -19,7 +23,8 @@ class InvoiceFetchService{
 		private InvoiceSettingsService $invoice_settings_service,
 		private CustomFields $custom_fields,
 		private SettingsSectionRepository $settings_section_repository,
-		private EasyIndex $easy_index
+		private EasyIndex $easy_index,
+		private InvoiceRepository $invoice_repository
 	){}
 
 	/**
@@ -231,6 +236,43 @@ class InvoiceFetchService{
 			'last_name'				=>		'clients.last_name',
 			'client_company'		=>		'clients.client_company_name'
 		])->setRewrites($rewrites)->setModel(Invoice::class)->fetchIndex();
+	}
+
+	/**
+	 * fetchInvoice function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param integer $timezone_offset_minutes
+	 * @return array
+	 */
+	public function fetchInvoice(int $company_id, int $invoice_id, int $timezone_offset_minutes) : array {
+		
+		$invoice = $this->invoice_repository->fetchById($invoice_id);
+
+		if(empty($invoice)){
+			throw new InvoiceException('invalid invoice id', 'invalid_invoice_id', config('global.error_code'));
+		}
+		logger("\nINVOICE\n");
+		logger($invoice);
+		logger("\nINVOICE\n");
+		$invoice['invoice_date'] = General::convertTimezone($timezone_offset_minutes, $invoice['invoice_date'], true);
+		$invoice['due_date'] = General::convertTimezone($timezone_offset_minutes, $invoice['due_date'], true);
+
+		unset($invoice['pattern_matched']);
+		unset($invoice['scan_chars']);
+		unset($invoice['settings_snapshot']);
+
+		$product_columns = $this->invoice_repository->fetchCustomProductColumnValues($invoice_id, $company_id);
+
+		$custom_fields = $this->custom_fields->fetchCustomFieldValues($invoice_id, 'invoice', InvoiceCustomFieldValue::class);
+		
+		return [
+			'invoice'			=>	$invoice,
+			'custom_fields' 	=> 	$custom_fields,
+			'product_columns'	=>	$product_columns
+		];
+
 	}
 
 }

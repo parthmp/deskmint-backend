@@ -274,9 +274,11 @@ class InvoiceRenderer extends InvoiceGenerator{
 					if((int) $row['tax'] === 1){
 
 						//for tax fields
+						//TODO: fix bug here, fetch values for custom tax fields
 						$product_columns_html .= (float) $row['tax_rate'].'%';
 
 					}else{
+						//TODO: fix bug here, fetch values for custom non tax fields
 						$product_columns_html .= $row['text'];
 					}
 				}	
