@@ -273,9 +273,9 @@ class InvoiceBaseService{
 		$this->invoice_number_service->resetManualInvoieNumberResetFlag($company_id);
 	}
 
-	protected function calculateInvoiceTotals(array $rows) : array {
+	// protected function calculateInvoiceTotals(array $rows) : array {
 
-	}
+	// }
 
 	/**
 	 * saveOrUpdate function
