@@ -28,9 +28,7 @@ class InvoiceGenerator{
 
 	private int $company_id;
 	private int $invoice_id;
-	private string $contents;
-	private InvoiceSettingsResolver $invoice_settings_resolver;
-	private InvoiceDBOperations $invoice_db_operations;
+	private string $contents = '';
 	private mixed $pdf_object;
 	private int $time_offset_minutes;
 	private ?Invoice $invoice_data;
@@ -43,16 +41,54 @@ class InvoiceGenerator{
 	/**
 	 * __construct function
 	 *
-	 * @param integer $company_id
-	 * @param integer $invoice_id
+	 * @param InvoiceSettingsResolver $invoice_settings_resolver
+	 * @param InvoiceDBOperations $invoice_db_operations
 	 */
-	public function __construct(int $company_id, int $invoice_id, string $time_offset_minutes){
+	public function __construct(private InvoiceSettingsResolver $invoice_settings_resolver, private InvoiceDBOperations $invoice_db_operations){
+	}
+
+	/**
+	 * setCompanyId function
+	 *
+	 * @param integer $company_id
+	 * @return self
+	 */
+	public function setCompanyId(int $company_id) : self {
 		$this->company_id = $company_id;
+		return $this;
+	}
+
+	/**
+	 * setInvoiceId function
+	 *
+	 * @param integer $invoice_id
+	 * @return self
+	 */
+	public function setInvoiceId(int $invoice_id) : self {
 		$this->invoice_id = $invoice_id;
-		$this->contents = '';
-		$this->invoice_settings_resolver = new InvoiceSettingsResolver($company_id, $this->invoice_id);
-		$this->invoice_db_operations = new InvoiceDBOperations($company_id, $this->invoice_id);
-		$this->time_offset_minutes = $time_offset_minutes;
+		return $this;
+	}
+
+	/**
+	 * setTimeOffsetMinutes function
+	 *
+	 * @param integer $minutes
+	 * @return self
+	 */
+	public function setTimeOffsetMinutes(int $minutes) : self{
+		$this->time_offset_minutes = $minutes;
+		return $this;
+	}
+
+	/**
+	 * exec function
+	 *
+	 * @return self
+	 */
+	public function exec() : self {
+		$this->invoice_settings_resolver = $this->invoice_settings_resolver->setCompanyId($this->company_id)->setInvoiceId($this->invoice_id);
+		$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId($this->company_id)->setInvoiceId($this->invoice_id)->execRequiredSettings();
+		return $this;
 	}
 
 	/**
@@ -121,7 +157,7 @@ class InvoiceGenerator{
 
 		$context['invoice_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfInvoice() ?? [];
 
-		$context['product_rows_data'] = $this->invoice_settings_resolver->fetchProductRowsSettings($context['invoice_data'], (int) $this->company_id);
+		$context['product_rows_data'] = $this->invoice_settings_resolver->fetchProductRowsSettings($context['invoice_data']);
 		$context['invoice_items'] = $this->invoice_db_operations->fetchInvoiceItems();
 
 		$this->invoice_data = $context['invoice_data'];

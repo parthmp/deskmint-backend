@@ -9,12 +9,16 @@ use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoicesCustomField;
 use App\Modules\CustomFields\CustomFields;
 use App\Modules\EasyIndex\EasyIndex;
+use App\Modules\InvoiceGeneration\InvoiceDBOperations;
+use App\Modules\InvoiceGeneration\InvoiceSettingsResolver;
 use App\Repositories\Invoice\InvoiceRepository;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use App\Services\HandleInvoiceNumbers;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use Generator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+
 
 class InvoiceFetchService{
 
@@ -24,7 +28,9 @@ class InvoiceFetchService{
 		private CustomFields $custom_fields,
 		private SettingsSectionRepository $settings_section_repository,
 		private EasyIndex $easy_index,
-		private InvoiceRepository $invoice_repository
+		private InvoiceRepository $invoice_repository,
+		private InvoiceSettingsResolver $invoice_settings_resolver,
+		private InvoiceDBOperations $invoice_db_operations
 	){}
 
 	/**
@@ -237,6 +243,98 @@ class InvoiceFetchService{
 			'client_company'		=>		'clients.client_company_name'
 		])->setRewrites($rewrites)->setModel(Invoice::class)->fetchIndex();
 	}
+	
+	private function assembleProductRowsForEdit(int $company_id, int $invoice_id, int $timezone_offset_minutes) : array {
+
+		$this->invoice_settings_resolver = $this->invoice_settings_resolver->setCompanyId($company_id)->setInvoiceId($invoice_id);
+
+		$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id);
+		$rows_settings = $this->invoice_settings_resolver->fetchProductRowsSettings($invoice);
+		$items = $this->invoice_db_operations->setCompanyId($company_id)->setInvoiceId($invoice_id)->execRequiredSettings()->fetchInvoiceItems();
+
+		$custom_cols = $this->invoice_db_operations->fetchCustomProductColumns();
+
+		// {
+		// 	"id": "1781615839900_c0tvyd0skpb",
+		// 	"row_index": 0,
+		// 	"item": "",
+		// 	"description": "",
+		// 	"normal_textfield2_bla": "", --
+		// 	"unit_price": "",
+		// 	"quantity": "",
+		// 	"tax": 0,
+		// 	"custom_tax_taxnew_yay": 11, --
+		// 	"line_total": "0",
+		// 	"product_id": "",
+		// 	"line_subtotal": "0", --
+		// 	"tax_amount": "0" --
+		// }
+		//[{"id": 1, "text": "Item", "type": "normal", "value": "item", "mapped": ["product_id"]}, {"id": 2, "text": "Description", "type": "normal", "value": "description", "mapped": ["description"]}, {"id": 12, "tax": false, "text": "textfield2 bla", "type": "custom", "value": "textfield2 bla", "mapped": "", "tax_rate": 0, "id_column": 13}, {"id": 3, "text": "Unit cost", "type": "normal", "value": "unit_cost", "mapped": ["unit_price"]}, {"id": 4, "text": "Quantity", "type": "normal", "value": "quantity", "mapped": ["quantity"]}, {"id": 6, "text": "Tax", "type": "normal", "value": "tax", "mapped": ["tax"]}, {"id": 11, "tax": true, "text": "taxnew yay", "type": "custom", "value": "taxnew yay", "mapped": "", "tax_rate": 11, "id_column": 6}, {"id": 7, "text": "Line total", "type": "normal", "value": "line_total", "mapped": ["line_total"]}]
+		$rows = [];
+		$row_index = 0;
+
+		foreach($items as $item){
+
+			$temp = [];
+
+			$temp['id'] = Str::uuid();
+			$temp['row_index'] = $row_index;
+			$temp['line_subtotal'] = $item->line_subtotal;
+			$temp['tax_amount'] = $item->tax_amount;
+			$temp['line_total'] = $item->line_total;
+
+			foreach($rows_settings as $rows_setting){
+
+				if($rows_setting['type'] === 'normal'){
+					if($rows_setting['value'] === 'unit_cost'){
+						$rows_setting['value'] = 'unit_price';
+					}
+
+					$mapped = $rows_setting['mapped'];
+
+					if($mapped[0] === 'tax'){
+						$temp['tax'] = (float) $item->tax;
+					}else{
+						if($mapped[0] === 'product_id'){
+							$temp['product_id'] = $item->product->id;
+							$temp['item'] = $item->product->product_name;
+						}else{
+							$temp[$rows_setting['value']] = $item->{$mapped[0]};
+						}
+						
+					}
+
+				}else{
+					//for custom product row fields.
+					if((int) $rows_setting['tax'] === 1){
+
+						//for tax fields
+						$key = 'custom_tax_'.General::replaceWithUnderscores($rows_setting['text']);
+						//$temp[$key] = 
+						// foreach($custom_cols as $custom_col){
+
+						// }
+						
+						//$product_columns_html .= (float) $rows_setting['tax_rate'].'%';
+
+					}else{
+						
+						//$product_columns_html .= $rows_setting['text'];
+					}
+				}	
+
+				
+			}
+
+			$rows[] = $temp;
+
+			$row_index++;
+
+		}
+		
+		return $rows;
+
+	}	
 
 	/**
 	 * fetchInvoice function
@@ -253,9 +351,7 @@ class InvoiceFetchService{
 		if(empty($invoice)){
 			throw new InvoiceException('invalid invoice id', 'invalid_invoice_id', config('global.error_code'));
 		}
-		logger("\nINVOICE\n");
-		logger($invoice);
-		logger("\nINVOICE\n");
+		
 		$invoice['invoice_date'] = General::convertTimezone($timezone_offset_minutes, $invoice['invoice_date'], true);
 		$invoice['due_date'] = General::convertTimezone($timezone_offset_minutes, $invoice['due_date'], true);
 
@@ -267,10 +363,13 @@ class InvoiceFetchService{
 
 		$custom_fields = $this->custom_fields->fetchCustomFieldValues($invoice_id, 'invoice', InvoiceCustomFieldValue::class);
 		
+		$product_rows = $this->assembleProductRowsForEdit($company_id, $invoice_id, $timezone_offset_minutes);
+
 		return [
 			'invoice'			=>	$invoice,
 			'custom_fields' 	=> 	$custom_fields,
-			'product_columns'	=>	$product_columns
+			'product_columns'	=>	$product_columns,
+			'product_rows'		=>	$product_rows
 		];
 
 	}

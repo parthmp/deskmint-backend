@@ -3,6 +3,7 @@
 namespace App\Modules\InvoiceGeneration;
 
 use App\Models\AdditionalCompanyField;
+use App\Models\AdditionalProductColumnsFieldValue;
 use App\Models\ClientCustomFieldValue;
 use App\Models\Company;
 use App\Models\Invoice;
@@ -24,15 +25,35 @@ class InvoiceDBOperations{
 	private array $data = [];
 	
 	/**
-	 * __construct function
+	 * setCompanyId function
 	 *
 	 * @param integer $company_id
-	 * @param integer $invoice_id
+	 * @return self
 	 */
-	public function __construct(int $company_id, int $invoice_id){
+	public function setCompanyId(int $company_id) : self {
 		$this->company_id = $company_id;
+		return $this;
+	}
+
+	/**
+	 * setInvoiceId function
+	 *
+	 * @param integer $invoice_id
+	 * @return self
+	 */
+	public function setInvoiceId(int $invoice_id) : self {
 		$this->invoice_id = $invoice_id;
+		return $this;
+	}
+
+	/**
+	 * execRequiredSettings function
+	 *
+	 * @return self
+	 */
+	public function execRequiredSettings() : self {
 		$this->data = $this->fetchRequiredSettings();
+		return $this;
 	}
 
 	/**
@@ -232,6 +253,17 @@ class InvoiceDBOperations{
 	 */
 	public function fetchDefaultCompanyById(int $company_id) : ?Company {
 		return Company::where([['id', '=', $company_id], ['default', '=', 1]])->with('country')->first();
+	}
+
+	/**
+	 * fetchCustomProductColumns function
+	 *
+	 * @return Collection
+	 */
+	public function fetchCustomProductColumns() : Collection {
+		return AdditionalProductColumnsFieldValue::where('invoice_id', '=', $this->invoice_id)->whereHas('custom_product_field')->with(['custom_product_field' => function($query){
+			$query->where('company_id', $this->company_id);
+		}])->get();
 	}
 
 }

@@ -16,18 +16,38 @@ class InvoiceSettingsResolver{
 
 	private int $company_id;
 	private int $invoice_id;
-	private InvoiceDBOperations $invoice_db_operations;
-
+	
 	/**
 	 * __construct function
 	 *
-	 * @param integer $company_id
-	 * @param integer $invoice_id
+	 * @param InvoiceDBOperations $invoice_db_operations
 	 */
-	public function __construct(int $company_id, int $invoice_id){
+	public function __construct(private InvoiceDBOperations $invoice_db_operations){
+		
+	}
+
+	/**
+	 * setCompanyId function
+	 *
+	 * @param integer $company_id
+	 * @return self
+	 */
+	public function setCompanyId(int $company_id) : self {
 		$this->company_id = $company_id;
+		$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId($company_id);
+		return $this;
+	}
+
+	/**
+	 * setInvoiceId function
+	 *
+	 * @param integer $invoice_id
+	 * @return self
+	 */
+	public function setInvoiceId(int $invoice_id) : self {
 		$this->invoice_id = $invoice_id;
-		$this->invoice_db_operations = new InvoiceDBOperations($company_id, $invoice_id);
+		$this->invoice_db_operations = $this->invoice_db_operations->setInvoiceId($invoice_id)->execRequiredSettings();
+		return $this;
 	}
 	
 	/**
@@ -128,7 +148,7 @@ class InvoiceSettingsResolver{
 		$settings = $this->invoice_db_operations->fetchTotalFieldsSettings();
 
 		if(!$settings){
-			$default = $this->getDefaultTotalFieldsSettings($this->company_id);
+			$default = $this->getDefaultTotalFieldsSettings();
 			return $default['rows'];
 		}
 
@@ -142,7 +162,7 @@ class InvoiceSettingsResolver{
 	 * @param Invoice $invoice
 	 * @return array
 	 */
-	public function fetchProductRowsSettings(Invoice $invoice, int $company_id) : array {
+	public function fetchProductRowsSettings(Invoice $invoice) : array {
 
 		$settings_snapshot = trim($invoice->settings_snapshot);
 
@@ -156,7 +176,7 @@ class InvoiceSettingsResolver{
 			return json_decode($settings_section['settings_json'], true);
 		}
 
-		return $this->getDefaultProductColumnsSettings((int) $company_id);
+		return $this->getDefaultProductColumnsSettings((int) $this->company_id);
 
 	}
 

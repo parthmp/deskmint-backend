@@ -12,4 +12,8 @@ class AdditionalProductColumnsFieldValue extends Model{
     
 	protected $table = 'additional_product_columns_field_values';
 
+	public function custom_product_field(){
+		return $this->belongsTo(AdditionalProductColumnsField::class, 'apc_field_id', 'id');
+	}
+
 }

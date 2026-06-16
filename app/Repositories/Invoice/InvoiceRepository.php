@@ -113,8 +113,21 @@ class InvoiceRepository{
 	 * @return array
 	 */
 	public function fetchById(int $invoice_id) : array {
+		
 		//return Invoice::where('id', '=', $invoice_id)->with('client_wt')->first();
+	
 		return (array) DB::table('invoices')->select('invoices.*', 'currencies.id as currency_id', 'currencies.code as currency_code', 'clients.first_name', 'clients.last_name')->join('clients', 'clients.id', 'invoices.client_id')->join('currencies', 'currencies.id', '=', 'clients.currency_id')->where('invoices.id', '=', $invoice_id)->first();
+		
+	}
+
+	/**
+	 * fetchInvoiceObjById function
+	 *
+	 * @param integer $invoice_id
+	 * @return Invoice|null
+	 */
+	public function fetchInvoiceObjById(int $invoice_id) : ?Invoice {
+		return Invoice::where('id', '=', $invoice_id)->first();
 	}
 
 	/**
