@@ -15,4 +15,8 @@ class InvoiceItem extends Model {
 	public function product(){
 		return $this->belongsTo(Product::class, 'product_id');
 	}
+
+	public function custom_field_values(){
+    	return $this->hasMany(AdditionalProductColumnsFieldValue::class, 'row_uuid', 'row_uuid');
+	}
 }

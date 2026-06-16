@@ -16,4 +16,8 @@ class AdditionalProductColumnsFieldValue extends Model{
 		return $this->belongsTo(AdditionalProductColumnsField::class, 'apc_field_id', 'id');
 	}
 
+	public function invoice_item(){
+    	return $this->belongsTo(InvoiceItem::class, 'row_uuid', 'row_uuid');
+	}
+
 }

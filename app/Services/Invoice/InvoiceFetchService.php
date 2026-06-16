@@ -250,26 +250,8 @@ class InvoiceFetchService{
 
 		$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id);
 		$rows_settings = $this->invoice_settings_resolver->fetchProductRowsSettings($invoice);
-		$items = $this->invoice_db_operations->setCompanyId($company_id)->setInvoiceId($invoice_id)->execRequiredSettings()->fetchInvoiceItems();
-
-		$custom_cols = $this->invoice_db_operations->fetchCustomProductColumns();
-
-		// {
-		// 	"id": "1781615839900_c0tvyd0skpb",
-		// 	"row_index": 0,
-		// 	"item": "",
-		// 	"description": "",
-		// 	"normal_textfield2_bla": "", --
-		// 	"unit_price": "",
-		// 	"quantity": "",
-		// 	"tax": 0,
-		// 	"custom_tax_taxnew_yay": 11, --
-		// 	"line_total": "0",
-		// 	"product_id": "",
-		// 	"line_subtotal": "0", --
-		// 	"tax_amount": "0" --
-		// }
-		//[{"id": 1, "text": "Item", "type": "normal", "value": "item", "mapped": ["product_id"]}, {"id": 2, "text": "Description", "type": "normal", "value": "description", "mapped": ["description"]}, {"id": 12, "tax": false, "text": "textfield2 bla", "type": "custom", "value": "textfield2 bla", "mapped": "", "tax_rate": 0, "id_column": 13}, {"id": 3, "text": "Unit cost", "type": "normal", "value": "unit_cost", "mapped": ["unit_price"]}, {"id": 4, "text": "Quantity", "type": "normal", "value": "quantity", "mapped": ["quantity"]}, {"id": 6, "text": "Tax", "type": "normal", "value": "tax", "mapped": ["tax"]}, {"id": 11, "tax": true, "text": "taxnew yay", "type": "custom", "value": "taxnew yay", "mapped": "", "tax_rate": 11, "id_column": 6}, {"id": 7, "text": "Line total", "type": "normal", "value": "line_total", "mapped": ["line_total"]}]
+		$items = $this->invoice_db_operations->setCompanyId($company_id)->setInvoiceId($invoice_id)->execRequiredSettings()->fetchInvoiceItemsWithCustomCols();
+		
 		$rows = [];
 		$row_index = 0;
 
@@ -279,6 +261,7 @@ class InvoiceFetchService{
 
 			$temp['id'] = Str::uuid();
 			$temp['row_index'] = $row_index;
+			$temp['row_uuid'] = $item->row_uuid;
 			$temp['line_subtotal'] = $item->line_subtotal;
 			$temp['tax_amount'] = $item->tax_amount;
 			$temp['line_total'] = $item->line_total;
@@ -310,16 +293,16 @@ class InvoiceFetchService{
 
 						//for tax fields
 						$key = 'custom_tax_'.General::replaceWithUnderscores($rows_setting['text']);
-						//$temp[$key] = 
-						// foreach($custom_cols as $custom_col){
-
-						// }
-						
-						//$product_columns_html .= (float) $rows_setting['tax_rate'].'%';
 
 					}else{
-						
-						//$product_columns_html .= $rows_setting['text'];
+						$key = 'normal_'.General::replaceWithUnderscores($rows_setting['value']);
+					}
+
+					$temp[$key] = '';
+					foreach($item->custom_field_values as $custom_field){
+						if((string) $custom_field->row_uuid === (string) $item->row_uuid && (int) $custom_field->apc_field_id === (int) $rows_setting['id_column']){
+							$temp[$key] = $custom_field->value;
+						}
 					}
 				}	
 
@@ -359,7 +342,7 @@ class InvoiceFetchService{
 		unset($invoice['scan_chars']);
 		unset($invoice['settings_snapshot']);
 
-		$product_columns = $this->invoice_repository->fetchCustomProductColumnValues($invoice_id, $company_id);
+		//$product_columns = $this->invoice_repository->fetchCustomProductColumnValues($invoice_id, $company_id);
 
 		$custom_fields = $this->custom_fields->fetchCustomFieldValues($invoice_id, 'invoice', InvoiceCustomFieldValue::class);
 		
@@ -368,7 +351,6 @@ class InvoiceFetchService{
 		return [
 			'invoice'			=>	$invoice,
 			'custom_fields' 	=> 	$custom_fields,
-			'product_columns'	=>	$product_columns,
 			'product_rows'		=>	$product_rows
 		];
 

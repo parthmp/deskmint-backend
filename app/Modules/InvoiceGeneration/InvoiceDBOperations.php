@@ -212,6 +212,20 @@ class InvoiceDBOperations{
 	}
 
 	/**
+	 * fetchInvoiceItemsWithCustomCols function
+	 *
+	 * @return Collection
+	 */
+	public function fetchInvoiceItemsWithCustomCols() : Collection {
+		return InvoiceItem::where([['invoice_id', '=', $this->invoice_id]])
+								->withTrashed()
+								->with(['product', 'custom_field_values.custom_product_field' => function($query){
+        								$query->where('company_id', $this->company_id);
+    							}])
+								->get();
+	}
+
+	/**
 	 * fetchEmailContentSettings function
 	 *
 	 * @return array|null
