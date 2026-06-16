@@ -56,6 +56,7 @@ class InvoiceBaseService{
 
 			$temp = [];
 
+			$temp['row_uuid'] = Sanitize::input($row['row_uuid']);
 			$temp['invoice_id'] = $invoice->id;
 			$temp['product_id'] = Sanitize::input($row['product_id']);
 			$temp['description'] = Sanitize::input($row['description'] ?? '');
@@ -285,10 +286,10 @@ class InvoiceBaseService{
 	 */
 	public function saveOrUpdate(Request $request, int $company_id) : int {
 
-		$invoice_id = $this->insertInvoice($request, $this->getInvoiceInsertData($request));
+		$invoice_id = $this->insertInvoice($request, $this->getInvoiceInsertData($request)); //adds invoice data + non changable (normal) product cols/rows
 
 		$this->custom_fields->upsertCustomFieldValues($request, $invoice_id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', true);
-		$this->insertProductRows($request, $invoice_id, $company_id);
+		$this->insertProductRows($request, $invoice_id, $company_id); //to insert custom product rows/cols
 
 		/* override manual reset here */
 		$this->resetManualInvoieNumberResetFlag($company_id);
