@@ -66,19 +66,19 @@ class ProductFieldService{
 			
 			if($this->isCustomColumn($user_defined_column)){
 				
-				$temp = [];
-
 				$custom_field_name = $this->generateFieldName($user_defined_column, $custom_tax_ids);
 
 				foreach($product_rows as $row){
+					$temp = [];
 					$temp['row_uuid'] = Sanitize::input($row['row_uuid']);
 					$temp['invoice_id'] = (int) $invoice_id;
 					$temp['apc_field_id'] = $user_defined_column['id_column'];
 					$value = $row[$custom_field_name] ?? '';
 					$temp['value'] = Sanitize::input($value);
+					$insert[] = $temp;
 				}
 
-				$insert[] = $temp;
+				
 
 			}
 			
