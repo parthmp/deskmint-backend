@@ -61,12 +61,12 @@ class InvoiceBaseService{
 			$temp['invoice_id'] = $invoice->id;
 			$temp['product_id'] = Sanitize::input($row['product_id']);
 			$temp['description'] = Sanitize::input($row['description'] ?? '');
-			$temp['unit_price'] = Sanitize::input($row['unit_price']);
-			$temp['quantity'] = Sanitize::input($row['quantity']);
-			$temp['tax'] = Sanitize::input($row['tax']);
-			$temp['tax_amount'] = Sanitize::input($row['tax_amount']);
-			$temp['line_subtotal'] = Sanitize::input($row['line_subtotal']);
-			$temp['line_total'] = Sanitize::input($row['line_total']);
+			$temp['unit_price'] = Sanitize::input($row['unit_price'] ?? 0);
+			$temp['quantity'] = Sanitize::input($row['quantity'] ?? 1);
+			$temp['tax'] = Sanitize::input($row['tax'] ?? 0);
+			$temp['tax_amount'] = Sanitize::input($row['tax_amount'] ?? 0);
+			$temp['line_subtotal'] = Sanitize::input($row['line_subtotal'] ?? 0);
+			$temp['line_total'] = Sanitize::input($row['line_total'] ?? 0);
 
 			$invoice_items[] = $temp;
 			
@@ -294,7 +294,7 @@ class InvoiceBaseService{
 
 		$this->custom_fields->upsertCustomFieldValues($request, $invoice_id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', $add);
 		
-		//to insert custom product rows/cols
+		//to upsert custom product rows/cols
 		$this->upsertCustomProductRows($request, $invoice_id, $company_id);
 
 		/* override manual reset here */

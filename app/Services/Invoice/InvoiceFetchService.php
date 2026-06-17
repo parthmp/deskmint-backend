@@ -248,8 +248,8 @@ class InvoiceFetchService{
 
 		$this->invoice_settings_resolver = $this->invoice_settings_resolver->setCompanyId($company_id)->setInvoiceId($invoice_id);
 
-		$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id);
-		$rows_settings = $this->invoice_settings_resolver->fetchProductRowsSettings($invoice);
+		$rows_settings = $this->invoice_settings_resolver->fetchCurrentRowsSettings();
+		
 		$items = $this->invoice_db_operations->setCompanyId($company_id)->setInvoiceId($invoice_id)->execRequiredSettings()->fetchInvoiceItemsWithCustomCols();
 		
 		$rows = [];

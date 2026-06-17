@@ -223,16 +223,16 @@ class InvoiceController extends Controller{
 
 		$data = $request->validated();
 
-		try{
+		//try{
 
 			$invoice_id = (int) Sanitize::input($invoice_id);
 			return $this->invoice_service->fetchInvoice($data['company_id'], $invoice_id, $data['timezone_offset_minutes']);
 
-		}catch(InvoiceException $e){
-			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
+		// }catch(InvoiceException $e){
+		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
 
 		
 

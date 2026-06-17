@@ -180,4 +180,20 @@ class InvoiceSettingsResolver{
 
 	}
 
+	/**
+	 * fetchCurrentRowsSettings function
+	 *
+	 * @return array
+	 */
+	public function fetchCurrentRowsSettings() : array {
+
+		$settings_section = $this->invoice_db_operations->fetchInvoiceProductCoulumnsSettings();
+
+		if($settings_section){
+			return json_decode($settings_section['settings_json'], true);
+		}
+
+		return $this->getDefaultProductColumnsSettings((int) $this->company_id)['rows'];
+	}
+
 }

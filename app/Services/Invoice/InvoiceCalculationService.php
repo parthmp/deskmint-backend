@@ -41,10 +41,10 @@ class InvoiceCalculationService{
 		$line_subtotal = BigDecimal::of(0);
 		$line_total = BigDecimal::of(0);
 
-		$raw_unit = Sanitize::input($product_row['unit_price']);
+		$raw_unit = Sanitize::input($product_row['unit_price'] ?? 0);
 		$unit_price = is_numeric($raw_unit) ? $raw_unit : "0";
 		
-		$raw_qty = Sanitize::input($product_row['quantity']);
+		$raw_qty = Sanitize::input($product_row['quantity'] ?? 1);
 		$quantity = ctype_digit((string) $raw_qty) ? (int) $raw_qty : 1;
 
 		
