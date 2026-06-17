@@ -202,7 +202,7 @@ class InvoiceBaseService{
 		}
 
 		$invoice_terms = '';
-		if($request->filled('data.invoice_details.po_number')){
+		if($request->filled('data.invoice_terms')){
 			$invoice_terms = Sanitize::input($request->input('data.invoice_terms') ?? '');
 		}
 

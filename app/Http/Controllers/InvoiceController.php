@@ -223,19 +223,38 @@ class InvoiceController extends Controller{
 
 		$data = $request->validated();
 
-		//try{
+		try{
 
 			$invoice_id = (int) Sanitize::input($invoice_id);
 			return $this->invoice_service->fetchInvoice($data['company_id'], $invoice_id, $data['timezone_offset_minutes']);
 
-		// }catch(InvoiceException $e){
-		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
-		// }catch(Exception $e){
-		// 	return General::wentWrong();
-		// }
+		}catch(InvoiceException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 		
 
+	}
+
+	public function destroy(Request $request){
+
+		$ids = $request->input('ids');
+
+		if(!$ids){
+			return response(['message' => 'No valid IDs provided', 'validity' => 'invalid_ids'], config('global.error_code'));
+		}
+		
+		try{
+			$ids = Sanitize::recursive($ids);
+			$this->invoice_service->deleteInvoices($ids);
+			return response(['message' => 'Invoice(s) deleted successfully', 'validity' => 'delete_success'], 200);
+		}catch(InvoiceException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 	}
 
 }

@@ -6,6 +6,8 @@ use App\Modules\InvoiceGeneration\InvoiceGenerator;
 use App\Repositories\Client\ClientRepository;
 use App\Repositories\Invoice\InvoiceRepository;
 use App\Repositories\Product\ProductRepository;
+use App\Services\Invoice\Exceptions\InvoiceException;
+use Exception;
 use Illuminate\Http\Request;
 
 class InvoiceService{
@@ -154,6 +156,38 @@ class InvoiceService{
 		
 		return ($invoice) ? true : false;
 
+	}
+
+	/**
+	 * deleteInvoices function
+	 *
+	 * @param array $ids
+	 * @return boolean
+	 */
+	public function deleteInvoices(array $ids) : bool {
+
+		if(empty($ids)){
+			throw new InvoiceException('No valid IDs provided', 'invalid_ids', config('global.error_code'));
+		}
+
+		foreach($ids as $id){
+			if(!is_numeric($id)){
+				throw new InvoiceException('All IDs must be numeric', 'non_numeric', config('global.error_code'));
+			}
+		}
+
+		try{
+
+			$flat_table = 'invoices_flat';
+
+			$this->invoice_repository->deleteRecordsByInvoiceIds($flat_table, $ids);
+			
+			return true;
+
+		}catch(Exception $e){
+			throw new InvoiceException('Something went wrong', 'something_wrong', 500);
+		}
+		
 	}
 
 }

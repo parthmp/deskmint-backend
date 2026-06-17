@@ -7,6 +7,7 @@ use App\Models\InvoiceItem;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class InvoiceRepository{
 
@@ -34,12 +35,12 @@ class InvoiceRepository{
 		$global_tax_amount = $data['global_tax_amount'];
 		$global_total = $data['global_total'];
 		$invoice_terms = $data['invoice_terms'];
-		$send_email = $data['send_email'];
+		// $send_email = $data['send_email'];
 		$payment_method = $data['payment_method'];
 		$patten_matched = $data['patten_matched'];
 		$scan_chars = $data['scan_chars'];
 		$rows = $data['rows'];
-		
+		logger($data);
 		$settings_snapshot = $settings->getProductColumns(); /* json text for product_columns settings from SettingsSection table, if it does not exist, it falls back to the default values */
 
 		if($invoice_id === 0){
@@ -166,6 +167,19 @@ class InvoiceRepository{
 
 	}
 
+	/**
+	 * deleteRecordsByInvoiceIds function
+	 *
+	 * @param string $table
+	 * @param array $ids
+	 * @return void
+	 */
+	public function deleteRecordsByInvoiceIds(string $table, array $ids): void {
+		if(Schema::hasTable($table)){
+			DB::table($table)->whereIn('invoice_id', $ids)->delete();
+		}
+		Invoice::whereIn('id', $ids)->delete();
+	}
 	
 
 	
