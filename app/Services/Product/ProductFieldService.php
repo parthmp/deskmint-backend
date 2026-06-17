@@ -97,13 +97,14 @@ class ProductFieldService{
 	 * @param integer $company_id
 	 * @return void
 	 */
-	public function insertProductRows(Request $request, int $invoice_id, int $company_id) : void {
+	public function upsertCustomProductRows(Request $request, int $invoice_id, int $company_id) : void {
 
 		$product_rows_path = 'data.product_rows';
 
 		$product_rows = $request->input($product_rows_path);
 		$rows = $this->prepareInsertData($product_rows, $company_id, $invoice_id);
-		AdditionalProductColumnsFieldValue::insert($rows);
+		//AdditionalProductColumnsFieldValue::insert($rows);
+		AdditionalProductColumnsFieldValue::upsert($rows, ['row_uuid', 'apc_field_id', 'invoice_id'], ['value']);
 
 	}
 

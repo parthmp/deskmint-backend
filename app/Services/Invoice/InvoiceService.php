@@ -99,10 +99,11 @@ class InvoiceService{
 	 *
 	 * @param Request $request
 	 * @param integer $company_id
+	 * @param integer $invoice_id
 	 * @return integer
 	 */
-	public function save(Request $request, int $company_id) : int {
-		return $this->invoice_save_service->save($request, $company_id);
+	public function save(Request $request, int $company_id, int $invoice_id = 0) : int {
+		return $this->invoice_save_service->save($request, $company_id, $invoice_id);
 	}
 
 	
@@ -139,6 +140,20 @@ class InvoiceService{
 	 */
 	public function fetchInvoice(int $company_id, int $invoice_id, int $timezone_offset_minutes) : array {
 		return $this->invoice_fetch_service->fetchInvoice($company_id, $invoice_id, $timezone_offset_minutes);
+	}
+
+	/**
+	 * ifInvoiceExists function
+	 *
+	 * @param integer $invoice_id
+	 * @return boolean
+	 */
+	public function ifInvoiceExists(int $invoice_id) : bool {
+		
+		$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id);
+		
+		return ($invoice) ? true : false;
+
 	}
 
 }

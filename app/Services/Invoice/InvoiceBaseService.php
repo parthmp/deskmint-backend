@@ -33,20 +33,21 @@ class InvoiceBaseService{
 	 * @param integer $company_id
 	 * @return void
 	 */
-	public function insertProductRows(Request $request, int $invoice_id, int $company_id) : void {
-		$this->product_field_service->insertProductRows($request, $invoice_id, $company_id);
+	public function upsertCustomProductRows(Request $request, int $invoice_id, int $company_id) : void {
+		$this->product_field_service->upsertCustomProductRows($request, $invoice_id, $company_id);
 	}
 
 	/**
-	 * insertInvoice function
+	 * upsertInvoice function
 	 *
 	 * @param Request $request
 	 * @param array $data
+	 * @param integer $invoice_id
 	 * @return integer
 	 */
-	public function insertInvoice(Request $request, array $data) : int {
+	public function upsertInvoice(Request $request, array $data, int $invoice_id = 0) : int {
 
-		$data = $this->invoice_repository->insertInvoiceData($request, $data);
+		$data = $this->invoice_repository->upsertInvoiceData($request, $data, $invoice_id);
 		
 		$invoice = $data['invoice'];
 		$rows = $data['rows'];
@@ -71,7 +72,7 @@ class InvoiceBaseService{
 			
 		}
 
-		$this->invoice_repository->insertInvoiceItems($invoice_items);
+		$this->invoice_repository->upsertInvoiceItems($invoice_items, $invoice_id);
 
 		$invoice_items = null;
 
@@ -183,7 +184,7 @@ class InvoiceBaseService{
 	 * @param Request $request
 	 * @return array
 	 */
-	public function getInvoiceInsertData(Request $request) : array {
+	public function getInvoiceData(Request $request) : array {
 
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 
@@ -282,14 +283,17 @@ class InvoiceBaseService{
 	 *
 	 * @param Request $request
 	 * @param integer $company_id
+	 * @param integer $invoice_id
 	 * @return integer
 	 */
-	public function saveOrUpdate(Request $request, int $company_id) : int {
+	public function saveOrUpdate(Request $request, int $company_id, int $invoice_id = 0) : int {
+		
+		$invoice_id = $this->upsertInvoice($request, $this->getInvoiceData($request), $invoice_id); //adds invoice data + non changable (normal) product cols/rows
 
-		$invoice_id = $this->insertInvoice($request, $this->getInvoiceInsertData($request)); //adds invoice data + non changable (normal) product cols/rows
-
-		$this->custom_fields->upsertCustomFieldValues($request, $invoice_id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', true);
-		$this->insertProductRows($request, $invoice_id, $company_id); //to insert custom product rows/cols
+		//$this->custom_fields->upsertCustomFieldValues($request, $invoice_id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', true);
+		
+		//to insert custom product rows/cols
+		$this->upsertCustomProductRows($request, $invoice_id, $company_id);
 
 		/* override manual reset here */
 		$this->resetManualInvoieNumberResetFlag($company_id);

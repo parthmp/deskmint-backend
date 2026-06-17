@@ -10,7 +10,15 @@ use Illuminate\Support\Facades\DB;
 
 class InvoiceRepository{
 
-	public function insertInvoiceData(Request $request, array $data) : array {
+	/**
+	 * upsertInvoiceData function
+	 *
+	 * @param Request $request
+	 * @param array $data
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function upsertInvoiceData(Request $request, array $data, int $invoice_id = 0) : array {
 
 		$settings = $data['settings'];
 		$client_id = $data['client_id'];
@@ -34,7 +42,12 @@ class InvoiceRepository{
 		
 		$settings_snapshot = $settings->getProductColumns(); /* json text for product_columns settings from SettingsSection table, if it does not exist, it falls back to the default values */
 
-		$invoice = new Invoice();
+		if($invoice_id === 0){
+			$invoice = new Invoice();
+		}else{
+			$invoice = $this->fetchInvoiceObjById($invoice_id);
+		}
+		
 		$invoice->client_id = $client_id;
 		$invoice->company_id = $company_id;
 		$invoice->invoice_number = $invoice_number;
@@ -49,7 +62,7 @@ class InvoiceRepository{
 		$invoice->balance_due = $global_total;
 		$invoice->total = $global_total;
 		$invoice->invoice_terms = $invoice_terms;
-		$invoice->send_email = $send_email;
+		// $invoice->send_email = $send_email;
 		$invoice->payment_method = $payment_method;
 		$invoice->pattern_matched = $patten_matched;
 		$invoice->scan_chars = $scan_chars;
@@ -89,8 +102,18 @@ class InvoiceRepository{
 	 * @param array $invoice_items
 	 * @return void
 	 */
-	public function insertInvoiceItems(array $invoice_items) : void {
-		InvoiceItem::insert($invoice_items);
+	public function upsertInvoiceItems(array $invoice_items, int $invoice_id = 0) : void {
+		
+		if($invoice_id > 0){
+			$posted_uuids = array_column($invoice_items, 'row_uuid');
+			InvoiceItem::where('invoice_id', $invoice_id)->whereNotIn('row_uuid', $posted_uuids)->delete();
+			//update all except row_uuid & invoice_id
+			InvoiceItem::upsert($invoice_items, ['row_uuid', 'invoice_id'], array_keys(array_diff_key($invoice_items[0], array_flip(['row_uuid', 'invoice_id']))));
+		}else{
+			InvoiceItem::insert($invoice_items);
+		}
+
+		
 	}
 
 	/**
@@ -142,5 +165,9 @@ class InvoiceRepository{
 		return DB::table('additional_product_columns_field_values as apcv')->select('apcv.value', 'apcv.apc_field_id', 'apc.label', 'apc.type')->join('additional_product_columns_fields as apc', 'apc.id', '=', 'apcv.apc_field_id')->where([['apcv.invoice_id', '=', $invoice_id], ['apc.company_id', '=', $company_id]])->get()->toArray();
 
 	}
+
+	
+
+	
 
 }

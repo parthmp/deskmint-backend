@@ -125,6 +125,26 @@ class InvoiceController extends Controller{
 
 	}
 
+	/**
+	 * sendInvoiceEmail function
+	 *
+	 * @param Request $request
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return string
+	 */
+	private function sendInvoiceEmail(Request $request, int $company_id, int $invoice_id) : string {
+		//send invoice in email if the setting is switched on.
+		//should check for e invoice setting before sending xml in invoice servie class.
+		$do_send = (bool) Sanitize::input($request->input('settings.send_invoice_in_email'));
+		if($do_send){
+			$timezone_offset_minutes = Sanitize::input($request->input('timezone_offset_minutes'));
+			GenerateInvoiceJob::dispatch($company_id, $invoice_id, $timezone_offset_minutes, $this->invoice_service);
+			return ' and invoice has been sent';
+		}
+
+		return '';
+	}
 	
 	/**
 	 * store function
@@ -145,15 +165,7 @@ class InvoiceController extends Controller{
 				$invoice_id = $this->invoice_service->save($request, $company_id);
 
 				$message = 'Invoice created successfully';
-
-				//send invoice in email if the setting is switched on.
-				//should check for e invoice setting before sending xml in invoice servie class.
-				$do_send = (bool) Sanitize::input($request->input('settings.send_invoice_in_email'));
-				if($do_send){
-					$timezone_offset_minutes = Sanitize::input($request->input('timezone_offset_minutes'));
-					GenerateInvoiceJob::dispatch($company_id, $invoice_id, $timezone_offset_minutes, $this->invoice_service);
-					$message .= ' and invoice has been sent';
-				}
+				$message .= $this->sendInvoiceEmail($request, $company_id, $invoice_id);
 
 				return response(['message' => $message, 'validator' => 'invalid_created'], 200);
 
@@ -169,20 +181,38 @@ class InvoiceController extends Controller{
 
 	}
 
+	public function update(Request $request, int $invoice_id){
+
+		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$invoice_id = (int) Sanitize::input((string) $invoice_id);
+
+		if(!$this->invoice_service->ifInvoiceExists($invoice_id)){
+			return response(['message' => 'invalid data', 'validity' => 'invalid_data', 'tab_switch' => 0], config('global.error_code'));
+		}
+
+		$this->invoice_service->validateAllForInvoice($request, $company_id);
+
+		$invoice_id = $this->invoice_service->save($request, $company_id, $invoice_id);
+
+		$message = 'Invoice updated successfully';
+		$message .= $this->sendInvoiceEmail($request, $company_id, $invoice_id);
+
+	}
+
 	public function show(FetchInvoiceRequest $request, int $invoice_id){
 
 		$data = $request->validated();
 
-		//try{
+		try{
 
 			$invoice_id = (int) Sanitize::input($invoice_id);
 			return $this->invoice_service->fetchInvoice($data['company_id'], $invoice_id, $data['timezone_offset_minutes']);
 
-		// }catch(InvoiceException $e){
-		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
-		// }catch(Exception $e){
-		// 	return General::wentWrong();
-		// }
+		}catch(InvoiceException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 		
 
