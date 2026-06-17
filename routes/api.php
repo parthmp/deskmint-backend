@@ -47,6 +47,8 @@ Route::middleware(['throttle:20,1'])->group(function () {
 	Route::post('resend-otp', [LoginController::class, 'resendOTP']);
 	Route::post('validate-otp', [LoginController::class, 'validateOTP']);
 	Route::post('reset-password', [ForgotPasswordController::class, 'resetPassword']);
+
+	Route::get('invoice/download', [InvoiceController::class, 'servePDF'])->name('invoice.download')->middleware('signed');
 });
 
 Route::middleware(['throttle:60,1', 'auth:sanctum', ValidateDeviceAndTokens::class])->group(function () {
@@ -139,6 +141,12 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-invoice-settings-total-fields', [InvoiceSettingsTotalFieldsController::class, 'show']);
 	Route::post('manage-invoice-settings-total-fields', [InvoiceSettingsTotalFieldsController::class, 'saveOrUpdate']);
 
+	/**
+	 * invoices start
+	 */
+	// In routes/web.php or api.php (no auth middleware)
+	Route::get('manage-invoices/download-pdf', [InvoiceController::class, 'downloadPdf']);
+
 	Route::get('manage-invoices/fetch-clients', [InvoiceController::class, 'searchClients']);
 	Route::get('manage-invoices/fetch-initial-data', [InvoiceController::class, 'fetchInitialData']);
 	Route::get('manage-invoices/fetch-products', [InvoiceController::class, 'fetchProducts']);
@@ -148,6 +156,10 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-invoices/send-invoice', [InvoiceController::class, 'sendInvoice']);
 	Route::resource('manage-invoices', InvoiceController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	Route::delete('manage-invoices', [InvoiceController::class, 'destroy']);
+	/**
+	 * invoiced end
+	 */
+	
 
 	Route::get('manage-email-settings-content', [EmailSettingsContentController::class, 'show']);
 	Route::post('manage-email-settings-content', [EmailSettingsContentController::class, 'upsert']);

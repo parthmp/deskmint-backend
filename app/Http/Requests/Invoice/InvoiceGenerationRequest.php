@@ -7,7 +7,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Override;
 
-class SendInvoiceRequest extends FormRequest
+class InvoiceGenerationRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -20,9 +20,9 @@ class SendInvoiceRequest extends FormRequest
 	#[Override]
 	protected function prepareForValidation()
 	{
-		$invoice_id = Sanitize::input($this->input('invoice_id'));
-		$company_id = Sanitize::input($this->input('company_id'));
-		$time_offset_minutes = Sanitize::input($this->input('time_offset_minutes'));
+		$invoice_id = (int) Sanitize::input($this->input('invoice_id'));
+		$company_id = (int) Sanitize::input($this->input('company_id'));
+		$time_offset_minutes = (int) Sanitize::input($this->input('time_offset_minutes'));
 
 		$this->merge([
 			'invoice_id'			=>	$invoice_id,

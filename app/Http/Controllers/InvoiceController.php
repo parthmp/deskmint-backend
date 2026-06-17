@@ -6,7 +6,7 @@ use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
 use App\Http\Requests\Invoice\FetchInvoiceRequest;
-use App\Http\Requests\Invoice\SendInvoiceRequest;
+use App\Http\Requests\Invoice\InvoiceGenerationRequest;
 use App\Http\Requests\Product\SearchProductRequest;
 use App\Jobs\GenerateInvoiceJob;
 use App\Models\InvoiceCustomFieldValue;
@@ -14,10 +14,12 @@ use App\Models\InvoicesCustomField;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
 use App\Modules\CustomFields\CustomFields;
+use App\Modules\InvoiceGeneration\InvoiceGenerator;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use App\Services\Invoice\InvoiceService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 
 /**
  * InvoiceController class
@@ -258,7 +260,7 @@ class InvoiceController extends Controller{
 		}
 	}
 
-	public function sendInvoice(SendInvoiceRequest $request){
+	public function sendInvoice(InvoiceGenerationRequest $request){
 
 		$data = $request->validated();
 		
@@ -269,6 +271,38 @@ class InvoiceController extends Controller{
 			return General::wentWrong();
 		}
 
+	}
+
+	public function downloadPDF(InvoiceGenerationRequest $request){
+
+		$data = $request->validated();
+		
+		$url = URL::temporarySignedRoute(
+			'invoice.download', now()->addMinutes(5),
+			[
+				'invoice_id' 			=> $data['invoice_id'],
+				'company_id' 			=> $data['company_id'],
+				'time_offset_minutes' 	=> $data['time_offset_minutes']
+			]
+		);
+
+		return response(['url' => $url], 200);
+
+	}
+
+	public function servePDF(Request $request){
+
+		$company_id = (int) $request->query('company_id');
+		$invoice_id = (int) $request->query('invoice_id');
+		$time_offset_minutes = (int) $request->query('time_offset_minutes');
+
+		return app(InvoiceGenerator::class)
+			->setCompanyId($company_id)
+			->setInvoiceId($invoice_id)
+			->setTimeOffsetMinutes($time_offset_minutes)
+			->exec()
+			->generatePDF(save: false, add_random: false)
+			->download();
 	}
 
 }
