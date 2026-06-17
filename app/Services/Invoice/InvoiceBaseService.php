@@ -286,7 +286,13 @@ class InvoiceBaseService{
 		
 		$invoice_id = $this->upsertInvoice($request, $this->getInvoiceData($request), $invoice_id); //adds invoice data + non changable (normal) product cols/rows
 
-		$this->custom_fields->upsertCustomFieldValues($request, $invoice_id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', true);
+		$add = true;
+
+		if($invoice_id > 0){
+			$add = false;
+		}
+
+		$this->custom_fields->upsertCustomFieldValues($request, $invoice_id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', $add);
 		
 		//to insert custom product rows/cols
 		$this->upsertCustomProductRows($request, $invoice_id, $company_id);
