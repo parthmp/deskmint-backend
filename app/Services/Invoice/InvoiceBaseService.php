@@ -171,10 +171,10 @@ class InvoiceBaseService{
 	 *
 	 * @param array $product_rows
 	 * @param string $discount_type
-	 * @param integer $discount_number
+	 * @param string $discount_number
 	 * @return array
 	 */
-	public function calculateInvoice(array $product_rows, string $discount_type, int $discount_number) : array {
+	public function calculateInvoice(array $product_rows, string $discount_type, string $discount_number) : array {
 		return $this->invoice_calculation_service->calculateInvoice($product_rows, $discount_type, $discount_number);
 	}
 
@@ -261,7 +261,7 @@ class InvoiceBaseService{
 			'scan_chars'				=>	$scan_chars,
 			'rows'						=>	$totals['rows']
 		];
-
+		
 	}
 
 	/**
@@ -273,10 +273,6 @@ class InvoiceBaseService{
 	public function resetManualInvoieNumberResetFlag(int $company_id) : void {
 		$this->invoice_number_service->resetManualInvoieNumberResetFlag($company_id);
 	}
-
-	// protected function calculateInvoiceTotals(array $rows) : array {
-
-	// }
 
 	/**
 	 * saveOrUpdate function
@@ -290,7 +286,7 @@ class InvoiceBaseService{
 		
 		$invoice_id = $this->upsertInvoice($request, $this->getInvoiceData($request), $invoice_id); //adds invoice data + non changable (normal) product cols/rows
 
-		//$this->custom_fields->upsertCustomFieldValues($request, $invoice_id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', true);
+		$this->custom_fields->upsertCustomFieldValues($request, $invoice_id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', true);
 		
 		//to insert custom product rows/cols
 		$this->upsertCustomProductRows($request, $invoice_id, $company_id);

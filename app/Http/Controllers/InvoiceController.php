@@ -190,12 +190,32 @@ class InvoiceController extends Controller{
 			return response(['message' => 'invalid data', 'validity' => 'invalid_data', 'tab_switch' => 0], config('global.error_code'));
 		}
 
-		$this->invoice_service->validateAllForInvoice($request, $company_id);
+		try{
 
-		$invoice_id = $this->invoice_service->save($request, $company_id, $invoice_id);
+			$this->invoice_service->validateAllForInvoice($request, $company_id);
 
-		$message = 'Invoice updated successfully';
-		$message .= $this->sendInvoiceEmail($request, $company_id, $invoice_id);
+			try{
+
+				$invoice_id = $this->invoice_service->save($request, $company_id, $invoice_id);
+
+				$message = 'Invoice updated successfully';
+				$message .= $this->sendInvoiceEmail($request, $company_id, $invoice_id);
+
+				return response(['message' => $message, 'validator' => 'invalid_created'], 200);
+
+			}catch(Exception $e){
+				return General::wentWrong();
+			}
+
+		}catch(InvoiceException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
+		
+
+		
 
 	}
 

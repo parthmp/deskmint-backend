@@ -70,7 +70,7 @@ class Save{
 			}
 
 		}
-		logger($columns);
+		
 		try{
 
 			$columns = json_encode($columns);

@@ -100,10 +100,10 @@ class InvoiceCalculationService{
 	 *
 	 * @param array $product_rows
 	 * @param string $discount_type
-	 * @param integer $discount_number
+	 * @param string $discount_number
 	 * @return array
 	 */
-	public function calculateInvoice(array $product_rows, string $discount_type, int $discount_number) : array {
+	public function calculateInvoice(array $product_rows, string $discount_type, string $discount_number) : array {
 
 		$rows = [];
 
@@ -115,7 +115,7 @@ class InvoiceCalculationService{
 			$this->global_discount_amount = BigDecimal::of($discount_number);
 		}else{
 			$global_discount_rate = BigDecimal::of($discount_number)->dividedBy(100, 4, RoundingMode::HALF_UP);
-			$global_discount_amount  = $global_discount_rate->multipliedBy($this->global_total)->toScale(4, RoundingMode::HALF_UP);
+			$this->global_discount_amount  = $global_discount_rate->multipliedBy($this->global_total)->toScale(4, RoundingMode::HALF_UP);
 		}
 
 		$global_total = $this->global_total->minus($this->global_discount_amount);

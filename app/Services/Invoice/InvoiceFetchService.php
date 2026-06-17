@@ -335,9 +335,6 @@ class InvoiceFetchService{
 			throw new InvoiceException('invalid invoice id', 'invalid_invoice_id', config('global.error_code'));
 		}
 		
-		$invoice['invoice_date'] = General::convertTimezone($timezone_offset_minutes, $invoice['invoice_date'], true);
-		$invoice['due_date'] = General::convertTimezone($timezone_offset_minutes, $invoice['due_date'], true);
-
 		unset($invoice['pattern_matched']);
 		unset($invoice['scan_chars']);
 		unset($invoice['settings_snapshot']);
