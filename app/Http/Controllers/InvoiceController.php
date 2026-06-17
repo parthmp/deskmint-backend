@@ -6,6 +6,7 @@ use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
 use App\Http\Requests\Invoice\FetchInvoiceRequest;
+use App\Http\Requests\Invoice\SendInvoiceRequest;
 use App\Http\Requests\Product\SearchProductRequest;
 use App\Jobs\GenerateInvoiceJob;
 use App\Models\InvoiceCustomFieldValue;
@@ -255,6 +256,19 @@ class InvoiceController extends Controller{
 		}catch(Exception $e){
 			return General::wentWrong();
 		}
+	}
+
+	public function sendInvoice(SendInvoiceRequest $request){
+
+		$data = $request->validated();
+		
+		try{
+			GenerateInvoiceJob::dispatch($data['company_id'], $data['invoice_id'], $data['time_offset_minutes'], $this->invoice_service);
+			return response(['message' => 'Invoice sent successfully', 'validity' => 'invoice_sent'], 200);
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
 	}
 
 }
