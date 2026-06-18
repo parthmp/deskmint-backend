@@ -149,7 +149,8 @@ class InvoiceGenerator{
 			'invoice_content_settings'	=>	$this->invoice_db_operations->fetchEmailContentSettings(),
 			'company_address_settings'	=>	$this->invoice_settings_resolver->fetchCompanyAddressDetails(),
 			'invoice_details_settings'	=>	$this->invoice_settings_resolver->fetchInvoiceDetails(),
-			'invoice_data'				=>	$this->invoice_db_operations->fetchInvoiceRow(),
+			//'invoice_data'				=>	$this->invoice_db_operations->fetchInvoiceRow(),
+			'invoice_data'				=>	$this->invoice_db_operations->fetchInvoiceRowObj(),
 			'total_fields_settings'		=>	$this->invoice_settings_resolver->fetchTotalFieldsDetails()
 		];
 		
@@ -158,7 +159,7 @@ class InvoiceGenerator{
 		$context['invoice_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfInvoice() ?? [];
 
 		$context['product_rows_data'] = $this->invoice_settings_resolver->fetchProductRowsSettings($context['invoice_data']);
-		$context['invoice_items'] = $this->invoice_db_operations->fetchInvoiceItems();
+		$context['invoice_items'] = $this->invoice_db_operations->fetchInvoiceItemsWithCustomCols();
 
 		$this->invoice_data = $context['invoice_data'];
 		$this->invoice_content = $context['invoice_content_settings'];

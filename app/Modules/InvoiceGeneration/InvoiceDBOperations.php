@@ -119,6 +119,15 @@ class InvoiceDBOperations{
 	}
 
 	/**
+	 * fetchInvoiceRowObj function
+	 *
+	 * @return Invoice|null
+	 */
+	public function fetchInvoiceRowObj() : ?Invoice {
+		return Invoice::where('id', '=', $this->invoice_id)->withTrashed()->first();
+	}
+
+	/**
 	 * fetchClientDetailsSettings function
 	 *
 	 * @return array|null

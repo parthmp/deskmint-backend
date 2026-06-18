@@ -575,7 +575,7 @@
 						'id'		=>	2,
 						'text'		=>	'Subtotal',
 						'value'		=>	General::replaceWithUnderscores('Subtotal'),
-						'mapped'	=>	['sub_total'],  /* these are not db columns like others, these added as indicators to differentiate */
+						'mapped'	=>	['subtotal'],  /* these are not db columns like others, these added as indicators to differentiate */
 						'type'		=>	'normal'
 					],
 					[
@@ -589,7 +589,7 @@
 						'id'		=>	4,
 						'text'		=>	'Total Taxes',
 						'value'		=>	General::replaceWithUnderscores('Total Taxes'),
-						'mapped'	=>	['total_taxes'],
+						'mapped'	=>	['tax_amount'],
 						'type'		=>	'normal'
 					],
 					[
@@ -603,7 +603,7 @@
 						'id'		=>	6,
 						'text'		=>	'Paid to Date',
 						'value'		=>	General::replaceWithUnderscores('Paid to Date'),
-						'mapped'	=>	['paid_to_date'],
+						'mapped'	=>	'',
 						'type'		=>	'normal'
 					],
 					[

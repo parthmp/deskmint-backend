@@ -2,9 +2,14 @@
 
 namespace App\Modules\InvoiceGeneration;
 
+use App\Helpers\General;
 use App\Repositories\Company\CompanyRepository;
 use App\Services\CompanySettingsLogo\CompanySettingsLogoService;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Carbon\Carbon;
+
+use function Laravel\Prompts\number;
 
 class InvoiceRenderer extends InvoiceGenerator{
 
@@ -259,27 +264,30 @@ class InvoiceRenderer extends InvoiceGenerator{
 				if($row['type'] === 'normal'){
 					$mapped = $row['mapped'];
 					if($mapped[0] === 'tax'){
-						$product_columns_html .= (float) $item->tax.'%';
+						$product_columns_html .= number_format($item->tax, 2).'%';
 					}else{
 						if($mapped[0] === 'product_id'){
 							$product_columns_html .= $item->product->product_name;
 						}else{
-							$product_columns_html .= $item->{$mapped[0]};
+							$temp_value = $item->{$mapped[0]};
+							if(trim(strtolower($mapped[0])) === 'unit_price'){
+								$temp_value = number_format($item->{$mapped[0]}, 2);
+							}
+							$product_columns_html .= $temp_value;
 						}
 						
 					}
 
 				}else{
-					//for custom product row fields.
-					if((int) $row['tax'] === 1){
 
-						//for tax fields
-						//TODO: fix bug here, fetch values for custom tax fields
-						$product_columns_html .= (float) $row['tax_rate'].'%';
-
-					}else{
-						//TODO: fix bug here, fetch values for custom non tax fields
-						$product_columns_html .= $row['text'];
+					foreach($item->custom_field_values as $custom_field){
+						if((string) $custom_field->row_uuid === (string) $item->row_uuid && (int) $custom_field->apc_field_id === (int) $row['id_column']){
+							if((int) $row['tax'] === 1){
+								$product_columns_html .= number_format($custom_field->value, 2).'%';
+							}else{
+								$product_columns_html .= $custom_field->value;
+							}
+						}
 					}
 				}	
 
@@ -312,8 +320,15 @@ class InvoiceRenderer extends InvoiceGenerator{
 
 		foreach($this->context['total_fields_settings'] as $field){
 			
-			$mapped = $field['mapped'][0];
-			$total_fields .= '<p>'.$field['text'].': '.(double) $this->context['invoice_data'][$mapped].' '.$currency_code.'</p>';
+			if(trim(strtolower($field['text'])) === 'paid to date'){
+				$math = BigDecimal::of($this->context['invoice_data']['total'])->minus($this->context['invoice_data']['balance_due']);
+				$show_value = $math->toScale(2, RoundingMode::HALF_UP)->__toString();
+			}else{
+				$mapped = $field['mapped'][0];
+				$show_value = number_format($this->context['invoice_data'][$mapped], 2);
+			}
+			
+			$total_fields .= '<p>'.$field['text'].': '.$show_value.' '.$currency_code.'</p>';
 
 		}
 
