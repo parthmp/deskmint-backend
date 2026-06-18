@@ -30,7 +30,7 @@ class InvoiceGenerator{
 	private int $invoice_id;
 	private string $contents = '';
 	private mixed $pdf_object;
-	private int $time_offset_minutes;
+	protected int $time_offset_minutes;
 	private ?Invoice $invoice_data;
 	private string $filename = '';
 	private string $disk = 'temp_invoices';
@@ -101,7 +101,7 @@ class InvoiceGenerator{
 	protected function formatDateTime(string $date, bool $show_time = false, $sql_format = false) : string {
 		
 		$date_obj = Carbon::parse($date);
-
+		
 		if($this->time_offset_minutes < 0){
 			$date_obj->subMinutes(abs($this->time_offset_minutes));	
 		}else if($this->time_offset_minutes > 0){
@@ -157,7 +157,7 @@ class InvoiceGenerator{
 		$context['client_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfClient((int) $context['invoice_data']['client_id']);
 
 		$context['invoice_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfInvoice() ?? [];
-
+		//dd($context['invoice_custom_fields_values']);
 		$context['product_rows_data'] = $this->invoice_settings_resolver->fetchProductRowsSettings($context['invoice_data']);
 		$context['invoice_items'] = $this->invoice_db_operations->fetchInvoiceItemsWithCustomCols();
 
@@ -176,7 +176,7 @@ class InvoiceGenerator{
 	 */
 	public function modifyInvoiceTemplate() : self {
 		$this->contents = $this->fetchTemplateContents();
-		$renderer = new InvoiceRenderer($this->contents, $this->generateContextArrayForRenderer());
+		$renderer = new InvoiceRenderer($this->contents, $this->generateContextArrayForRenderer(), $this->time_offset_minutes);
 		$this->contents = $renderer->render();
 		return $this;
 	}

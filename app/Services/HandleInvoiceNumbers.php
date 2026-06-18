@@ -28,16 +28,18 @@ class HandleInvoiceNumbers{
 	}
 
 	/**
-	 * getUserTime function
+	 * setUserTime function
 	 *
-	 * @return Carbon
+	 * @return void
 	 */
 	private function setUserTime() : void {
 
 		if($this->timezone_offset_minutes < 0){
 			$this->user_time = Carbon::now()->subMinutes(abs($this->timezone_offset_minutes));
-		}else{
+		}else if($this->timezone_offset_minutes > 0){
 			$this->user_time = Carbon::now()->addMinutes(abs($this->timezone_offset_minutes));
+		}else{
+			$this->user_time = Carbon::now();
 		}
 
 	}

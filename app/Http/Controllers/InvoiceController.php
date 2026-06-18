@@ -229,7 +229,7 @@ class InvoiceController extends Controller{
 		try{
 
 			$invoice_id = (int) Sanitize::input($invoice_id);
-			return $this->invoice_service->fetchInvoice($data['company_id'], $invoice_id, $data['timezone_offset_minutes']);
+			return $this->invoice_service->fetchInvoice((int) $data['company_id'], (int) $invoice_id, (int) $data['timezone_offset_minutes']);
 
 		}catch(InvoiceException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());

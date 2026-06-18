@@ -15,7 +15,6 @@ class InvoiceRenderer extends InvoiceGenerator{
 
 	private string $contents;
 	private array $context;
-	private int $time_offset_minutes;
 	private CompanySettingsLogoService $company_settings_logo_service;
 
 	/**
@@ -56,10 +55,10 @@ class InvoiceRenderer extends InvoiceGenerator{
 
 		foreach($this->context[$type.'_custom_fields_values'] as $custom_field_value){
 			
-			if($field[$type.'s_custom_field_id'] === $custom_field_value->{$type.'s_custom_field_id'}){
+			if((int) $field[$type.'s_custom_field_id'] === (int) $custom_field_value->{$type.'s_custom_field_id'}){
 				
 				$input_type = $custom_field_value->{$type.'s_custom_field_wt'}->custom_field_type_wt->input_type;
-
+				
 				$content .= match($input_type){
 					config('global.field_types')[5] => $this->formatDateTime($custom_field_value->field_value), /* date */
 					config('global.field_types')[7] => $this->formatDateTime($custom_field_value->field_value, true), /* datetime */
