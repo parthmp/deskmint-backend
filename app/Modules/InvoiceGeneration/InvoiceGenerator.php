@@ -139,7 +139,7 @@ class InvoiceGenerator{
 	 *
 	 * @return array
 	 */
-	private function generateContextArrayForRenderer() : array {
+	public function generateContextArrayForRenderer() : array {
 
 		$context = [
 			'general_settings'			=>	$this->invoice_settings_resolver->fetchGeneral(),
@@ -149,15 +149,14 @@ class InvoiceGenerator{
 			'invoice_content_settings'	=>	$this->invoice_db_operations->fetchEmailContentSettings(),
 			'company_address_settings'	=>	$this->invoice_settings_resolver->fetchCompanyAddressDetails(),
 			'invoice_details_settings'	=>	$this->invoice_settings_resolver->fetchInvoiceDetails(),
-			//'invoice_data'				=>	$this->invoice_db_operations->fetchInvoiceRow(),
-			'invoice_data'				=>	$this->invoice_db_operations->fetchInvoiceRowObj(),
+			'invoice_data'				=>	$this->invoice_db_operations->fetchInvoiceRow(),
 			'total_fields_settings'		=>	$this->invoice_settings_resolver->fetchTotalFieldsDetails()
 		];
 		
 		$context['client_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfClient((int) $context['invoice_data']['client_id']);
 
 		$context['invoice_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfInvoice() ?? [];
-		//dd($context['invoice_custom_fields_values']);
+		
 		$context['product_rows_data'] = $this->invoice_settings_resolver->fetchProductRowsSettings($context['invoice_data']);
 		$context['invoice_items'] = $this->invoice_db_operations->fetchInvoiceItemsWithCustomCols();
 

@@ -305,4 +305,22 @@ class InvoiceController extends Controller{
 			->download();
 	}
 
+	// public function fetchForView(InvoiceGenerationRequest $request){
+
+	// 	$data = $request->validated();
+
+	// 	try{
+
+	// 		$response = app(InvoiceGenerator::class)->setCompanyId((int) $data['company_id'])->setInvoiceId((int) $data['invoice_id'])->setTimeOffsetMinutes((int) $data['time_offset_minutes'])->exec()->generateContextArrayForRenderer();
+	// 		return $response;
+
+	// 	}catch(Exception $e){
+
+	// 		return General::wentWrong();
+
+	// 	}
+		
+
+	// }
+
 }

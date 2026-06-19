@@ -146,6 +146,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	 */
 	// In routes/web.php or api.php (no auth middleware)
 	Route::get('manage-invoices/download-pdf', [InvoiceController::class, 'downloadPdf']);
+	// Route::get('manage-invoices/fetch-for-view', [InvoiceController::class, 'fetchForView']);
 
 	Route::get('manage-invoices/fetch-clients', [InvoiceController::class, 'searchClients']);
 	Route::get('manage-invoices/fetch-initial-data', [InvoiceController::class, 'fetchInitialData']);
