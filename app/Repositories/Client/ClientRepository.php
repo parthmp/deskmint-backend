@@ -6,6 +6,7 @@ use App\Models\Client;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use stdClass;
 
 class ClientRepository{
 
@@ -79,6 +80,16 @@ class ClientRepository{
 	 */
 	public function fetchById(int $id) : ?Client {
 		return Client::where('id', '=', $id)->first();
+	}
+
+	/**
+	 * fetchClientCurrencyById function
+	 *
+	 * @param integer $id
+	 * @return stdClass|null
+	 */
+	public function fetchClientCurrencyById(int $id) : ?stdClass {
+		return DB::table('clients')->select('currencies.id', 'currencies.code')->join('currencies', 'currencies.id', 'clients.currency_id')->where('clients.id', '=', $id)->first();
 	}
 
 	/**

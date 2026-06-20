@@ -2,10 +2,12 @@
 
 namespace App\Services\Invoice;
 
+use App\Helpers\Sanitize;
 use App\Models\InvoicesCustomField;
 use App\Models\Product;
 use App\Modules\CustomFields\CustomFields;
 use App\Modules\CustomFields\Exceptions\InvalidCustomFieldsException;
+use App\Repositories\Client\ClientRepository;
 use App\Repositories\Product\ProductRepository;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use App\Services\Product\ProductFieldService;
@@ -18,7 +20,8 @@ class InvoiceValidationService extends ProductFieldService {
 	public function __construct(
 		private CustomFields $custom_fields, 
 		private InvoiceSettingsService $invoice_settings_service,
-		private ProductRepository $product_repository
+		private ProductRepository $product_repository,
+		private ClientRepository $client_repository
 	){}
 
 	/**
@@ -144,6 +147,46 @@ class InvoiceValidationService extends ProductFieldService {
 		return $this->product_repository->ifProductsExists($company_id, $product_ids);
 
 	}
+
+	/**
+	 * validatePaymentGatewayCurrency function
+	 *
+	 * @param integer $client_id
+	 * @param integer $payment_method
+	 * @return array
+	 */
+	private function validatePaymentGatewayCurrency(int $client_id, int $payment_method) : array {
+		
+		$currency = $this->client_repository->fetchClientCurrencyById($client_id);
+		
+		$currency_code = strtoupper(trim($currency->code));
+
+		$is_valid = true;
+
+		if($payment_method === PAYMENT_PAYPAL){
+			$is_valid = in_array($currency_code, config('payment.supported_currencies.paypal'));
+		}else if($payment_method === PAYMENT_STRIPE){
+			$is_valid = in_array($currency_code, config('payment.supported_currencies.stripe'));
+		}
+
+		return ['code' => $currency_code, 'valid' => $is_valid];
+
+	}
+
+	/**
+	 * getPaymentMethodName function
+	 *
+	 * @param integer $payment_method
+	 * @return string
+	 */
+	private function getPaymentMethodName(int $payment_method) : string {
+		return match($payment_method){
+			PAYMENT_CASH			=>	'Cash',
+			PAYMENT_NETBANKING		=>	'Netbanking',
+			PAYMENT_PAYPAL			=>	'PayPal',
+			PAYMENT_STRIPE			=>	'Stripe'
+		};
+	}
 	
 	/**
 	 * validateAllForInvoice function
@@ -186,6 +229,15 @@ class InvoiceValidationService extends ProductFieldService {
 		
 		if(!$this->ifSubmittedFieldsAreSameAsDefined($request, $company_id)){
 			throw new InvoiceException('Invalid request', 'mismatch_fields', config('global.error_code'), 2);
+		}
+
+		$client_id = (int) Sanitize::input($request->input('data.invoice_details.client.client_id'));
+		$payment_method = (int) Sanitize::input($request->input('settings.payment_method'));
+		$currency_validated = $this->validatePaymentGatewayCurrency($client_id, $payment_method);
+
+		if(!$currency_validated['valid']){
+			$payment_gateway_name = $this->getPaymentMethodName($payment_method);
+			throw new InvoiceException('Currency '.$currency_validated['code'].' not supported with '.$payment_gateway_name, 'unsupported_currency', config('global.error_code'), 2);
 		}
 
 		return true;

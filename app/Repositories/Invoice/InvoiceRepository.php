@@ -40,7 +40,7 @@ class InvoiceRepository{
 		$patten_matched = $data['patten_matched'];
 		$scan_chars = $data['scan_chars'];
 		$rows = $data['rows'];
-		logger($data);
+		
 		$settings_snapshot = $settings->getProductColumns(); /* json text for product_columns settings from SettingsSection table, if it does not exist, it falls back to the default values */
 
 		if($invoice_id === 0){

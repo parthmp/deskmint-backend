@@ -12,7 +12,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->mergeConfigFrom(base_path('app/Modules/Payment/config.php'), 'payment');
 		
     }
 
