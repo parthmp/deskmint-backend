@@ -343,7 +343,17 @@ class InvoiceRenderer extends InvoiceGenerator{
 	 */
 	private function renderTerms() : self {
 
-		$terms = $this->context['invoice_data']->company->invoice_terms;
+		$terms = '<p><strong>Company terms';
+
+		$terms .= '</strong><br>';
+		$terms .= $this->context['invoice_data']->company->invoice_terms;
+		$terms .= '</p>';
+		
+		$terms .= '<p><strong>Invoice terms';
+		$terms .= '</strong><br>';
+		$terms .= nl2br($this->context['invoice_data']->invoice_terms);
+		$terms .= '</p>';
+		
 
 		$this->contents = str_ireplace('{{$render_terms}}', $terms, $this->contents);
 
