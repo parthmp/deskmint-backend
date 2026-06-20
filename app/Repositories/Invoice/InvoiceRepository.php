@@ -106,14 +106,13 @@ class InvoiceRepository{
 	public function upsertInvoiceItems(array $invoice_items, int $invoice_id = 0) : void {
 		
 		if($invoice_id > 0){
-			$posted_uuids = array_column($invoice_items, 'row_uuid');
-			InvoiceItem::where('invoice_id', $invoice_id)->whereNotIn('row_uuid', $posted_uuids)->delete();
+			// $posted_uuids = array_column($invoice_items, 'row_uuid');
+			InvoiceItem::where('invoice_id', '=', $invoice_id)->forceDelete();
 			//update all except row_uuid & invoice_id
-			InvoiceItem::upsert($invoice_items, ['row_uuid', 'invoice_id'], array_keys(array_diff_key($invoice_items[0], array_flip(['row_uuid', 'invoice_id']))));
-		}else{
-			InvoiceItem::insert($invoice_items);
+			//InvoiceItem::upsert($invoice_items, ['row_uuid', 'invoice_id'], array_keys(array_diff_key($invoice_items[0], array_flip(['row_uuid', 'invoice_id']))));
+			// InvoiceItem::insert($invoice_items);
 		}
-
+		InvoiceItem::insert($invoice_items);
 		
 	}
 

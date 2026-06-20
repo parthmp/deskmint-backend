@@ -582,7 +582,7 @@
 						'id'		=>	3,
 						'text'		=>	'Discount',
 						'value'		=>	General::replaceWithUnderscores('Discount'),
-						'mapped'	=>	['discount'],
+						'mapped'	=>	['discount_amount'],
 						'type'		=>	'normal'
 					],
 					[
