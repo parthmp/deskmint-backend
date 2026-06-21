@@ -200,7 +200,7 @@ class InvoiceValidationService extends ProductFieldService {
 		$tab0_valid = $this->validateInvoiceDetails($request);
 		
 		if(!$tab0_valid){
-			throw new InvoiceException('Please fill in required fields', 'invalid_request', config('global.error_code'), 0);
+			throw new InvoiceException('Please fill in required fields', 'invalid_request_t0', config('global.error_code'), 0);
 		}
 
 		try{
