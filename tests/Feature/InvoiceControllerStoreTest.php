@@ -8,5 +8,6 @@ use Tests\TestCase;
 
 class InvoiceControllerStoreTest extends TestCase
 {
-    
+    use RefreshDatabase;
+	
 }
