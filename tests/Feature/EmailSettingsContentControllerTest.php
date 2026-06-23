@@ -32,8 +32,8 @@ class EmailSettingsContentControllerTest extends TestCase {
 		$json = $response->json();
 		
 
-		$this->assertEmpty($json['email_content_invoice']);
-		$this->assertEmpty($json['email_content_reminder']);
+		$this->assertNotEmpty($json['email_content_invoice']);
+		$this->assertNotEmpty($json['email_content_reminder']);
 		$this->assertEmpty($json['payment_details']);
 
 	}

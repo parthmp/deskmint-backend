@@ -644,8 +644,22 @@
 		public function getDefaultEmailContentSettings() : array {
 
 			return [
-				'email_content_invoice'		=>	'Hello {$client_first_name} {$client_last_name},\nHere is your invoice dated {$invoice_date}, due date is {$due_date} with invoice # {$invoice_number}\n\nYou have unpaid balance of {$unpaid_balance}\n\n[{online-payment-start}]\nPAYMENT URL BELOW\n{$payment_url}\n[{online-payment-end}]',
-				'email_content_reminder'	=>	'Hello {$client_first_name} {$client_last_name},\nHere is your invoice dated {$invoice_date}, due date is {$due_date} with invoice # {$invoice_number}\n\nYou have unpaid balance of {$unpaid_balance}\n\n[{online-payment-start}]\nPAYMENT URL BELOW\n{$payment_url}\n[{online-payment-end}]',
+				'email_content_invoice'		=>	trim('Hello {$client_first_name} {$client_last_name},
+Here is your invoice dated {$invoice_date}, due date is {$due_date} with invoice # {$invoice_number}
+You have unpaid balance of {$unpaid_balance}
+
+[{online-payment-start}]
+PAYMENT URL BELOW
+{$payment_url}
+[{online-payment-end}]'),
+				'email_content_reminder'	=>	trim('Hello {$client_first_name} {$client_last_name},
+Here is your invoice dated {$invoice_date}, due date is {$due_date} with invoice # {$invoice_number}
+You have unpaid balance of {$unpaid_balance}
+
+[{online-payment-start}]
+PAYMENT URL BELOW
+{$payment_url}
+[{online-payment-end}]'),
 				'payment_details'			=>	'',
 			];
 
