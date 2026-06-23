@@ -170,7 +170,7 @@ class InvoiceController extends Controller{
 				$message = 'Invoice created successfully';
 				$message .= $this->sendInvoiceEmail($request, $company_id, $invoice_id);
 
-				return response(['message' => $message, 'validator' => 'invalid_created'], 200);
+				return response(['message' => $message, 'validity' => 'invoice_created'], 200);
 
 			}catch(Exception $e){
 				return General::wentWrong();
@@ -204,7 +204,7 @@ class InvoiceController extends Controller{
 				$message = 'Invoice updated successfully';
 				$message .= $this->sendInvoiceEmail($request, $company_id, $invoice_id);
 
-				return response(['message' => $message, 'validator' => 'invalid_created'], 200);
+				return response(['message' => $message, 'validity' => 'invoice_created'], 200);
 
 			}catch(Exception $e){
 				return General::wentWrong();

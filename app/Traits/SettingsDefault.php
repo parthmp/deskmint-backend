@@ -644,8 +644,8 @@
 		public function getDefaultEmailContentSettings() : array {
 
 			return [
-				'email_content_invoice'		=>	'',
-				'email_content_reminder'	=>	'',
+				'email_content_invoice'		=>	'Hello {$client_first_name} {$client_last_name},\nHere is your invoice dated {$invoice_date}, due date is {$due_date} with invoice # {$invoice_number}\n\nYou have unpaid balance of {$unpaid_balance}\n\n[{online-payment-start}]\nPAYMENT URL BELOW\n{$payment_url}\n[{online-payment-end}]',
+				'email_content_reminder'	=>	'Hello {$client_first_name} {$client_last_name},\nHere is your invoice dated {$invoice_date}, due date is {$due_date} with invoice # {$invoice_number}\n\nYou have unpaid balance of {$unpaid_balance}\n\n[{online-payment-start}]\nPAYMENT URL BELOW\n{$payment_url}\n[{online-payment-end}]',
 				'payment_details'			=>	'',
 			];
 

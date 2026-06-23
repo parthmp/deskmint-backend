@@ -95,13 +95,13 @@ class InvoiceValidationService extends ProductFieldService {
 			}
 
 			
-			if($user_defined_column['mapped'] === null && $user_defined_column['type'] === 'custom'){
+			if(($user_defined_column['mapped'] === null || $user_defined_column['mapped'] === '') && ($user_defined_column['type'] === 'custom')){
 				
 				if(!isset($user_defined_column['id_column'])){
 					$fields_same = false;
 					break;
 				}
-
+				
 				$custom_field_name = $this->generateFieldName($user_defined_column, $custom_tax_ids);
 				
 				if(!in_array($custom_field_name, $product_row_fields_names)){
@@ -186,14 +186,15 @@ class InvoiceValidationService extends ProductFieldService {
 	 * getPaymentMethodName function
 	 *
 	 * @param integer $payment_method
-	 * @return string
+	 * @return string|null
 	 */
-	private function getPaymentMethodName(int $payment_method) : string {
+	private function getPaymentMethodName(int $payment_method) : ?string {
 		return match($payment_method){
 			PAYMENT_CASH			=>	'Cash',
 			PAYMENT_NETBANKING		=>	'Netbanking',
 			PAYMENT_PAYPAL			=>	'PayPal',
-			PAYMENT_STRIPE			=>	'Stripe'
+			PAYMENT_STRIPE			=>	'Stripe',
+			default					=>	null
 		};
 	}
 	
@@ -244,9 +245,19 @@ class InvoiceValidationService extends ProductFieldService {
 		$payment_method = (int) Sanitize::input($request->input('settings.payment_method'));
 		$currency_validated = $this->validatePaymentGatewayCurrency($client_id, $payment_method);
 
+		$payment_gateway_name = $this->getPaymentMethodName($payment_method);
+		if(!$payment_gateway_name){
+			throw new InvoiceException('Invalid request', 'invalid_payment_gateway', config('global.error_code'), 2);
+		}
+
 		if(!$currency_validated['valid']){
-			$payment_gateway_name = $this->getPaymentMethodName($payment_method);
+			
+			
 			throw new InvoiceException('Currency '.$currency_validated['code'].' not supported with '.$payment_gateway_name, 'unsupported_currency', config('global.error_code'), 2);
+		}
+
+		if(!$request->has('timezone_offset_minutes')){
+			throw new InvoiceException('Invalid request', 'invalid_timezone', config('global.error_code'), 2);
 		}
 
 		return true;

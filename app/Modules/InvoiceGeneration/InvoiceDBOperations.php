@@ -12,12 +12,15 @@ use App\Models\InvoiceItem;
 use App\Models\SettingsSection;
 use App\Models\User;
 use App\Repositories\Company\CompanyRepository;
+use App\Traits\SettingsDefault;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
  * InvoiceDBOperations class
  */
 class InvoiceDBOperations{
+
+	use SettingsDefault;
 	
 	private int $company_id;
 	private int $invoice_id;
@@ -237,10 +240,18 @@ class InvoiceDBOperations{
 	/**
 	 * fetchEmailContentSettings function
 	 *
-	 * @return array|null
+	 * @return array
 	 */
-	public function fetchEmailContentSettings() : ?array {
-		return $this->filterArray(ESC_EMAIL_CONTENT_TYPE);
+	public function fetchEmailContentSettings() : array {
+
+		$email_content = $this->filterArray(ESC_EMAIL_CONTENT_TYPE);
+		
+		if($email_content){
+			return $email_content;
+		}
+		
+		return $this->getDefaultEmailContentSettings();
+
 	}
 
 	/**
