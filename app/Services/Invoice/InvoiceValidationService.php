@@ -38,7 +38,7 @@ class InvoiceValidationService extends ProductFieldService {
 			'data.invoice_details.invoice_number.value'	=>	'required',
 			'data.invoice_details.due_date.value'		=>	'required'
 		]);
-
+		
 		return (bool) !$v->fails();
 	}
 
@@ -134,6 +134,11 @@ class InvoiceValidationService extends ProductFieldService {
 		// Extract all product IDs
 		$product_ids = [];
 		foreach($product_rows as $row){
+			
+			if(trim($row['row_uuid']) === ''){
+				throw new InvoiceException('Please have at least one product to create invoice', 'invalid_product_uuid_tab0', config('global.error_code'), 0);
+			}
+
 			if(!empty($row['product_id'])){
 				$product_ids[] = (int) $row['product_id'];
 			}
@@ -200,7 +205,17 @@ class InvoiceValidationService extends ProductFieldService {
 		$tab0_valid = $this->validateInvoiceDetails($request);
 		
 		if(!$tab0_valid){
-			throw new InvoiceException('Please fill in required fields', 'invalid_request_t0', config('global.error_code'), 0);
+			throw new InvoiceException('Please fill in required fields', 'invalid_request_tab0', config('global.error_code'), 0);
+		}
+
+		if(!$request->filled('data.product_rows')){
+			throw new InvoiceException('Please have at least one product to create invoice', 'invalid_request_product_rows_tab0', config('global.error_code'), 0);
+		}
+
+		$product_rows = $request->input('data.product_rows');
+
+		if(!$this->shouldHaveAtLeastOneRow($product_rows, $company_id)){
+			throw new InvoiceException('Please have at least one product to create invoice', 'invalid_product_data_tab0', config('global.error_code'), 0);
 		}
 
 		try{
@@ -215,16 +230,6 @@ class InvoiceValidationService extends ProductFieldService {
 
 		if(!$tab2_valid){
 			throw new InvoiceException('Please fill in required fields', 'invalid_request', config('global.error_code'), 2);
-		}
-		
-		if(!$request->filled('data.product_rows')){
-			throw new InvoiceException('Please have at least one product to create invoice', 'invalid_request', config('global.error_code'), 0);
-		}
-
-		$product_rows = $request->input('data.product_rows');
-
-		if(!$this->shouldHaveAtLeastOneRow($product_rows, $company_id)){
-			throw new InvoiceException('Please have at least one product to create invoice', 'invalid_request', config('global.error_code'), 0);
 		}
 		
 		if(!$this->ifSubmittedFieldsAreSameAsDefined($request, $company_id)){
