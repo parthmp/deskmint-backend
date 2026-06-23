@@ -217,8 +217,66 @@ class InvoiceControllerValidationTest extends TestCase
 
 	}
 
-	//with invalid product rows. should fail because of no product in db
+	//with invalid product rows. should fail because of no uuid for second row
 	public function test_invoice_posting_without_custom_fields_invalid_tab0_data_7_icvt(){ 
+
+		$device = 'device 123';
+		$c = $this->set_access($device);
+		$company_id = $this->set_default_company();
+
+		$client = $this->insertClient($company_id, $c['headers']);
+		$data = [];
+		
+		Arr::set($data, 'company_id', $company_id);
+		Arr::set($data, 'data.invoice_details.client.client_id', $client->id);
+		Arr::set($data, 'data.invoice_details.invoice_date.value', '2026-06-23T14:32:47.853Z');
+		Arr::set($data, 'data.invoice_details.invoice_number.value', '123');
+		Arr::set($data, 'data.invoice_details.due_date.value', '2026-06-23T14:32:47.853Z');
+
+
+		$data['data']['product_rows'] = [
+			[
+				"id"		 		=> "b2c4ec6a-0ed8-4238-9737-ab6a7d3f4b30",
+				"row_index" 		=>  0,
+				"row_uuid" 			=> "bla-123",
+				"line_subtotal" 	=> '  ',
+				"tax_amount"	 	=> '  ',
+				"line_total" 		=> "16.33",
+				"product_id" 		=>  18,
+				"item" 				=> "prod 3",
+				"description" 		=>  "prod 3 desc",
+				"unit_price" 		=> 15.55,
+				"quantity" 			=> 1,
+				"tax" 				=> 5,
+				"normal_c_field" 	=> "555"
+			],
+			[
+				"id"		 		=> "b2c4ec6a-0ed8-4238-9737-ab6a7d3f4b30",
+				"row_index" 		=>  0,
+				"line_subtotal" 	=> '  ',
+				"tax_amount"	 	=> '  ',
+				"line_total" 		=> "16.33",
+				"product_id" 		=>  18,
+				"item" 				=> "prod 3",
+				"description" 		=>  "prod 3 desc",
+				"unit_price" 		=> 15.55,
+				"quantity" 			=> 1,
+				"tax" 				=> 5,
+				"normal_c_field" 	=> "555"
+			]
+		];
+		
+		$response = $this->post('/api/manage-invoices', $data, $c['headers']);
+
+		$json = $response->json();
+		//dd($json);
+		$this->assertEquals('invalid_product_uuid_tab0', $json['validity']);
+
+
+	}
+
+	//with invalid product rows. should fail because of no product in db
+	public function test_invoice_posting_without_custom_fields_invalid_tab0_data_8_icvt(){ 
 
 		$device = 'device 123';
 		$c = $this->set_access($device);
@@ -231,12 +289,7 @@ class InvoiceControllerValidationTest extends TestCase
 		Arr::set($data, 'data.invoice_details.invoice_date.value', '2026-06-23T14:32:47.853Z');
 		Arr::set($data, 'data.invoice_details.invoice_number.value', '123');
 		Arr::set($data, 'data.invoice_details.due_date.value', '2026-06-23T14:32:47.853Z');
-
-		// Product::factory()->count(5)->create([
-		// 	'company_id'	=>	$company_id
-		// ]);
-
-		//dd(Product::all());
+		
 
 		$data['data']['product_rows'] = [
 			[
@@ -266,7 +319,7 @@ class InvoiceControllerValidationTest extends TestCase
 	}
 
 	//valid data. should pass for tab0
-	public function test_invoice_posting_without_custom_fields_valid_tab0_data_8_icvt(){ 
+	public function test_invoice_posting_without_custom_fields_valid_tab0_data_9_icvt(){ 
 
 		$device = 'device 123';
 		$c = $this->set_access($device);

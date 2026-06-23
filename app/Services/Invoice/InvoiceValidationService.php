@@ -135,6 +135,10 @@ class InvoiceValidationService extends ProductFieldService {
 		$product_ids = [];
 		foreach($product_rows as $row){
 			
+			if(!isset($row['row_uuid'])){
+				throw new InvoiceException('Please have at least one product to create invoice', 'invalid_product_uuid_tab0', config('global.error_code'), 0);
+			}
+
 			if(trim($row['row_uuid']) === ''){
 				throw new InvoiceException('Please have at least one product to create invoice', 'invalid_product_uuid_tab0', config('global.error_code'), 0);
 			}
