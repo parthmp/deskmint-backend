@@ -162,6 +162,9 @@ class InvoiceGenerator{
 
 		$this->invoice_data = $context['invoice_data'];
 		$this->invoice_content = $context['invoice_content_settings'];
+		if(!isset($this->invoice_content['settings_json'])){
+			$this->invoice_content['settings_json'] = $this->invoice_content;
+		}
 		$this->invoice_items = $context['invoice_items'];
 		$this->product_rows_data = $context['product_rows_data'];
 		
@@ -561,8 +564,13 @@ class InvoiceGenerator{
 			Log::alert('Could not send invoice as an attachment. invoice #:'.$this->invoice_id);
 			throw new Exception('Could not send invoice as an attachment.');
 		}
-
-		$email_json = json_decode($this->invoice_content['settings_json']);
+		
+		if(is_array($this->invoice_content['settings_json'])){
+			$email_json = json_decode(json_encode($this->invoice_content['settings_json']));
+		}else{
+			$email_json = json_decode($this->invoice_content['settings_json']);
+		}
+		
 
 		$attachments = [];
 

@@ -8,6 +8,7 @@ use App\Services\CompanySettingsLogo\CompanySettingsLogoService;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Carbon\Carbon;
+use Exception;
 
 use function Laravel\Prompts\number;
 
@@ -382,12 +383,17 @@ class InvoiceRenderer extends InvoiceGenerator{
 	 */
 	private function renderLogo() : self {
 
-		$storage_path = storage_path('app/public/logos/'.$this->context['invoice_data']->company_id.'/'.$this->context['invoice_data']->company_wt->logo);
-		$encoded = base64_encode(file_get_contents($storage_path));
-		$mime = mime_content_type($storage_path);
-		$logo = '<img width="'.$this->context['general_settings']['logo_size'].'" src="data:'.$mime.';base64, '.$encoded.'">';
+		try{
+			$storage_path = storage_path('app/public/logos/'.$this->context['invoice_data']->company_id.'/'.$this->context['invoice_data']->company_wt->logo);
+			$encoded = base64_encode(file_get_contents($storage_path));
+			$mime = mime_content_type($storage_path);
+			$logo = '<img width="'.$this->context['general_settings']['logo_size'].'" src="data:'.$mime.';base64, '.$encoded.'">';
+			
+			$this->contents = str_ireplace('{{$render_logo}}', $logo, $this->contents);
+		}catch(Exception $e){
+			$this->contents = str_ireplace('{{$render_logo}}', '', $this->contents);
+		}
 		
-		$this->contents = str_ireplace('{{$render_logo}}', $logo, $this->contents);
 
 		return $this;
 

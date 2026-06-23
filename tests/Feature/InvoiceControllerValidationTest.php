@@ -795,7 +795,7 @@ class InvoiceControllerValidationTest extends TestCase
 		];
 		
 		$response = $this->post('/api/manage-invoices', $data, $c['headers']);
-		//$response->assertStatus(200);
+		$response->assertStatus(200);
 
 		$json = $response->json();
 		

@@ -159,11 +159,11 @@ class InvoiceController extends Controller{
 		
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 
-		try{
+		//try{
 
 			$this->invoice_service->validateAllForInvoice($request, $company_id);
 
-			try{
+			//try{
 
 				$invoice_id = $this->invoice_service->save($request, $company_id);
 
@@ -172,15 +172,15 @@ class InvoiceController extends Controller{
 
 				return response(['message' => $message, 'validity' => 'invoice_created'], 200);
 
-			}catch(Exception $e){
-				return General::wentWrong();
-			}
+			// }catch(Exception $e){
+			// 	return General::wentWrong();
+			// }
 			
-		}catch(InvoiceException $e){
-			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
+		// }catch(InvoiceException $e){
+		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
 
 	}
 
