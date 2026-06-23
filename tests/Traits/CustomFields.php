@@ -142,11 +142,16 @@ trait CustomFields{
 		return $whole_data;
 	}
 
-	protected function setCustomFields($invalid = false){
+	protected function setCustomFields($invalid = false, ?string $model = null){
 
 		$custom_fields_post = [];
 		$custom_fields_types = [];
-		$custom_fields_db = ClientsCustomField::whereHas('customFieldType')->with('customFieldType')->get();
+		if($model){
+			$custom_fields_db = $model::whereHas('customFieldType')->with('customFieldType')->get();
+		}else{
+			$custom_fields_db = ClientsCustomField::whereHas('customFieldType')->with('customFieldType')->get();
+		}
+		
 		
 		foreach($custom_fields_db as $db_field){
 
@@ -198,7 +203,7 @@ trait CustomFields{
 
 	}
 
-	protected function addAllCustomFields(int $company_id, $headers, int $number_of_fields = -1):array{
+	protected function addAllCustomFields(int $company_id, $headers, int $number_of_fields = -1, string $type = 'client'):array{
 		$this->setCustomFieldTypes();
 
 		if($number_of_fields > 0){
@@ -221,9 +226,9 @@ trait CustomFields{
 				$options = "five,six,seven";
 			}
 
-			$label = 'client '.$field_type->input_type;
+			$label = $type.' '.$field_type->input_type;
 
-			$response = $this->post('/api/clients-custom-fields', [
+			$response = $this->post('/api/'.$type.'s-custom-fields', [
 				'input_field'			=>		$field_type->id,
 				'label'					=>		$label,
 				'is_required'			=>		'true',
