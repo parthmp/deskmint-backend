@@ -861,7 +861,7 @@ class InvoiceControllerValidationTest extends TestCase
 
 	}
 
-		public function test_invoice_posting_with_custom_fields_valid_tab1_data_valid_tab2_unsupported_currency_paypal_19_icvt(){ 
+	public function test_invoice_posting_with_custom_fields_valid_tab1_data_valid_tab2_unsupported_currency_paypal_19_icvt(){ 
 
 		$device = 'device 123';
 		$c = $this->set_access($device);

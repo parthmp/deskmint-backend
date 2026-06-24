@@ -513,7 +513,7 @@ class InvoiceGenerator{
 			$payment_settings['secret'] = decrypt($payment_settings['secret']);
 			
 			$payment_gateway_url = $this->generatePaymentURL((int) $this->invoice_data->payment_method, $payment_settings);
-
+			
 			if(!$payment_gateway_url){
 				//send an email to admins to notify the failure.
 				$this->sendUrlGenerationFailedEmail();
@@ -559,7 +559,7 @@ class InvoiceGenerator{
 	 * @return void
 	 */
 	public function sendEmail() : void {
-
+		
 		if(!$this->ifInvoiceDataAvailable()){
 			Log::alert('Could not send invoice as an attachment. invoice #:'.$this->invoice_id);
 			throw new Exception('Could not send invoice as an attachment.');
