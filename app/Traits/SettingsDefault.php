@@ -483,7 +483,7 @@
 			$data = [
 				'rows' => [
 					[
-						'id'		=>	1,
+						'id'		=>	uniqid(rand()),
 						'text'		=>	'Item',
 						'value'		=>	General::replaceWithUnderscores('Item'),
 						'mapped'	=>	['product_id'], /* from db */
@@ -491,7 +491,7 @@
 						'type'		=>	'normal'
 					],
 					[
-						'id'		=>	2,
+						'id'		=>	uniqid(rand()),
 						'text'		=>	'Description',
 						'value'		=>	General::replaceWithUnderscores('Description'),
 						'mapped'	=>	['description'],
@@ -499,7 +499,7 @@
 						'type'		=>	'normal'
 					],
 					[
-						'id'		=>	3,
+						'id'		=>	uniqid(rand()),
 						'text'		=>	'Unit cost',
 						'value'		=>	General::replaceWithUnderscores('Unit cost'),
 						'mapped'	=>	['unit_price'],
@@ -507,22 +507,22 @@
 						'type'		=>	'normal'
 					],
 					[
-						'id'		=>	4,
+						'id'		=>	uniqid(rand()),
 						'text'		=>	'Quantity',
 						'value'		=>	General::replaceWithUnderscores('Quantity'),
 						'mapped'	=>	['quantity'],
 						'tax'		=>	false,
 						'type'		=>	'normal'
 					],
-					// [
-					// 	'id'		=>	5,
-					// 	'text'		=>	'Discount',
-					// 	'value'		=>	General::replaceWithUnderscores('discount'),
-					// 	'mapped'	=>	['discount'],
-					// 	'type'		=>	'normal'
-					// ],
 					[
-						'id'		=>	6,
+						'id'		=>	uniqid(rand()),
+						'text'		=>	'Discount %',
+						'value'		=>	General::replaceWithUnderscores('discount'),
+						'mapped'	=>	['discount'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	uniqid(rand()),
 						'text'		=>	'Tax',
 						'value'		=>	General::replaceWithUnderscores('Tax'),
 						'mapped'	=>	['tax'],
@@ -531,7 +531,7 @@
 						'type'		=>	'normal'
 					],
 					[
-						'id'		=>	7,
+						'id'		=>	uniqid(rand()),
 						'text'		=>	'Line total',
 						'value'		=>	General::replaceWithUnderscores('Line total'),
 						'mapped'	=>	['line_total'],
@@ -572,42 +572,49 @@
 					// 	'type'		=>	'normal'
 					// ],
 					[
-						'id'		=>	2,
+						'id'		=>	uniqid(rand()),
 						'text'		=>	'Subtotal',
 						'value'		=>	General::replaceWithUnderscores('Subtotal'),
 						'mapped'	=>	['subtotal'],  /* these are not db columns like others, these added as indicators to differentiate */
 						'type'		=>	'normal'
 					],
 					[
-						'id'		=>	3,
-						'text'		=>	'Discount',
-						'value'		=>	General::replaceWithUnderscores('Discount'),
+						'id'		=>	uniqid(rand()),
+						'text'		=>	'Discount Post Tax',
+						'value'		=>	General::replaceWithUnderscores('Discount Post Tax'),
 						'mapped'	=>	['discount_amount'],
 						'type'		=>	'normal'
 					],
 					[
-						'id'		=>	4,
+						'id'		=>	uniqid(rand()),
+						'text'		=>	'Discount Pre tax',
+						'value'		=>	General::replaceWithUnderscores('Discount Pre tax'),
+						'mapped'	=>	['discount_amount_pre_tax'],
+						'type'		=>	'normal'
+					],
+					[
+						'id'		=>	uniqid(rand()),
 						'text'		=>	'Total Taxes',
 						'value'		=>	General::replaceWithUnderscores('Total Taxes'),
 						'mapped'	=>	['tax_amount'],
 						'type'		=>	'normal'
 					],
 					[
-						'id'		=>	5,
+						'id'		=>	uniqid(rand()),
 						'text'		=>	'Total',
 						'value'		=>	General::replaceWithUnderscores('Total'),
 						'mapped'	=>	['total'],
 						'type'		=>	'normal'
 					],
 					[
-						'id'		=>	6,
+						'id'		=>	uniqid(rand()),
 						'text'		=>	'Paid to Date',
 						'value'		=>	General::replaceWithUnderscores('Paid to Date'),
 						'mapped'	=>	'',
 						'type'		=>	'normal'
 					],
 					[
-						'id'		=>	7,
+						'id'		=>	uniqid(rand()),
 						'text'		=>	'Balance Due',
 						'value'		=>	General::replaceWithUnderscores('Balance Due'),
 						'mapped'	=>	['balance_due'],
