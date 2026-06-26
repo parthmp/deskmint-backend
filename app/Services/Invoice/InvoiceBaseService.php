@@ -62,6 +62,10 @@ class InvoiceBaseService{
 			$temp['product_id'] = Sanitize::input($row['product_id']);
 			$temp['description'] = Sanitize::input($row['description'] ?? '');
 			$temp['unit_price'] = Sanitize::input($row['unit_price'] ?? 0);
+
+			$temp['discount'] = Sanitize::input($row['discount'] ?? 0);
+			$temp['discount_amount'] = Sanitize::input($row['discount_amount'] ?? 0);
+
 			$temp['quantity'] = Sanitize::input($row['quantity'] ?? 1);
 			$temp['tax'] = Sanitize::input($row['tax'] ?? 0);
 			$temp['tax_amount'] = Sanitize::input($row['tax_amount'] ?? 0);
@@ -108,8 +112,18 @@ class InvoiceBaseService{
 				$filtered_rows[] = $product_rows[$index];
 			}
 		}
+
+		$sanitized_rows = [];
+
+		foreach($filtered_rows as $row){
+			$temp = [];
+			foreach($row as $key => $value){
+				$temp[$key] = Sanitize::input($value);
+			}
+			$sanitized_rows[] = $temp;
+		}
 		
-		return $filtered_rows;
+		return $sanitized_rows;
 	}
 
 	/**
@@ -238,28 +252,32 @@ class InvoiceBaseService{
 		$global_total = $totals['global_total'];
 		$global_subtotal = $totals['global_subtotal'];
 		$global_tax_amount = $totals['global_tax_amount'];
-		$global_discount_amount = $totals['global_discount_amount'];
+		$global_discount_amount_post_tax = $totals['global_discount_amount_post_tax'];
+		$global_discount_amount_pre_tax = $totals['global_discount_amount_pre_tax'];
+
+		//$discount_amount_pre_tax = 
 
 		return [
-			'settings' 					=>  $settings,
-			'client_id'					=>	$client_id,
-			'company_id'				=>	$company_id,
-			'invoice_number'			=>	$invoice_number,
-			'invoice_date'				=>	$invoice_date,
-			'due_date'					=>	$due_date,
-			'po_number'					=>	$po_number,
-			'discount_number'			=>	$discount_number,
-			'discount_type'				=>	$discount_type,
-			'global_discount_amount'	=>	$global_discount_amount,
-			'global_subtotal'			=>	$global_subtotal,
-			'global_tax_amount'			=>	$global_tax_amount,
-			'global_total'				=>	$global_total,
-			'invoice_terms'				=>	$invoice_terms,
-			'send_email'				=>	$send_email,
-			'payment_method'			=>	$payment_method,
-			'patten_matched'			=>	$patten_matched,
-			'scan_chars'				=>	$scan_chars,
-			'rows'						=>	$totals['rows']
+			'settings' 							=>  $settings,
+			'client_id'							=>	$client_id,
+			'company_id'						=>	$company_id,
+			'invoice_number'					=>	$invoice_number,
+			'invoice_date'						=>	$invoice_date,
+			'due_date'							=>	$due_date,
+			'po_number'							=>	$po_number,
+			'discount_number'					=>	$discount_number,
+			'discount_type'						=>	$discount_type,
+			'global_discount_amount_post_tax'	=>	$global_discount_amount_post_tax,
+			'global_discount_amount_pre_tax'	=>	$global_discount_amount_pre_tax,
+			'global_subtotal'					=>	$global_subtotal,
+			'global_tax_amount'					=>	$global_tax_amount,
+			'global_total'						=>	$global_total,
+			'invoice_terms'						=>	$invoice_terms,
+			'send_email'						=>	$send_email,
+			'payment_method'					=>	$payment_method,
+			'patten_matched'					=>	$patten_matched,
+			'scan_chars'						=>	$scan_chars,
+			'rows'								=>	$totals['rows']
 		];
 		
 	}

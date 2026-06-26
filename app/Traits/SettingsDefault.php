@@ -575,7 +575,7 @@
 						'id'		=>	uniqid(rand()),
 						'text'		=>	'Subtotal',
 						'value'		=>	General::replaceWithUnderscores('Subtotal'),
-						'mapped'	=>	['subtotal'],  /* these are not db columns like others, these added as indicators to differentiate */
+						'mapped'	=>	['subtotal'],
 						'type'		=>	'normal'
 					],
 					[

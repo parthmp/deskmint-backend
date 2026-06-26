@@ -30,7 +30,8 @@ class InvoiceRepository{
 		$po_number = $data['po_number'];
 		$discount_number = $data['discount_number'];
 		$discount_type = $data['discount_type'];
-		$global_discount_amount = $data['global_discount_amount'];
+		$global_discount_amount = $data['global_discount_amount_post_tax'];
+		$global_discount_amount_pre_tax = $data['global_discount_amount_pre_tax'];
 		$global_subtotal = $data['global_subtotal'];
 		$global_tax_amount = $data['global_tax_amount'];
 		$global_total = $data['global_total'];
@@ -57,7 +58,8 @@ class InvoiceRepository{
 		$invoice->po_number = $po_number;
 		$invoice->discount = $discount_number;
 		$invoice->discount_type = ($discount_type === 'percentage') ? DISCOUNT_TYPE_PERCENTAGE : DISCOUNT_TYPE_AMOUNT;
-		$invoice->discount_amount = $global_discount_amount;
+		$invoice->discount_amount_post_tax = $global_discount_amount;
+		$invoice->discount_amount_pre_tax = $global_discount_amount_pre_tax;
 		$invoice->subtotal = $global_subtotal;
 		$invoice->tax_amount = $global_tax_amount;
 		$invoice->balance_due = $global_total;
@@ -112,6 +114,13 @@ class InvoiceRepository{
 			//InvoiceItem::upsert($invoice_items, ['row_uuid', 'invoice_id'], array_keys(array_diff_key($invoice_items[0], array_flip(['row_uuid', 'invoice_id']))));
 			// InvoiceItem::insert($invoice_items);
 		}
+
+		$now = now();
+		foreach($invoice_items as &$item){
+			$item['created_at'] = $now;
+			$item['updated_at'] = $now;
+		}
+		
 		InvoiceItem::insert($invoice_items);
 		
 	}
