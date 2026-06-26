@@ -183,7 +183,7 @@ class DatabaseOperations{
 
 		$is_paid = ($amount_paid->isEqualTo($amount_balance_due) || $amount_paid->isGreaterThan($amount_balance_due)) ? 1 : 0;
 
-		$left = $left->toScale(2, RoundingMode::HALF_UP)->__toString();
+		$left = $left->toScale(2, RoundingMode::HalfUp)->__toString();
 		
 		$invoice->is_paid = $is_paid;
 		$invoice->balance_due = $left;
@@ -275,7 +275,7 @@ class DatabaseOperations{
 		$transaction->save();
 		
 		$amount = (int) $data['data']['object']['amount_total'];
-		$amount = BigDecimal::of($amount)->dividedBy(100, 2, RoundingMode::HALF_UP)->toFloat();
+		$amount = BigDecimal::of($amount)->dividedBy(100, 2, RoundingMode::HalfUp)->toFloat();
 
 		return $transaction->save() && $this->markInvoicePaidnDeduct((int) $transaction->invoice_id, $amount);
 

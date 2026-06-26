@@ -85,7 +85,7 @@ class InvoiceValidationService extends ProductFieldService {
 		}
 
 		$custom_tax_ids = $this->getCustomTaxIds($company_id);
-
+		
 		foreach($product_columns as $user_defined_column){
 			
 			/* this "normal is for normal fields from DB, not for taxes" */

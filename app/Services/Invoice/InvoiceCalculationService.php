@@ -63,7 +63,7 @@ class InvoiceCalculationService{
 		$line_subtotal = $unit_price->multipliedBy($quantity);
 		$line_total = $line_subtotal;
 
-		$discount_amount = $discount->multipliedBy($line_subtotal)->dividedBy(100, 4, RoundingMode::HALF_UP);
+		$discount_amount = $discount->multipliedBy($line_subtotal)->dividedBy(100, 4, RoundingMode::HalfUp);
 		$discounted_subtotal = $line_subtotal->minus($discount_amount);
 
 		$cols = [];
@@ -77,8 +77,8 @@ class InvoiceCalculationService{
 				$product_column = max(0, min(100, (float) $product_column));
 
 				/* tax */
-				$rate = BigDecimal::of($product_column)->dividedBy(100, 4, RoundingMode::HALF_UP);
-				$tax  = $rate->multipliedBy($discounted_subtotal)->toScale(4, RoundingMode::HALF_UP);
+				$rate = BigDecimal::of($product_column)->dividedBy(100, 4, RoundingMode::HalfUp);
+				$tax  = $rate->multipliedBy($discounted_subtotal)->toScale(4, RoundingMode::HalfUp);
 
 				$line_tax_amount = $line_tax_amount->plus($tax);
 
@@ -97,19 +97,19 @@ class InvoiceCalculationService{
 		
 		$this->global_total = $this->global_total->plus($line_total);
 
-		$cols['unit_price'] = $unit_price->toScale(2, RoundingMode::HALF_UP)->__toString();
+		$cols['unit_price'] = $unit_price->toScale(2, RoundingMode::HalfUp)->__toString();
 		$cols['quantity'] = $quantity->toInt();
 
-		$cols['discount'] = $discount->toScale(4, RoundingMode::HALF_UP)->toString();
+		$cols['discount'] = $discount->toScale(4, RoundingMode::HalfUp)->toString();
 		//$discount_amount = $discount->multipliedBy($line_subtotal)->dividedBy(100, 4, RoundingMode::HALF_UP);
 
 		$this->global_discount_amount_pre_tax = $this->global_discount_amount_pre_tax->plus($discount_amount);
 
-		$cols['discount_amount'] = $discount_amount->toString();
+		$cols['discount_amount'] = $discount_amount->toScale(2, RoundingMode::HalfUp)->__toString();
 
-		$cols['tax_amount'] = $line_tax_amount->toScale(2, RoundingMode::HALF_UP)->__toString();
-		$cols['line_subtotal'] = $discounted_subtotal->toScale(2, RoundingMode::HALF_UP)->__toString();
-		$cols['line_total'] = $line_total->toScale(2, RoundingMode::HALF_UP)->__toString();
+		$cols['tax_amount'] = $line_tax_amount->toScale(2, RoundingMode::HalfUp)->__toString();
+		$cols['line_subtotal'] = $discounted_subtotal->toScale(2, RoundingMode::HalfUp)->__toString();
+		$cols['line_total'] = $line_total->toScale(2, RoundingMode::HalfUp)->__toString();
 
 		return $cols;
 	}
@@ -130,20 +130,25 @@ class InvoiceCalculationService{
 			$rows[] = $this->calculateRow($product_row);
 		}
 
+		$discount_number_dec = BigDecimal::of($discount_number);
+
 		if($discount_type === 'amount'){
-			$this->global_discount_amount_post_tax = BigDecimal::of($discount_number);
+			$this->global_discount_amount_post_tax = $discount_number_dec;
+			$discount_number_dec = $discount_number_dec->toScale(2, RoundingMode::HalfUp);
 		}else{
-			$global_discount_rate = BigDecimal::of($discount_number)->dividedBy(100, 4, RoundingMode::HALF_UP);
-			$this->global_discount_amount_post_tax  = $global_discount_rate->multipliedBy($this->global_total)->toScale(4, RoundingMode::HALF_UP);
+			$global_discount_rate = $discount_number_dec->dividedBy(100, 4, RoundingMode::HalfUp);
+			$this->global_discount_amount_post_tax  = $global_discount_rate->multipliedBy($this->global_total)->toScale(4, RoundingMode::HalfUp);
+			$discount_number_dec = $discount_number_dec->toScale(4, RoundingMode::HalfUp);
 		}
 
 		$global_total = $this->global_total->minus($this->global_discount_amount_post_tax);
 
-		$global_subtotal = $this->global_subtotal->toScale(4, RoundingMode::HALF_UP)->__toString();
-		$global_tax_amount = $this->global_tax_amount->toScale(4, RoundingMode::HALF_UP)->__toString();
-		$global_total = $global_total->toScale(2, RoundingMode::HALF_UP)->__toString();
-		$global_discount_amount_post_tax = $this->global_discount_amount_post_tax->toScale(4, RoundingMode::HALF_UP)->__toString();
-		$global_discount_amount_pre_tax = $this->global_discount_amount_pre_tax->toScale(4, RoundingMode::HALF_UP)->__toString();
+		$global_subtotal = $this->global_subtotal->toScale(2, RoundingMode::HalfUp)->__toString();
+		$global_tax_amount = $this->global_tax_amount->toScale(2, RoundingMode::HalfUp)->__toString();
+		$global_total = $global_total->toScale(2, RoundingMode::HalfUp)->__toString();
+		$global_discount_amount_post_tax = $this->global_discount_amount_post_tax->toScale(2, RoundingMode::HalfUp)->__toString();
+		$global_discount_amount_pre_tax = $this->global_discount_amount_pre_tax->toScale(2, RoundingMode::HalfUp)->__toString();
+		$discount_number_str = $discount_number_dec->__toString();
 
 		return [
 			'global_total'						=>	$global_total,
@@ -151,6 +156,7 @@ class InvoiceCalculationService{
 			'global_tax_amount'					=>	$global_tax_amount,
 			'global_discount_amount_post_tax'	=>	$global_discount_amount_post_tax,
 			'global_discount_amount_pre_tax'	=>	$global_discount_amount_pre_tax,
+			'discount_number'					=>	$discount_number_str,
 			'rows'								=>	$rows
 		];
 

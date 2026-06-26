@@ -32,7 +32,7 @@ class Stripe implements PaymentGatewayInterface{
 		$this->stripe_client = new StripeClient($secret);
 		$this->database_operations = $database_operations ?? new DatabaseOperations(new SettingsSectionRepository());
 		$this->invoice = $this->database_operations->fetchInvoiceById($this->invoice_id);
-		$this->amount_in_cents = BigDecimal::of($this->amount)->multipliedBy(100)->toScale(2, RoundingMode::HALF_UP)->toInt();
+		$this->amount_in_cents = BigDecimal::of($this->amount)->multipliedBy(100)->toScale(2, RoundingMode::HalfUp)->toInt();
 	}
 
 	/**

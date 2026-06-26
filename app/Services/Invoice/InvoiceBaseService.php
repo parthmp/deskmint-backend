@@ -254,6 +254,7 @@ class InvoiceBaseService{
 		$global_tax_amount = $totals['global_tax_amount'];
 		$global_discount_amount_post_tax = $totals['global_discount_amount_post_tax'];
 		$global_discount_amount_pre_tax = $totals['global_discount_amount_pre_tax'];
+		$discount_number = $totals['discount_number'];
 
 		//$discount_amount_pre_tax = 
 

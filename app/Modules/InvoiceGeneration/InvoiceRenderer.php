@@ -322,7 +322,7 @@ class InvoiceRenderer extends InvoiceGenerator{
 			
 			if(trim(strtolower($field['text'])) === 'paid to date'){
 				$math = BigDecimal::of($this->context['invoice_data']['total'])->minus($this->context['invoice_data']['balance_due']);
-				$show_value = $math->toScale(2, RoundingMode::HALF_UP)->__toString();
+				$show_value = $math->toScale(2, RoundingMode::HalfUp)->__toString();
 			}else{
 				$mapped = $field['mapped'][0];
 				$show_value = number_format((float) $this->context['invoice_data'][$mapped], 2);
