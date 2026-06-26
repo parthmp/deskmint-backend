@@ -10,6 +10,7 @@ use App\Modules\Payment\Payment;
 use App\Traits\CustomMailSettings;
 use Carbon\Carbon;
 use DateTime;
+use Einvoicing\AllowanceOrCharge;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -308,12 +309,16 @@ class InvoiceGenerator{
 						->setCity($this->invoice_data->client_wt->billing_city);
 
 		$inv->setBuyer($buyer);
-
+		
 		// Add a product line
 		foreach($this->invoice_items as $item){
 
 			$line = new InvoiceLine();
 			$line = $line->setName($item->product->product_name)->setPrice($item->unit_price)->setQuantity($item->quantity);
+			
+			$allowance = new AllowanceOrCharge();
+			$allowance->setReason('Discount')->setAmount($item->discount_amount); // the calculated discount amount
+			$line->addAllowance($allowance);
 
 			$vat_rate = 0;
 
@@ -341,6 +346,10 @@ class InvoiceGenerator{
 			$inv->addLine($line);
 			
 		}
+
+		$allowance = new AllowanceOrCharge();
+		$allowance->setReason('Global Discount')->setAmount($this->invoice_data->discount_amount_post_tax);
+		$inv->addAllowance($allowance);
 
 		$writer = new UblWriter();
 		$xml = $writer->export($inv);

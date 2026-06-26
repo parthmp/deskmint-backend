@@ -582,7 +582,7 @@
 						'id'		=>	uniqid(rand()),
 						'text'		=>	'Discount Post Tax',
 						'value'		=>	General::replaceWithUnderscores('Discount Post Tax'),
-						'mapped'	=>	['discount_amount'],
+						'mapped'	=>	['discount_amount_post_tax'],
 						'type'		=>	'normal'
 					],
 					[
