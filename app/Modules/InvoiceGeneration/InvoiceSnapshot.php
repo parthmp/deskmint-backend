@@ -6,6 +6,8 @@ use App\Helpers\General;
 use App\Models\Invoice;
 use App\Modules\InvoiceGeneration\InvoiceSettingsResolver;
 use App\Repositories\Invoice\InvoiceRepository;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -317,6 +319,8 @@ class InvoiceSnapshot {
 		}
 
 		$this->snapshot['invoice'] = $invoice_details_with_values;
+		$this->snapshot['meta']['currency']	= $this->invoice->client_wt->currency->code;
+		
 		$invoice_details_with_values = null;
 
 
@@ -330,9 +334,115 @@ class InvoiceSnapshot {
 	 */
 	public function setInvoiceRowsSnapshot() : self {
 
-		$context['product_rows_data'] = $this->invoice_settings_resolver->fetchProductRowsSettings($context['invoice_data']);
-		$context['invoice_items'] = $this->invoice_db_operations->fetchInvoiceItemsWithCustomCols();
+		$product_rows_data = $this->invoice_settings_resolver->fetchProductRowsSettings($this->invoice);
+		$invoice_items = $this->invoice_db_operations->fetchInvoiceItemsWithCustomCols();
+
+		$rows = [
+			'headers' 	=> [],
+			'data'		=>	[]
+		];
+
+		foreach($product_rows_data as $row){
+			$rows['headers'][] = $row['text'];
+		}
+
 		
+		foreach($invoice_items as $item){
+
+			$temp = [];
+		
+			foreach($product_rows_data as $row){
+
+				if($row['type'] === 'normal'){
+					$mapped = $row['mapped'];
+					if($mapped[0] === 'tax'){
+						$temp[] = number_format((float) $item->tax, 2).'%';
+					}else{
+						if($mapped[0] === 'product_id'){
+							$temp[] = $item->product->product_name;
+						}else{
+							$temp_value = $item->{$mapped[0]};
+							if(trim(strtolower($mapped[0])) === 'unit_price'){
+								$temp_value = number_format((float) $item->{$mapped[0]}, 2);
+							}
+							$temp[] = $temp_value;
+						}
+						
+					}
+
+				}else{
+
+					foreach($item->custom_field_values as $custom_field){
+						if((string) $custom_field->row_uuid === (string) $item->row_uuid && (int) $custom_field->apc_field_id === (int) $row['id_column']){
+							if((int) $row['tax'] === 1){
+								$temp[] = number_format((float) (($custom_field->value == '') ? 0 : $custom_field->value), 2).'%';
+							}else{
+								$temp[] = $custom_field->value;
+							}
+						}
+					}
+				}
+
+			}
+
+			$rows['data'][] = $temp;
+
+		}
+
+		$this->snapshot['product_rows'] = $rows;
+		$rows = null;
+		
+		return $this;
+
+	}
+
+	/**
+	 * setTotalsSnapshot function
+	 *
+	 * @return self
+	 */
+	public function setTotalsSnapshot() : self {
+
+		$total_fields_settings = $this->invoice_settings_resolver->fetchTotalFieldsDetails();
+		
+		$totals_with_values = [];
+
+		foreach($total_fields_settings as $field){	
+			
+			if(trim(strtolower($field['text'])) === 'paid to date'){
+				$math = BigDecimal::of($this->invoice->total)->minus($this->invoice->balance_due);
+				$show_value = $math->toScale(2, RoundingMode::HalfUp)->__toString();
+			}else{
+				$mapped = $field['mapped'][0];
+				$show_value = number_format((float) $this->invoice[$mapped], 2);
+			}
+
+			$temp = [
+				'text'	=>	$field['text'],
+				'value'	=>	$show_value,
+			];
+
+			$totals_with_values[] = $temp;
+			
+		}
+
+		$this->snapshot['totals'] = $totals_with_values;
+		$totals_with_values = null;
+
+		return $this;
+	}
+
+	/**
+	 * setTermsSnapshot function
+	 *
+	 * @return self
+	 */
+	public function setTermsSnapshot() : self {
+		
+		$this->snapshot['terms']['company_terms'] = $this->invoice->company->invoice_terms;
+		$this->snapshot['terms']['invoice_terms'] = $this->invoice->invoice_terms;
+		$this->snapshot['terms']['footer'] = $this->invoice->company->invoice_footer;
+
 		return $this;
 	}
 
