@@ -352,4 +352,31 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 
 		}
 
+		/**
+		 * formatDateTime function
+		 *
+		 * @param string $date
+		 * @param integer $timezone_offset_minutes
+		 * @param boolean $show_time
+		 * @param boolean $sql_format
+		 * @return string
+		 */
+		public static function formatDateTime(string $date, int $timezone_offset_minutes = 0, bool $show_time = false, $sql_format = false) : string {
+		
+			$date_obj = Carbon::parse($date);
+			
+			if($timezone_offset_minutes < 0){
+				$date_obj->subMinutes(abs($timezone_offset_minutes));	
+			}else if($timezone_offset_minutes > 0){
+				$date_obj->addMinutes(abs($timezone_offset_minutes));	
+			}
+
+			if(!$sql_format){
+				return $show_time ? $date_obj->format('d-M-Y H:i:s') : $date_obj->format('d-M-Y');
+			}
+
+			return $show_time ? $date_obj->format('Y-m-d H:i:s') : $date_obj->format('Y-m-d');
+
+		}
+
 	}

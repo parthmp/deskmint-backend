@@ -61,8 +61,10 @@ class InvoiceRenderer extends InvoiceGenerator{
 				$input_type = $custom_field_value->{$type.'s_custom_field_wt'}->custom_field_type_wt->input_type;
 				
 				$content .= match($input_type){
-					config('global.field_types')[5] => $this->formatDateTime($custom_field_value->field_value), /* date */
-					config('global.field_types')[7] => $this->formatDateTime($custom_field_value->field_value, true), /* datetime */
+					//config('global.field_types')[5] => $this->formatDateTime($custom_field_value->field_value), /* date */
+					config('global.field_types')[5] => General::formatDateTime($custom_field_value->field_value, $this->time_offset_minutes), /* date */
+					//config('global.field_types')[7] => $this->formatDateTime($custom_field_value->field_value, true), /* datetime */
+					config('global.field_types')[7] => General::formatDateTime($custom_field_value->field_value, $this->time_offset_minutes, true), /* datetime */
 					config('global.field_types')[9] => $this->formatMultiSelectValues($custom_field_value->field_value), /* multiselect */
 					default							=> $custom_field_value->field_value
 				};

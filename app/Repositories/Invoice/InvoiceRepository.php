@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Invoice;
 
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use Carbon\Carbon;
@@ -187,6 +188,17 @@ class InvoiceRepository{
 			DB::table($table)->whereIn('invoice_id', $ids)->delete();
 		}
 		Invoice::whereIn('id', $ids)->delete();
+	}
+
+	/**
+	 * fetchLogoImage function
+	 *
+	 * @param integer $company_id
+	 * @return string
+	 */
+	public function fetchLogoImage(int $company_id) : string {
+		$company = Company::select('logo')->where('id', '=', $company_id)->first();
+		return $company->logo;
 	}
 	
 

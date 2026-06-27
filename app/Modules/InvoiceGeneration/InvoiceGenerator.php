@@ -2,6 +2,7 @@
 
 namespace App\Modules\InvoiceGeneration;
 
+use App\Helpers\General;
 use App\Jobs\SendEmailJob;
 use App\Models\Invoice;
 use App\Modules\Payment\Gateways\PayPal\PayPal;
@@ -92,30 +93,24 @@ class InvoiceGenerator{
 		return $this;
 	}
 
-	/**
-	 * Undocumented function
-	 *
-	 * @param string $date
-	 * @param boolean $show_time
-	 * @return string
-	 */
-	protected function formatDateTime(string $date, bool $show_time = false, $sql_format = false) : string {
+	//extracted in General::formatDateTime
+	// protected function formatDateTime(string $date, bool $show_time = false, $sql_format = false) : string {
 		
-		$date_obj = Carbon::parse($date);
+	// 	$date_obj = Carbon::parse($date);
 		
-		if($this->time_offset_minutes < 0){
-			$date_obj->subMinutes(abs($this->time_offset_minutes));	
-		}else if($this->time_offset_minutes > 0){
-			$date_obj->addMinutes(abs($this->time_offset_minutes));	
-		}
+	// 	if($this->time_offset_minutes < 0){
+	// 		$date_obj->subMinutes(abs($this->time_offset_minutes));	
+	// 	}else if($this->time_offset_minutes > 0){
+	// 		$date_obj->addMinutes(abs($this->time_offset_minutes));	
+	// 	}
 
-		if(!$sql_format){
-			return $show_time ? $date_obj->format('d-M-Y H:i:s') : $date_obj->format('d-M-Y');
-		}
+	// 	if(!$sql_format){
+	// 		return $show_time ? $date_obj->format('d-M-Y H:i:s') : $date_obj->format('d-M-Y');
+	// 	}
 
-		return $show_time ? $date_obj->format('Y-m-d H:i:s') : $date_obj->format('Y-m-d');
+	// 	return $show_time ? $date_obj->format('Y-m-d H:i:s') : $date_obj->format('Y-m-d');
 
-	}
+	// }
 
 	/**
 	 * fetchTemplateContents function
@@ -207,7 +202,8 @@ class InvoiceGenerator{
 		$this->pdf_object = App::make('dompdf.wrapper');
 		$this->pdf_object->loadHTML($this->contents);
 
-		$filename = $this->formatDateTime($this->invoice_data->created_at, true, true);
+		//$filename = $this->formatDateTime($this->invoice_data->created_at, true, true);
+		$filename = General::formatDateTime($this->invoice_data->created_at, $this->time_offset_minutes, true, true);
 		if($add_random){
 			$filename .= '_' . uniqid();
 		}
@@ -233,7 +229,8 @@ class InvoiceGenerator{
 	 */
 	public function generateEInvoice() : self {
 		
-		$created_at = $this->formatDateTime($this->invoice_data->created_at, false, true);
+		//$created_at = $this->formatDateTime($this->invoice_data->created_at, false, true);
+		$created_at = General::formatDateTime($this->invoice_data->created_at, $this->time_offset_minutes, false, true);
 		$due_date = Carbon::create($this->invoice_data->due_date);
 		$due_date = $due_date->format('Y-m-d');
 
