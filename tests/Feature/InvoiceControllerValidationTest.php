@@ -724,6 +724,7 @@ class InvoiceControllerValidationTest extends TestCase
 				"product_id" 		=>  1,
 				"item" 				=> "prod 3",
 				"description" 		=> "prod 3 desc",
+				"discount" 			=> 0,
 				"unit_price" 		=> 15.55,
 				"quantity" 			=> 1,
 				"tax" 				=> 5,
@@ -782,6 +783,7 @@ class InvoiceControllerValidationTest extends TestCase
 				"description" 		=> "prod 3 desc",
 				"unit_price" 		=> 15.55,
 				"quantity" 			=> 1,
+				"discount" 			=> 0,
 				"tax" 				=> 5,
 				"normal_c_field" 	=> "555"
 			]
@@ -839,6 +841,7 @@ class InvoiceControllerValidationTest extends TestCase
 				"description" 		=> "prod 3 desc",
 				"unit_price" 		=> 15.55,
 				"quantity" 			=> 1,
+				"discount" 			=> 0,
 				"tax" 				=> 5,
 				"normal_c_field" 	=> "555"
 			]
@@ -896,6 +899,7 @@ class InvoiceControllerValidationTest extends TestCase
 				"description" 		=> "prod 3 desc",
 				"unit_price" 		=> 15.55,
 				"quantity" 			=> 1,
+				"discount" 			=> 0,
 				"tax" 				=> 5,
 				"normal_c_field" 	=> "555"
 			]

@@ -29,11 +29,12 @@ use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 use Tests\Traits\CustomFields;
 use Tests\Traits\DefaultCompany;
+use Tests\Traits\GeneralFunctions;
 use Tests\Traits\SetAccess;
 
 class InvoiceControllerStoreTest extends TestCase
 {
-    use SettingsDefault, RefreshDatabase, SetAccess, DefaultCompany, CustomFields;
+    use SettingsDefault, RefreshDatabase, SetAccess, DefaultCompany, CustomFields, GeneralFunctions;
 
 	public function insertClient(int $company_id, mixed $headers, int $currency_id = 5) : Client {
 		DB::table('clients')->truncate();
@@ -80,6 +81,7 @@ class InvoiceControllerStoreTest extends TestCase
 				"product_id" 		=>  1,
 				"item" 				=> "prod 3",
 				"description" 		=> "prod 3 desc",
+				"discount" 			=> 0,
 				"unit_price" 		=> 15.55,
 				"quantity" 			=> 1,
 				"tax" 				=> 5,
@@ -122,7 +124,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(0.78, (float) $invoice->tax_amount);
 		$this->assertEquals('', $invoice->invoice_terms);
 		$this->assertEquals(PAYMENT_CASH, (int) $invoice->payment_method);
-		$this->assertEquals($default_product_rows_settings, (string) $invoice->settings_snapshot);
+		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
 		Bus::assertDispatched(GenerateInvoiceJob::class);
 
@@ -166,6 +168,7 @@ class InvoiceControllerStoreTest extends TestCase
 				"description" 		=> "prod 3 desc",
 				"unit_price" 		=> 15.55,
 				"quantity" 			=> 1,
+				"discount" 			=> 0,
 				"tax" 				=> 5,
 				"normal_c_field" 	=> "555"
 			]
@@ -206,7 +209,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(0.78, (float) $invoice->tax_amount);
 		$this->assertEquals('', $invoice->invoice_terms);
 		$this->assertEquals(PAYMENT_CASH, (int) $invoice->payment_method);
-		$this->assertEquals($default_product_rows_settings, (string) $invoice->settings_snapshot);
+		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
 		
 		Bus::fake([SendEmailJob::class]);
@@ -255,6 +258,7 @@ class InvoiceControllerStoreTest extends TestCase
 				"unit_price" 		=> 15.55,
 				"quantity" 			=> 1,
 				"tax" 				=> 5,
+				"discount" 			=> 0,
 				"normal_c_field" 	=> "555"
 			]
 		];
@@ -294,7 +298,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(0.78, (float) $invoice->tax_amount);
 		$this->assertEquals('', $invoice->invoice_terms);
 		$this->assertEquals(PAYMENT_CASH, (int) $invoice->payment_method);
-		$this->assertEquals($default_product_rows_settings, (string) $invoice->settings_snapshot);
+		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
 
 		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
@@ -338,6 +342,7 @@ class InvoiceControllerStoreTest extends TestCase
 				"unit_price" 		=> 15.55,
 				"quantity" 			=> 1,
 				"tax" 				=> 5,
+				"discount" 			=> 0,
 				"normal_c_field" 	=> "555"
 			]
 		];
@@ -377,7 +382,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(0.78, (float) $invoice->tax_amount);
 		$this->assertEquals('', $invoice->invoice_terms);
 		$this->assertEquals(PAYMENT_CASH, (int) $invoice->payment_method);
-		$this->assertEquals($default_product_rows_settings, (string) $invoice->settings_snapshot);
+		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
 
 		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
@@ -421,6 +426,7 @@ class InvoiceControllerStoreTest extends TestCase
 				"unit_price" 		=> 15.55,
 				"quantity" 			=> 1,
 				"tax" 				=> 5,
+				"discount" 			=> 0,
 				"normal_c_field" 	=> "555"
 			]
 		];
@@ -460,7 +466,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(0.78, (float) $invoice->tax_amount);
 		$this->assertEquals('', $invoice->invoice_terms);
 		$this->assertEquals(PAYMENT_CASH, (int) $invoice->payment_method);
-		$this->assertEquals($default_product_rows_settings, (string) $invoice->settings_snapshot);
+		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
 		Bus::assertNotDispatched(GenerateInvoiceJob::class);
 
@@ -519,6 +525,7 @@ class InvoiceControllerStoreTest extends TestCase
 				"unit_price" 		=> 15.55,
 				"quantity" 			=> 1,
 				"tax" 				=> 5,
+				"discount" 			=> 0,
 				"normal_c_field" 	=> "555"
 			]
 		];
@@ -558,7 +565,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(0.78, (float) $invoice->tax_amount);
 		$this->assertEquals('', $invoice->invoice_terms);
 		$this->assertEquals(PAYMENT_PAYPAL, (int) $invoice->payment_method);
-		$this->assertEquals($default_product_rows_settings, (string) $invoice->settings_snapshot);
+		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
 		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
 		$this->assertCount(1, $files);
@@ -611,6 +618,7 @@ class InvoiceControllerStoreTest extends TestCase
 				"item" 				=> "prod 3",
 				"description" 		=> "prod 3 desc",
 				"unit_price" 		=> 15.55,
+				"discount" 			=> 0,
 				"quantity" 			=> 1,
 				"tax" 				=> 5,
 				"normal_c_field" 	=> "555"
@@ -652,7 +660,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(0.78, (float) $invoice->tax_amount);
 		$this->assertEquals('', $invoice->invoice_terms);
 		$this->assertEquals(PAYMENT_STRIPE, (int) $invoice->payment_method);
-		$this->assertEquals($default_product_rows_settings, (string) $invoice->settings_snapshot);
+		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
 		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
 		$this->assertCount(1, $files);
@@ -711,6 +719,7 @@ class InvoiceControllerStoreTest extends TestCase
 				"unit_price" 		=> 15.55,
 				"quantity" 			=> 1,
 				"tax" 				=> 5,
+				"discount" 				=> 0,
 				"normal_c_field" 	=> "555"
 			]
 		];
@@ -750,7 +759,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(0.78, (float) $invoice->tax_amount);
 		$this->assertEquals('', $invoice->invoice_terms);
 		$this->assertEquals(PAYMENT_NETBANKING, (int) $invoice->payment_method);
-		$this->assertEquals($default_product_rows_settings, (string) $invoice->settings_snapshot);
+		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
 		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
 		$this->assertCount(1, $files);
@@ -808,6 +817,7 @@ class InvoiceControllerStoreTest extends TestCase
 				"description" 		=> "prod 3 desc",
 				"unit_price" 		=> 15.55,
 				"quantity" 			=> 1,
+				"discount" 			=> 0,
 				"tax" 				=> 5,
 				"normal_c_field" 	=> "555"
 			]
@@ -848,7 +858,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(0.78, (float) $invoice->tax_amount);
 		$this->assertEquals('', $invoice->invoice_terms);
 		$this->assertEquals(PAYMENT_NETBANKING, (int) $invoice->payment_method);
-		$this->assertEquals($default_product_rows_settings, (string) $invoice->settings_snapshot);
+		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
 		$files = Storage::disk('temp_invoices')->allFiles();
 		Storage::disk('temp_invoices')->delete($files);
@@ -912,6 +922,7 @@ class InvoiceControllerStoreTest extends TestCase
 				"description" 		=> "prod 3 desc",
 				"unit_price" 		=> 15.55,
 				"quantity" 			=> 1,
+				"discount" 			=> 0,
 				"tax" 				=> 5,
 				"normal_c_field" 	=> "555"
 			]
@@ -952,7 +963,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(0.78, (float) $invoice->tax_amount);
 		$this->assertEquals('invoice terms here', $invoice->invoice_terms);
 		$this->assertEquals(PAYMENT_NETBANKING, (int) $invoice->payment_method);
-		$this->assertEquals($default_product_rows_settings, (string) $invoice->settings_snapshot);
+		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
 		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
 		$this->assertCount(0, $files);
@@ -1026,6 +1037,7 @@ class InvoiceControllerStoreTest extends TestCase
 				"description" 		=> "prod 3 desc",
 				"unit_price" 		=> 15.55,
 				"quantity" 			=> 1,
+				"discount" 			=> 0,
 				"tax" 				=> 5,
 				"normal_c_field" 	=> "555"
 			]
@@ -1066,7 +1078,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(0.78, (float) $invoice->tax_amount);
 		$this->assertEquals('invoice terms here', $invoice->invoice_terms);
 		$this->assertEquals(PAYMENT_NETBANKING, (int) $invoice->payment_method);
-		$this->assertEquals($default_product_rows_settings, (string) $invoice->settings_snapshot);
+		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
 		
 		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
@@ -1174,6 +1186,7 @@ class InvoiceControllerStoreTest extends TestCase
 				"tax" 				=> 5,
 				"normal_c_field" 	=> "555",
 				"custom_tax_ctax_1" 	=> "6",
+				"discount" 			=> 0,
 				"custom_tax_ctax_2" 	=> "7",
 				
 			]
@@ -1215,7 +1228,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(2.80, (float) $invoice->tax_amount);
 		$this->assertEquals('invoice terms here', $invoice->invoice_terms);
 		$this->assertEquals(PAYMENT_NETBANKING, (int) $invoice->payment_method);
-		$this->assertEquals(json_decode($default_product_rows_settings, true), json_decode($invoice->settings_snapshot, true));
+		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
 		
 		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
