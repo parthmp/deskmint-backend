@@ -5,6 +5,8 @@ namespace App\Repositories\Invoice;
 use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\InvoiceSnapshot;
+use App\Modules\InvoiceGeneration\InvoiceSnapshot as Snapshot;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +43,7 @@ class InvoiceRepository{
 		$payment_method = $data['payment_method'];
 		$patten_matched = $data['patten_matched'];
 		$scan_chars = $data['scan_chars'];
+		$timezone_offset_minutes = $data['timezone_offset_minutes'];
 		$rows = $data['rows'];
 		
 		$settings_snapshot = $settings->getProductColumns(); /* json text for product_columns settings from SettingsSection table, if it does not exist, it falls back to the default values */
@@ -70,8 +73,28 @@ class InvoiceRepository{
 		$invoice->payment_method = $payment_method;
 		$invoice->pattern_matched = $patten_matched;
 		$invoice->scan_chars = $scan_chars;
+		$invoice->timezone_offset_minutes = $timezone_offset_minutes;
 		$invoice->settings_snapshot = json_encode($settings_snapshot);
 		$invoice->save();
+
+		$snapshot = app(Snapshot::class)
+						->setCompanyId($company_id)
+						->setInvoiceId($invoice->id)
+						->setTimezoneOffset($invoice->timezone_offset_minutes)
+						->setLogoSnapsot()
+						->setGeneralSettings()
+						->setClientSnapshot()
+						->setCompanySnapshot()
+						->setInvoiceSnapshot()
+						->setInvoiceRowsSnapshot()
+						->setTotalsSnapshot()
+						->setTermsSnapshot()
+						->output();
+
+		InvoiceSnapshot::updateOrCreate(
+			['invoice_id' 	=> $invoice->id],
+			['snapshot' 	=> $snapshot]
+		);
 
 		return [
 			'invoice'	=>	$invoice,

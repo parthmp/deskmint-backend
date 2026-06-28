@@ -210,6 +210,8 @@ class InvoiceBaseService{
 		$invoice_date = Sanitize::input($request->input('data.invoice_details.invoice_date.value'));
 		$due_date = Sanitize::input($request->input('data.invoice_details.due_date.value'));
 
+		$timezone_offset_minutes = (int) Sanitize::input($request->input('timezone_offset_minutes'));
+
 		$po_number = '';
 		if($request->filled('data.invoice_details.po_number')){
 			$po_number = Sanitize::input($request->input('data.invoice_details.po_number'));
@@ -256,8 +258,6 @@ class InvoiceBaseService{
 		$global_discount_amount_pre_tax = $totals['global_discount_amount_pre_tax'];
 		$discount_number = $totals['discount_number'];
 
-		//$discount_amount_pre_tax = 
-
 		return [
 			'settings' 							=>  $settings,
 			'client_id'							=>	$client_id,
@@ -278,6 +278,7 @@ class InvoiceBaseService{
 			'payment_method'					=>	$payment_method,
 			'patten_matched'					=>	$patten_matched,
 			'scan_chars'						=>	$scan_chars,
+			'timezone_offset_minutes'			=>	$timezone_offset_minutes,
 			'rows'								=>	$totals['rows']
 		];
 		
