@@ -6,7 +6,6 @@ use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceSnapshot;
-use App\Modules\InvoiceGeneration\InvoiceSnapshot as Snapshot;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -76,25 +75,6 @@ class InvoiceRepository{
 		$invoice->timezone_offset_minutes = $timezone_offset_minutes;
 		$invoice->settings_snapshot = json_encode($settings_snapshot);
 		$invoice->save();
-
-		$snapshot = app(Snapshot::class)
-						->setCompanyId($company_id)
-						->setInvoiceId($invoice->id)
-						->setTimezoneOffset($invoice->timezone_offset_minutes)
-						->setLogoSnapsot()
-						->setGeneralSettings()
-						->setClientSnapshot()
-						->setCompanySnapshot()
-						->setInvoiceSnapshot()
-						->setInvoiceRowsSnapshot()
-						->setTotalsSnapshot()
-						->setTermsSnapshot()
-						->output();
-
-		InvoiceSnapshot::updateOrCreate(
-			['invoice_id' 	=> $invoice->id],
-			['snapshot' 	=> $snapshot]
-		);
 
 		return [
 			'invoice'	=>	$invoice,
@@ -224,7 +204,16 @@ class InvoiceRepository{
 		return $company->logo;
 	}
 	
-
+	/**
+	 * fetchInvoiceSnapshot function
+	 *
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function fetchInvoiceSnapshot(int $invoice_id) : array {
+		$snapshot = InvoiceSnapshot::where('invoice_id', '=', $invoice_id)->first();
+		return $snapshot->snapshot;
+	}
 	
 
 }

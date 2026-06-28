@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
-use App\Http\Requests\Invoice\FetchInvoiceRequest;
 use App\Http\Requests\Invoice\InvoiceGenerationRequest;
 use App\Http\Requests\Product\SearchProductRequest;
 use App\Jobs\GenerateInvoiceJob;
@@ -159,11 +158,11 @@ class InvoiceController extends Controller{
 		
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 
-		//try{
+		try{
 
 			$this->invoice_service->validateAllForInvoice($request, $company_id);
 
-			//try{
+			try{
 
 				$invoice_id = $this->invoice_service->save($request, $company_id);
 
@@ -172,15 +171,15 @@ class InvoiceController extends Controller{
 
 				return response(['message' => $message, 'validity' => 'invoice_created'], 200);
 
-			// }catch(Exception $e){
-			// 	return General::wentWrong();
-			// }
+			}catch(Exception $e){
+				return General::wentWrong();
+			}
 			
-		// }catch(InvoiceException $e){
-		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
-		// }catch(Exception $e){
-		// 	return General::wentWrong();
-		// }
+		}catch(InvoiceException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 	}
 
@@ -222,14 +221,14 @@ class InvoiceController extends Controller{
 
 	}
 
-	public function show(FetchInvoiceRequest $request, int $invoice_id){
+	public function show(GenericRequest $request, int $invoice_id){
 
 		$data = $request->validated();
 
 		try{
 
 			$invoice_id = (int) Sanitize::input($invoice_id);
-			return $this->invoice_service->fetchInvoice((int) $data['company_id'], (int) $invoice_id, (int) $data['timezone_offset_minutes']);
+			return $this->invoice_service->fetchInvoice((int) $data['company_id'], (int) $invoice_id);
 
 		}catch(InvoiceException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());

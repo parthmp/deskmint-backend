@@ -12,6 +12,8 @@ use App\Repositories\Product\ProductRepository;
 use App\Services\HandleInvoiceNumbers;
 use App\Services\Product\ProductFieldService;
 use Illuminate\Http\Request;
+use App\Models\InvoiceSnapshot;
+use App\Modules\InvoiceGeneration\InvoiceSnapshot as Snapshot;
 
 class InvoiceBaseService{
 
@@ -77,6 +79,25 @@ class InvoiceBaseService{
 		}
 
 		$this->invoice_repository->upsertInvoiceItems($invoice_items, $invoice_id);
+
+		$snapshot = app(Snapshot::class)
+						->setCompanyId($invoice->company_id)
+						->setInvoiceId($invoice->id)
+						->setTimezoneOffset($invoice->timezone_offset_minutes)
+						->setLogoSnapsot()
+						->setGeneralSettings()
+						->setClientSnapshot()
+						->setCompanySnapshot()
+						->setInvoiceSnapshot()
+						->setInvoiceRowsSnapshot()
+						->setTotalsSnapshot()
+						->setTermsSnapshot()
+						->output();
+
+		InvoiceSnapshot::updateOrCreate(
+			['invoice_id' 	=> $invoice->id],
+			['snapshot' 	=> $snapshot]
+		);
 
 		$invoice_items = null;
 

@@ -324,10 +324,9 @@ class InvoiceFetchService{
 	 *
 	 * @param integer $company_id
 	 * @param integer $invoice_id
-	 * @param integer $timezone_offset_minutes
 	 * @return array
 	 */
-	public function fetchInvoice(int $company_id, int $invoice_id, int $timezone_offset_minutes) : array {
+	public function fetchInvoice(int $company_id, int $invoice_id) : array {
 		
 		$invoice = $this->invoice_repository->fetchById($invoice_id);
 
@@ -339,17 +338,19 @@ class InvoiceFetchService{
 		unset($invoice['scan_chars']);
 		unset($invoice['settings_snapshot']);
 
+		return $this->invoice_repository->fetchInvoiceSnapshot($invoice_id);
+
 		//$product_columns = $this->invoice_repository->fetchCustomProductColumnValues($invoice_id, $company_id);
 
-		$custom_fields = $this->custom_fields->fetchCustomFieldValues($invoice_id, 'invoice', InvoiceCustomFieldValue::class);
+		// $custom_fields = $this->custom_fields->fetchCustomFieldValues($invoice_id, 'invoice', InvoiceCustomFieldValue::class);
 		
-		$product_rows = $this->assembleProductRowsForEdit($company_id, $invoice_id, $timezone_offset_minutes);
+		// $product_rows = $this->assembleProductRowsForEdit($company_id, $invoice_id, $timezone_offset_minutes);
 
-		return [
-			'invoice'			=>	$invoice,
-			'custom_fields' 	=> 	$custom_fields,
-			'product_rows'		=>	$product_rows
-		];
+		// return [
+		// 	'invoice'			=>	$invoice,
+		// 	'custom_fields' 	=> 	$custom_fields,
+		// 	'product_rows'		=>	$product_rows
+		// ];
 
 	}
 

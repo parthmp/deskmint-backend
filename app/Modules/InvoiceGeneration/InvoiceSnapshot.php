@@ -20,7 +20,6 @@ class InvoiceSnapshot {
 		'company'				=>	[],
 		'invoice'				=>	[],
 		'product_rows'			=>	[],
-		'product_rows_settings'	=>	[],
 		'totals'				=>	[],
 		'terms'					=>	[],
 		'meta'					=>	[]
@@ -343,11 +342,13 @@ class InvoiceSnapshot {
 		];
 
 		foreach($product_rows_data as $row){
-			$rows['headers'][] = $row['text'];
+			$rows['headers'][] = ['text' => $row['text'], 'key' => str_ireplace(' ', '_', strtolower($row['text']))];
 		}
 
 		
 		foreach($invoice_items as $item){
+
+			$counter = 0;
 
 			$temp = [];
 		
@@ -356,16 +357,16 @@ class InvoiceSnapshot {
 				if($row['type'] === 'normal'){
 					$mapped = $row['mapped'];
 					if($mapped[0] === 'tax'){
-						$temp[] = number_format((float) $item->tax, 2).'%';
+						$temp[] = [$rows['headers'][$counter]['key'] => number_format((float) $item->tax, 2).'%'];
 					}else{
 						if($mapped[0] === 'product_id'){
-							$temp[] = $item->product->product_name;
+							$temp[] = [$rows['headers'][$counter]['key'] => $item->product->product_name];
 						}else{
 							$temp_value = $item->{$mapped[0]};
 							if(trim(strtolower($mapped[0])) === 'unit_price'){
 								$temp_value = number_format((float) $item->{$mapped[0]}, 2);
 							}
-							$temp[] = $temp_value;
+							$temp[] = [$rows['headers'][$counter]['key'] => $temp_value];
 						}
 						
 					}
@@ -375,13 +376,15 @@ class InvoiceSnapshot {
 					foreach($item->custom_field_values as $custom_field){
 						if((string) $custom_field->row_uuid === (string) $item->row_uuid && (int) $custom_field->apc_field_id === (int) $row['id_column']){
 							if((int) $row['tax'] === 1){
-								$temp[] = number_format((float) (($custom_field->value == '') ? 0 : $custom_field->value), 2).'%';
+								$temp[] = [$rows['headers'][$counter]['key'] => number_format((float) (($custom_field->value == '') ? 0 : $custom_field->value), 2).'%'];
 							}else{
-								$temp[] = $custom_field->value;
+								$temp[] = [$rows['headers'][$counter]['key'] => $custom_field->value];
 							}
 						}
 					}
 				}
+
+				$counter++;
 
 			}
 
