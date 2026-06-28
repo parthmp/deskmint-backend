@@ -281,6 +281,13 @@ class InvoiceSnapshot {
 
 		$invoice_details = $this->invoice_settings_resolver->fetchInvoiceDetails();
 		$invoice_custom_fields = $this->invoice_db_operations->fetchCustomFieldValuesOfInvoice() ?? [];
+		$company = $this->invoice_db_operations->fetchDefaultCompanyById($this->invoice->company_id);
+		
+		$product_rows_data = $this->invoice_settings_resolver->fetchProductRowsSettings($this->invoice);
+		$invoice_items = $this->invoice_db_operations->fetchInvoiceItemsWithCustomCols();
+
+
+		//$client = $this->invoice_db_operations->fetchInvoiceRow();
 	
 		$invoice_details_with_values = [];
 		
@@ -325,6 +332,13 @@ class InvoiceSnapshot {
 		$this->snapshot['meta']['payment_method'] = $this->invoice->payment_method;
 		$this->snapshot['meta']['created_at'] = $this->invoice->created_at;
 		$this->snapshot['meta']['timezone_offset_minutes'] = $this->timezone_offset_minutes;
+		$this->snapshot['meta']['company'] = $company;
+		$this->snapshot['meta']['product_rows_data'] = $product_rows_data;
+		$this->snapshot['meta']['invoice_items'] = $invoice_items;
+		$this->snapshot['meta']['invoice']['discount_amount_post_tax'] = $this->invoice->discount_amount_post_tax;
+		$this->snapshot['meta']['client'] = [
+			'client'	=>	$this->invoice->client_wt
+		];
 		$this->snapshot['meta']['payment_method_string'] = match((int) $this->invoice->payment_method){
 			PAYMENT_CASH 		=> 'Cash',
 			PAYMENT_NETBANKING 	=> 'NetBanking',

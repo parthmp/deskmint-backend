@@ -109,9 +109,9 @@ class InvoiceService{
 	}
 
 	
-	public function sendInvoice(int $company_id, int $invoice_id, string $time_offset_minutes) : void {
+	public function sendInvoice(int $company_id, int $invoice_id) : void {
 		
-		$invoice_generator = app(InvoiceGenerator::class)->setCompanyId((int) $company_id)->setInvoiceId((int) $invoice_id)->setTimeOffsetMinutes((string) $time_offset_minutes)->exec();
+		$invoice_generator = app(InvoiceGenerator::class)->setCompanyId((int) $company_id)->setInvoiceId((int) $invoice_id)->exec();
 		$invoice_generator = $invoice_generator->generatePDF(save:true, add_random:true);
 
 		if($this->invoice_repository->ifEInvoiceIsOn($invoice_id)){

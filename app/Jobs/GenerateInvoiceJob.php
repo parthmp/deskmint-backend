@@ -16,7 +16,6 @@ class GenerateInvoiceJob implements ShouldQueue
     public function __construct(
 		private int $company_id,
 		private int $invoice_id,
-		private string $timezone_offset_minutes,
 		private InvoiceService $invoice_service
 	){}
 
@@ -25,6 +24,6 @@ class GenerateInvoiceJob implements ShouldQueue
      */
     public function handle(): void
     {
-        $this->invoice_service->sendInvoice($this->company_id, $this->invoice_id, $this->timezone_offset_minutes);
+        $this->invoice_service->sendInvoice($this->company_id, $this->invoice_id);
     }
 }

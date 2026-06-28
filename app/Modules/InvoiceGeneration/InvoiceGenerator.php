@@ -33,12 +33,10 @@ class InvoiceGenerator{
 	private string $contents = '';
 	private mixed $pdf_object;
 	protected int $time_offset_minutes;
-	private ?Invoice $invoice_data;
+	private Invoice $live_invoice_data;
 	private string $filename = '';
 	private string $disk = 'temp_invoices';
 	private array $invoice_content;
-	private array $product_rows_data;
-	private ?Collection $invoice_items;
 	private array $data;
 	
 	/**
@@ -77,29 +75,11 @@ class InvoiceGenerator{
 	 * @return self
 	 */
 	public function exec() : self {
-		//$this->invoice_settings_resolver = $this->invoice_settings_resolver->setCompanyId($this->company_id)->setInvoiceId($this->invoice_id);
 		$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId($this->company_id)->setInvoiceId($this->invoice_id)->execRequiredSettings();
+		$this->generateContextArrayForRenderer();
 		return $this;
 	}
 
-	//extracted in General::formatDateTime
-	// protected function formatDateTime(string $date, bool $show_time = false, $sql_format = false) : string {
-		
-	// 	$date_obj = Carbon::parse($date);
-		
-	// 	if($this->time_offset_minutes < 0){
-	// 		$date_obj->subMinutes(abs($this->time_offset_minutes));	
-	// 	}else if($this->time_offset_minutes > 0){
-	// 		$date_obj->addMinutes(abs($this->time_offset_minutes));	
-	// 	}
-
-	// 	if(!$sql_format){
-	// 		return $show_time ? $date_obj->format('d-M-Y H:i:s') : $date_obj->format('d-M-Y');
-	// 	}
-
-	// 	return $show_time ? $date_obj->format('Y-m-d H:i:s') : $date_obj->format('Y-m-d');
-
-	// }
 
 	/**
 	 * fetchTemplateContents function
@@ -125,36 +105,12 @@ class InvoiceGenerator{
 	 * @return void
 	 */
 	public function generateContextArrayForRenderer() : void {
-
-		// $context = [
-		// 	'general_settings'			=>	$this->invoice_settings_resolver->fetchGeneral(),
-		// 	'client_details_settings'	=>	$this->invoice_settings_resolver->fetchClientDetails(),
-		// 	'company_details_settings'	=>	$this->invoice_settings_resolver->fetchCompanyDetails(),
-		// 	'additional_company_fields'	=>	$this->invoice_db_operations->fetchAdditionalCompanyFields(),
-		// 	'invoice_content_settings'	=>	$this->invoice_db_operations->fetchEmailContentSettings(),
-		// 	'company_address_settings'	=>	$this->invoice_settings_resolver->fetchCompanyAddressDetails(),
-		// 	'invoice_details_settings'	=>	$this->invoice_settings_resolver->fetchInvoiceDetails(),
-		// 	'invoice_data'				=>	$this->invoice_db_operations->fetchInvoiceRow(),
-		// 	'total_fields_settings'		=>	$this->invoice_settings_resolver->fetchTotalFieldsDetails()
-		// ];
 		
-		// $context['client_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfClient((int) $context['invoice_data']['client_id']);
-
-		// $context['invoice_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfInvoice() ?? [];
-		
-		// $context['product_rows_data'] = $this->invoice_settings_resolver->fetchProductRowsSettings($context['invoice_data']);
-		// $context['invoice_items'] = $this->invoice_db_operations->fetchInvoiceItemsWithCustomCols();
-
-		// $this->invoice_data = $context['invoice_data'];
-		// $this->invoice_content = $context['invoice_content_settings'];
-		// if(!isset($this->invoice_content['settings_json'])){
-		// 	$this->invoice_content['settings_json'] = $this->invoice_content;
-		// }
-		// $this->invoice_items = $context['invoice_items'];
-		// $this->product_rows_data = $context['product_rows_data'];
-		
-		// return $context;
-
+		$this->invoice_content = $this->invoice_db_operations->fetchEmailContentSettings();
+		if(!isset($this->invoice_content['settings_json'])){
+			$this->invoice_content['settings_json'] = $this->invoice_content;
+		}
+		$this->live_invoice_data = $this->invoice_db_operations->fetchInvoiceRowObj();
 		$this->data = $this->invoice_db_operations->fetchInvoiceSnapshot($this->invoice_id);
 
 	}
@@ -166,7 +122,6 @@ class InvoiceGenerator{
 	 */
 	public function modifyInvoiceTemplate() : self {
 		$this->contents = $this->fetchTemplateContents();
-		$this->generateContextArrayForRenderer();
 		$renderer = new InvoiceRenderer($this->contents, $this->data);
 		$this->contents = $renderer->render();
 		return $this;
@@ -221,62 +176,60 @@ class InvoiceGenerator{
 	 */
 	public function generateEInvoice() : self {
 		
-		//$created_at = $this->formatDateTime($this->invoice_data->created_at, false, true);
-		$created_at = General::formatDateTime($this->invoice_data->created_at, $this->time_offset_minutes, false, true);
-		$due_date = Carbon::create($this->invoice_data->due_date);
+		$created_at = General::formatDateTime($this->live_invoice_data->created_at, $this->data['meta']['timezone_offset_minutes'], false, true);
+		$due_date = Carbon::create($this->live_invoice_data->due_date);
 		$due_date = $due_date->format('Y-m-d');
 
-		$company = $this->invoice_db_operations->fetchDefaultCompanyById($this->company_id);
-
+		
 		// Create PEPPOL invoice instance
 		$inv = new EInvoice(Presets\Peppol::class);
-		$inv->setNumber($this->invoice_data->invoice_number)
+		$inv->setNumber($this->live_invoice_data->invoice_number)
 			->setIssueDate(new DateTime($created_at))
 			->setDueDate(new DateTime($due_date))
-			->setCurrency($this->invoice_data->client_wt->currency->code);
+			->setCurrency($this->data['meta']['currency']);
 
 		// Set seller
 		$seller = new Party();
-
-		if(trim($company->address_identifier) !== '' && trim($company->address_scheme) !== ''){
-			$seller = $seller->setElectronicAddress(new Identifier($company->address_identifier, $company->address_scheme));
+		$company = $this->data['meta']['company'];
+		if(trim($company['address_identifier']) !== '' && trim($company['address_scheme']) !== ''){
+			$seller = $seller->setElectronicAddress(new Identifier($company['address_identifier'], $company['address_scheme']));
 		}
 
-		if(trim($company->company_identifier) !== '' && trim($company->scheme) !== ''){
-			$seller = $seller->setCompanyId(new Identifier($company->company_identifier, $company->scheme));
+		if(trim($company['company_identifier']) !== '' && trim($company['scheme']) !== ''){
+			$seller = $seller->setCompanyId(new Identifier($company['company_identifier'], $company['scheme']));
 		}
 
-		$seller = $seller->setName($company->company_name);
+		$seller = $seller->setName($company['company_name']);
 
-		if($company->gst_vat_number !== ''){
-			$seller = $seller->setVatNumber($company->gst_vat_number);
+		if($company['gst_vat_number'] !== ''){
+			$seller = $seller->setVatNumber($company['gst_vat_number']);
 		}
 
 		$seller_company_address = [];
 
-		if($company->apt !== ''){
-			$seller_company_address[] = $company->apt;
+		if($company['apt'] !== ''){
+			$seller_company_address[] = $company['apt'];
 		}
 
-		if($company->address_street !== ''){
-			$seller_company_address[] = $company->address_street;
+		if($company['address_street'] !== ''){
+			$seller_company_address[] = $company['address_street'];
 		}
 
 		if(!empty($seller_company_address)){
 			$seller = $seller->setAddress($seller_company_address);
 		}
 
-		if($company->city !== ''){
-			$seller = $seller->setCity($company->city);
+		if($company['city'] !== ''){
+			$seller = $seller->setCity($company['city']);
 		}
 
-		if($company->postal_code !== ''){
-			$seller = $seller->setPostalCode($company->postal_code);
+		if($company['postal_code'] !== ''){
+			$seller = $seller->setPostalCode($company['postal_code']);
 		}
 
 
-		if($company->country_id){
-			$seller = $seller->setCountry($company->country->country_code);
+		if($company['country_id']){
+			$seller = $seller->setCountry($company['country']['country_code']);
 		}
 		
 
@@ -284,39 +237,40 @@ class InvoiceGenerator{
 
 		// Set buyer
 		$buyer = new Party();
+		$client = $this->data['meta']['client']['client'];
 
-		if($this->invoice_data->client_wt->peppol_identifier !== '' && $this->invoice_data->client_wt->peppol_scheme !== ''){
-			$buyer = $buyer->setElectronicAddress(new Identifier($this->invoice_data->client_wt->peppol_identifier, $this->invoice_data->client_wt->peppol_scheme));
+		if($client['peppol_identifier'] !== '' && $client['peppol_scheme'] !== ''){
+			$buyer = $buyer->setElectronicAddress(new Identifier($client['peppol_identifier'], $client['peppol_scheme']));
 		}
 
-		$buyer_name = ($this->invoice_data->client_wt->client_company_name !== '') ? $this->invoice_data->client_wt->client_company_name : $this->invoice_data->client_wt->first_name.' '.$this->invoice_data->client_wt->last_name;
+		$buyer_name = ($client['client_company_name'] !== '') ? $client['client_company_name'] : $client['first_name'].' '.$client['last_name'];
 
 		$buyer = $buyer->setName($buyer_name)
-						->setCountry($this->invoice_data->client_wt->billing_country->country_code)
-						->setPostalCode($this->invoice_data->client_wt->billing_postal_code)
-						->setAddress([$this->invoice_data->client_wt->billing_apt, $this->invoice_data->client_wt->billing_street])
-						->setCity($this->invoice_data->client_wt->billing_city);
+						->setCountry($client['billing_country']['country_code'])
+						->setPostalCode($client['billing_postal_code'])
+						->setAddress([$client['billing_apt'], $client['billing_street']])
+						->setCity($client['billing_city']);
 
 		$inv->setBuyer($buyer);
 		
 		// Add a product line
-		foreach($this->invoice_items as $item){
+		foreach($this->data['meta']['invoice_items'] as $item){
 
 			$line = new InvoiceLine();
-			$line = $line->setName($item->product->product_name)->setPrice($item->unit_price)->setQuantity($item->quantity);
+			$line = $line->setName($item['product']['product_name'])->setPrice($item['unit_price'])->setQuantity($item['quantity']);
 			
 			$allowance = new AllowanceOrCharge();
-			$allowance->setReason('Discount')->setAmount($item->discount_amount); // the calculated discount amount
+			$allowance->setReason('Discount')->setAmount($item['discount_amount']); // the calculated discount amount
 			$line->addAllowance($allowance);
 
 			$vat_rate = 0;
 
-			foreach($this->product_rows_data as $row){
+			foreach($this->data['meta']['product_rows_data'] as $row){
 				
 				if($row['type'] === 'normal'){
 					$mapped = $row['mapped'];
 					if($mapped[0] === 'tax'){
-						$vat_rate += (float) $item->tax;
+						$vat_rate += (float) $item['tax'];
 					}
 
 				}else{
@@ -337,7 +291,7 @@ class InvoiceGenerator{
 		}
 
 		$allowance = new AllowanceOrCharge();
-		$allowance->setReason('Global Discount')->setAmount($this->invoice_data->discount_amount_post_tax);
+		$allowance->setReason('Global Discount')->setAmount($this->data['meta']['invoice']['discount_amount_post_tax']);
 		$inv->addAllowance($allowance);
 
 		$writer = new UblWriter();
@@ -432,7 +386,7 @@ class InvoiceGenerator{
 	private function sendUrlGenerationFailedEmail() : void {
 
 		$data = [
-			'payment_method'		=>  $this->invoice_data->payment_method === PAYMENT_PAYPAL ? 'PayPal' : 'Stripe'
+			'payment_method'		=>  $this->data['meta']['payment_method'] === PAYMENT_PAYPAL ? 'PayPal' : 'Stripe'
 		];
 
 		$info = $this->invoice_db_operations->fetchAdminEmails();
@@ -492,13 +446,13 @@ class InvoiceGenerator{
 	 */
 	private function parseEmailContent(string $content) : string {
 
-		$currency = $this->invoice_data->client_wt->currency->code;
+		$currency = $this->data['meta']['currency'];
 		
 		$payment_gateway_url = '';
 		
-		if((int) $this->invoice_data->payment_method !== PAYMENT_CASH && (int) $this->invoice_data->payment_method !== PAYMENT_NETBANKING){
+		if((int) $this->data['meta']['payment_method'] !== PAYMENT_CASH && (int) $this->data['meta']['payment_method'] !== PAYMENT_NETBANKING){
 			
-			$payment_settings = $this->invoice_db_operations->fetchPaymentSettings((int) $this->invoice_data->payment_method);
+			$payment_settings = $this->invoice_db_operations->fetchPaymentSettings((int) $this->data['meta']['payment_method']);
 			
 			if(!$payment_settings){
 				logger('something went wrong with payment settings data -> '.json_encode($payment_settings));
@@ -507,10 +461,10 @@ class InvoiceGenerator{
 			
 			$payment_settings = json_decode($payment_settings['settings_json'], true);
 			$payment_settings['currency'] = $currency;
-			$payment_settings['amount'] = $this->invoice_data->balance_due;
+			$payment_settings['amount'] = $this->live_invoice_data->balance_due;
 			$payment_settings['secret'] = decrypt($payment_settings['secret']);
 			
-			$payment_gateway_url = $this->generatePaymentURL((int) $this->invoice_data->payment_method, $payment_settings);
+			$payment_gateway_url = $this->generatePaymentURL((int) $this->data['meta']['payment_method'], $payment_settings);
 			
 			if(!$payment_gateway_url){
 				//send an email to admins to notify the failure.
@@ -529,21 +483,21 @@ class InvoiceGenerator{
 		];
 
 		$replace = [
-			$this->invoice_data->client_wt->first_name,
-			$this->invoice_data->client_wt->last_name,
-			Carbon::parse($this->invoice_data->invoice_date)->format('d-M-Y'),
-			Carbon::parse($this->invoice_data->due_date)->format('d-M-Y'),
-			$this->invoice_data->invoice_number,
+			$this->live_invoice_data->client_wt->first_name,
+			$this->live_invoice_data->client_wt->last_name,
+			Carbon::parse($this->live_invoice_data->invoice_date)->format('d-M-Y'),
+			Carbon::parse($this->live_invoice_data->due_date)->format('d-M-Y'),
+			$this->live_invoice_data->invoice_number,
 			$payment_gateway_url
 		];
 
-		if((int) $this->invoice_data->payment_method === PAYMENT_CASH || (int) $this->invoice_data->payment_method === PAYMENT_NETBANKING){
+		if((int) $this->data['meta']['payment_method'] === PAYMENT_CASH || (int) $this->data['meta']['payment_method'] === PAYMENT_NETBANKING){
 			$content = $this->replaceBetweenTags($content,  '[{online-payment-start}]', '[{online-payment-end}]', '');
 		}
 
 		$content = str_ireplace($search, $replace, $content);
-		$content = str_ireplace('{$invoice_total}', $this->invoice_data->total.' '.$currency, $content);
-		$content = str_ireplace('{$unpaid_balance}', $this->invoice_data->balance_due.' '.$currency, $content);
+		$content = str_ireplace('{$invoice_total}', $this->live_invoice_data->total.' '.$currency, $content);
+		$content = str_ireplace('{$unpaid_balance}', $this->live_invoice_data->balance_due.' '.$currency, $content);
 		$content = str_ireplace('[{online-payment-start}]', '', $content);
 		$content = str_ireplace('[{online-payment-end}]', '', $content);
 		
@@ -586,8 +540,8 @@ class InvoiceGenerator{
 		];
 
 		SendEmailJob::dispatch(
-			to: $this->invoice_data->client_wt->email,
-			to_name: $this->invoice_data->client_wt->first_name.' '.$this->invoice_data->client_wt->last_name,
+			to: $this->live_invoice_data->client_wt->email,
+			to_name: $this->live_invoice_data->client_wt->first_name.' '.$this->live_invoice_data->client_wt->last_name,
 			mailable_class: \App\Mail\SendInvoice::class,
 			mailable_data: [$data],
 			smtp: $this->smtpSettings()

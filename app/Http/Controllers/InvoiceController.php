@@ -27,18 +27,6 @@ use Illuminate\Support\Facades\URL;
 class InvoiceController extends Controller{
 
 	private array $additional_fields = [
-		// [
-		// 	'label'			=>	'first_name',
-		// 	'text'			=>	'First name'
-		// ],
-		// [
-		// 	'label'			=>	'last_name',
-		// 	'text'			=>	'Last name'
-		// ],
-		// [
-		// 	'label'			=>	'client_company',
-		// 	'text'			=>	'Client company'
-		// ],
 		[
 			'label'			=>	'c_code',
 			'text'			=>	'Currency'
@@ -141,8 +129,8 @@ class InvoiceController extends Controller{
 		//should check for e invoice setting before sending xml in invoice servie class.
 		$do_send = (bool) Sanitize::input($request->input('settings.send_invoice_in_email'));
 		if($do_send){
-			$timezone_offset_minutes = Sanitize::input($request->input('timezone_offset_minutes'));
-			GenerateInvoiceJob::dispatch($company_id, $invoice_id, $timezone_offset_minutes, $this->invoice_service);
+			// $timezone_offset_minutes = Sanitize::input($request->input('timezone_offset_minutes'));
+			GenerateInvoiceJob::dispatch($company_id, $invoice_id, $this->invoice_service);
 			return ' and invoice has been sent';
 		}
 
@@ -265,7 +253,7 @@ class InvoiceController extends Controller{
 		$data = $request->validated();
 		
 		try{
-			GenerateInvoiceJob::dispatch($data['company_id'], $data['invoice_id'], $data['time_offset_minutes'], $this->invoice_service);
+			GenerateInvoiceJob::dispatch($data['company_id'], $data['invoice_id'], $this->invoice_service);
 			return response(['message' => 'Invoice sent successfully', 'validity' => 'invoice_sent'], 200);
 		}catch(Exception $e){
 			return General::wentWrong();
@@ -294,15 +282,14 @@ class InvoiceController extends Controller{
 
 		$company_id = (int) $request->query('company_id');
 		$invoice_id = (int) $request->query('invoice_id');
-		$time_offset_minutes = (int) $request->query('time_offset_minutes');
-
+		
 		return app(InvoiceGenerator::class)
 			->setCompanyId($company_id)
 			->setInvoiceId($invoice_id)
-			->setTimeOffsetMinutes($time_offset_minutes)
 			->exec()
 			->generatePDF(save: false, add_random: false)
 			->download();
+
 	}
 
 	public function snapshot(GenericRequest $request, int $invoice_id){

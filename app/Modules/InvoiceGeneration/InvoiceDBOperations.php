@@ -128,7 +128,7 @@ class InvoiceDBOperations{
 	 * @return Invoice|null
 	 */
 	public function fetchInvoiceRowObj() : ?Invoice {
-		return Invoice::where('id', '=', $this->invoice_id)->withTrashed()->first();
+		return Invoice::where('id', '=', $this->invoice_id)->withTrashed()->with('client_wt')->first();
 	}
 
 	/**
