@@ -14,6 +14,7 @@ use App\Services\Product\ProductFieldService;
 use Illuminate\Http\Request;
 use App\Models\InvoiceSnapshot;
 use App\Modules\InvoiceGeneration\InvoiceSnapshot as Snapshot;
+use App\Repositories\Client\ClientRepository;
 
 class InvoiceBaseService{
 
@@ -24,7 +25,8 @@ class InvoiceBaseService{
 		private InvoiceCalculationService $invoice_calculation_service,
 		private CustomFields $custom_fields,
 		private ProductRepository $product_repository,
-		private InvoiceSettingsService $invoice_settings_service
+		private InvoiceSettingsService $invoice_settings_service,
+		private ClientRepository $client_repository
 	){}
 
 	/**
@@ -279,9 +281,16 @@ class InvoiceBaseService{
 		$global_discount_amount_pre_tax = $totals['global_discount_amount_pre_tax'];
 		$discount_number = $totals['discount_number'];
 
+		$client = $this->client_repository->fetchById($client_id);
+
 		return [
 			'settings' 							=>  $settings,
 			'client_id'							=>	$client_id,
+			'first_name'						=>	$client->first_name,
+			'last_name'							=>	$client->last_name,
+			'full_name'							=>	$client->first_name.' '.$client->last_name,
+			'client_company'					=>	$client->client_company_name,
+			'currency_id'						=>	$client->currency_id,
 			'company_id'						=>	$company_id,
 			'invoice_number'					=>	$invoice_number,
 			'invoice_date'						=>	$invoice_date,

@@ -43,6 +43,13 @@ class InvoiceRepository{
 		$patten_matched = $data['patten_matched'];
 		$scan_chars = $data['scan_chars'];
 		$timezone_offset_minutes = $data['timezone_offset_minutes'];
+
+		$first_name = $data['first_name'];
+		$last_name = $data['last_name'];
+		$full_name = $data['full_name'];
+		$client_company = $data['client_company'];
+		$currency_id = $data['currency_id'];
+
 		$rows = $data['rows'];
 		
 		$settings_snapshot = $settings->getProductColumns(); /* json text for product_columns settings from SettingsSection table, if it does not exist, it falls back to the default values */
@@ -54,6 +61,13 @@ class InvoiceRepository{
 		}
 		
 		$invoice->client_id = $client_id;
+
+		$invoice->first_name = $first_name;
+		$invoice->last_name = $last_name;
+		$invoice->full_name = $full_name;
+		$invoice->client_company = $client_company;
+		$invoice->currency_id = $currency_id;
+
 		$invoice->company_id = $company_id;
 		$invoice->invoice_number = $invoice_number;
 		$invoice->invoice_date = Carbon::parse($invoice_date);

@@ -80,45 +80,45 @@ class InvoiceFetchService{
 						'second' => 'invoices_flat.invoice_id',
 						'columns' => '' //this will be replaced by EasyIndex class.
 					],
-					[
-						'table' => 'clients',
-						'first' => 'clients.id',
-						'operator' => '=',
-						'second' => 'invoices.client_id',
-						'columns' => ['clients.first_name as first_name', 'clients.last_name as last_name', 'clients.client_company_name as client_company']
-					],
+					// [
+					// 	'table' => 'clients',
+					// 	'first' => 'clients.id',
+					// 	'operator' => '=',
+					// 	'second' => 'invoices.client_id',
+					// 	'columns' => ['clients.first_name as first_name', 'clients.last_name as last_name', 'clients.client_company_name as client_company']
+					// ],
 					[
 						'table' => 'currencies',
-						'first' => 'clients.currency_id',
+						'first' => 'currencies.id',
 						'operator' => '=',
-						'second' => 'currencies.id',
+						'second' => 'invoices.currency_id',
 						'columns' => ['currencies.code as c_code']
 					],
-					[
-						'table' => 'countries as b_countries',
-						'first' => 'clients.billing_country_id',
-						'operator' => '=',
-						'second' => 'b_countries.id',
-						'columns' => ['b_countries.country_name as b_country_name']
-					],
-					[
-						'table' => 'countries as s_countries',
-						'first' => 'clients.shipping_country_id',
-						'operator' => '=',
-						'second' => 's_countries.id',
-						'columns' => ['s_countries.country_name as s_country_name']
-					],
-					[
-						'table' => 'industries',
-						'first' => 'clients.industry_id',
-						'operator' => '=',
-						'second' => 'industries.id',
-						'columns' => ['industries.industry_name as industry_name']
-					]
+					// [
+					// 	'table' => 'countries as b_countries',
+					// 	'first' => 'clients.billing_country_id',
+					// 	'operator' => '=',
+					// 	'second' => 'b_countries.id',
+					// 	'columns' => ['b_countries.country_name as b_country_name']
+					// ],
+					// [
+					// 	'table' => 'countries as s_countries',
+					// 	'first' => 'clients.shipping_country_id',
+					// 	'operator' => '=',
+					// 	'second' => 's_countries.id',
+					// 	'columns' => ['s_countries.country_name as s_country_name']
+					// ],
+					// [
+					// 	'table' => 'industries',
+					// 	'first' => 'clients.industry_id',
+					// 	'operator' => '=',
+					// 	'second' => 'industries.id',
+					// 	'columns' => ['industries.industry_name as industry_name']
+					// ]
 				];
 
 			$default_columns = [
-				'searchable_columns'	=>	['invoices.invoice_number', 'invoices.total', 'currencies.code', 'invoices.is_paid', 'clients.first_name', 'clients.last_name'],
+				'searchable_columns'	=>	['invoices.invoice_number', 'invoices.total', 'currencies.code', 'invoices.is_paid', 'invoices.first_name', 'invoices.last_name', 'invoices.full_name'],
 				'searchable_dates'		=>	['invoices.created_at', 'invoices.due_date', 'invoices.invoice_date'],
 				'show_columns'			=>	[
 					[
@@ -146,12 +146,8 @@ class InvoiceFetchService{
 	 					'text'	=>	'Paid',
 					],
 					[
-						'label'	=>	'first_name',
-	 					'text'	=>	'First name',
-					],
-					[
-						'label'	=>	'last_name',
-	 					'text'	=>	'Last name',
+						'label'	=>	'full_name',
+	 					'text'	=>	'Full name',
 					],
 					[
 						'label'	=>	'created_at',
@@ -236,12 +232,16 @@ class InvoiceFetchService{
 
 			];
 
+		// return $this->easy_index->setType('invoice')->setCustomFieldClass(InvoicesCustomField::class)->setJoins($joins)->setExceptionClass(InvoiceException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
+		// 	'c_code'				=>		'currencies.code',
+		// 	'first_name'			=>		'clients.first_name',
+		// 	'last_name'				=>		'clients.last_name',
+		// 	'client_company'		=>		'clients.client_company_name'
+		// ])->setRewrites($rewrites)->setModel(Invoice::class)->fetchIndex();
+
 		return $this->easy_index->setType('invoice')->setCustomFieldClass(InvoicesCustomField::class)->setJoins($joins)->setExceptionClass(InvoiceException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
-			'c_code'				=>		'currencies.code',
-			'first_name'			=>		'clients.first_name',
-			'last_name'				=>		'clients.last_name',
-			'client_company'		=>		'clients.client_company_name'
-		])->setRewrites($rewrites)->setModel(Invoice::class)->fetchIndex();
+			'c_code'				=>		'currencies.code'
+		 ])->setRewrites($rewrites)->setModel(Invoice::class)->fetchIndex();
 	}
 	
 	private function assembleProductRowsForEdit(int $company_id, int $invoice_id, int $timezone_offset_minutes) : array {
