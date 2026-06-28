@@ -16,6 +16,7 @@ class InvoiceRenderer extends InvoiceGenerator{
 
 	private string $contents;
 	private array $data;
+	private array $live_data;
 	
 	/**
 	 * __construct function
@@ -23,9 +24,10 @@ class InvoiceRenderer extends InvoiceGenerator{
 	 * @param string $contents
 	 * @param array $data
 	 */
-	public function __construct(string $contents, array $data){
+	public function __construct(string $contents, array $data, array $live_data){
 		$this->contents = $contents;
 		$this->data = $data;
+		$this->live_data = $live_data;
 	}
 
 	/**
@@ -41,11 +43,11 @@ class InvoiceRenderer extends InvoiceGenerator{
 
 			$client_details_html .= '<p class="'.strtolower(str_ireplace('#', 'number', str_ireplace(' ', '_', $field['text']))).'">';
 
-			if(strtolower($field['text']) === 'phone' || strtolower($field['text']) === 'gst/tax #' || strtolower($field['text']) === 'website'){
+			//if(strtolower($field['text']) === 'phone' || strtolower($field['text']) === 'gst/tax #' || strtolower($field['text']) === 'website'){
 				$client_details_html .= $field['text'].' : '.$field['value'];
-			}else{
-				$client_details_html .= ' '.$field['value'];
-			}
+			//}else{
+			//	$client_details_html .= ' '.$field['value'];
+			//}
 
 			$client_details_html .= '</p>';
 			
@@ -70,11 +72,11 @@ class InvoiceRenderer extends InvoiceGenerator{
 
 			$company_details_html .= '<p class="'.strtolower(str_ireplace('#', 'number', str_ireplace(' ', '_', $field['text']))).'">';
 
-			if(strtolower($field['text']) === 'phone' || strtolower($field['text']) === 'GST - VAT number'){
+			//if(strtolower($field['text']) === 'phone' || strtolower($field['text']) === 'GST - VAT number'){
 				$company_details_html .= $field['text'].' : '.$field['value'];
-			}else{
-				$company_details_html .= ' '.$field['value'];
-			}
+			// }else{
+			// 	$company_details_html .= ' '.$field['value'];
+			// }
 
 			$company_details_html .= '</p>';
 
@@ -99,16 +101,21 @@ class InvoiceRenderer extends InvoiceGenerator{
 
 			$invoice_details_html .= '<p class="'.strtolower(str_ireplace('#', 'number', str_ireplace(' ', '_', $field['text']))).'">';
 
-			if(strtolower($field['text']) === 'phone' || strtolower($field['text']) === 'gst/tax #' || strtolower($field['text']) === 'website'){
-				$invoice_details_html .= $field['text'].' : '.$field['value'];
-			}else{
-				$invoice_details_html .= ' '.$field['value'];
+			//if(strtolower($field['text']) === 'phone' || strtolower($field['text']) === 'gst/tax #' || strtolower($field['text']) === 'website'){
+			if(trim(strtolower($field['text'])) === 'balance due'){
+				$field['value'] = $this->live_data['balance_due'];
 			}
+			
+			$invoice_details_html .= $field['text'].' : '.$field['value'];
+			
+			// }else{
+			// 	$invoice_details_html .= ' '.$field['value'];
+			// }
 
-			$lowercase_field_text = trim(strtolower($field['text']));
-			if($lowercase_field_text === 'total' || $lowercase_field_text === 'balance due'){
+			// $lowercase_field_text = trim(strtolower($field['text']));
+			// if($lowercase_field_text === 'total' || $lowercase_field_text === 'balance due'){
 				$invoice_details_html .= ' '.$this->data['meta']['currency'];
-			}
+			//}
 
 			$invoice_details_html .= '</p>';
 
@@ -123,16 +130,16 @@ class InvoiceRenderer extends InvoiceGenerator{
 	private function renderProductRows() : self {
 
 		$product_columns_html = '<thead>';
-		$product_columns_html = '<tr>';
-
+		$product_columns_html .= '<tr>';
+		
 		foreach($this->data['product_rows']['headers'] as $header){
 			$product_columns_html .= '<th>';
 			$product_columns_html .= $header['text'];
 			$product_columns_html .= '</th>';
 		}
 
-		$product_columns_html = '</tr>';
-		$product_columns_html = '</thead>';
+		$product_columns_html .= '</tr>';
+		$product_columns_html .= '</thead>';
 
 		$product_columns_html .= '<tbody>';
 		foreach($this->data['product_rows']['data'] as $row){
@@ -167,6 +174,14 @@ class InvoiceRenderer extends InvoiceGenerator{
 		foreach($this->data['totals'] as $field){
 
 			$total_fields .= '<p>';
+
+			if(trim(strtolower($field['text'])) === 'balance due'){
+				$field['value'] = $this->live_data['balance_due'];
+			}
+
+			if(trim(strtolower($field['text'])) === 'paid to date'){
+				$field['value'] = $this->live_data['paid_to_date'];
+			}
 			
 			$total_fields .= $field['text'].' : '.$field['value'].' '.$this->data['meta']['currency'];
 

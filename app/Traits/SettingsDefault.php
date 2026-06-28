@@ -17,8 +17,8 @@
 				'template'				=>	'stylish',
 				'font_size'				=>	12,
 				'logo_size'				=>	100,
-				'primary_color'			=>	'#055f40',
-				'secondary_color'		=>	'#118b65'
+				'primary_color'			=>	'#00402a',
+				'secondary_color'		=>	'#292929'
 			];
 
 		}

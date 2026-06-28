@@ -3,6 +3,7 @@
 namespace App\Services\Invoice;
 
 use App\Helpers\Sanitize;
+use App\Models\Invoice;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoicesCustomField;
 use App\Models\Product;
@@ -47,9 +48,9 @@ class InvoiceBaseService{
 	 * @param Request $request
 	 * @param array $data
 	 * @param integer $invoice_id
-	 * @return integer
+	 * @return Invoice
 	 */
-	public function upsertInvoice(Request $request, array $data, int $invoice_id = 0) : int {
+	public function upsertInvoice(Request $request, array $data, int $invoice_id = 0) : Invoice {
 
 		$data = $this->invoice_repository->upsertInvoiceData($request, $data, $invoice_id);
 		
@@ -82,28 +83,9 @@ class InvoiceBaseService{
 
 		$this->invoice_repository->upsertInvoiceItems($invoice_items, $invoice_id);
 
-		$snapshot = app(Snapshot::class)
-						->setCompanyId($invoice->company_id)
-						->setInvoiceId($invoice->id)
-						->setTimezoneOffset($invoice->timezone_offset_minutes)
-						->setLogoSnapsot()
-						->setGeneralSettings()
-						->setClientSnapshot()
-						->setCompanySnapshot()
-						->setInvoiceSnapshot()
-						->setInvoiceRowsSnapshot()
-						->setTotalsSnapshot()
-						->setTermsSnapshot()
-						->output();
-
-		InvoiceSnapshot::updateOrCreate(
-			['invoice_id' 	=> $invoice->id],
-			['snapshot' 	=> $snapshot]
-		);
-
 		$invoice_items = null;
 
-		return $invoice->id;
+		return $invoice;
 
 	}
 
@@ -334,7 +316,7 @@ class InvoiceBaseService{
 	 */
 	public function saveOrUpdate(Request $request, int $company_id, int $invoice_id = 0) : int {
 		
-		$invoice_id = $this->upsertInvoice($request, $this->getInvoiceData($request), $invoice_id); //adds invoice data + non changable (normal) product cols/rows
+		$invoice = $this->upsertInvoice($request, $this->getInvoiceData($request), $invoice_id); //adds invoice data + non changable (normal) product cols/rows
 
 		$add = true;
 
@@ -342,13 +324,34 @@ class InvoiceBaseService{
 			$add = false;
 		}
 
-		$this->custom_fields->upsertCustomFieldValues($request, $invoice_id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', $add);
+		$this->custom_fields->upsertCustomFieldValues($request, $invoice->id, InvoicesCustomField::class, InvoiceCustomFieldValue::class, 'invoices_flat', 'invoice', $add);
 		
 		//to upsert custom product rows/cols
-		$this->upsertCustomProductRows($request, $invoice_id, $company_id);
+		$this->upsertCustomProductRows($request, $invoice->id, $company_id);
 
 		/* override manual reset here */
 		$this->resetManualInvoieNumberResetFlag($company_id);
+
+
+
+		$snapshot = app(Snapshot::class)
+						->setCompanyId($company_id)
+						->setInvoiceId($invoice->id)
+						->setTimezoneOffset($invoice->timezone_offset_minutes)
+						->setLogoSnapsot()
+						->setGeneralSettings()
+						->setClientSnapshot()
+						->setCompanySnapshot()
+						->setInvoiceSnapshot()
+						->setInvoiceRowsSnapshot()
+						->setTotalsSnapshot()
+						->setTermsSnapshot()
+						->output();
+
+		InvoiceSnapshot::updateOrCreate(
+			['invoice_id' 	=> $invoice->id],
+			['snapshot' 	=> $snapshot]
+		);
 
 		return $invoice_id;
 

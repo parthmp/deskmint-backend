@@ -9,6 +9,8 @@ use App\Modules\Payment\Gateways\PayPal\PayPal;
 use App\Modules\Payment\Gateways\Stripe\Stripe;
 use App\Modules\Payment\Payment;
 use App\Traits\CustomMailSettings;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Carbon\Carbon;
 use DateTime;
 use Einvoicing\AllowanceOrCharge;
@@ -122,9 +124,16 @@ class InvoiceGenerator{
 	 */
 	public function modifyInvoiceTemplate() : self {
 		$this->contents = $this->fetchTemplateContents();
-		$renderer = new InvoiceRenderer($this->contents, $this->data);
+
+		$total = BigDecimal::of($this->live_invoice_data->total);
+		$balance_due = BigDecimal::of($this->live_invoice_data->balance_due);
+
+		$paid_to_date = $total->minus($balance_due)->toScale(2, RoundingMode::HalfUp)->__toString();
+
+		$renderer = new InvoiceRenderer($this->contents, $this->data, ['balance_due' => $this->live_invoice_data->balance_due, 'paid_to_date' => $paid_to_date]);
 		$this->contents = $renderer->render();
 		return $this;
+		
 	}
 
 	/**
