@@ -287,7 +287,7 @@ class InvoiceController extends Controller{
 			->setCompanyId($company_id)
 			->setInvoiceId($invoice_id)
 			->exec()
-			->generatePDF(save: false, add_random: false)
+			->generatePDF(save: false, add_random: true)
 			->download();
 
 	}
