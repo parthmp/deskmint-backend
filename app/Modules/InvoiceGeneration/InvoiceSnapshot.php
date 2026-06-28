@@ -321,7 +321,10 @@ class InvoiceSnapshot {
 
 		$this->snapshot['invoice'] = $invoice_details_with_values;
 		$this->snapshot['meta']['currency']	= $this->invoice->client_wt->currency->code;
+		$this->snapshot['meta']['company_id']	= $this->invoice->company_id;
 		$this->snapshot['meta']['payment_method'] = $this->invoice->payment_method;
+		$this->snapshot['meta']['created_at'] = $this->invoice->created_at;
+		$this->snapshot['meta']['timezone_offset_minutes'] = $this->timezone_offset_minutes;
 		$this->snapshot['meta']['payment_method_string'] = match((int) $this->invoice->payment_method){
 			PAYMENT_CASH 		=> 'Cash',
 			PAYMENT_NETBANKING 	=> 'NetBanking',

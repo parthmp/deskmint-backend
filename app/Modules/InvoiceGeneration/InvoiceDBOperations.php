@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoiceItem;
+use App\Models\InvoiceSnapshot;
 use App\Models\SettingsSection;
 use App\Models\User;
 use App\Repositories\Company\CompanyRepository;
@@ -298,6 +299,18 @@ class InvoiceDBOperations{
 		return AdditionalProductColumnsFieldValue::where('invoice_id', '=', $this->invoice_id)->whereHas('custom_product_field')->with(['custom_product_field' => function($query){
 			$query->where('company_id', $this->company_id);
 		}])->get();
+	}
+	
+
+	/**
+	 * fetchInvoiceSnapshot function
+	 *
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function fetchInvoiceSnapshot(int $invoice_id) : array {
+		$snapshot = InvoiceSnapshot::where('invoice_id', '=', $invoice_id)->first();
+		return $snapshot->snapshot;
 	}
 
 }

@@ -39,14 +39,14 @@ class InvoiceGenerator{
 	private array $invoice_content;
 	private array $product_rows_data;
 	private ?Collection $invoice_items;
+	private array $data;
 	
 	/**
 	 * __construct function
 	 *
-	 * @param InvoiceSettingsResolver $invoice_settings_resolver
 	 * @param InvoiceDBOperations $invoice_db_operations
 	 */
-	public function __construct(private InvoiceSettingsResolver $invoice_settings_resolver, private InvoiceDBOperations $invoice_db_operations){
+	public function __construct(private InvoiceDBOperations $invoice_db_operations){
 	}
 
 	/**
@@ -72,23 +72,12 @@ class InvoiceGenerator{
 	}
 
 	/**
-	 * setTimeOffsetMinutes function
-	 *
-	 * @param integer $minutes
-	 * @return self
-	 */
-	public function setTimeOffsetMinutes(int $minutes) : self{
-		$this->time_offset_minutes = $minutes;
-		return $this;
-	}
-
-	/**
 	 * exec function
 	 *
 	 * @return self
 	 */
 	public function exec() : self {
-		$this->invoice_settings_resolver = $this->invoice_settings_resolver->setCompanyId($this->company_id)->setInvoiceId($this->invoice_id);
+		//$this->invoice_settings_resolver = $this->invoice_settings_resolver->setCompanyId($this->company_id)->setInvoiceId($this->invoice_id);
 		$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId($this->company_id)->setInvoiceId($this->invoice_id)->execRequiredSettings();
 		return $this;
 	}
@@ -119,8 +108,8 @@ class InvoiceGenerator{
 	 */
 	private function fetchTemplateContents() : string {
 
-		$general_settings = $this->invoice_settings_resolver->fetchGeneral();
-		$template_name = strtolower($general_settings['template'].'.html');
+		//$general_settings = $this->invoice_settings_resolver->fetchGeneral();
+		$template_name = strtolower($this->data['general']['template'].'.html');
 
 		try{
 			return Storage::disk('invoice_templates')->get($template_name);
@@ -133,38 +122,41 @@ class InvoiceGenerator{
 	/**
 	 * generateContextArrayForRenderer function
 	 *
-	 * @return array
+	 * @return void
 	 */
-	public function generateContextArrayForRenderer() : array {
+	public function generateContextArrayForRenderer() : void {
 
-		$context = [
-			'general_settings'			=>	$this->invoice_settings_resolver->fetchGeneral(),
-			'client_details_settings'	=>	$this->invoice_settings_resolver->fetchClientDetails(),
-			'company_details_settings'	=>	$this->invoice_settings_resolver->fetchCompanyDetails(),
-			'additional_company_fields'	=>	$this->invoice_db_operations->fetchAdditionalCompanyFields(),
-			'invoice_content_settings'	=>	$this->invoice_db_operations->fetchEmailContentSettings(),
-			'company_address_settings'	=>	$this->invoice_settings_resolver->fetchCompanyAddressDetails(),
-			'invoice_details_settings'	=>	$this->invoice_settings_resolver->fetchInvoiceDetails(),
-			'invoice_data'				=>	$this->invoice_db_operations->fetchInvoiceRow(),
-			'total_fields_settings'		=>	$this->invoice_settings_resolver->fetchTotalFieldsDetails()
-		];
+		// $context = [
+		// 	'general_settings'			=>	$this->invoice_settings_resolver->fetchGeneral(),
+		// 	'client_details_settings'	=>	$this->invoice_settings_resolver->fetchClientDetails(),
+		// 	'company_details_settings'	=>	$this->invoice_settings_resolver->fetchCompanyDetails(),
+		// 	'additional_company_fields'	=>	$this->invoice_db_operations->fetchAdditionalCompanyFields(),
+		// 	'invoice_content_settings'	=>	$this->invoice_db_operations->fetchEmailContentSettings(),
+		// 	'company_address_settings'	=>	$this->invoice_settings_resolver->fetchCompanyAddressDetails(),
+		// 	'invoice_details_settings'	=>	$this->invoice_settings_resolver->fetchInvoiceDetails(),
+		// 	'invoice_data'				=>	$this->invoice_db_operations->fetchInvoiceRow(),
+		// 	'total_fields_settings'		=>	$this->invoice_settings_resolver->fetchTotalFieldsDetails()
+		// ];
 		
-		$context['client_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfClient((int) $context['invoice_data']['client_id']);
+		// $context['client_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfClient((int) $context['invoice_data']['client_id']);
 
-		$context['invoice_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfInvoice() ?? [];
+		// $context['invoice_custom_fields_values'] = $this->invoice_db_operations->fetchCustomFieldValuesOfInvoice() ?? [];
 		
-		$context['product_rows_data'] = $this->invoice_settings_resolver->fetchProductRowsSettings($context['invoice_data']);
-		$context['invoice_items'] = $this->invoice_db_operations->fetchInvoiceItemsWithCustomCols();
+		// $context['product_rows_data'] = $this->invoice_settings_resolver->fetchProductRowsSettings($context['invoice_data']);
+		// $context['invoice_items'] = $this->invoice_db_operations->fetchInvoiceItemsWithCustomCols();
 
-		$this->invoice_data = $context['invoice_data'];
-		$this->invoice_content = $context['invoice_content_settings'];
-		if(!isset($this->invoice_content['settings_json'])){
-			$this->invoice_content['settings_json'] = $this->invoice_content;
-		}
-		$this->invoice_items = $context['invoice_items'];
-		$this->product_rows_data = $context['product_rows_data'];
+		// $this->invoice_data = $context['invoice_data'];
+		// $this->invoice_content = $context['invoice_content_settings'];
+		// if(!isset($this->invoice_content['settings_json'])){
+		// 	$this->invoice_content['settings_json'] = $this->invoice_content;
+		// }
+		// $this->invoice_items = $context['invoice_items'];
+		// $this->product_rows_data = $context['product_rows_data'];
 		
-		return $context;
+		// return $context;
+
+		$this->data = $this->invoice_db_operations->fetchInvoiceSnapshot($this->invoice_id);
+
 	}
 
 	/**
@@ -174,7 +166,8 @@ class InvoiceGenerator{
 	 */
 	public function modifyInvoiceTemplate() : self {
 		$this->contents = $this->fetchTemplateContents();
-		$renderer = new InvoiceRenderer($this->contents, $this->generateContextArrayForRenderer(), $this->time_offset_minutes);
+		$this->generateContextArrayForRenderer();
+		$renderer = new InvoiceRenderer($this->contents, $this->data);
 		$this->contents = $renderer->render();
 		return $this;
 	}
@@ -202,8 +195,7 @@ class InvoiceGenerator{
 		$this->pdf_object = App::make('dompdf.wrapper');
 		$this->pdf_object->loadHTML($this->contents);
 
-		//$filename = $this->formatDateTime($this->invoice_data->created_at, true, true);
-		$filename = General::formatDateTime($this->invoice_data->created_at, $this->time_offset_minutes, true, true);
+		$filename = General::formatDateTime($this->data['meta']['created_at'], $this->data['meta']['timezone_offset_minutes'], true, true);
 		if($add_random){
 			$filename .= '_' . uniqid();
 		}

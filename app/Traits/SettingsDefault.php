@@ -202,7 +202,7 @@
 					],
 					[
 						'id'		=>	2,
-						'text'		=>	'Company id',
+						'text'		=>	'Company id', //this is not auto increment id, this is company identification number like registered with MCA.
 						'value'		=>	General::replaceWithUnderscores('Company id'),
 						'mapped'	=>	['id_number'],
 						'type'		=>	'normal'
