@@ -137,10 +137,11 @@ class InvoiceService{
 	 *
 	 * @param integer $company_id
 	 * @param integer $invoice_id
+	 * @param integer $timezone_offset_minutes
 	 * @return array
 	 */
-	public function fetchInvoice(int $company_id, int $invoice_id) : array {
-		return $this->invoice_fetch_service->fetchInvoice($company_id, $invoice_id);
+	public function fetchInvoice(int $company_id, int $invoice_id, int $timezone_offset_minutes) : array {
+		return $this->invoice_fetch_service->fetchInvoice($company_id, $invoice_id, $timezone_offset_minutes);
 	}
 
 	/**
@@ -187,6 +188,16 @@ class InvoiceService{
 			throw new InvoiceException('Something went wrong', 'something_wrong', 500);
 		}
 		
+	}
+
+	/**
+	 * fetchSnapshot function
+	 *
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function fetchSnapshot(int $invoice_id) : array {
+		return $this->invoice_fetch_service->fetchSnapshot($invoice_id);
 	}
 
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
+use App\Http\Requests\Invoice\FetchInvoiceRequest;
 use App\Http\Requests\Invoice\InvoiceGenerationRequest;
 use App\Http\Requests\Product\SearchProductRequest;
 use App\Jobs\GenerateInvoiceJob;
@@ -97,7 +98,7 @@ class InvoiceController extends Controller{
 	}
 
 	public function fetchArrangedColumns(Request $request){
-		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'invoices', 'invoices', InvoicesCustomField::class, 'invoice', remove_columns:['invoice_terms', 'send_email', 'pattern_matched', 'scan_chars', 'settings_snapshot', 'client_id', 'company_id'], additional_fields: $this->additional_fields);
+		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'invoices', 'invoices', InvoicesCustomField::class, 'invoice', remove_columns:['invoice_terms', 'send_email', 'pattern_matched', 'scan_chars', 'settings_snapshot', 'client_id', 'company_id', 'timezone_offset_minutes'], additional_fields: $this->additional_fields);
 	}
 	
 
@@ -221,14 +222,14 @@ class InvoiceController extends Controller{
 
 	}
 
-	public function show(GenericRequest $request, int $invoice_id){
+	public function show(FetchInvoiceRequest $request, int $invoice_id){
 
 		$data = $request->validated();
 
 		try{
 
 			$invoice_id = (int) Sanitize::input($invoice_id);
-			return $this->invoice_service->fetchInvoice((int) $data['company_id'], (int) $invoice_id);
+			return $this->invoice_service->fetchInvoice((int) $data['company_id'], (int) $invoice_id, (int) $data['timezone_offset_minutes']);
 
 		}catch(InvoiceException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
@@ -302,6 +303,15 @@ class InvoiceController extends Controller{
 			->exec()
 			->generatePDF(save: false, add_random: false)
 			->download();
+	}
+
+	public function snapshot(GenericRequest $request, int $invoice_id){
+
+		$invoice_id = (int) Sanitize::input($invoice_id);
+
+		return $this->invoice_service->fetchSnapshot($invoice_id);
+
+
 	}
 
 	// public function fetchForView(InvoiceGenerationRequest $request){

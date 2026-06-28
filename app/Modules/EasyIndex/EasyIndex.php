@@ -25,6 +25,7 @@ class EasyIndex{
 		'searchable_dates'		=>	[],
 		'show_columns'			=>	[], //must have label and text for each element
 	];
+	private array $skip_columns = [];
 
 	private array $map_additional_searchables = [];
 
@@ -146,6 +147,17 @@ class EasyIndex{
 	}
 
 	/**
+	 * setSkipColumns function
+	 *
+	 * @param array $skip_columns
+	 * @return self
+	 */
+	public function setSkipColumns(array $skip_columns) : self {
+		$this->skip_columns = $skip_columns;
+		return $this;
+	}
+
+	/**
 	 * processTempLabel function
 	 *
 	 * @param string $temp_label
@@ -215,7 +227,7 @@ class EasyIndex{
 		
 		$joins = $this->getJoins($clients_flat_columns);
 
-		$fields = $this->datatable->setVars($data)->setModel($this->model)->skipColumns(['deleted_at', 'updated_at'])->setDatesColumns($searchable_dates)->setCompanyId($company_id)->setJoins($joins)->setSearchableColumns($searchable_columns);
+		$fields = $this->datatable->setVars($data)->setModel($this->model)->skipColumns(array_merge(['deleted_at', 'updated_at'], $this->skip_columns))->setDatesColumns($searchable_dates)->setCompanyId($company_id)->setJoins($joins)->setSearchableColumns($searchable_columns);
 		
 		if(!empty($this->rewrites['data'])){
 			$fields = $fields->setRewrites($this->rewrites['data']);
