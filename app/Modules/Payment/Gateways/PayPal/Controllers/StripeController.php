@@ -31,6 +31,8 @@ class StripeController extends Controller{
 
 			$payment->handlePayment($data, $request);
 
+			return response('ok', 200);
+
 		}catch(PaymentException $e){
 
 			if($e->getValidity() === 'unsupported_event'){

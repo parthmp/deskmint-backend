@@ -148,6 +148,12 @@ class Stripe implements PaymentGatewayInterface{
 				return true;
 			}
 
+			$payment_status = $data['data']['object']['payment_status'];
+
+			if($payment_status !== 'paid'){
+				return true;
+			}
+
 			$payment_intent_id = $data['data']['object']['payment_intent'];
 
 			$payment_intent = $this->stripe_client->paymentIntents->retrieve($payment_intent_id, [
