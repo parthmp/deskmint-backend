@@ -353,7 +353,7 @@ class InvoiceBaseService{
 			['snapshot' 	=> $snapshot]
 		);
 
-		return $invoice_id;
+		return $invoice->id;
 
 	}
 

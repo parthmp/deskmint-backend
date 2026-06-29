@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
 use App\Modules\Payment\DatabaseOperations;
 use App\Modules\Payment\Exceptions\PaymentException;
+use App\Modules\Payment\Jobs\FetchStripeBalanceTransactionJob;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use Brick\Math\BigDecimal;
 use Illuminate\Http\Request;
@@ -137,13 +138,54 @@ class Stripe implements PaymentGatewayInterface{
 		}
 
 		$event_type = $data['type'] ?? null;
-		
+
 		if((string) $event_type === 'checkout.session.completed'){
+
+			$order_id = $data['order_id'];
+			$transaction = $this->database_operations->fetchTransactionByTokenId($order_id);
+
+			if($transaction->is_payment_captured){
+				return true;
+			}
+
+			$payment_intent_id = $data['data']['object']['payment_intent'];
+
+			$payment_intent = $this->stripe_client->paymentIntents->retrieve($payment_intent_id, [
+				'expand' => ['latest_charge.balance_transaction']
+			]);
+
+			$balance_transaction = $payment_intent->latest_charge->balance_transaction;
+
+			$gateway_fee = '0';
+			$net_amount  = '0';
+
+			if($balance_transaction){
+
+				$gateway_fee = BigDecimal::of($balance_transaction->fee)->dividedBy(100, 2, RoundingMode::HalfUp)->__toString();
+
+				$net_amount = BigDecimal::of($balance_transaction->net)->dividedBy(100, 2, RoundingMode::HalfUp)->__toString();
+
+				if($balance_transaction->currency !== strtolower($this->currency)){
+
+					$exchange_rate = BigDecimal::of($balance_transaction->exchange_rate);
+					$gateway_fee = BigDecimal::of($gateway_fee)->dividedBy($exchange_rate, 2, RoundingMode::HalfUp)->__toString();
+					$net_amount = BigDecimal::of($net_amount)->dividedBy($exchange_rate, 2, RoundingMode::HalfUp)->__toString();
+
+				}
+
+			}else{
+				FetchStripeBalanceTransactionJob::dispatch($payment_intent_id, $transaction->id, $this->secret, $this->currency)->delay(10);
+			}
+			
+			$data['gateway_fees_amount'] = $gateway_fee;
+			$data['received_amount'] = $net_amount;
+
 			return $this->database_operations->updateStripePaymentTransaction($data);
+
 		}
 
 		throw new PaymentException("Unsupported event", "unsupported_event", config('global.error_code'));
-		
+
 	}
 
 }

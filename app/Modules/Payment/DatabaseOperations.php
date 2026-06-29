@@ -223,10 +223,19 @@ class DatabaseOperations{
 
 			}else if($event_type === 'PAYMENT.CAPTURE.COMPLETED'){
 
+				
+				$breakdown = $data['resource']['seller_receivable_breakdown'];
+
+				$gateway_fee  = $breakdown['paypal_fee']['value'];         		// 0.94  - PayPal's cut
+				$net_amount   = $breakdown['net_amount']['value'];         		// 14.92 - what you actually received
+				
+				$transaction->gateway_fees_amount = $gateway_fee;
+				$transaction->received_amount = $net_amount;
+
 				$transaction->is_payment_captured = 1;
 				$transaction->payment_captured_details = json_encode($data);
 				$saved = $transaction->save();
-
+				
 				$this->markInvoicePaidnDeduct((int) $transaction->invoice_id, (float) $data['resource']['amount']['value']);
 
 			}else if($event_type === 'PAYMENT.CAPTURE.PENDING'){
@@ -253,6 +262,16 @@ class DatabaseOperations{
 	}
 
 	/**
+	 * fetchTransactionByTokenId function
+	 *
+	 * @param string $identifer
+	 * @return Transaction
+	 */
+	public function fetchTransactionByTokenId(string $identifer) : Transaction {
+		return Transaction::where('token_id_identifier', '=', $identifer)->first();
+	}
+
+	/**
 	 * updateStripePaymentTransaction function
 	 *
 	 * @param array $data
@@ -268,10 +287,12 @@ class DatabaseOperations{
 			Log::error('Payment update failed $transaction was null');
 			throw new PaymentException('failed to update database', 'db_failed', config('global.error_code'));
 		}
-	
+		
 		$transaction->is_approved = 1;
 		$transaction->is_payment_captured = 1;
 		$transaction->payment_captured_details = json_encode($data);
+		$transaction->gateway_fees_amount = $data['gateway_fees_amount'];
+		$transaction->received_amount = $data['received_amount'];
 		$transaction->save();
 		
 		$amount = (int) $data['data']['object']['amount_total'];

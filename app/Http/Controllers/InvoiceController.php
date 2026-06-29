@@ -19,6 +19,7 @@ use App\Services\Invoice\Exceptions\InvoiceException;
 use App\Services\Invoice\InvoiceService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 
 /**
@@ -115,27 +116,6 @@ class InvoiceController extends Controller{
 		
 
 	}
-
-	/**
-	 * sendInvoiceEmail function
-	 *
-	 * @param Request $request
-	 * @param integer $company_id
-	 * @param integer $invoice_id
-	 * @return string
-	 */
-	private function sendInvoiceEmail(Request $request, int $company_id, int $invoice_id) : string {
-		//send invoice in email if the setting is switched on.
-		//should check for e invoice setting before sending xml in invoice servie class.
-		$do_send = (bool) Sanitize::input($request->input('settings.send_invoice_in_email'));
-		if($do_send){
-			// $timezone_offset_minutes = Sanitize::input($request->input('timezone_offset_minutes'));
-			GenerateInvoiceJob::dispatch($company_id, $invoice_id, $this->invoice_service);
-			return ' and invoice has been sent';
-		}
-
-		return '';
-	}
 	
 	/**
 	 * store function
@@ -152,11 +132,27 @@ class InvoiceController extends Controller{
 			$this->invoice_service->validateAllForInvoice($request, $company_id);
 
 			try{
+				
+				$do_send = (bool) Sanitize::input($request->input('settings.send_invoice_in_email'));
 
-				$invoice_id = $this->invoice_service->save($request, $company_id);
+				DB::transaction(function() use ($request, $company_id, $do_send) {
 
+					$invoice_id = $this->invoice_service->save($request, $company_id);
+					
+					if($do_send){
+						
+						DB::afterCommit(function() use ($company_id, $invoice_id) {
+							GenerateInvoiceJob::dispatch($company_id, $invoice_id, $this->invoice_service);
+						});
+					}
+					
+				});
+								
 				$message = 'Invoice created successfully';
-				$message .= $this->sendInvoiceEmail($request, $company_id, $invoice_id);
+
+				if($do_send){
+					$message .= ' and invoice has been sent';
+				}
 
 				return response(['message' => $message, 'validity' => 'invoice_created'], 200);
 
@@ -187,10 +183,25 @@ class InvoiceController extends Controller{
 
 			try{
 
-				$invoice_id = $this->invoice_service->save($request, $company_id, $invoice_id);
+				$do_send = (bool) Sanitize::input($request->input('settings.send_invoice_in_email'));
+
+				DB::transaction(function() use ($request, $company_id, $do_send, $invoice_id) {
+
+					$invoice_id = $this->invoice_service->save($request, $company_id, $invoice_id);
+					
+					if($do_send){
+						DB::afterCommit(function() use ($company_id, $invoice_id) {
+							GenerateInvoiceJob::dispatch($company_id, $invoice_id, $this->invoice_service);
+						});
+					}
+					
+				});
 
 				$message = 'Invoice updated successfully';
-				$message .= $this->sendInvoiceEmail($request, $company_id, $invoice_id);
+
+				if($do_send){
+					$message .= ' and invoice has been sent';
+				}
 
 				return response(['message' => $message, 'validity' => 'invoice_created'], 200);
 
@@ -203,10 +214,6 @@ class InvoiceController extends Controller{
 		}catch(Exception $e){
 			return General::wentWrong();
 		}
-
-		
-
-		
 
 	}
 
@@ -300,23 +307,5 @@ class InvoiceController extends Controller{
 
 
 	}
-
-	// public function fetchForView(InvoiceGenerationRequest $request){
-
-	// 	$data = $request->validated();
-
-	// 	try{
-
-	// 		$response = app(InvoiceGenerator::class)->setCompanyId((int) $data['company_id'])->setInvoiceId((int) $data['invoice_id'])->setTimeOffsetMinutes((int) $data['time_offset_minutes'])->exec()->generateContextArrayForRenderer();
-	// 		return $response;
-
-	// 	}catch(Exception $e){
-
-	// 		return General::wentWrong();
-
-	// 	}
-		
-
-	// }
 
 }
