@@ -166,7 +166,7 @@ class FlatTable{
 			case 'time':
 			case 'telephone':
 				$length = $params[0] ?? 191;
-				return $table->string($name, $length)->default('');
+				return $table->string($name, $length)->nullable()->default('');
 				break;
 
 			case 'text':
@@ -190,7 +190,7 @@ class FlatTable{
 
 			default:
 				$length = $params[0] ?? 191;
-				return $table->string($name, $length)->default('');
+				return $table->string($name, $length)->nullable()->default('');
 				break;
 		}
 

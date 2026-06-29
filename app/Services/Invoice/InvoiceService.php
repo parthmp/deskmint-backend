@@ -176,6 +176,10 @@ class InvoiceService{
 			}
 		}
 
+		if($this->invoice_repository->ifInvoiceLockedMultiple($ids)){
+			throw new InvoiceException('One or more invoices has payment attached, unable to delete.', 'unable to delete', config('global.error_code'));
+		}
+
 		try{
 
 			$flat_table = 'invoices_flat';

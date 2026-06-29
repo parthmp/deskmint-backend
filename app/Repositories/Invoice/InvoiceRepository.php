@@ -243,5 +243,15 @@ class InvoiceRepository{
 
 	}
 
+	/**
+	 * ifInvoiceLockedMultiple function
+	 *
+	 * @param array $invoice_ids
+	 * @return boolean
+	 */
+	public function ifInvoiceLockedMultiple(array $invoice_ids) : bool {
+		return Transaction::whereIn('invoice_id', $invoice_ids)->where('is_payment_captured', 1)->exists();
+	}
+
 
 }
