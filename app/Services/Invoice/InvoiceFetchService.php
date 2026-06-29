@@ -348,7 +348,8 @@ class InvoiceFetchService{
 		return [
 			'invoice'			=>	$invoice,
 			'custom_fields' 	=> 	$custom_fields,
-			'product_rows'		=>	$product_rows
+			'product_rows'		=>	$product_rows,
+			'locked'			=>	$this->invoice_repository->ifInvoiceLocked($invoice_id)
 		];
 
 	}

@@ -70,8 +70,8 @@ class InvoiceService{
 	 * @param integer $company_id
 	 * @return mixed
 	 */
-	public function validateAllForInvoice(Request $request, int $company_id){
-		return $this->invoice_validation_service->validateAllForInvoice($request, $company_id);
+	public function validateAllForInvoice(Request $request, int $company_id, int $invoice_id = 0){
+		return $this->invoice_validation_service->validateAllForInvoice($request, $company_id, $invoice_id);
 	}
 	
 	/**

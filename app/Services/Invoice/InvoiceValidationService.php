@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Modules\CustomFields\CustomFields;
 use App\Modules\CustomFields\Exceptions\InvalidCustomFieldsException;
 use App\Repositories\Client\ClientRepository;
+use App\Repositories\Invoice\InvoiceRepository;
 use App\Repositories\Product\ProductRepository;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use App\Services\Product\ProductFieldService;
@@ -21,7 +22,8 @@ class InvoiceValidationService extends ProductFieldService {
 		private CustomFields $custom_fields, 
 		private InvoiceSettingsService $invoice_settings_service,
 		private ProductRepository $product_repository,
-		private ClientRepository $client_repository
+		private ClientRepository $client_repository,
+		private InvoiceRepository $invoice_repository
 	){}
 
 	/**
@@ -205,7 +207,13 @@ class InvoiceValidationService extends ProductFieldService {
 	 * @param integer $company_id
 	 * @return boolean
 	 */
-	public function validateAllForInvoice(Request $request, int $company_id) : bool {
+	public function validateAllForInvoice(Request $request, int $company_id, int $invoice_id = 0) : bool {
+
+		if($invoice_id > 0){
+			if($this->invoice_repository->ifInvoiceLocked($invoice_id)){
+				throw new InvoiceException('Readonly : This invoice has payments attached to it', 'invalid_request_tab2', config('global.error_code'), 2);
+			}
+		}
 
 		$tab0_valid = $this->validateInvoiceDetails($request);
 		

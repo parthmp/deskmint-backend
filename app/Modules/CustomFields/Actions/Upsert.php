@@ -113,7 +113,7 @@ class Upsert{
 
 							$temp_values = $this->timeFlatValue($field->required, $custom_fields_submitted[$z]['value']);
 							$flat_value = $temp_values['flat_value'];
-							$value = $temp_values['value'];
+							$value = $temp_values['value'] ?? '';
 
 						}else if($field->customFieldType->input_type === config('global.field_types')[9]){ //multiselect
 							$value = json_encode('');
@@ -141,7 +141,7 @@ class Upsert{
 			
 			$temp_upsert[$type.'_id'] = $db_id;
 			$temp_upsert[$type.'s_custom_field_id'] = $field->id;
-			$temp_upsert['field_value'] = $value;
+			$temp_upsert['field_value'] = $value ?? '';
 
 			$upsert[] = $temp_upsert;
 		}

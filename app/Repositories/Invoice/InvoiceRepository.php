@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceSnapshot;
+use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -229,5 +230,18 @@ class InvoiceRepository{
 		return $snapshot->snapshot;
 	}
 	
+	/**
+	 * ifInvoiceLocked function
+	 *
+	 * @param integer $invoice_id
+	 * @return boolean
+	 */
+	public function ifInvoiceLocked(int $invoice_id) : bool {
+
+		$transactions = Transaction::where([['invoice_id', '=', $invoice_id], ['is_payment_captured', '=', 1]])->count();
+		return $transactions > 0;
+
+	}
+
 
 }

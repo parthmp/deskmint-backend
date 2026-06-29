@@ -179,7 +179,7 @@ class InvoiceController extends Controller{
 
 		try{
 
-			$this->invoice_service->validateAllForInvoice($request, $company_id);
+			$this->invoice_service->validateAllForInvoice($request, $company_id, $invoice_id);
 
 			try{
 
