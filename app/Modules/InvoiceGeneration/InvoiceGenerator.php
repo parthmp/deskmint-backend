@@ -473,12 +473,17 @@ class InvoiceGenerator{
 			$payment_settings['amount'] = $this->live_invoice_data->balance_due;
 			$payment_settings['secret'] = decrypt($payment_settings['secret']);
 			
-			$payment_gateway_url = $this->generatePaymentURL((int) $this->data['meta']['payment_method'], $payment_settings);
+			if((int) $this->live_invoice_data->is_paid === 0){
+
+				$payment_gateway_url = $this->generatePaymentURL((int) $this->data['meta']['payment_method'], $payment_settings);
 			
-			if(!$payment_gateway_url){
-				//send an email to admins to notify the failure.
-				$this->sendUrlGenerationFailedEmail();
+				if(!$payment_gateway_url){
+					//send an email to admins to notify the failure.
+					$this->sendUrlGenerationFailedEmail();
+				}
+
 			}
+			
 		}
 		
 
@@ -500,7 +505,7 @@ class InvoiceGenerator{
 			$payment_gateway_url
 		];
 
-		if((int) $this->data['meta']['payment_method'] === PAYMENT_CASH || (int) $this->data['meta']['payment_method'] === PAYMENT_NETBANKING){
+		if((int) $this->data['meta']['payment_method'] === PAYMENT_CASH || (int) $this->data['meta']['payment_method'] === PAYMENT_NETBANKING || (int) $this->live_invoice_data->is_paid === 1){
 			$content = $this->replaceBetweenTags($content,  '[{online-payment-start}]', '[{online-payment-end}]', '');
 		}
 
