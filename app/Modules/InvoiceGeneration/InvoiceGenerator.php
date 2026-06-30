@@ -183,7 +183,7 @@ class InvoiceGenerator{
 	 *
 	 * @return self
 	 */
-	public function generateEInvoice() : self {
+	public function generateEInvoice() : mixed {
 		
 		$created_at = General::formatDateTime($this->live_invoice_data->created_at, $this->data['meta']['timezone_offset_minutes'], false, true);
 		$due_date = Carbon::create($this->live_invoice_data->due_date);
@@ -274,24 +274,43 @@ class InvoiceGenerator{
 
 			$vat_rate = 0;
 
+			//for normal tax field.
 			foreach($this->data['meta']['product_rows_data'] as $row){
 				
 				if($row['type'] === 'normal'){
+
 					$mapped = $row['mapped'];
+
 					if($mapped[0] === 'tax'){
+
 						$vat_rate += (float) $item['tax'];
+						break;
+
 					}
 
-				}else{
-					//for custom product row fields.
-					if((int) $row['tax'] === 1){
+				}
+			}
 
-						//for tax fields
-						$vat_rate += (float) $row['tax_rate'];
+			foreach($this->data['meta']['product_rows_data'] as $row){
+				
+				if($row['type'] !== 'normal'){
+
+					if((bool) $row['tax']){
+
+						$id_column = (int) $row['id_column'];
+						if(isset($item['custom_field_values'])){
+
+							foreach($item['custom_field_values'] as $custom_field){
+								if((int) $custom_field['apc_field_id'] === $id_column){
+									$vat_rate += (float) $custom_field['value'];
+								}
+							}
+
+						}
+						
 
 					}
 				}
-
 			}
 
 			$line->setVatRate($vat_rate);
@@ -308,6 +327,7 @@ class InvoiceGenerator{
 		$disk = Storage::disk($this->disk);
 		$filename = str_ireplace('pdf', 'xml', $this->filename);
 		$disk->put($this->invoice_id.DIRECTORY_SEPARATOR.$filename, $xml);
+		
 		return $this;
 
 	}
