@@ -11,6 +11,11 @@ class Invoice extends Model{
 
 	protected $table = 'invoices';
 
+	protected $casts = [
+		'invoice_date' => 'datetime',
+		'due_date'     => 'datetime',
+	];
+
 	public function client(){
 		return $this->belongsTo(Client::class, 'client_id');
 	}

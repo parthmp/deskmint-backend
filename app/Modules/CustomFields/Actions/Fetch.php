@@ -2,6 +2,8 @@
 
 namespace App\Modules\CustomFields\Actions;
 
+use App\Helpers\General;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 
 class Fetch{
@@ -26,7 +28,10 @@ class Fetch{
 	 * @return Collection
 	 */
 	public function fetchCustomFields(int $company_id) : Collection {
-		return $this->model::where('company_id', '=', $company_id)->whereHas('customFieldType')->orderBy('order_on_add_edit_page', 'asc')->with('customFieldType')->get();
+		
+		$collection = $this->model::where('company_id', '=', $company_id)->whereHas('customFieldType')->orderBy('order_on_add_edit_page', 'asc')->with('customFieldType')->get();
+		return $collection;
+		
 	}
 
 

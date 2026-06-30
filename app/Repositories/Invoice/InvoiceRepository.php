@@ -8,6 +8,7 @@ use App\Models\InvoiceItem;
 use App\Models\InvoiceSnapshot;
 use App\Models\Transaction;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -161,13 +162,15 @@ class InvoiceRepository{
 	 * fetchById function
 	 *
 	 * @param integer $invoice_id
-	 * @return array
+	 * @return Invoice|null
 	 */
-	public function fetchById(int $invoice_id) : array {
+	public function fetchById(int $invoice_id) : ?Invoice {
 		
 		//return Invoice::where('id', '=', $invoice_id)->with('client_wt')->first();
 	
-		return (array) DB::table('invoices')->select('invoices.*', 'currencies.id as currency_id', 'currencies.code as currency_code', 'clients.first_name', 'clients.last_name')->join('clients', 'clients.id', 'invoices.client_id')->join('currencies', 'currencies.id', '=', 'clients.currency_id')->where('invoices.id', '=', $invoice_id)->first();
+		//return (array) DB::table('invoices')->select('invoices.*', 'currencies.id as currency_id', 'currencies.code as currency_code', 'clients.first_name', 'clients.last_name')->join('clients', 'clients.id', 'invoices.client_id')->join('currencies', 'currencies.id', '=', 'clients.currency_id')->where('invoices.id', '=', $invoice_id)->first();
+
+		return Invoice::select('invoices.*', 'currencies.id as currency_id', 'currencies.code as currency_code', 'clients.first_name', 'clients.last_name')->join('clients', 'clients.id', '=', 'invoices.client_id')->join('currencies', 'currencies.id', '=', 'clients.currency_id')->where('invoices.id', $invoice_id)->first();
 		
 	}
 

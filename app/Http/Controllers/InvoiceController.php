@@ -9,6 +9,7 @@ use App\Http\Requests\Invoice\FetchInvoiceRequest;
 use App\Http\Requests\Invoice\InvoiceGenerationRequest;
 use App\Http\Requests\Product\SearchProductRequest;
 use App\Jobs\GenerateInvoiceJob;
+use App\Models\Invoice;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoicesCustomField;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
@@ -222,7 +223,7 @@ class InvoiceController extends Controller{
 		$data = $request->validated();
 
 		try{
-
+			
 			$invoice_id = (int) Sanitize::input($invoice_id);
 			return $this->invoice_service->fetchInvoice((int) $data['company_id'], (int) $invoice_id, (int) $data['timezone_offset_minutes']);
 

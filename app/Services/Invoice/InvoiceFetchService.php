@@ -335,9 +335,9 @@ class InvoiceFetchService{
 			throw new InvoiceException('invalid invoice id', 'invalid_invoice_id', config('global.error_code'));
 		}
 		
-		unset($invoice['pattern_matched']);
-		unset($invoice['scan_chars']);
-		unset($invoice['settings_snapshot']);
+		unset($invoice->pattern_matched);
+		unset($invoice->scan_chars);
+		unset($invoice->settings_snapshot);
 
 		//$product_columns = $this->invoice_repository->fetchCustomProductColumnValues($invoice_id, $company_id);
 

@@ -204,6 +204,8 @@ class Printing{
 		
 		if(!$parsed){
 			$default_value = '';
+		}else{
+			$default_value = (new DateTime())->createFromFormat('Y-m-d', $default_value)->format('Y-m-d\TH:i:s.000000\Z');
 		}
 
 		return $default_value;
@@ -254,7 +256,10 @@ class Printing{
 		}
 		
 		if($parsed){
+			
+			$default_value = (new DateTime())->createFromFormat('Y-m-d H:i:s', $default_value)->format('Y-m-d\TH:i:s.000000\Z');
 			$return_value = $default_value;
+
 		}
 
 		return $return_value;
