@@ -272,7 +272,7 @@ class InvoiceGenerator{
 			$allowance->setReason('Discount')->setAmount($item['discount_amount']); // the calculated discount amount
 			$line->addAllowance($allowance);
 
-			$vat_rate = 0;
+			$vat_rate = BigDecimal::of(0);
 
 			//for normal tax field.
 			foreach($this->data['meta']['product_rows_data'] as $row){
@@ -283,7 +283,7 @@ class InvoiceGenerator{
 
 					if($mapped[0] === 'tax'){
 
-						$vat_rate += (float) $item['tax'];
+						$vat_rate = $vat_rate->plus($item['tax']);
 						break;
 
 					}
@@ -302,7 +302,7 @@ class InvoiceGenerator{
 
 							foreach($item['custom_field_values'] as $custom_field){
 								if((int) $custom_field['apc_field_id'] === $id_column){
-									$vat_rate += (float) $custom_field['value'];
+									$vat_rate = $vat_rate->plus($custom_field['value']);
 								}
 							}
 
@@ -313,7 +313,7 @@ class InvoiceGenerator{
 				}
 			}
 
-			$line->setVatRate($vat_rate);
+			$line->setVatRate($vat_rate->toScale(2, RoundingMode::HalfUp)->__toString());
 			$inv->addLine($line);
 			
 		}
