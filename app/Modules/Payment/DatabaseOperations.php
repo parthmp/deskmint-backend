@@ -4,6 +4,7 @@ namespace App\Modules\Payment;
 
 use App\Models\Invoice;
 use App\Models\Transaction;
+use App\Models\TransactionGatewayDetail;
 use App\Modules\Payment\Exceptions\PaymentException;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use Illuminate\Support\Facades\DB;
@@ -43,8 +44,6 @@ class DatabaseOperations{
 		$transaction->payment_method = $data['payment_method'];
 		$transaction->mode = $data['mode'];
 		$transaction->token_id_identifier = $data['token_id_identifier'];
-		$transaction->payment_approved_details = $data['payment_approved_details'];
-		$transaction->payment_captured_details = $data['payment_captured_details'];
 		$transaction->is_approved = $data['is_approved'];
 		$transaction->is_payment_captured = $data['is_payment_captured'];
 		return $transaction->save();
@@ -218,8 +217,13 @@ class DatabaseOperations{
 			if($event_type === 'CHECKOUT.ORDER.APPROVED'){
 				
 				$transaction->is_approved = 1;
-				$transaction->payment_approved_details = json_encode($data);
 				$saved = $transaction->save();
+
+				TransactionGatewayDetail::updateOrCreate(
+					['transaction_id' => $transaction->id],
+					['payment_approved_details' => json_encode($data)]
+				);
+
 
 			}else if($event_type === 'PAYMENT.CAPTURE.COMPLETED'){
 
@@ -233,19 +237,29 @@ class DatabaseOperations{
 				$transaction->received_amount = $net_amount;
 
 				$transaction->is_payment_captured = 1;
-				$transaction->payment_captured_details = json_encode($data);
+				$transaction->paid_at = now();
+				
 				$saved = $transaction->save();
+
+				TransactionGatewayDetail::updateOrCreate(
+					['transaction_id' => $transaction->id],
+					['payment_captured_details' => json_encode($data)]
+				);
 				
 				$this->markInvoicePaidnDeduct((int) $transaction->invoice_id, (float) $data['resource']['amount']['value']);
 
 			}else if($event_type === 'PAYMENT.CAPTURE.PENDING'){
 
 				$transaction->is_echeck = ($data['resource']['status_details']['reason'] === 'ECHECK') ? 1 : 0;
-				$transaction->echeck_pending_details = ($data['resource']['status_details']['reason'] === 'ECHECK') ? json_encode($data) : null;
 				
 				$transaction->is_pending = 1;
 
 				$saved = $transaction->save();
+
+				TransactionGatewayDetail::updateOrCreate(
+					['transaction_id' => $transaction->id],
+					['echeck_pending_details' => ($data['resource']['status_details']['reason'] === 'ECHECK') ? json_encode($data) : null]
+				);
 
 			}
 
@@ -290,10 +304,16 @@ class DatabaseOperations{
 		
 		$transaction->is_approved = 1;
 		$transaction->is_payment_captured = 1;
-		$transaction->payment_captured_details = json_encode($data);
+		//$transaction->payment_captured_details = json_encode($data);
 		$transaction->gateway_fees_amount = $data['gateway_fees_amount'];
 		$transaction->received_amount = $data['received_amount'];
+		$transaction->paid_at = now();
 		$transaction->save();
+
+		TransactionGatewayDetail::updateOrCreate(
+			['transaction_id' => $transaction->id],
+			['payment_captured_details' => json_encode($data)]
+		);
 		
 		$amount = (int) $data['data']['object']['amount_total'];
 		$amount = BigDecimal::of($amount)->dividedBy(100, 2, RoundingMode::HalfUp)->toFloat();

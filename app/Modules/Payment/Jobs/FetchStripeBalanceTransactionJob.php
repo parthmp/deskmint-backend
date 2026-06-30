@@ -3,6 +3,7 @@
 namespace App\Modules\Payment\Jobs;
 
 use App\Models\Transaction;
+use App\Models\TransactionGatewayDetail;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Exception;
@@ -56,13 +57,17 @@ class FetchStripeBalanceTransactionJob implements ShouldQueue
             return;
         }
 
-		$captured_details = json_decode($transaction->payment_captured_details, true);
+		$gateway_details = TransactionGatewayDetail::where('transaction_id', '=', $transaction->id)->first();
+
+		$captured_details = json_decode($gateway_details->payment_captured_details, true);
 		$captured_details['balance_transaction'] = $balance_transaction->toArray();
 
        	$transaction->gateway_fees_amount = $gateway_fee->__toString();
 		$transaction->received_amount = $net_amount->__toString();
-		$transaction->payment_captured_details = json_encode($captured_details);
         $transaction->save();
+
+		$gateway_details->payment_captured_details = json_encode($captured_details);
+		$gateway_details->save();
     }
 
     public function failed(Exception $exception): void {

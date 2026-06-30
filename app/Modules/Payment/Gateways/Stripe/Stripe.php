@@ -59,8 +59,6 @@ class Stripe implements PaymentGatewayInterface{
 			'payment_method'				=>	PAYMENT_STRIPE,
 			'mode'							=>	'-',
 			'token_id_identifier'			=>	$order_id,
-			'payment_approved_details'		=>	null,
-			'payment_captured_details'		=>	null,
 			'is_approved'					=>	0,
 			'is_payment_captured'			=>	0
 		]);
