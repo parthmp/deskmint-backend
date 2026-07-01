@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\General;
 use App\Helpers\Sanitize;
+use App\Http\Requests\GenericRequest;
 use App\Models\ClientsCustomField;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
@@ -113,5 +114,16 @@ class ClientsController extends Controller{
 			return General::wentWrong();
 		}
 	}
+
+	// public function fetchClientInvoices(GenericRequest $request, int $client_id){
+
+	// 	$data = $request->validated();
+
+	// 	$client_id = (int) Sanitize::input((string) $client_id);
+	// 	$company_id = (int) Sanitize::input((string) $data['company_id']);
+
+	// 	return $this->client_service->fetchClientInvoices($company_id, $client_id, $request);
+
+	// }
 
 }

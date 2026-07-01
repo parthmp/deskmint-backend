@@ -8,6 +8,8 @@ use App\Helpers\Sanitize;
 use App\Models\Client;
 use App\Models\ClientCustomFieldValue;
 use App\Models\ClientsCustomField;
+use App\Models\Invoice;
+use App\Models\InvoicesCustomField;
 use App\Modules\ArrangedDataTableColumns\DatabaseOperations\DatabaseOperations as ArrangedDataTableDatabaseOperations;
 use App\Modules\CustomFields\CustomFields;
 use App\Modules\DataTable\DataTable;
@@ -16,6 +18,7 @@ use App\Repositories\Client\ClientRepository;
 use App\Repositories\Currency\CurrencyRepository;
 use App\Repositories\Industry\IndustryRepository;
 use App\Services\Client\Exceptions\ClientException;
+use App\Services\Invoice\Exceptions\InvoiceException;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -187,6 +190,87 @@ class ClientFetchService{
 
 		return $this->easy_index->setType('client')->setCustomFieldClass(ClientsCustomField::class)->setJoins($joins)->setExceptionClass(ClientException::class)->setRequest($request)->setDefaultColumns($default_columns)->setRewrites($rewrites)->setModel(Client::class)->fetchIndex();
 	}
+
+	
+	// public function fetchClientInvoices(int $company_id, int $client_id, Request $request) : array {
+
+	// 	$joins = [
+	// 				[
+	// 					'table' => 'currencies',
+	// 					'first' => 'invoices.currency_id',
+	// 					'operator' => '=',
+	// 					'second' => 'currencies.id',
+	// 					'columns' => ['currencies.code as currency_code']
+	// 				]
+	// 			];
+
+	
+	// 	$default_columns = [
+	// 		'searchable_columns'	=>	['invoices.invoice_number', 'invoices.due_date', 'invoices.balance_due', 'invoices.total', 'currencies.code', 'invoices.is_paid'],
+	// 		'searchable_dates'		=>	['invoices.due_date'],
+	// 		'show_columns'			=>	[
+	// 			[
+	// 				'label'	=>	'invoice_number',
+	// 				'text'	=>	'Invoice #',
+	// 			],
+	// 			[
+	// 				'label'	=>	'due_date',
+	// 				'text'	=>	'Due date',
+	// 			],
+	// 			[
+	// 				'label'	=>	'balance_due',
+	// 				'text'	=>	'Balance due',
+	// 			],
+				
+	// 			[
+	// 				'label'	=>	'total',
+	// 				'text'	=>	'Total',
+	// 			],
+	// 			[
+	// 				'label'	=>	'currency_code',
+	// 				'text'	=>	'Currency',
+	// 			],
+	// 			[
+	// 				'label'	=>	'is_paid',
+	// 				'text'	=>	'Paid',
+	// 			]
+	// 		],
+	// 	];
+
+	// 	$rewrites = [
+	// 			'data' => [
+	// 				'invoices.is_paid' => [
+	// 					0	=>	'No',
+	// 					1	=>	"Yes"
+	// 				],
+	// 			],
+
+	// 			'ui'	=>	[
+	// 				'is_paid'	=>	[
+	// 					[
+	// 						'type'			=>	'label',
+	// 						'highlight'		=>	'error',
+	// 						'text'			=>	'No',
+	// 						'value'			=>	0,
+	// 					],
+	// 					[
+	// 						'type'			=>	'label',
+	// 						'highlight'		=>	'success',
+	// 						'text'			=>	'Yes',
+	// 						'value'			=>	1,
+	// 					]
+	// 				]
+	// 			]
+	// 		];
+
+	// 	$and_where = [
+	// 		['client_id', '=', $client_id],
+	// 		['company_id', '=', $company_id]
+	// 	];
+
+	// 	//adding the type that does not exist disables custom fields and the config fetching from user_index_columns, hacky but works.
+	// 	return $this->easy_index->setType('invoice_doesnt_exist')->setCustomFieldClass(InvoicesCustomField::class)->setJoins($joins)->setAndWhere($and_where)->setExceptionClass(InvoiceException::class)->setRequest($request)->setDefaultColumns($default_columns)->setRewrites($rewrites)->setModel(Invoice::class)->fetchIndex();
+	// }
 
 	
 	/**

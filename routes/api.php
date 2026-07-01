@@ -80,6 +80,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::post('manage-clients/save-arranged-columns', [ClientsController::class, 'saveArrangedColumns']);
 	Route::resource('manage-clients', ClientsController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	Route::delete('manage-clients', [ClientsController::class, 'destroy']);
+	//Route::get('manage-clients/invoices/{id}', [ClientsController::class, 'fetchClientInvoices']);
 
 	Route::resource('manage-products', ProductsController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	Route::delete('manage-products', [ProductsController::class, 'destroy']);

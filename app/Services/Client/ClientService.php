@@ -34,6 +34,11 @@ class ClientService{
 		return $this->client_fetch_service->fetchIndex($request);
 	}
 
+	
+	// public function fetchClientInvoices(int $company_id, int $client_id, Request $request) : array {
+	// 	return $this->client_fetch_service->fetchClientInvoices($company_id, $client_id, $request);
+	// }
+
 	/**
 	 * deleteClients function
 	 *

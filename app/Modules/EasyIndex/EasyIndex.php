@@ -17,7 +17,7 @@ class EasyIndex{
 
 	private string $type;
 	private string $custom_fields_class;
-	private array $joins;
+	private array $joins = [];
 	private string $exception_class;
 	private Request $request;
 	private array $default_columns = [
@@ -32,6 +32,8 @@ class EasyIndex{
 	private array $rewrites = [];
 
 	private string $model;
+
+	private array $and_where = [];
 
 	public function __construct(private ArrangedDBperations $arranged_db_operations, private CustomFields $custom_fields, private DataTable $datatable){}
 	
@@ -121,6 +123,17 @@ class EasyIndex{
 	 */
 	public function setAdditionalSearchables(array $additional_searchables) : self {
 		$this->map_additional_searchables = $additional_searchables;
+		return $this;
+	}
+
+	/**
+	 * setAndWhere function
+	 *
+	 * @param array $conditions
+	 * @return self
+	 */
+	public function setAndWhere(array $conditions) : self {
+		$this->and_where = $conditions;
 		return $this;
 	}
 
@@ -225,9 +238,19 @@ class EasyIndex{
 
 	private function processDataTable(array $clients_flat_columns, array $data, array $searchable_dates, array $searchable_columns, int $company_id, array $joins) : LengthAwarePaginator {
 		
-		$joins = $this->getJoins($clients_flat_columns);
+		if(!empty($clients_flat_columns)){
+			$joins = $this->getJoins($clients_flat_columns);
+		}else{
+			$joins = $this->joins;
+		}
+		//$fields = $this->datatable->setVars($data)->setModel($this->model)->skipColumns(array_merge(['deleted_at', 'updated_at'], $this->skip_columns))->setDatesColumns($searchable_dates)->setCompanyId($company_id)->setJoins($joins)->setAndWhere($this->and_where)->setSearchableColumns($searchable_columns);
+		$dt_object = $this->datatable->setVars($data)->setModel($this->model)->skipColumns(array_merge(['deleted_at', 'updated_at'], $this->skip_columns))->setDatesColumns($searchable_dates)->setCompanyId($company_id);
 
-		$fields = $this->datatable->setVars($data)->setModel($this->model)->skipColumns(array_merge(['deleted_at', 'updated_at'], $this->skip_columns))->setDatesColumns($searchable_dates)->setCompanyId($company_id)->setJoins($joins)->setSearchableColumns($searchable_columns);
+		if(!empty($joins)){
+			$dt_object = $dt_object->setJoins($joins);
+		}
+		
+		$fields = $dt_object->setAndWhere($this->and_where)->setSearchableColumns($searchable_columns);
 		
 		if(!empty($this->rewrites['data'])){
 			$fields = $fields->setRewrites($this->rewrites['data']);

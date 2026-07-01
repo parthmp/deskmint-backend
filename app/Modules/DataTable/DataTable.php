@@ -41,6 +41,7 @@ class DataTable{
 	private array $searchable_columns_with_tables = [];
 	private array $allowed_sorting_directions = ['asc', 'desc'];
 	private ?int $company_id = null;
+	private array $and_where = [];
 	
 	/**
 	 * setVars function
@@ -76,6 +77,17 @@ class DataTable{
 		$this->allowed_columns = Schema::getColumnListing($this->table);
 		return $this;
 
+	}
+
+	/**
+	 * setAndWhere function
+	 *
+	 * @param array $conditions
+	 * @return self
+	 */
+	public function setAndWhere(array $conditions) : self {
+		$this->and_where = $conditions;
+		return $this;
 	}
 
 	/**
@@ -222,7 +234,6 @@ class DataTable{
 	 * @return self
 	 */
 	public function executeJoins() : self {
-
 		if(empty($this->joins)){
 			return $this;
 		}
@@ -231,6 +242,14 @@ class DataTable{
 	
 		return $this;
 
+	}
+
+	public function executeAndWhere() : self {
+		if(empty($this->and_where)){
+			return $this;
+		}
+		$this->fields = $this->query_builder->andWhere($this->fields, $this->and_where);
+		return $this;
 	}
 
 	/**
@@ -318,7 +337,7 @@ class DataTable{
 	 */
 	public function results() : mixed {
 
-		$this->setPaginate()->setFields()->executeJoins()->executeCompanyId()->executeDateRange()->executeSearchTerm()->setPaginateSortedColumns()->executeRewrites();
+		$this->setPaginate()->setFields()->executeJoins()->executeAndWhere()->executeCompanyId()->executeDateRange()->executeSearchTerm()->setPaginateSortedColumns()->executeRewrites();
 		
 		if($this->paginate){
 			$fields = $this->fields->orderBy($this->table.'.id', 'desc')->paginate($this->per_page, ["{$this->table}.*"], 'page', (int)$this->current_page);

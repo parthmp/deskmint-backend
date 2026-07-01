@@ -79,6 +79,12 @@ class QueryBuilder{
 
 	}
 
+	public function andWhere(Builder $fields, array $and_where) : Builder {
+		
+		return $fields->where($and_where);
+
+	}
+
 	/**
 	 * buildForDateRange function
 	 *
