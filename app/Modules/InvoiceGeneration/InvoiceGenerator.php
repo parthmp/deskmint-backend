@@ -26,6 +26,7 @@ use Einvoicing\Party;
 use Einvoicing\Presets;
 use Einvoicing\Writers\UblWriter;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\URL;
 
 class InvoiceGenerator{
 
@@ -41,7 +42,6 @@ class InvoiceGenerator{
 	private string $disk = 'temp_invoices';
 	private array $invoice_content;
 	private array $data;
-	private ?Transaction $payment_url_data = null;
 	
 	/**
 	 * __construct function
@@ -116,8 +116,7 @@ class InvoiceGenerator{
 		}
 		$this->live_invoice_data = $this->invoice_db_operations->fetchInvoiceRowObj();
 		$this->data = $this->invoice_db_operations->fetchInvoiceSnapshot($this->invoice_id);
-		$this->payment_url_data = $this->invoice_db_operations->fetchPaymentUrlData($this->invoice_id);
-
+		
 	}
 
 	/**
@@ -394,23 +393,6 @@ class InvoiceGenerator{
 	}
 
 	/**
-	 * generatePaymentURL function
-	 *
-	 * @return string|null
-	 */
-	private function generatePaymentURL(int $payment_gateway, array $data) : ?string {
-		
-		$payment = match($payment_gateway){
-
-			PAYMENT_PAYPAL => new Payment(new PayPal($this->invoice_id, $data['client_id'], $data['app_id'], $data['secret'], $data['mode'], $data['currency'], (float) $data['amount'])),
-			PAYMENT_STRIPE => new Payment(new Stripe($this->invoice_id, $data['secret'], $data['currency'], (float) $data['amount'])),
-		};
-
-		return $payment->paymentURL();
-		
-	}
-
-	/**
 	 * sendUrlGenerationFailedEmail function
 	 *
 	 * @return void
@@ -483,41 +465,7 @@ class InvoiceGenerator{
 		$payment_gateway_url = '';
 		
 		if((int) $this->data['meta']['payment_method'] !== PAYMENT_CASH && (int) $this->data['meta']['payment_method'] !== PAYMENT_NETBANKING){
-			
-			$payment_settings = $this->invoice_db_operations->fetchPaymentSettings((int) $this->data['meta']['payment_method']);
-			
-			if(!$payment_settings){
-				logger('something went wrong with payment settings data -> '.json_encode($payment_settings));
-				throw new Exception("something went wrong");
-			}
-			
-			$payment_settings = json_decode($payment_settings['settings_json'], true);
-			$payment_settings['currency'] = $currency;
-			$payment_settings['amount'] = $this->live_invoice_data->balance_due;
-			$payment_settings['secret'] = decrypt($payment_settings['secret']);
-			
-			if((int) $this->live_invoice_data->is_paid === 0){
-
-				if($this->payment_url_data === null){
-
-					$payment_gateway_url = $this->generatePaymentURL((int) $this->data['meta']['payment_method'], $payment_settings);
-			
-					if(!$payment_gateway_url){
-						$this->sendUrlGenerationFailedEmail();
-					}
-
-				}else{
-
-					//update url here.
-					//$this->updatePaymentURL((int) $this->data['meta']['payment_method'], $this->payment_url_data->gateway_url_identifier, $payment_settings);
-					$payment_gateway_url = $this->payment_url_data->url;
-
-				}
-
-				
-
-			}
-			
+			$payment_gateway_url = URL::signedRoute('invoice.pay', ['uuid' => $this->live_invoice_data->uuid]);
 		}
 		
 
@@ -536,7 +484,7 @@ class InvoiceGenerator{
 			Carbon::parse($this->live_invoice_data->invoice_date)->format('d-M-Y'),
 			Carbon::parse($this->live_invoice_data->due_date)->format('d-M-Y'),
 			$this->live_invoice_data->invoice_number,
-			$payment_gateway_url
+			'<a href="'.$payment_gateway_url.'" target="_blank">'.$payment_gateway_url.'</a>'
 		];
 
 		if((int) $this->data['meta']['payment_method'] === PAYMENT_CASH || (int) $this->data['meta']['payment_method'] === PAYMENT_NETBANKING || (int) $this->live_invoice_data->is_paid === 1){

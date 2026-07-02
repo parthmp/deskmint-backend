@@ -339,36 +339,6 @@ class InvoiceBaseService{
 		/* override manual reset here */
 		$this->resetManualInvoieNumberResetFlag($company_id);
 
-		if($invoice_id > 0){
-			
-			//overwrite invoice object with currency.
-			$invoice = $this->invoice_db_operations->fetchInvoiceWithCurrency($invoice->id);
-
-			$this->invoice_db_operations->setCompanyId($invoice->company_id)->setInvoiceId($invoice->id)->execRequiredSettings();
-			$payment_data = $this->invoice_db_operations->fetchPaymentUrlData($invoice->id);
-			
-			if($payment_data !== null){
-				
-				//update the payment gateway url here.
-				$payment_settings = $this->invoice_db_operations->fetchPaymentSettings((int) $invoice->payment_method);
-				if(!$payment_settings){
-					logger('something went wrong with payment settings data -> '.json_encode($payment_settings));
-					throw new Exception("something went wrong");
-				}
-				
-				
-
-				$payment_settings = json_decode($payment_settings['settings_json'], true);
-				$payment_settings['currency'] = $invoice->currency->code;
-				$payment_settings['amount'] = $invoice->balance_due;
-				$payment_settings['secret'] = decrypt($payment_settings['secret']);
-				
-				UpdatePaymentUrlJob::dispatch($invoice, $payment_data->gateway_url_identifier, $payment_settings);
-
-			}
-			
-		}
-
 		$snapshot = app(Snapshot::class)
 						->setCompanyId($company_id)
 						->setInvoiceId($invoice->id)

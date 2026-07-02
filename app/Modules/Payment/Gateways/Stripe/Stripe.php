@@ -193,8 +193,4 @@ class Stripe implements PaymentGatewayInterface{
 
 	}
 
-	public function updateUrl(string $gateway_url_identifier) : bool {
-		return true;
-	}
-
 }

@@ -189,28 +189,4 @@ class PayPal implements PaymentGatewayInterface{
 		
 	}
 
-	/**
-	 * updateUrl function
-	 *
-	 * @param string $gateway_url_identifier
-	 * @return boolean
-	 */
-	public function updateUrl(string $gateway_url_identifier) : bool {
-
-		$data = [
-			[
-				'op'    => 'replace',
-				'path'  => "/purchase_units/@reference_id=='default'/amount",
-				'value' => [
-					'currency_code' => $this->currency,
-					'value'         => $this->amount,
-				],
-			],
-		];
-
-		$response = $this->provider->updateOrder($gateway_url_identifier, $data);
-		return !is_array($response);
-
-	}
-
 }

@@ -15,3 +15,9 @@ Route::get('/', function () {
 	//return $snapshot->output();
     return 'welcome';
 });
+
+
+// routes/web.php
+Route::get('/pay-invoice/{uuid}', function(){
+	return 'works';
+})->name('invoice.pay')->middleware('signed');
