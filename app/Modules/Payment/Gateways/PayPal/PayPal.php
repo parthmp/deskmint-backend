@@ -2,6 +2,7 @@
 
 namespace App\Modules\Payment\Gateways\PayPal;
 
+use App\Models\Transaction;
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
 use App\Modules\Payment\DatabaseOperations;
 use App\Modules\Payment\Exceptions\PaymentException;
@@ -22,7 +23,7 @@ class PayPal implements PaymentGatewayInterface{
 		private string $app_id,
 		private string $secret,
 		private string $mode,
-		private string $currency,
+		private ?string $currency,
 		private float $amount,
 		?DatabaseOperations $database_operations = null
 	){
@@ -85,9 +86,9 @@ class PayPal implements PaymentGatewayInterface{
 	 * createTransaction function
 	 *
 	 * @param string $order_id
-	 * @return boolean
+	 * @return Transaction
 	 */
-	private function createTransaction(string $order_id) : bool {
+	private function createTransaction(string $order_id) : Transaction {
 		return $this->database_operations->insertTransaction([
 			'invoice_id'					=>	$this->invoice_id,
 			'amount'						=>	$this->amount,
@@ -111,8 +112,10 @@ class PayPal implements PaymentGatewayInterface{
 		if(isset($response['id']) && $response['id'] != null){
 			foreach($response['links'] as $link) {
 				if($link['rel'] === 'approve'){
-					$this->createTransaction($response['id']);
-					return $link['href'];
+					$transaction = $this->createTransaction($response['id']);
+					$url = $link['href'];
+					$this->database_operations->insertPaymentUrl($transaction->id, $response['id'], $url);
+					return $url;
 				}
 			}
 		}
@@ -184,6 +187,30 @@ class PayPal implements PaymentGatewayInterface{
 		return $this->database_operations->updatePaymentTransaction($data);
 
 		
+	}
+
+	/**
+	 * updateUrl function
+	 *
+	 * @param string $gateway_url_identifier
+	 * @return boolean
+	 */
+	public function updateUrl(string $gateway_url_identifier) : bool {
+
+		$data = [
+			[
+				'op'    => 'replace',
+				'path'  => "/purchase_units/@reference_id=='default'/amount",
+				'value' => [
+					'currency_code' => $this->currency,
+					'value'         => $this->amount,
+				],
+			],
+		];
+
+		$response = $this->provider->updateOrder($gateway_url_identifier, $data);
+		return !is_array($response);
+
 	}
 
 }

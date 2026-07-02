@@ -10,7 +10,9 @@ use App\Models\Invoice;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceSnapshot;
+use App\Models\PaymentUrl;
 use App\Models\SettingsSection;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Repositories\Company\CompanyRepository;
 use App\Traits\SettingsDefault;
@@ -311,6 +313,28 @@ class InvoiceDBOperations{
 	public function fetchInvoiceSnapshot(int $invoice_id) : array {
 		$snapshot = InvoiceSnapshot::where('invoice_id', '=', $invoice_id)->first();
 		return $snapshot->snapshot;
+	}
+
+	/**
+	 * fetchPaymentUrl function
+	 *
+	 * @param integer $invoice_id
+	 * @return Transaction|null
+	 */
+	public function fetchPaymentUrlData(int $invoice_id) : ?Transaction {
+
+		return Transaction::select('payment_urls.url', 'payment_urls.gateway_url_identifier', 'payment_urls.transaction_id')->join('payment_urls', 'payment_urls.transaction_id', '=', 'transactions.id')->where([['transactions.invoice_id', '=', $invoice_id], ['transactions.is_payment_captured', '=', 0]])->orderBy('transactions.id', 'desc')->first();
+
+	}
+
+	/**
+	 * fetchInvoiceWithCurrency function
+	 *
+	 * @param integer $invoice_id
+	 * @return Invoice
+	 */
+	public function fetchInvoiceWithCurrency(int $invoice_id) : Invoice {
+		return Invoice::where('id', '=', $invoice_id)->with('currency')->first();
 	}
 
 }

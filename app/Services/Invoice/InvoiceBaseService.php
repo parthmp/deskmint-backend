@@ -14,8 +14,14 @@ use App\Services\HandleInvoiceNumbers;
 use App\Services\Product\ProductFieldService;
 use Illuminate\Http\Request;
 use App\Models\InvoiceSnapshot;
+use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\InvoiceGeneration\InvoiceSnapshot as Snapshot;
+use App\Modules\Payment\Gateways\PayPal\PayPal;
+use App\Modules\Payment\Gateways\Stripe\Stripe;
+use App\Modules\Payment\Jobs\UpdatePaymentUrlJob;
+use App\Modules\Payment\Payment;
 use App\Repositories\Client\ClientRepository;
+use Exception;
 
 class InvoiceBaseService{
 
@@ -27,7 +33,8 @@ class InvoiceBaseService{
 		private CustomFields $custom_fields,
 		private ProductRepository $product_repository,
 		private InvoiceSettingsService $invoice_settings_service,
-		private ClientRepository $client_repository
+		private ClientRepository $client_repository,
+		private InvoiceDBOperations $invoice_db_operations
 	){}
 
 	/**
@@ -332,7 +339,35 @@ class InvoiceBaseService{
 		/* override manual reset here */
 		$this->resetManualInvoieNumberResetFlag($company_id);
 
+		if($invoice_id > 0){
+			
+			//overwrite invoice object with currency.
+			$invoice = $this->invoice_db_operations->fetchInvoiceWithCurrency($invoice->id);
 
+			$this->invoice_db_operations->setCompanyId($invoice->company_id)->setInvoiceId($invoice->id)->execRequiredSettings();
+			$payment_data = $this->invoice_db_operations->fetchPaymentUrlData($invoice->id);
+			
+			if($payment_data !== null){
+				
+				//update the payment gateway url here.
+				$payment_settings = $this->invoice_db_operations->fetchPaymentSettings((int) $invoice->payment_method);
+				if(!$payment_settings){
+					logger('something went wrong with payment settings data -> '.json_encode($payment_settings));
+					throw new Exception("something went wrong");
+				}
+				
+				
+
+				$payment_settings = json_decode($payment_settings['settings_json'], true);
+				$payment_settings['currency'] = $invoice->currency->code;
+				$payment_settings['amount'] = $invoice->balance_due;
+				$payment_settings['secret'] = decrypt($payment_settings['secret']);
+				
+				UpdatePaymentUrlJob::dispatch($invoice, $payment_data->gateway_url_identifier, $payment_settings);
+
+			}
+			
+		}
 
 		$snapshot = app(Snapshot::class)
 						->setCompanyId($company_id)

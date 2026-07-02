@@ -3,6 +3,7 @@
 namespace App\Modules\Payment\Gateways\Stripe;
 
 use App\Models\Invoice;
+use App\Models\Transaction;
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
 use App\Modules\Payment\DatabaseOperations;
 use App\Modules\Payment\Exceptions\PaymentException;
@@ -50,9 +51,9 @@ class Stripe implements PaymentGatewayInterface{
 	 * createTransaction function
 	 *
 	 * @param string $order_id
-	 * @return boolean
+	 * @return Transaction
 	 */
-	private function createTransaction(string $order_id) : bool {
+	private function createTransaction(string $order_id) : Transaction {
 		return $this->database_operations->insertTransaction([
 			'invoice_id'					=>	$this->invoice_id,
 			'amount'						=>	$this->amount,
@@ -190,6 +191,10 @@ class Stripe implements PaymentGatewayInterface{
 
 		throw new PaymentException("Unsupported event", "unsupported_event", config('global.error_code'));
 
+	}
+
+	public function updateUrl(string $gateway_url_identifier) : bool {
+		return true;
 	}
 
 }

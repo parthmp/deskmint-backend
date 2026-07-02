@@ -5,6 +5,7 @@ namespace App\Modules\InvoiceGeneration;
 use App\Helpers\General;
 use App\Jobs\SendEmailJob;
 use App\Models\Invoice;
+use App\Models\Transaction;
 use App\Modules\Payment\Gateways\PayPal\PayPal;
 use App\Modules\Payment\Gateways\Stripe\Stripe;
 use App\Modules\Payment\Payment;
@@ -40,6 +41,7 @@ class InvoiceGenerator{
 	private string $disk = 'temp_invoices';
 	private array $invoice_content;
 	private array $data;
+	private ?Transaction $payment_url_data = null;
 	
 	/**
 	 * __construct function
@@ -114,6 +116,7 @@ class InvoiceGenerator{
 		}
 		$this->live_invoice_data = $this->invoice_db_operations->fetchInvoiceRowObj();
 		$this->data = $this->invoice_db_operations->fetchInvoiceSnapshot($this->invoice_id);
+		$this->payment_url_data = $this->invoice_db_operations->fetchPaymentUrlData($this->invoice_id);
 
 	}
 
@@ -495,12 +498,23 @@ class InvoiceGenerator{
 			
 			if((int) $this->live_invoice_data->is_paid === 0){
 
-				$payment_gateway_url = $this->generatePaymentURL((int) $this->data['meta']['payment_method'], $payment_settings);
+				if($this->payment_url_data === null){
+
+					$payment_gateway_url = $this->generatePaymentURL((int) $this->data['meta']['payment_method'], $payment_settings);
 			
-				if(!$payment_gateway_url){
-					//send an email to admins to notify the failure.
-					$this->sendUrlGenerationFailedEmail();
+					if(!$payment_gateway_url){
+						$this->sendUrlGenerationFailedEmail();
+					}
+
+				}else{
+
+					//update url here.
+					//$this->updatePaymentURL((int) $this->data['meta']['payment_method'], $this->payment_url_data->gateway_url_identifier, $payment_settings);
+					$payment_gateway_url = $this->payment_url_data->url;
+
 				}
+
+				
 
 			}
 			

@@ -178,18 +178,18 @@ class InvoiceController extends Controller{
 			return response(['message' => 'invalid data', 'validity' => 'invalid_data', 'tab_switch' => 0], config('global.error_code'));
 		}
 
-		try{
+		//try{
 
 			$this->invoice_service->validateAllForInvoice($request, $company_id, $invoice_id);
 
-			try{
+			//try{
 
 				$do_send = (bool) Sanitize::input($request->input('settings.send_invoice_in_email'));
 
 				DB::transaction(function() use ($request, $company_id, $do_send, $invoice_id) {
 
 					$invoice_id = $this->invoice_service->save($request, $company_id, $invoice_id);
-					
+
 					if($do_send){
 						DB::afterCommit(function() use ($company_id, $invoice_id) {
 							GenerateInvoiceJob::dispatch($company_id, $invoice_id, $this->invoice_service);
@@ -206,15 +206,15 @@ class InvoiceController extends Controller{
 
 				return response(['message' => $message, 'validity' => 'invoice_created'], 200);
 
-			}catch(Exception $e){
-				return General::wentWrong();
-			}
+			// }catch(Exception $e){
+			// 	return General::wentWrong();
+			// }
 
-		}catch(InvoiceException $e){
-			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
+		// }catch(InvoiceException $e){
+		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
 
 	}
 

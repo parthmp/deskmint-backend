@@ -28,4 +28,14 @@ class Payment{
 		return $this->payment_gateway->handlePayment($data, $request);
 	}
 
+	/**
+	 * updateUrl function
+	 *
+	 * @param string $gateway_url_identifier
+	 * @return boolean
+	 */
+	public function updateUrl(string $gateway_url_identifier) : bool {
+		return $this->payment_gateway->updateUrl($gateway_url_identifier);
+	}
+
 }

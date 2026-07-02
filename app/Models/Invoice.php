@@ -32,4 +32,9 @@ class Invoice extends Model{
 		return $this->belongsTo(Company::class, 'company_id')->withTrashed();
 	}
 
+	public function currency(){
+		return $this->belongsTo(Currency::class, 'currency_id');
+	}
+
+
 }

@@ -3,6 +3,7 @@
 namespace App\Modules\Payment;
 
 use App\Models\Invoice;
+use App\Models\PaymentUrl;
 use App\Models\Transaction;
 use App\Models\TransactionGatewayDetail;
 use App\Modules\Payment\Exceptions\PaymentException;
@@ -27,7 +28,7 @@ class DatabaseOperations{
 	 *
 	 * @return Transaction
 	 */
-	public function createEmptyTransaction() : Transaction{
+	public function createEmptyTransaction() : Transaction {
 		return new Transaction();
 	}
 
@@ -35,9 +36,9 @@ class DatabaseOperations{
 	 * insertTransaction function
 	 *
 	 * @param array $data
-	 * @return boolean
+	 * @return Transaction
 	 */
-	public function insertTransaction(array $data) : bool {
+	public function insertTransaction(array $data) : Transaction {
 		$transaction = $this->createEmptyTransaction();
 		$transaction->invoice_id = $data['invoice_id'];
 		$transaction->amount = $data['amount'];
@@ -46,7 +47,8 @@ class DatabaseOperations{
 		$transaction->token_id_identifier = $data['token_id_identifier'];
 		$transaction->is_approved = $data['is_approved'];
 		$transaction->is_payment_captured = $data['is_payment_captured'];
-		return $transaction->save();
+		$transaction->save();
+		return $transaction;
 	}
 
 	/**
@@ -330,6 +332,24 @@ class DatabaseOperations{
 	 */
 	public function fetchInvoiceById(int $invoice_id) : ?Invoice {
 		return Invoice::where('id', '=', $invoice_id)->first();
+	}
+
+	/**
+	 * insertPaymentUrl function
+	 *
+	 * @param integer $transaction_id
+	 * @param string $gateway_url_identifier
+	 * @param string $url_string
+	 * @return boolean
+	 */
+	public function insertPaymentUrl(int $transaction_id, string $gateway_url_identifier, string $url_string) : bool {
+		
+		$payment_url = new PaymentUrl();
+		$payment_url->transaction_id = $transaction_id;
+		$payment_url->gateway_url_identifier = $gateway_url_identifier;
+		$payment_url->url = $url_string;
+		return $payment_url->save();
+
 	}
 
 }

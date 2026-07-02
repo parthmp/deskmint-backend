@@ -14,6 +14,14 @@ interface PaymentGatewayInterface{
 	public function generateUrl() : ?string;
 
 	/**
+	 * updateUrl function
+	 *
+	 * @param string $gateway_url_identifier
+	 * @return boolean
+	 */
+	public function updateUrl(string $gateway_url_identifier) : bool;
+
+	/**
 	 * handlePayment function
 	 *
 	 * @param array $data
