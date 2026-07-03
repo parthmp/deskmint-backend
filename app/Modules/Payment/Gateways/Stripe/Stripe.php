@@ -69,7 +69,7 @@ class Stripe implements PaymentGatewayInterface{
 
 		$payment_id = Str::uuid();
 		
-		$this->createTransaction($payment_id);
+		$transaction = $this->createTransaction($payment_id);
 
 		try{
 
@@ -99,6 +99,8 @@ class Stripe implements PaymentGatewayInterface{
 		}
 
 		$checkout_url = $session->url;
+
+		$this->database_operations->insertPaymentUrl($transaction->id, $payment_id, $checkout_url);
 	
 		return $checkout_url;
 		

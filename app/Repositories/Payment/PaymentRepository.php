@@ -3,6 +3,7 @@
 namespace App\Repositories\Payment;
 
 use App\Models\Invoice;
+use App\Models\Transaction;
 
 class PaymentRepository{
 
@@ -32,6 +33,26 @@ class PaymentRepository{
 	 */
 	public function fetchInvoiceByUuid(string $uuid) : ?Invoice {
 		return Invoice::where('uuid', '=', $uuid)->with('currency')->first();
+	}
+
+	/**
+	 * fetchTransactionOfPast function
+	 *
+	 * @param integer $invoice_id
+	 * @return Transaction|null
+	 */
+	public function fetchTransactionOfPast(int $invoice_id) : ?Transaction {
+		return Transaction::where([['invoice_id', '=', $invoice_id], ['created_at', '>', now()->subHours(2)]])->with('payment_url')->orderBy('id', 'desc')->first();
+	}
+
+	/**
+	 * fetchInvoiceById function
+	 *
+	 * @param integer $invoice_id
+	 * @return Invoice|null
+	 */
+	public function fetchInvoiceById(int $invoice_id) : ?Invoice {
+		return Invoice::where('id', '=', $invoice_id)->first();
 	}
 
 }

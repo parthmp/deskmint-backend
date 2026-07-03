@@ -393,40 +393,6 @@ class InvoiceGenerator{
 	}
 
 	/**
-	 * sendUrlGenerationFailedEmail function
-	 *
-	 * @return void
-	 */
-	private function sendUrlGenerationFailedEmail() : void {
-
-		$data = [
-			'payment_method'		=>  $this->data['meta']['payment_method'] === PAYMENT_PAYPAL ? 'PayPal' : 'Stripe'
-		];
-
-		$info = $this->invoice_db_operations->fetchAdminEmails();
-
-		if($info){
-
-			$first_email = $info[0]['email'];
-			$first_name = $info[0]['name'];
-
-			array_shift($info);
-
-			$info = array_values($info);
-
-			SendEmailJob::dispatch(
-				to: $first_email,
-				to_name: $first_name,
-				mailable_class: \App\Mail\SendFailedPaymentURLGenerationEmail::class,
-				mailable_data: [$data],
-				smtp: $this->smtpSettings(),
-				cc: $info
-			);
-		}
-
-	}
-
-	/**
 	 * replaceBetweenTags function
 	 *
 	 * @param string $text

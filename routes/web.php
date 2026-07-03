@@ -19,3 +19,4 @@ Route::get('/', function () {
 
 Route::get('/pay-invoice/{uuid}', [PaymentController::class, 'showPaymentPage'])->name('invoice.pay')->middleware('signed');
 Route::post('/pay-invoice/checkout/{uuid}', [PaymentController::class, 'generateUrl'])->name('invoice.pay.checkout')->middleware('signed');
+Route::get('/pay-invoice/failure/{payment_method}', [PaymentController::class, 'failedToConnect']);
