@@ -3,6 +3,7 @@
 namespace App\Modules\Payment\Gateways\PayPal;
 
 use App\Models\Transaction;
+use App\Modules\InvoiceGeneration\InvoiceSnapshot;
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
 use App\Modules\Payment\DatabaseOperations;
 use App\Modules\Payment\Exceptions\PaymentException;
@@ -179,6 +180,7 @@ class PayPal implements PaymentGatewayInterface{
 			$transaction = $this->database_operations->fetchTransactionByTokenId($data['order_id']);
 
 			if($transaction->is_payment_captured){
+
 				return true;
 			}
 

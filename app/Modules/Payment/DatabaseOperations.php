@@ -3,9 +3,11 @@
 namespace App\Modules\Payment;
 
 use App\Models\Invoice;
+use App\Models\InvoiceSnapshot;
 use App\Models\PaymentUrl;
 use App\Models\Transaction;
 use App\Models\TransactionGatewayDetail;
+use App\Modules\InvoiceGeneration\InvoiceSnapshot as Snapshot;
 use App\Modules\Payment\Exceptions\PaymentException;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use Illuminate\Support\Facades\DB;
@@ -250,6 +252,8 @@ class DatabaseOperations{
 				
 				$this->markInvoicePaidnDeduct((int) $transaction->invoice_id, (float) $data['resource']['amount']['value']);
 
+				$this->updateInvoiceSnapshot((int) $transaction->invoice_id);
+
 			}else if($event_type === 'PAYMENT.CAPTURE.PENDING'){
 
 				$transaction->is_echeck = ($data['resource']['status_details']['reason'] === 'ECHECK') ? 1 : 0;
@@ -320,8 +324,45 @@ class DatabaseOperations{
 		$amount = (int) $data['data']['object']['amount_total'];
 		$amount = BigDecimal::of($amount)->dividedBy(100, 2, RoundingMode::HalfUp)->toFloat();
 
-		return $transaction->save() && $this->markInvoicePaidnDeduct((int) $transaction->invoice_id, $amount);
+		$saved = $transaction->save() && $this->markInvoicePaidnDeduct((int) $transaction->invoice_id, $amount);
 
+		$this->updateInvoiceSnapshot((int) $transaction->invoice_id);
+
+		return $saved;
+
+	}
+	
+	/**
+	 * updateInvoiceSnapshot function
+	 *
+	 * @param integer $invoice_id
+	 * @return void
+	 */
+	private function updateInvoiceSnapshot(int $invoice_id) : void {
+		
+		$invoice = $this->fetchInvoiceById($invoice_id);
+
+		if($invoice !== null){
+			$snapshot = app(Snapshot::class)
+						->setCompanyId($invoice->company_id)
+						->setInvoiceId($invoice->id)
+						->setTimezoneOffset($invoice->timezone_offset_minutes)
+						->setLogoSnapsot()
+						->setGeneralSettings()
+						->setClientSnapshot()
+						->setCompanySnapshot()
+						->setInvoiceSnapshot()
+						->setInvoiceRowsSnapshot()
+						->setTotalsSnapshot()
+						->setTermsSnapshot()
+						->output();
+
+				InvoiceSnapshot::updateOrCreate(
+					['invoice_id' 	=> $invoice->id],
+					['snapshot' 	=> $snapshot]
+				);
+		}
+		
 	}
 
 	/**
