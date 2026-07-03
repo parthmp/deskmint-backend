@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PaymentController;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\InvoiceGeneration\InvoiceGenerator;
 use App\Modules\InvoiceGeneration\InvoiceSettingsResolver;
@@ -16,8 +17,5 @@ Route::get('/', function () {
     return 'welcome';
 });
 
-
-// routes/web.php
-Route::get('/pay-invoice/{uuid}', function(){
-	return 'works';
-})->name('invoice.pay')->middleware('signed');
+Route::get('/pay-invoice/{uuid}', [PaymentController::class, 'showPaymentPage'])->name('invoice.pay')->middleware('signed');
+Route::post('/pay-invoice/checkout/{uuid}', [PaymentController::class, 'generateUrl'])->name('invoice.pay.checkout')->middleware('signed');

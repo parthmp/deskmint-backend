@@ -379,4 +379,24 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 
 		}
 
+		/**
+		 * getPaymentMethodName function
+		 *
+		 * @param integer $payment_method
+		 * @return string|null
+		 */
+		public static function getPaymentMethodName(int $payment_method) : ?string {
+
+			$payment_method = match((int) $payment_method){
+				PAYMENT_CASH 		=> 'Cash',
+				PAYMENT_NETBANKING 	=> 'NetBanking',
+				PAYMENT_PAYPAL 		=> 'PayPal',
+				PAYMENT_STRIPE 		=> 'Stripe',
+				default 			=> null
+			};
+
+			return $payment_method;
+
+		}
+
 	}

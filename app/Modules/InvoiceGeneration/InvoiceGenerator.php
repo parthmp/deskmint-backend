@@ -484,7 +484,7 @@ class InvoiceGenerator{
 			Carbon::parse($this->live_invoice_data->invoice_date)->format('d-M-Y'),
 			Carbon::parse($this->live_invoice_data->due_date)->format('d-M-Y'),
 			$this->live_invoice_data->invoice_number,
-			'<a href="'.$payment_gateway_url.'" target="_blank">'.$payment_gateway_url.'</a>'
+			$payment_gateway_url
 		];
 
 		if((int) $this->data['meta']['payment_method'] === PAYMENT_CASH || (int) $this->data['meta']['payment_method'] === PAYMENT_NETBANKING || (int) $this->live_invoice_data->is_paid === 1){

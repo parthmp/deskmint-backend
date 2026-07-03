@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Payment\Gateways\PayPal\Controllers;
+namespace App\Modules\Payment\Controllers;
 
 use App\Helpers\General;
 use App\Http\Controllers\Controller;

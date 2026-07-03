@@ -1,7 +1,7 @@
 <?php
 
-use App\Modules\Payment\Gateways\PayPal\Controllers\PayPalController;
-use App\Modules\Payment\Gateways\PayPal\Controllers\StripeController;
+use App\Modules\Payment\Controllers\PayPalController;
+use App\Modules\Payment\Controllers\StripeController;
 use Illuminate\Support\Facades\Route;
 //https://xxx.dev/payments/paypal/webhook
 Route::post('paypal/webhook', [PayPalController::class, 'handlePaymentWebhook']);
@@ -15,3 +15,5 @@ Route::get('/payment-cancel', function(){
 Route::get('/payment-success', function(){
 	return view('payment_info', ['type' => 'pass']);
 });
+
+
