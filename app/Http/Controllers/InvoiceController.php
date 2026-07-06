@@ -23,6 +23,8 @@ use App\Services\Invoice\InvoiceService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 
 /**
@@ -262,7 +264,7 @@ class InvoiceController extends Controller{
 		$data = $request->validated();
 		
 		try{
-			
+
 			$invoice = $this->invoice_service->fetchInvoiceById((int) $data['invoice_id']);
 			
 			if(!$invoice){
@@ -305,13 +307,21 @@ class InvoiceController extends Controller{
 
 		$company_id = (int) $request->query('company_id');
 		$invoice_id = (int) $request->query('invoice_id');
+
+		$invoice = $this->invoice_service->fetchInvoiceById((int) $invoice_id);
+			
+		if(!$invoice){
+			return response(['message' => 'Invalid invoice provided', 'validity' => 'invalid_invoice'], config('global.error_code'));
+		}
+
+		$pdf_path = $invoice->id.DIRECTORY_SEPARATOR.$invoice->pdf_file;
 		
-		// return app(InvoiceGenerator::class)
-		// 	->setCompanyId($company_id)
-		// 	->setInvoiceId($invoice_id)
-		// 	->exec()
-		// 	->generatePDF(save: false, add_random: true)
-		// 	->download();
+		if(!Storage::disk('temp_invoices')->exists($pdf_path)){
+			Log::alert('Could not download. invoice #:'.$invoice->id);
+			throw new Exception('Could not send invoice as an attachment.');
+		}
+		
+		return Storage::disk('temp_invoices')->download($pdf_path);
 
 	}
 
