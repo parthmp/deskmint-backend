@@ -8,6 +8,7 @@ use App\Http\Requests\GenericRequest;
 use App\Http\Requests\Invoice\FetchInvoiceRequest;
 use App\Http\Requests\Invoice\InvoiceGenerationRequest;
 use App\Http\Requests\Product\SearchProductRequest;
+use App\Http\Requests\ToggleCancelRequest;
 use App\Jobs\GenerateInvoiceJob;
 use App\Jobs\SendInvoiceEmailJob;
 use App\Models\Invoice;
@@ -318,7 +319,7 @@ class InvoiceController extends Controller{
 		
 		if(!Storage::disk('temp_invoices')->exists($pdf_path)){
 			Log::alert('Could not download. invoice #:'.$invoice->id);
-			throw new Exception('Could not send invoice as an attachment.');
+			return response(['message' => 'File not found', 'validity' => 'file_not_found'], config('global.error_code'));
 		}
 		
 		return Storage::disk('temp_invoices')->download($pdf_path);
@@ -332,6 +333,32 @@ class InvoiceController extends Controller{
 		return $this->invoice_service->fetchSnapshot($invoice_id);
 
 
+	}
+
+	public function toggleCancel(ToggleCancelRequest $request){
+
+		$data = $request->validated();
+
+		$invoice = $this->invoice_service->fetchInvoiceById((int) $data['invoice_id']);
+
+		if(!$invoice){
+			return response(['message' => 'Invalid invoice provided', 'validity' => 'invalid_invoice'], config('global.error_code'));
+		}
+		
+		if((int) $invoice->status === (int) InvoiceStatus::PAID->value || (int) $invoice->status === (int) InvoiceStatus::PARTIALLY_PAID->value){
+			return response(['message' => 'You can not change status for this invoice', 'validity' => 'status_change_blocked'], config('global.error_code'));
+		}
+
+		try{
+
+			$this->invoice_service->updateInvoiceStatus((int) $data['invoice_id'], (int) $data['status']);
+			GenerateInvoiceJob::dispatch($invoice->company_id, $invoice->id, false);
+			return response(['message' => 'Updated successfully', 'validity' => 'status_change_success'], 200);
+
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+		
 	}
 
 }

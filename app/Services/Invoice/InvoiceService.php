@@ -273,4 +273,15 @@ class InvoiceService{
 		return $this->invoice_repository->fetchInvoiceObjById($invoice_id);
 	}
 
+	/**
+	 * updateInvoiceStatus function
+	 *
+	 * @param integer $invoice_id
+	 * @param integer $status
+	 * @return boolean
+	 */
+	public function updateInvoiceStatus(int $invoice_id, int $status) : bool {
+		return $this->invoice_repository->updateInvoiceStatus($invoice_id, $status);
+	}
+
 }

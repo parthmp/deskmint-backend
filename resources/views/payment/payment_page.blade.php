@@ -1,7 +1,7 @@
 @extends('payment.payment_layout')
 	
   <div class="card">
-	@if($is_paid)
+	@if($is_paid || $is_cancelled)
 
     <span class="badge badge--paid">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -11,11 +11,16 @@
     </span>
 
     <p class="invoice-number">#{{ $invoice->invoice_number }}</p>
-
-    <p class="paid-message">
-      This invoice is already paid. No further action is needed.
-    </p>
-
+	@if($is_paid)
+		<p class="paid-message">
+		This invoice is already paid. No further action is needed.
+		</p>
+	@endif
+	@if($is_cancelled)
+		<p class="paid-message">
+		This invoice is cancelled. No further action is needed.
+		</p>
+	@endif
   @else
     <span class="badge">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">

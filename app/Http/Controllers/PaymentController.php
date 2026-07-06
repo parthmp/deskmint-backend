@@ -31,10 +31,11 @@ class PaymentController extends Controller
 		$checkout_url = URL::signedRoute('invoice.pay.checkout', ['uuid' => $invoice->uuid]);
 
 		$is_paid = ((int) InvoiceStatus::PAID->value === (int) $invoice->status);
+		$is_cancelled = ((int) InvoiceStatus::CANCELLED->value === (int) $invoice->status);
 
 		$due_date = General::formatDateTime($invoice->due_date, $invoice->timezone_offset_minutes);
 
-		return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => $payment_method_name, 'checkout_url' => $checkout_url, 'is_paid' => $is_paid, 'due_date' => $due_date]);
+		return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => $payment_method_name, 'checkout_url' => $checkout_url, 'is_paid' => $is_paid, 'due_date' => $due_date, 'is_cancelled' => $is_cancelled]);
 
 	}
 
@@ -46,10 +47,12 @@ class PaymentController extends Controller
 			die('invalid request');
 		}
 
-		if((int) $invoice->status === (int) InvoiceStatus::PAID->value){
+		if((int) $invoice->status === (int) InvoiceStatus::PAID->value || (int) $invoice->status === (int) InvoiceStatus::CANCELLED->value){
 			$payment_method_name = General::getPaymentMethodName((int) $invoice->payment_method);
 			$due_date = General::formatDateTime($invoice->due_date, $invoice->timezone_offset_minutes);
-			return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => $payment_method_name, 'checkout_url' => '', 'is_paid' => true, 'due_date' => $due_date]);
+			$is_paid = ((int) InvoiceStatus::PAID->value === (int) $invoice->status);
+			$is_cancelled = ((int) InvoiceStatus::CANCELLED->value === (int) $invoice->status);
+			return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => $payment_method_name, 'checkout_url' => '', 'is_paid' => $is_paid, 'is_cancelled' => $is_cancelled,'due_date' => $due_date]);
 		}
 
 		//check if payment url already exist for past 2 hours with same payment method, total.

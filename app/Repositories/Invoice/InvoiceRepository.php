@@ -292,5 +292,18 @@ class InvoiceRepository{
 		return Invoice::where('id', '=', $invoice_id)->with('client_wt', 'currency')->withTrashed()->first();
 	}
 
+	/**
+	 * updateInvoiceStatus function
+	 *
+	 * @param integer $invoice_id
+	 * @param integer $status
+	 * @return boolean
+	 */
+	public function updateInvoiceStatus(int $invoice_id, int $status) : bool {
+		return (bool) Invoice::where('id', '=', $invoice_id)->update([
+			'status'	=>	$status
+		]);
+	}
+
 
 }
