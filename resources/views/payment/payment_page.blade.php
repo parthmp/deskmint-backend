@@ -1,7 +1,7 @@
 @extends('payment.payment_layout')
 	
   <div class="card">
-	@if($invoice->is_paid == 1)
+	@if($is_paid)
 
     <span class="badge badge--paid">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">

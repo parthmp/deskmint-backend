@@ -4,6 +4,7 @@ namespace App\Modules\InvoiceGeneration;
 
 use App\Helpers\General;
 use App\Models\Invoice;
+use App\Modules\Payment\Enums\InvoiceStatus;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -109,7 +110,7 @@ class InvoiceEmailContent {
 			$payment_gateway_url
 		];
 
-		if((int) $this->invoice->payment_method === PAYMENT_CASH || (int) $this->invoice->payment_method === PAYMENT_NETBANKING || (int) $this->invoice->is_paid === 1){
+		if((int) $this->invoice->payment_method === PAYMENT_CASH || (int) $this->invoice->payment_method === PAYMENT_NETBANKING || (int) $this->invoice->status === (int) InvoiceStatus::PAID->value){
 			$content = $this->replaceBetweenTags($content,  '[{online-payment-start}]', '[{online-payment-end}]', '');
 		}
 
@@ -132,10 +133,10 @@ class InvoiceEmailContent {
 
 		$pdf_path = $this->invoice->id.DIRECTORY_SEPARATOR.$this->invoice->pdf_file;
 		
-		// if(!Storage::disk($this->disk)->exists($pdf_path)){
-		// 	Log::alert('Could not send invoice as an attachment. invoice #:'.$this->invoice->id);
-		// 	throw new Exception('Could not send invoice as an attachment.');
-		// }
+		if(!Storage::disk($this->disk)->exists($pdf_path)){
+			Log::alert('Could not send invoice as an attachment. invoice #:'.$this->invoice->id);
+			throw new Exception('Could not send invoice as an attachment.');
+		}
 		
 
 		$attachments = [];

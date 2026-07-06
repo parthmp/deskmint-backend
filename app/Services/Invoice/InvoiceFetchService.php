@@ -357,7 +357,8 @@ class InvoiceFetchService{
 			'invoice'			=>	$invoice,
 			'custom_fields' 	=> 	$custom_fields,
 			'product_rows'		=>	$product_rows,
-			'locked'			=>	$this->invoice_repository->ifInvoiceLocked($invoice_id)
+			'locked'			=>	((int) $invoice->status !== (int) InvoiceStatus::PENDING->value),
+			'cancelled'			=>	((int) $invoice->status === (int) InvoiceStatus::CANCELLED->value)
 		];
 
 	}

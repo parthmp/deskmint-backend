@@ -7,6 +7,7 @@ use App\Models\InvoicesCustomField;
 use App\Models\Product;
 use App\Modules\CustomFields\CustomFields;
 use App\Modules\CustomFields\Exceptions\InvalidCustomFieldsException;
+use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Repositories\Client\ClientRepository;
 use App\Repositories\Invoice\InvoiceRepository;
 use App\Repositories\Product\ProductRepository;
@@ -210,9 +211,21 @@ class InvoiceValidationService extends ProductFieldService {
 	public function validateAllForInvoice(Request $request, int $company_id, int $invoice_id = 0) : bool {
 
 		if($invoice_id > 0){
-			if($this->invoice_repository->ifInvoiceLocked($invoice_id)){
+
+			$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id);
+
+			if(!$invoice){
+				throw new InvoiceException('Invalid data provided', 'invalid_request_tab2', config('global.error_code'), 2);
+			}
+
+			if((int) $invoice->status === (int) InvoiceStatus::PAID->value || (int) $invoice->status === (int) InvoiceStatus::PARTIALLY_PAID->value){
 				throw new InvoiceException('Readonly : This invoice has payments attached to it', 'invalid_request_tab2', config('global.error_code'), 2);
 			}
+
+			if((int) $invoice->status === (int) InvoiceStatus::CANCELLED->value){
+				throw new InvoiceException('Readonly : This invoice has been cancelled', 'invalid_request_tab2', config('global.error_code'), 2);
+			}
+
 		}
 
 		$tab0_valid = $this->validateInvoiceDetails($request);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
+use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Services\Payment\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
@@ -29,7 +30,9 @@ class PaymentController extends Controller
 		$payment_method_name = General::getPaymentMethodName((int) $invoice->payment_method);
 		$checkout_url = URL::signedRoute('invoice.pay.checkout', ['uuid' => $invoice->uuid]);
 
-		return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => $payment_method_name, 'checkout_url' => $checkout_url]);
+		$is_paid = ((int) InvoiceStatus::PAID->value === (int) $invoice->status);
+
+		return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => $payment_method_name, 'checkout_url' => $checkout_url, 'is_paid' => $is_paid]);
 
 	}
 
@@ -41,9 +44,9 @@ class PaymentController extends Controller
 			die('invalid request');
 		}
 
-		if((int) $invoice->is_paid === 1){
+		if((int) $invoice->status === (int) InvoiceStatus::PAID->value){
 			$payment_method_name = General::getPaymentMethodName((int) $invoice->payment_method);
-			return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => $payment_method_name, 'checkout_url' => '']);
+			return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => $payment_method_name, 'checkout_url' => '', 'is_paid' => true]);
 		}
 
 		//check if payment url already exist for past 2 hours with same payment method, total.

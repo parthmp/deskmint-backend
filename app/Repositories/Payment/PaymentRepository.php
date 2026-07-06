@@ -4,6 +4,7 @@ namespace App\Repositories\Payment;
 
 use App\Models\Invoice;
 use App\Models\Transaction;
+use App\Modules\Payment\Enums\InvoiceStatus;
 
 class PaymentRepository{
 
@@ -15,7 +16,7 @@ class PaymentRepository{
 	 */
 	public function ifInvoiceIsPaid(string $uuid) : bool {
 		
-		$invoice = Invoice::where([['uuid', '=', $uuid], ['is_paid', '=', 1]])->first();
+		$invoice = Invoice::where([['uuid', '=', $uuid], ['status', '=', (int) InvoiceStatus::PAID->value]])->first();
 
 		if(!$invoice){
 			return false;
