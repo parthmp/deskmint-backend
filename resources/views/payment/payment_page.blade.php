@@ -28,12 +28,12 @@
 
     <div class="amount-row">
       <span class="amount-label">Amount due</span>
-      <span class="amount-value">{{ $invoice->currency->code }} {{ number_format($invoice->balance_due, 2) }}</span>
+      <span class="amount-value">{{ number_format($invoice->balance_due, 2) }} {{ $invoice->currency->code }}</span>
     </div>
 
     <div class="meta">
       <span>Due date</span>
-      <span>{{ $invoice->due_date->format('M j, Y') }}</span>
+      <span>{{ $due_date }}</span>
     </div>
     <div class="meta">
       <span>Paying via</span>
@@ -43,7 +43,7 @@
     <form method="POST" action="{{ $checkout_url }}" id="pay-form">
 		@csrf
 		<p id="pay-status" class="pay-status" hidden>Redirecting you to {{ $payment_method_name }}, please wait…</p>
-		<button type="submit" id="pay-button">Pay {{ $invoice->currency->code }} {{ number_format($invoice->balance_due, 2) }}</button>
+		<button type="submit" id="pay-button">Pay {{ number_format($invoice->balance_due, 2) }} {{ $invoice->currency->code }} </button>
 		
 	</form>
 

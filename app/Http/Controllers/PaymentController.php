@@ -32,7 +32,9 @@ class PaymentController extends Controller
 
 		$is_paid = ((int) InvoiceStatus::PAID->value === (int) $invoice->status);
 
-		return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => $payment_method_name, 'checkout_url' => $checkout_url, 'is_paid' => $is_paid]);
+		$due_date = General::formatDateTime($invoice->due_date, $invoice->timezone_offset_minutes);
+
+		return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => $payment_method_name, 'checkout_url' => $checkout_url, 'is_paid' => $is_paid, 'due_date' => $due_date]);
 
 	}
 
@@ -46,7 +48,8 @@ class PaymentController extends Controller
 
 		if((int) $invoice->status === (int) InvoiceStatus::PAID->value){
 			$payment_method_name = General::getPaymentMethodName((int) $invoice->payment_method);
-			return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => $payment_method_name, 'checkout_url' => '', 'is_paid' => true]);
+			$due_date = General::formatDateTime($invoice->due_date, $invoice->timezone_offset_minutes);
+			return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => $payment_method_name, 'checkout_url' => '', 'is_paid' => true, 'due_date' => $due_date]);
 		}
 
 		//check if payment url already exist for past 2 hours with same payment method, total.

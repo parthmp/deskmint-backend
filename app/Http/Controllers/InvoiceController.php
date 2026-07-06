@@ -17,6 +17,7 @@ use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
 use App\Modules\CustomFields\CustomFields;
 use App\Modules\InvoiceGeneration\InvoiceGenerator;
+use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use App\Services\Invoice\InvoiceService;
 use Exception;
@@ -258,14 +259,28 @@ class InvoiceController extends Controller{
 
 	public function sendInvoice(InvoiceGenerationRequest $request){
 
-		// $data = $request->validated();
+		$data = $request->validated();
 		
-		// try{
-		// 	GenerateInvoiceJob::dispatch($data['company_id'], $data['invoice_id'], $this->invoice_service);
-		// 	return response(['message' => 'Invoice sent successfully', 'validity' => 'invoice_sent'], 200);
-		// }catch(Exception $e){
-		// 	return General::wentWrong();
-		// }
+		try{
+			
+			$invoice = $this->invoice_service->fetchInvoiceById((int) $data['invoice_id']);
+			
+			if(!$invoice){
+				return response(['message' => 'Invalid invoice provided', 'validity' => 'invalid_invoice'], config('global.error_code'));
+			}
+
+			if((int) $invoice->status === (int) InvoiceStatus::CANCELLED->value){
+				return response(['message' => 'You can not send cancelled invoice', 'validity' => 'can_not_send_cancelled'], config('global.error_code'));
+			}
+
+			$data = $this->invoice_service->prepareEmailData($data['invoice_id']);
+			SendInvoiceEmailJob::dispatch($data['invoice'], $data);
+			
+			return response(['message' => 'Invoice sent successfully', 'validity' => 'invoice_sent'], 200);
+
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 	}
 

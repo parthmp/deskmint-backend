@@ -2,6 +2,7 @@
 
 namespace App\Services\Invoice;
 
+use App\Models\Invoice;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\InvoiceGeneration\InvoiceEmailContent;
 use App\Modules\InvoiceGeneration\InvoiceGenerator;
@@ -260,6 +261,16 @@ class InvoiceService{
 		$content_class = new InvoiceEmailContent();
 		return $content_class->setDisk('temp_invoices')->setInvoice($data['invoice'])->setInvoiceContent($data['content'])->getContent();
 
+	}
+
+	/**
+	 * fetchInvoiceById function
+	 *
+	 * @param integer $invoice_id
+	 * @return invoice|null
+	 */
+	public function fetchInvoiceById(int $invoice_id) : ?Invoice {
+		return $this->invoice_repository->fetchInvoiceObjById($invoice_id);
 	}
 
 }
