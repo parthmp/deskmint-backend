@@ -13,6 +13,7 @@ use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Exceptions\PaymentException;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use App\Services\Invoice\InvoiceService;
+use App\Services\Notifications\NotificationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Brick\Math\BigDecimal;
@@ -173,14 +174,15 @@ class DatabaseOperations{
 	}
 
 	/**
-	 * markInvoicePaid function
+	 * markInvoicePaidnDeduct function
 	 *
-	 * @param integer $invoice_id
+	 * @param Transaction $transaction
+	 * @param float $amount
 	 * @return boolean
 	 */
-	private function markInvoicePaidnDeduct(int $invoice_id, float $amount) : bool {
+	private function markInvoicePaidnDeduct(Transaction $transaction, float $amount) : bool {
 		
-		$invoice = Invoice::where('id', $invoice_id)->first();
+		$invoice = Invoice::where('id', $transaction->invoice_id)->first();
 
 		$amount_paid = BigDecimal::of($amount);
 		$amount_balance_due = BigDecimal::of($invoice->balance_due);
@@ -190,7 +192,15 @@ class DatabaseOperations{
 		$paid_in_full = ($amount_paid->isEqualTo($amount_balance_due) || $amount_paid->isGreaterThan($amount_balance_due)) ? 1 : 0;
 
 		$left = $left->toScale(2, RoundingMode::HalfUp)->__toString();
-		
+
+		//check if invoice was cancelled.
+		if((int) $invoice->status === (int) InvoiceStatus::CANCELLED->value){
+			app(NotificationService::class)->notify($invoice->company_id, 'cancelled_invoice_paid', 'Your customer paid cancelled invoice', 'Invoice: '. $invoice->invoice_number.' was cancelled and customer made a payment towards it. Transaction id: '.$transaction->id.', Identifer: '.$transaction->token_id_identifier, []);
+		}
+
+		if($amount_paid->isGreaterThan($amount_balance_due)){
+			app(NotificationService::class)->notify($invoice->company_id, 'invoice_overpaid', 'Your customer overpaid invoice', 'Invoice: '. $invoice->invoice_number.' was overpaid by your customer. Transaction id: '.$transaction->id.', Identifer: '.$transaction->token_id_identifier, []);
+		}
 
 		$invoice->status = ((int) $paid_in_full === 1) ? (int) InvoiceStatus::PAID->value : (int) InvoiceStatus::PARTIALLY_PAID->value;
 		$invoice->balance_due = $left;
@@ -254,7 +264,7 @@ class DatabaseOperations{
 					['payment_captured_details' => json_encode($data)]
 				);
 				
-				$this->markInvoicePaidnDeduct((int) $transaction->invoice_id, (float) $data['resource']['amount']['value']);
+				$this->markInvoicePaidnDeduct($transaction, (float) $data['resource']['amount']['value']);
 
 				$this->updateInvoiceSnapshot((int) $transaction->invoice_id);
 
@@ -330,7 +340,7 @@ class DatabaseOperations{
 		$amount = (int) $data['data']['object']['amount_total'];
 		$amount = BigDecimal::of($amount)->dividedBy(100, 2, RoundingMode::HalfUp)->toFloat();
 
-		$saved = $transaction->save() && $this->markInvoicePaidnDeduct((int) $transaction->invoice_id, $amount);
+		$saved = $transaction->save() && $this->markInvoicePaidnDeduct($transaction, $amount);
 
 		$this->updateInvoiceSnapshot((int) $transaction->invoice_id);
 

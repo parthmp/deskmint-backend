@@ -5,6 +5,7 @@ use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\InvoiceGeneration\InvoiceGenerator;
 use App\Modules\InvoiceGeneration\InvoiceSettingsResolver;
 use App\Modules\InvoiceGeneration\InvoiceSnapshot;
+use App\Services\Notifications\NotificationService;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -14,6 +15,7 @@ Route::get('/', function () {
 	//return app(InvoiceGenerator::class)->setCompanyId(1)->setInvoiceId(134)->exec()->generatePDF(save: true, add_random: false)->generateEInvoice();
 	//$snapshot = app(InvoiceSnapshot::class)->setCompanyId(1)->setInvoiceId(88)->setTimezoneOffset(-330)->setLogoSnapsot()->setGeneralSettings()->setClientSnapshot()->setCompanySnapshot()->setInvoiceSnapshot()->setInvoiceRowsSnapshot()->setTotalsSnapshot()->setTermsSnapshot();
 	//return $snapshot->output();
+	//app(NotificationService::class)->notify(1, 'test', 'title here', 'message here', ['whatever']);
     return 'welcome';
 });
 

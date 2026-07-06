@@ -272,7 +272,7 @@ class InvoiceDBOperations{
 	 * @return null|array
 	 */
 	public function fetchAdminEmails() : ?array {
-
+		//TODO: when we have persmissions, make sure the "real" admins are fetched.
 		$info = User::select('name', 'email')->get();
 		if($info->isEmpty()){
 			return null;
