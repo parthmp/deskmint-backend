@@ -261,6 +261,10 @@ class InvoiceRepository{
 		return Transaction::whereIn('invoice_id', $invoice_ids)->where('is_payment_captured', 1)->exists();
 	}
 
+	public function ifInvoiceLockedMultipleCancelled(array $invoice_ids) : bool {
+		return Invoice::whereIn('id', $invoice_ids)->where('status', '=', (int) InvoiceStatus::CANCELLED->value)->exists();
+	}
+
 	/**
 	 * updateInvoiceFiles function
 	 *
