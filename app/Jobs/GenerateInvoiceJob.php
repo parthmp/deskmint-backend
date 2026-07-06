@@ -16,14 +16,19 @@ class GenerateInvoiceJob implements ShouldQueue
     public function __construct(
 		private int $company_id,
 		private int $invoice_id,
-		private InvoiceService $invoice_service
+		private bool $do_send = false
 	){}
 
     /**
      * Execute the job.
      */
-    public function handle(): void
+    public function handle(InvoiceService $invoice_service): void
     {
-        $this->invoice_service->generateInvoice($this->company_id, $this->invoice_id);
+        $invoice_service->generateInvoice($this->company_id, $this->invoice_id);
+
+		if($this->do_send){
+			$data = $invoice_service->prepareEmailData($this->invoice_id);
+			SendInvoiceEmailJob::dispatch($data['invoice'], $data);
+		}
     }
 }

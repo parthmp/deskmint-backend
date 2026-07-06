@@ -9,6 +9,7 @@ use App\Http\Requests\Invoice\FetchInvoiceRequest;
 use App\Http\Requests\Invoice\InvoiceGenerationRequest;
 use App\Http\Requests\Product\SearchProductRequest;
 use App\Jobs\GenerateInvoiceJob;
+use App\Jobs\SendInvoiceEmailJob;
 use App\Models\Invoice;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoicesCustomField;
@@ -140,12 +141,9 @@ class InvoiceController extends Controller{
 
 					$invoice_id = $this->invoice_service->save($request, $company_id);
 					
-					//if($do_send){
-						
-						DB::afterCommit(function() use ($company_id, $invoice_id) {
-							GenerateInvoiceJob::dispatch($company_id, $invoice_id, $this->invoice_service);
-						});
-					//}
+					DB::afterCommit(function() use ($company_id, $invoice_id, $do_send) {
+						GenerateInvoiceJob::dispatch($company_id, $invoice_id, $do_send);
+					});
 					
 				});
 								
@@ -190,12 +188,11 @@ class InvoiceController extends Controller{
 
 					$invoice_id = $this->invoice_service->save($request, $company_id, $invoice_id);
 
-					//if($do_send){
-						DB::afterCommit(function() use ($company_id, $invoice_id) {
-							GenerateInvoiceJob::dispatch($company_id, $invoice_id, $this->invoice_service);
-						});
-					//}
-					
+
+					DB::afterCommit(function() use ($company_id, $invoice_id, $do_send) {
+						GenerateInvoiceJob::dispatch($company_id, $invoice_id, $do_send);
+					});
+
 				});
 
 				$message = 'Invoice updated successfully';
@@ -294,12 +291,12 @@ class InvoiceController extends Controller{
 		$company_id = (int) $request->query('company_id');
 		$invoice_id = (int) $request->query('invoice_id');
 		
-		return app(InvoiceGenerator::class)
-			->setCompanyId($company_id)
-			->setInvoiceId($invoice_id)
-			->exec()
-			->generatePDF(save: false, add_random: true)
-			->download();
+		// return app(InvoiceGenerator::class)
+		// 	->setCompanyId($company_id)
+		// 	->setInvoiceId($invoice_id)
+		// 	->exec()
+		// 	->generatePDF(save: false, add_random: true)
+		// 	->download();
 
 	}
 

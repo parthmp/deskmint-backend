@@ -278,5 +278,15 @@ class InvoiceRepository{
 
 	}
 
+	/**
+	 * fetchInvoiceWithClientAndCurrency function
+	 *
+	 * @param integer $invoice_id
+	 * @return Invoice|null
+	 */
+	public function fetchInvoiceWithClientAndCurrency(int $invoice_id) : ?Invoice {
+		return Invoice::where('id', '=', $invoice_id)->with('client_wt', 'currency')->withTrashed()->first();
+	}
+
 
 }

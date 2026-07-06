@@ -81,7 +81,7 @@ class InvoiceDBOperations{
 			PAYMENTS_PAYPAL_TYPE,
 			PAYMENTS_STRIPE_TYPE
 		])->get()->toArray();
-
+		
 		return array_values($settings_data);
 	}
 

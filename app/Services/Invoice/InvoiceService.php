@@ -2,6 +2,8 @@
 
 namespace App\Services\Invoice;
 
+use App\Modules\InvoiceGeneration\InvoiceDBOperations;
+use App\Modules\InvoiceGeneration\InvoiceEmailContent;
 use App\Modules\InvoiceGeneration\InvoiceGenerator;
 use App\Repositories\Client\ClientRepository;
 use App\Repositories\Invoice\InvoiceRepository;
@@ -18,7 +20,8 @@ class InvoiceService{
 		private ProductRepository $product_repository,
 		private InvoiceValidationService $invoice_validation_service,
 		private InvoiceSaveService  $invoice_save_service,
-		private InvoiceRepository $invoice_repository
+		private InvoiceRepository $invoice_repository,
+		private InvoiceDBOperations $invoice_db_operations
 	){}
 
 	/**
@@ -108,7 +111,13 @@ class InvoiceService{
 		return $this->invoice_save_service->save($request, $company_id, $invoice_id);
 	}
 
-	
+	/**
+	 * generateInvoice function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return void
+	 */
 	public function generateInvoice(int $company_id, int $invoice_id) : void {
 		
 		$invoice_generator = app(InvoiceGenerator::class)->setCompanyId((int) $company_id)->setInvoiceId((int) $invoice_id)->exec();
@@ -205,6 +214,48 @@ class InvoiceService{
 	 */
 	public function fetchSnapshot(int $invoice_id) : array {
 		return $this->invoice_fetch_service->fetchSnapshot($invoice_id);
+	}
+
+	/**
+	 * getDataForSendingInvoice function
+	 *
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function getDataForSendingInvoice(int $invoice_id, bool $reminder_content = false) : array {
+
+		$invoice = $this->invoice_repository->fetchInvoiceWithClientAndCurrency($invoice_id);
+		$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId($invoice->company_id)->setInvoiceId($invoice->id)->execRequiredSettings();
+		$content = $this->invoice_db_operations->fetchEmailContentSettings();
+		
+		if(isset($content['settings_json'])){
+			$email_json = json_decode($content['settings_json'], true);
+		}else{
+			$email_json = $content;
+		}
+		
+		if($reminder_content){ //for reminder email
+			return ['invoice' => $invoice, 'content' => $email_json['email_content_reminder']];
+		}
+
+		return ['invoice' => $invoice, 'content' => $email_json['email_content_invoice']];
+
+	}
+
+	/**
+	 * prepareEmailData function
+	 *
+	 * @param integer $invoice_id
+	 * @param boolean $reminder_content
+	 * @return array
+	 */
+	public function prepareEmailData(int $invoice_id, bool $reminder_content = false) : array {
+		
+		$data = $this->getDataForSendingInvoice($invoice_id, $reminder_content);
+
+		$content_class = new InvoiceEmailContent();
+		return $content_class->setDisk('temp_invoices')->setInvoice($data['invoice'])->setInvoiceContent($data['content'])->getContent();
+
 	}
 
 }

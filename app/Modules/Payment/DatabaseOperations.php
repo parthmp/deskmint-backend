@@ -2,14 +2,17 @@
 
 namespace App\Modules\Payment;
 
+use App\Jobs\GenerateInvoiceJob;
 use App\Models\Invoice;
 use App\Models\InvoiceSnapshot;
 use App\Models\PaymentUrl;
 use App\Models\Transaction;
 use App\Models\TransactionGatewayDetail;
 use App\Modules\InvoiceGeneration\InvoiceSnapshot as Snapshot;
+use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Exceptions\PaymentException;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
+use App\Services\Invoice\InvoiceService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Brick\Math\BigDecimal;
@@ -184,11 +187,12 @@ class DatabaseOperations{
 
 		$left = $amount_balance_due->minus($amount_paid);
 
-		$is_paid = ($amount_paid->isEqualTo($amount_balance_due) || $amount_paid->isGreaterThan($amount_balance_due)) ? 1 : 0;
+		$paid_in_full = ($amount_paid->isEqualTo($amount_balance_due) || $amount_paid->isGreaterThan($amount_balance_due)) ? 1 : 0;
 
 		$left = $left->toScale(2, RoundingMode::HalfUp)->__toString();
 		
-		$invoice->is_paid = $is_paid;
+
+		$invoice->status = ((int) $paid_in_full === 1) ? (int) InvoiceStatus::PAID->value : (int) InvoiceStatus::PARTIALLY_PAID->value;
 		$invoice->balance_due = $left;
 
 		return $invoice->save();
@@ -253,6 +257,8 @@ class DatabaseOperations{
 				$this->markInvoicePaidnDeduct((int) $transaction->invoice_id, (float) $data['resource']['amount']['value']);
 
 				$this->updateInvoiceSnapshot((int) $transaction->invoice_id);
+
+				
 
 			}else if($event_type === 'PAYMENT.CAPTURE.PENDING'){
 
@@ -361,6 +367,9 @@ class DatabaseOperations{
 					['invoice_id' 	=> $invoice->id],
 					['snapshot' 	=> $snapshot]
 				);
+
+			//regenerate pdf
+			GenerateInvoiceJob::dispatch($invoice->company_id, $invoice->id);
 		}
 		
 	}
