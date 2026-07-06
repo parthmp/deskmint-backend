@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Modules\Payment\Enums\InvoiceStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -12,8 +13,8 @@ class Invoice extends Model{
 	protected $table = 'invoices';
 
 	protected $casts = [
-		'invoice_date' => 'datetime',
-		'due_date'     => 'datetime',
+		'invoice_date' 	=> 'datetime',
+		'due_date'     	=> 'datetime'
 	];
 
 	public function client(){

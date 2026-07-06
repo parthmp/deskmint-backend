@@ -267,6 +267,7 @@ class EasyIndex{
 					foreach($ui_element as $d_ele){
 						if($ele->{$ui_key} == $d_ele['value']){
 							$ele->{$ui_key} = $d_ele;
+							
 						}
 					}
 

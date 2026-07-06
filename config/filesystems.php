@@ -56,7 +56,7 @@ return [
 
 		'temp_invoices' => [
 			'driver' => 'local',
-			'root' => storage_path('temp/invoices'),
+			'root' => storage_path('app/private/temp/invoices'),
 			'visibility' => 'private',
 			'throw' => false,
 		],

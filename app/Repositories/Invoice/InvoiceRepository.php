@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceSnapshot;
 use App\Models\Transaction;
+use App\Modules\Payment\Enums\InvoiceStatus;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
@@ -61,6 +62,7 @@ class InvoiceRepository{
 		if($invoice_id === 0){
 			$invoice = new Invoice();
 			$invoice->uuid = Str::uuid();
+			$invoice->status = (int) InvoiceStatus::PENDING->value;
 		}else{
 			$invoice = $this->fetchInvoiceObjById($invoice_id);
 		}
@@ -257,6 +259,23 @@ class InvoiceRepository{
 	 */
 	public function ifInvoiceLockedMultiple(array $invoice_ids) : bool {
 		return Transaction::whereIn('invoice_id', $invoice_ids)->where('is_payment_captured', 1)->exists();
+	}
+
+	/**
+	 * updateInvoiceFiles function
+	 *
+	 * @param integer $invoice_id
+	 * @param string $pdf_file
+	 * @param string $xml_file
+	 * @return boolean
+	 */
+	public function updateInvoiceFiles(int $invoice_id, string $pdf_file, string $xml_file) : bool {
+
+		return (bool) Invoice::where('id', '=', $invoice_id)->update([
+			'pdf_file'	=>	$pdf_file,
+			'xml_file'	=>	$xml_file
+		]);
+
 	}
 
 

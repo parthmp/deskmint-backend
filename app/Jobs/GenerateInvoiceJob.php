@@ -24,6 +24,6 @@ class GenerateInvoiceJob implements ShouldQueue
      */
     public function handle(): void
     {
-        $this->invoice_service->sendInvoice($this->company_id, $this->invoice_id);
+        $this->invoice_service->generateInvoice($this->company_id, $this->invoice_id);
     }
 }

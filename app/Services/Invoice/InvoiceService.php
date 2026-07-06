@@ -109,16 +109,19 @@ class InvoiceService{
 	}
 
 	
-	public function sendInvoice(int $company_id, int $invoice_id) : void {
+	public function generateInvoice(int $company_id, int $invoice_id) : void {
 		
 		$invoice_generator = app(InvoiceGenerator::class)->setCompanyId((int) $company_id)->setInvoiceId((int) $invoice_id)->exec();
-		$invoice_generator = $invoice_generator->generatePDF(save:true, add_random:true);
+		$invoice_generator = $invoice_generator->generatePDF(save:true, add_random:false);
 
-		if($this->invoice_repository->ifEInvoiceIsOn($invoice_id)){
+		$xml_on = $this->invoice_repository->ifEInvoiceIsOn($invoice_id);
+
+		if($xml_on){
 			$invoice_generator = $invoice_generator->generateEInvoice();
 		}
 		
-		$invoice_generator->sendEmail();
+		$filename = $invoice_generator->getFilename();
+		$this->invoice_repository->updateInvoiceFiles((int) $invoice_id, $filename.'.pdf', ($xml_on) ? $filename.'.xml' : '');
 
 	}
 

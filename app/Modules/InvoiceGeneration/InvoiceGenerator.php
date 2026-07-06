@@ -42,7 +42,7 @@ class InvoiceGenerator{
 	private string $disk = 'temp_invoices';
 	private array $invoice_content;
 	private array $data;
-	
+
 	/**
 	 * __construct function
 	 *
@@ -132,7 +132,7 @@ class InvoiceGenerator{
 
 		$paid_to_date = $total->minus($balance_due)->toScale(2, RoundingMode::HalfUp)->__toString();
 
-		$renderer = new InvoiceRenderer($this->contents, $this->data, ['balance_due' => $this->live_invoice_data->balance_due, 'paid_to_date' => $paid_to_date]);
+		$renderer = new InvoiceRenderer($this->contents, $this->data, ['balance_due' => $this->live_invoice_data->balance_due, 'paid_to_date' => $paid_to_date, 'status' => $this->live_invoice_data->status]);
 		$this->contents = $renderer->render();
 		return $this;
 		
@@ -145,6 +145,24 @@ class InvoiceGenerator{
 	 */
 	public function getInvoiceHTML() : string {
 		return $this->contents;
+	}
+
+	private function deleteFiles() : void {
+
+		$disk = Storage::disk($this->disk);
+
+		$current_pdf = $this->invoice_id.DIRECTORY_SEPARATOR.$this->filename.'.pdf';
+		$current_xml = $this->invoice_id.DIRECTORY_SEPARATOR.$this->filename.'.xml';
+
+		$current_files = [$current_pdf, $current_xml];
+
+		$files_to_delete = collect($disk->files($this->invoice_id))
+			->reject(fn($path) => in_array($path, $current_files))
+			->values()
+			->all();
+
+		$disk->delete($files_to_delete);
+
 	}
 
 	/**
@@ -166,14 +184,25 @@ class InvoiceGenerator{
 			$filename .= '_' . uniqid();
 		}
 
-		$filename .= '.pdf';
 		$filename = (string) str_ireplace([' ', ':', '-'], '_', $filename);
 		$this->filename = $filename;
 
 		if($save){
 
 			$disk = Storage::disk($this->disk);
-			$disk->put($this->invoice_id.DIRECTORY_SEPARATOR.$filename, $this->pdf_object->output());
+			$saved_pdf = false;
+			try{
+
+				$result = $disk->put($this->invoice_id.DIRECTORY_SEPARATOR.$this->filename.'.pdf', $this->pdf_object->output());
+				logger('inside here');
+				$saved_pdf = $result !== false;
+			}catch(Exception $e){
+				Log::error('PDF save failed for invoice ' . $this->invoice_id . ': ' . $e->getMessage());
+			}
+
+			if($saved_pdf){
+				$this->deleteFiles();
+			}
 			
 		}
 
@@ -327,8 +356,19 @@ class InvoiceGenerator{
 		$writer = new UblWriter();
 		$xml = $writer->export($inv);
 		$disk = Storage::disk($this->disk);
-		$filename = str_ireplace('pdf', 'xml', $this->filename);
-		$disk->put($this->invoice_id.DIRECTORY_SEPARATOR.$filename, $xml);
+		
+		$saved_xml = false;
+		try{
+
+			$result = $disk->put($this->invoice_id.DIRECTORY_SEPARATOR.$this->filename.'.xml', $xml);
+			$saved_xml = $result !== false;
+		}catch(Exception $e){
+			Log::error('XML save failed for invoice ' . $this->invoice_id . ': ' . $e->getMessage());
+		}
+
+		if($saved_xml){
+			$this->deleteFiles();
+		}
 		
 		return $this;
 
@@ -447,8 +487,8 @@ class InvoiceGenerator{
 		$replace = [
 			$this->live_invoice_data->client_wt->first_name,
 			$this->live_invoice_data->client_wt->last_name,
-			Carbon::parse($this->live_invoice_data->invoice_date)->format('d-M-Y'),
-			Carbon::parse($this->live_invoice_data->due_date)->format('d-M-Y'),
+			General::formatDateTime($this->live_invoice_data->invoice_date, (int) $this->live_invoice_data->timezone_offset_minutes, false, false),
+			General::formatDateTime($this->live_invoice_data->invoice_date, (int) $this->live_invoice_data->due_date, false, false),
 			$this->live_invoice_data->invoice_number,
 			$payment_gateway_url
 		];
@@ -465,6 +505,15 @@ class InvoiceGenerator{
 		
 		return $content;
 
+	}
+
+	/**
+	 * getFilename function
+	 *
+	 * @return string
+	 */
+	public function getFilename() : string {
+		return $this->filename;
 	}
 
 	/**

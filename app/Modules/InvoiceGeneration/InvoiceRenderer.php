@@ -3,6 +3,7 @@
 namespace App\Modules\InvoiceGeneration;
 
 use App\Helpers\General;
+use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Repositories\Company\CompanyRepository;
 use App\Services\CompanySettingsLogo\CompanySettingsLogoService;
 use Brick\Math\BigDecimal;
@@ -290,8 +291,18 @@ class InvoiceRenderer extends InvoiceGenerator{
 		return $this;
 	}
 
+	/**
+	 * renderInvoiceStatus function
+	 *
+	 * @return self
+	 */
+	public function renderInvoiceStatus() : self {
+		$this->contents = str_ireplace('{{$invoice_status}}', '<strong>'.InvoiceStatus::getInvoiceStatusLabel((int) $this->live_data['status']).'</strong>', $this->contents);
+		return $this;
+	}
+
 	public function render(){
-		$this->renderLogo()->renderClientDetails()->renderCompanyDetails()->renderInvoiceDetails()->renderProductRows()->renderTotals()->renderTerms()->renderFooter()->modifyThemeColors()->modifyFontSize();
+		$this->renderLogo()->renderClientDetails()->renderCompanyDetails()->renderInvoiceDetails()->renderProductRows()->renderTotals()->renderTerms()->renderFooter()->renderInvoiceStatus()->modifyThemeColors()->modifyFontSize();
 		return $this->contents;
 	}
 

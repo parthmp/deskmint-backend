@@ -11,6 +11,7 @@ use App\Modules\CustomFields\CustomFields;
 use App\Modules\EasyIndex\EasyIndex;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\InvoiceGeneration\InvoiceSettingsResolver;
+use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Repositories\Invoice\InvoiceRepository;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use App\Services\HandleInvoiceNumbers;
@@ -118,7 +119,7 @@ class InvoiceFetchService{
 				];
 
 			$default_columns = [
-				'searchable_columns'	=>	['invoices.invoice_number', 'invoices.total', 'currencies.code', 'invoices.is_paid', 'invoices.first_name', 'invoices.last_name', 'invoices.full_name'],
+				'searchable_columns'	=>	['invoices.invoice_number', 'invoices.total', 'currencies.code', 'invoices.status', 'invoices.first_name', 'invoices.last_name', 'invoices.full_name'],
 				'searchable_dates'		=>	['invoices.created_at', 'invoices.due_date', 'invoices.invoice_date'],
 				'show_columns'			=>	[
 					[
@@ -142,8 +143,8 @@ class InvoiceFetchService{
 						'text'	=>	'Currency',
 					],
 					[
-						'label'	=>	'is_paid',
-	 					'text'	=>	'Paid',
+						'label'	=>	'status',
+	 					'text'	=>	'Status',
 					],
 					[
 						'label'	=>	'full_name',
@@ -162,9 +163,11 @@ class InvoiceFetchService{
 						1	=>	'Percentage',
 						2	=>	"Amount"
 					],
-					'invoices.is_paid' => [
-						0	=>	'No',
-						1	=>	"Yes"
+					'invoices.status' => [
+						InvoiceStatus::PENDING->value				=>	InvoiceStatus::PENDING->label(),
+						InvoiceStatus::CANCELLED->value				=>	InvoiceStatus::CANCELLED->label(),
+						InvoiceStatus::PARTIALLY_PAID->value		=>	InvoiceStatus::PARTIALLY_PAID->label(),
+						InvoiceStatus::PAID->value					=>	InvoiceStatus::PAID->label(),
 					],
 					'invoices.payment_method' => [
 						1	=>	'Cash',
@@ -188,18 +191,30 @@ class InvoiceFetchService{
 							'value'			=>	2,
 						]
 					],
-					'is_paid'	=>	[
+					'status'	=>	[
 						[
 							'type'		=>	'label',
 							'highlight'	=>	'error',
-							'text'		=>	'No',
-							'value'		=>	0,
+							'text'		=>	InvoiceStatus::CANCELLED->label(),
+							'value'		=>	InvoiceStatus::CANCELLED->value,
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'info',
+							'text'		=>	InvoiceStatus::PENDING->label(),
+							'value'		=>	InvoiceStatus::PENDING->value
 						],
 						[
 							'type'		=>	'label',
 							'highlight'	=>	'success',
-							'text'		=>	'Yes',
-							'value'		=>	1
+							'text'		=>	InvoiceStatus::PARTIALLY_PAID->label(),
+							'value'		=>	InvoiceStatus::PARTIALLY_PAID->value
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'success',
+							'text'		=>	InvoiceStatus::PAID->label(),
+							'value'		=>	InvoiceStatus::PAID->value
 						]
 					],
 					'payment_method'	=>	[
@@ -231,13 +246,6 @@ class InvoiceFetchService{
 				]
 
 			];
-
-		// return $this->easy_index->setType('invoice')->setCustomFieldClass(InvoicesCustomField::class)->setJoins($joins)->setExceptionClass(InvoiceException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
-		// 	'c_code'				=>		'currencies.code',
-		// 	'first_name'			=>		'clients.first_name',
-		// 	'last_name'				=>		'clients.last_name',
-		// 	'client_company'		=>		'clients.client_company_name'
-		// ])->setRewrites($rewrites)->setModel(Invoice::class)->fetchIndex();
 
 		return $this->easy_index->setType('invoice')->setCustomFieldClass(InvoicesCustomField::class)->setJoins($joins)->setExceptionClass(InvoiceException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
 			'c_code'				=>		'currencies.code'

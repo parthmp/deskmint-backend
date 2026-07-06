@@ -15,6 +15,7 @@ use App\Services\Product\ProductFieldService;
 use Illuminate\Http\Request;
 use App\Models\InvoiceSnapshot;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
+use App\Modules\InvoiceGeneration\InvoiceGenerator;
 use App\Modules\InvoiceGeneration\InvoiceSnapshot as Snapshot;
 use App\Modules\Payment\Gateways\PayPal\PayPal;
 use App\Modules\Payment\Gateways\Stripe\Stripe;

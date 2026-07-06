@@ -88,7 +88,7 @@ class InvoiceController extends Controller{
 	}
 
 	public function fetchArrangedColumns(Request $request){
-		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'invoices', 'invoices', InvoicesCustomField::class, 'invoice', remove_columns:['invoice_terms', 'send_email', 'pattern_matched', 'scan_chars', 'settings_snapshot', 'client_id', 'company_id', 'timezone_offset_minutes', 'currency_id'], additional_fields: $this->additional_fields);
+		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'invoices', 'invoices', InvoicesCustomField::class, 'invoice', remove_columns:['invoice_terms', 'send_email', 'pattern_matched', 'scan_chars', 'settings_snapshot', 'client_id', 'company_id', 'timezone_offset_minutes', 'currency_id', 'pdf_file', 'xml_file', 'uuid'], additional_fields: $this->additional_fields);
 	}
 	
 
@@ -140,12 +140,12 @@ class InvoiceController extends Controller{
 
 					$invoice_id = $this->invoice_service->save($request, $company_id);
 					
-					if($do_send){
+					//if($do_send){
 						
 						DB::afterCommit(function() use ($company_id, $invoice_id) {
 							GenerateInvoiceJob::dispatch($company_id, $invoice_id, $this->invoice_service);
 						});
-					}
+					//}
 					
 				});
 								
@@ -190,11 +190,11 @@ class InvoiceController extends Controller{
 
 					$invoice_id = $this->invoice_service->save($request, $company_id, $invoice_id);
 
-					if($do_send){
+					//if($do_send){
 						DB::afterCommit(function() use ($company_id, $invoice_id) {
 							GenerateInvoiceJob::dispatch($company_id, $invoice_id, $this->invoice_service);
 						});
-					}
+					//}
 					
 				});
 
@@ -261,14 +261,14 @@ class InvoiceController extends Controller{
 
 	public function sendInvoice(InvoiceGenerationRequest $request){
 
-		$data = $request->validated();
+		// $data = $request->validated();
 		
-		try{
-			GenerateInvoiceJob::dispatch($data['company_id'], $data['invoice_id'], $this->invoice_service);
-			return response(['message' => 'Invoice sent successfully', 'validity' => 'invoice_sent'], 200);
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
+		// try{
+		// 	GenerateInvoiceJob::dispatch($data['company_id'], $data['invoice_id'], $this->invoice_service);
+		// 	return response(['message' => 'Invoice sent successfully', 'validity' => 'invoice_sent'], 200);
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
 
 	}
 
