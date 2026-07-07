@@ -9,15 +9,13 @@ use App\Models\PaymentUrl;
 use App\Models\Transaction;
 use App\Models\TransactionGatewayDetail;
 use App\Modules\InvoiceGeneration\InvoiceSnapshot as Snapshot;
+use App\Modules\Notifications\Enums\NotificationType;
+use App\Modules\Notifications\Notification;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Exceptions\PaymentException;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
-use App\Services\Invoice\InvoiceService;
-use App\Services\Notifications\NotificationService;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Brick\Math\BigDecimal;
-use Brick\Math\BigInteger;
 use Brick\Math\RoundingMode;
 
 class DatabaseOperations{
@@ -195,11 +193,11 @@ class DatabaseOperations{
 
 		//check if invoice was cancelled.
 		if((int) $invoice->status === (int) InvoiceStatus::CANCELLED->value){
-			app(NotificationService::class)->notify($invoice->company_id, 'cancelled_invoice_paid', 'Your customer paid cancelled invoice', 'Invoice: '. $invoice->invoice_number.' was cancelled and customer made a payment towards it. Transaction id: '.$transaction->id.', Identifer: '.$transaction->token_id_identifier, []);
+			app(Notification::class)->notify($invoice->company_id, NotificationType::INVOICE_CANCELLED_PAID, 'Your customer paid cancelled invoice', 'Invoice: '. $invoice->invoice_number.' was cancelled and customer made a payment towards it. Transaction id: '.$transaction->id.', Identifer: '.$transaction->token_id_identifier, []);
 		}
 
 		if($amount_paid->isGreaterThan($amount_balance_due)){
-			app(NotificationService::class)->notify($invoice->company_id, 'invoice_overpaid', 'Your customer overpaid invoice', 'Invoice: '. $invoice->invoice_number.' was overpaid by your customer. Transaction id: '.$transaction->id.', Identifer: '.$transaction->token_id_identifier, []);
+			app(Notification::class)->notify($invoice->company_id, NotificationType::INVOICE_OVERPAID, 'Your customer overpaid invoice', 'Invoice: '. $invoice->invoice_number.' was overpaid by your customer. Transaction id: '.$transaction->id.', Identifer: '.$transaction->token_id_identifier, []);
 		}
 
 		$invoice->status = ((int) $paid_in_full === 1) ? (int) InvoiceStatus::PAID->value : (int) InvoiceStatus::PARTIALLY_PAID->value;

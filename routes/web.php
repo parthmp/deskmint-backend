@@ -5,7 +5,6 @@ use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\InvoiceGeneration\InvoiceGenerator;
 use App\Modules\InvoiceGeneration\InvoiceSettingsResolver;
 use App\Modules\InvoiceGeneration\InvoiceSnapshot;
-use App\Services\Notifications\NotificationService;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {

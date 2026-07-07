@@ -1,15 +1,16 @@
 <?php
 
-namespace App\Services\Notifications;
+namespace App\Modules\Notifications;
 
 use App\Jobs\SendEmailJob;
 use App\Traits\CustomMailSettings;
 use App\Mail\SystemAlert;
 use App\Models\SystemNotification;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
+use App\Modules\Notifications\Enums\NotificationType;
 use Illuminate\Support\Facades\Log;
 
-class NotificationService
+class Notification
 {
     use CustomMailSettings;
 
@@ -19,23 +20,17 @@ class NotificationService
      * Log a notification to DB and email the account owner.
      *
      * @param int $company_id
-     * @param string $type
+     * @param NotificationType $type
      * @param string $title
      * @param string $message
      * @param array $data
      */
-    public function notify(
-        int $company_id,
-        string $type,
-        string $title,
-        string $message,
-        array $data = []
-    ): void {
+    public function notify(int $company_id, NotificationType $type, string $title, string $message, array $data = []) : void {
 
         try {
             SystemNotification::create([
                 'company_id' => $company_id,
-                'type'       => $type,
+                'type'       => $type->value,
                 'title'      => $title,
                 'message'    => $message,
                 'data'       => json_encode($data),
@@ -56,7 +51,7 @@ class NotificationService
 			$info = array_values($info);
 
 			$pass_data = [
-				'type'			=>	$type,
+				'type'			=>	$type->value,
 				'title'			=>	$title,
 				'message'		=>	$message,
 				'data'			=>	$data
@@ -65,7 +60,7 @@ class NotificationService
 			SendEmailJob::dispatch(
 				to: $first_email,
 				to_name: $first_name,
-				mailable_class: \App\Mail\SystemAlert::class,
+				mailable_class: SystemAlert::class,
 				mailable_data: [$pass_data],
 				smtp: $this->smtpSettings(),
 				cc: $info
