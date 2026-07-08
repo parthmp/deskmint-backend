@@ -15,6 +15,9 @@ class InvoiceEmailContent {
 	private string $disk;
 	private Invoice $invoice;
 	private string $invoice_content;
+	private ?string $alt_client_first_name = null;
+	private ?string $alt_client_last_name = null;
+	private ?string $alt_currency_code = null;
 
 	/**
 	 * setDisk function
@@ -46,6 +49,39 @@ class InvoiceEmailContent {
 	 */
 	public function setInvoiceContent(string $invoice_content) : self {
 		$this->invoice_content = $invoice_content;
+		return $this;
+	}
+
+	/**
+	 * setAltCurrencyCode function
+	 *
+	 * @param string $currency_code
+	 * @return self
+	 */
+	public function setAltCurrencyCode(string $currency_code) : self {
+		$this->alt_currency_code = $currency_code;
+		return $this;
+	}
+
+	/**
+	 * setAltClientFirstName function
+	 *
+	 * @param string $client_first_name
+	 * @return self
+	 */
+	public function setAltClientFirstName(string $client_first_name) : self {
+		$this->alt_client_first_name = $client_first_name;
+		return $this;
+	}
+
+	/**
+	 * setAltClientLastName function
+	 *
+	 * @param string $client_last_name
+	 * @return self
+	 */
+	public function setAltClientLastName(string $client_last_name) : self {
+		$this->alt_client_last_name = $client_last_name;
 		return $this;
 	}
 
@@ -82,8 +118,10 @@ class InvoiceEmailContent {
 	 * @return string
 	 */
 	private function parseEmailContent(string $content) : string {
-
-		$currency = $this->invoice->currency->code;
+		
+		$currency = $this->alt_currency_code ?? $this->invoice->currency->code;
+		$client_first_name = $this->alt_client_first_name ?? $this->invoice->client_wt->first_name;
+		$client_last_name = $this->alt_client_last_name ?? $this->invoice->client_wt->last_name;
 		
 		$payment_gateway_url = '';
 		
@@ -102,8 +140,8 @@ class InvoiceEmailContent {
 		];
 
 		$replace = [
-			$this->invoice->client_wt->first_name,
-			$this->invoice->client_wt->last_name,
+			$client_first_name,
+			$client_last_name,
 			General::formatDateTime($this->invoice->invoice_date, (int) $this->invoice->timezone_offset_minutes, false, false),
 			General::formatDateTime($this->invoice->due_date, (int) $this->invoice->timezone_offset_minutes, false, false),
 			$this->invoice->invoice_number,

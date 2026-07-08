@@ -120,7 +120,7 @@ class InvoiceFetchService{
 
 			$default_columns = [
 				'searchable_columns'	=>	['invoices.invoice_number', 'invoices.total', 'currencies.code', 'invoices.status', 'invoices.first_name', 'invoices.last_name', 'invoices.full_name'],
-				'searchable_dates'		=>	['invoices.created_at', 'invoices.due_date', 'invoices.invoice_date'],
+				'searchable_dates'		=>	['invoices.created_at', 'invoices.due_date', 'invoices.invoice_date', 'invoices.last_reminder_sent_at'],
 				'show_columns'			=>	[
 					[
 						'label'	=>	'invoice_number',

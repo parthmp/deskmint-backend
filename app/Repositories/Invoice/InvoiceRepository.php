@@ -63,6 +63,8 @@ class InvoiceRepository{
 			$invoice = new Invoice();
 			$invoice->uuid = Str::uuid();
 			$invoice->status = (int) InvoiceStatus::PENDING->value;
+			$invoice->reminders_sent = 0;
+			$invoice->last_reminder_sent_at = now();
 		}else{
 			$invoice = $this->fetchInvoiceObjById($invoice_id);
 		}

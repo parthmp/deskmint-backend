@@ -681,7 +681,7 @@ PAYMENT URL BELOW
 
 			return [
 				'send_n_times'	=>	'3',
-				'days_gap'		=>	'2',
+				'days_gap'		=>	'3',
 			];
 
 		}

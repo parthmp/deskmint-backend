@@ -13,8 +13,9 @@ class Invoice extends Model{
 	protected $table = 'invoices';
 
 	protected $casts = [
-		'invoice_date' 	=> 'datetime',
-		'due_date'     	=> 'datetime'
+		'invoice_date' 					=> 'datetime',
+		'due_date'     					=> 'datetime',
+		'last_reminder_sent_at'     	=> 'datetime'
 	];
 
 	public function client(){

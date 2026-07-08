@@ -31,7 +31,7 @@ class SendInvoice extends Mailable {
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'You have received an invoice',
+            subject: $this->data['subject'] ?? 'You have received an invoice',
         );
     }
 
