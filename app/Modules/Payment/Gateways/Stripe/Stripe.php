@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\Transaction;
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
 use App\Modules\Payment\DatabaseOperations;
+use App\Modules\Payment\Enums\TransactionStatus;
 use App\Modules\Payment\Exceptions\PaymentException;
 use App\Modules\Payment\Jobs\FetchStripeBalanceTransactionJob;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
@@ -61,7 +62,8 @@ class Stripe implements PaymentGatewayInterface{
 			'mode'							=>	'-',
 			'token_id_identifier'			=>	$order_id,
 			'is_approved'					=>	0,
-			'is_payment_captured'			=>	0
+			'is_payment_captured'			=>	0,
+			'status'						=>	(int) TransactionStatus::PENDING->value
 		]);
 	}
 

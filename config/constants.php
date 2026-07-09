@@ -50,4 +50,4 @@
 	if(!defined('PAYMENT_SUCCESS_URL')) define('PAYMENT_SUCCESS_URL', '/payments/payment-success');
 
 
-	if(!defined('INVOICES_DISK')) define('INVOICES_DISK', 'temp_invoices');
+	if(!defined('INVOICES_DISK')) define('INVOICES_DISK', 'invoices_storage');

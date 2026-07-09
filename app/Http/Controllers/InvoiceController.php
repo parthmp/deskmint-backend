@@ -317,12 +317,12 @@ class InvoiceController extends Controller{
 
 		$pdf_path = $invoice->id.DIRECTORY_SEPARATOR.$invoice->pdf_file;
 		
-		if(!Storage::disk('temp_invoices')->exists($pdf_path)){
+		if(!Storage::disk(INVOICES_DISK)->exists($pdf_path)){
 			Log::alert('Could not download. invoice #:'.$invoice->id);
 			return response(['message' => 'File not found', 'validity' => 'file_not_found'], config('global.error_code'));
 		}
 		
-		return Storage::disk('temp_invoices')->download($pdf_path);
+		return Storage::disk(INVOICES_DISK)->download($pdf_path);
 
 	}
 

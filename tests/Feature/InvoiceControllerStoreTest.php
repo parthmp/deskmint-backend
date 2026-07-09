@@ -222,7 +222,7 @@ class InvoiceControllerStoreTest extends TestCase
 
 	public function test_if_invoice_saves_with_default_product_rows_no_custom_fields_and_required_fields_3_icst(){ 
 		
-		Storage::fake('temp_invoices');
+		Storage::fake(INVOICES_DISK);
 
 		$device = 'device 123';
 		$c = $this->set_access($device);
@@ -301,7 +301,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
 
-		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
+		$files = Storage::disk(INVOICES_DISK)->allFiles((string) $invoice->id);
 		$this->assertCount(1, $files);
 
 
@@ -309,7 +309,7 @@ class InvoiceControllerStoreTest extends TestCase
 
 	public function test_if_invoice_saves_with_default_product_rows_no_custom_fields_and_required_fields_4_icst(){ 
 		
-		Storage::fake('temp_invoices');
+		Storage::fake(INVOICES_DISK);
 
 		$device = 'device 123';
 		$c = $this->set_access($device);
@@ -385,7 +385,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
 
-		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
+		$files = Storage::disk(INVOICES_DISK)->allFiles((string) $invoice->id);
 		$this->assertCount(0, $files);
 
 
@@ -477,7 +477,7 @@ class InvoiceControllerStoreTest extends TestCase
 	
 	public function test_if_invoice_saves_with_default_product_rows_no_custom_fields_and_required_fields_6_icst(){ 
 
-		Storage::fake('temp_invoices');
+		Storage::fake(INVOICES_DISK);
 		
 		$device = 'device 123';
 		$c = $this->set_access($device);
@@ -567,14 +567,14 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(PAYMENT_PAYPAL, (int) $invoice->payment_method);
 		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
-		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
+		$files = Storage::disk(INVOICES_DISK)->allFiles((string) $invoice->id);
 		$this->assertCount(1, $files);
 
 	}
 
 	public function test_if_invoice_saves_with_default_product_rows_no_custom_fields_and_required_fields_7_icst(){ 
 
-		Storage::fake('temp_invoices');
+		Storage::fake(INVOICES_DISK);
 		
 		$device = 'device 123';
 		$c = $this->set_access($device);
@@ -662,14 +662,14 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(PAYMENT_STRIPE, (int) $invoice->payment_method);
 		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
-		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
+		$files = Storage::disk(INVOICES_DISK)->allFiles((string) $invoice->id);
 		$this->assertCount(1, $files);
 
 	}
 
 	public function test_if_invoice_saves_with_default_product_rows_with_custom_fields_and_required_fields_8_icst(){ 
 
-		Storage::fake('temp_invoices');
+		Storage::fake(INVOICES_DISK);
 		
 		$device = 'device 123';
 		$c = $this->set_access($device);
@@ -761,14 +761,14 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(PAYMENT_NETBANKING, (int) $invoice->payment_method);
 		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
-		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
+		$files = Storage::disk(INVOICES_DISK)->allFiles((string) $invoice->id);
 		$this->assertCount(1, $files);
 
 	}
 
 	public function test_if_invoice_saves_with_default_product_rows_with_custom_fields_and_required_fields_9_icst(){ 
 
-		Storage::fake('temp_invoices');
+		Storage::fake(INVOICES_DISK);
 		
 		$device = 'device 123';
 		$c = $this->set_access($device);
@@ -860,16 +860,16 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(PAYMENT_NETBANKING, (int) $invoice->payment_method);
 		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
-		$files = Storage::disk('temp_invoices')->allFiles();
-		Storage::disk('temp_invoices')->delete($files);
-		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
+		$files = Storage::disk(INVOICES_DISK)->allFiles();
+		Storage::disk(INVOICES_DISK)->delete($files);
+		$files = Storage::disk(INVOICES_DISK)->allFiles((string) $invoice->id);
 		$this->assertCount(0, $files);
 
 	}
 
 	public function test_if_invoice_saves_with_default_product_rows_with_custom_fields_and_all_fields_10_icst(){ 
 
-		Storage::fake('temp_invoices');
+		Storage::fake(INVOICES_DISK);
 		
 		$device = 'device 123';
 		$c = $this->set_access($device);
@@ -965,7 +965,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertEquals(PAYMENT_NETBANKING, (int) $invoice->payment_method);
 		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
-		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
+		$files = Storage::disk(INVOICES_DISK)->allFiles((string) $invoice->id);
 		$this->assertCount(0, $files);
 
 		//test for product rows.
@@ -987,9 +987,9 @@ class InvoiceControllerStoreTest extends TestCase
 
 	public function test_if_invoice_saves_with_default_product_rows_without_custom_fields_and_all_fields_11_icst(){ 
 
-		Storage::fake('temp_invoices');
-		$files = Storage::disk('temp_invoices')->allFiles();
-		Storage::disk('temp_invoices')->delete($files);
+		Storage::fake(INVOICES_DISK);
+		$files = Storage::disk(INVOICES_DISK)->allFiles();
+		Storage::disk(INVOICES_DISK)->delete($files);
 		
 		$device = 'device 123';
 		$c = $this->set_access($device);
@@ -1081,7 +1081,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
 		
-		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
+		$files = Storage::disk(INVOICES_DISK)->allFiles((string) $invoice->id);
 		$this->assertCount(0, $files);
 
 		//test for product rows.
@@ -1103,9 +1103,9 @@ class InvoiceControllerStoreTest extends TestCase
 
 	public function test_if_invoice_saves_with_custom_product_rows_without_custom_fields_and_all_fields_12_icst(){ 
 
-		Storage::fake('temp_invoices');
-		$files = Storage::disk('temp_invoices')->allFiles();
-		Storage::disk('temp_invoices')->delete($files);
+		Storage::fake(INVOICES_DISK);
+		$files = Storage::disk(INVOICES_DISK)->allFiles();
+		Storage::disk(INVOICES_DISK)->delete($files);
 
 		$device = 'device 123';
 		$c = $this->set_access($device);
@@ -1231,7 +1231,7 @@ class InvoiceControllerStoreTest extends TestCase
 		$this->assertJsonWithoutIds(json_decode($invoice->settings_snapshot, true), json_decode($default_product_rows_settings, true));
 
 		
-		$files = Storage::disk('temp_invoices')->allFiles((string) $invoice->id);
+		$files = Storage::disk(INVOICES_DISK)->allFiles((string) $invoice->id);
 		$this->assertCount(0, $files);
 
 		//test for product rows.

@@ -12,6 +12,7 @@ use App\Modules\InvoiceGeneration\InvoiceSnapshot as Snapshot;
 use App\Modules\Notifications\Enums\NotificationType;
 use App\Modules\Notifications\Notification;
 use App\Modules\Payment\Enums\InvoiceStatus;
+use App\Modules\Payment\Enums\TransactionStatus;
 use App\Modules\Payment\Exceptions\PaymentException;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use Illuminate\Support\Facades\Log;
@@ -51,6 +52,7 @@ class DatabaseOperations{
 		$transaction->token_id_identifier = $data['token_id_identifier'];
 		$transaction->is_approved = $data['is_approved'];
 		$transaction->is_payment_captured = $data['is_payment_captured'];
+		$transaction->status = $data['status'];
 		$transaction->save();
 		return $transaction;
 	}
@@ -253,6 +255,7 @@ class DatabaseOperations{
 				$transaction->received_amount = $net_amount;
 
 				$transaction->is_payment_captured = 1;
+				$transaction->status = (int) TransactionStatus::COMPLETED->value;
 				$transaction->paid_at = now();
 				
 				$saved = $transaction->save();
@@ -272,7 +275,7 @@ class DatabaseOperations{
 
 				$transaction->is_echeck = ($data['resource']['status_details']['reason'] === 'ECHECK') ? 1 : 0;
 				
-				$transaction->is_pending = 1;
+				$transaction->status = (int) TransactionStatus::PENDING->value;
 
 				$saved = $transaction->save();
 
@@ -324,6 +327,7 @@ class DatabaseOperations{
 		
 		$transaction->is_approved = 1;
 		$transaction->is_payment_captured = 1;
+		$transaction->status = (int) TransactionStatus::COMPLETED->value;
 		//$transaction->payment_captured_details = json_encode($data);
 		$transaction->gateway_fees_amount = $data['gateway_fees_amount'];
 		$transaction->received_amount = $data['received_amount'];

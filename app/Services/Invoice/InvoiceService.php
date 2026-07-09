@@ -259,7 +259,7 @@ class InvoiceService{
 		$data = $this->getDataForSendingInvoice($invoice_id, $reminder_content);
 
 		$content_class = new InvoiceEmailContent();
-		return $content_class->setDisk('temp_invoices')->setInvoice($data['invoice'])->setInvoiceContent($data['content'])->getContent();
+		return $content_class->setDisk(INVOICES_DISK)->setInvoice($data['invoice'])->setInvoiceContent($data['content'])->getContent();
 
 	}
 

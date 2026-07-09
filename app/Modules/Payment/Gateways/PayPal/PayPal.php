@@ -6,6 +6,7 @@ use App\Models\Transaction;
 use App\Modules\InvoiceGeneration\InvoiceSnapshot;
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
 use App\Modules\Payment\DatabaseOperations;
+use App\Modules\Payment\Enums\TransactionStatus;
 use App\Modules\Payment\Exceptions\PaymentException;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use Exception;
@@ -97,7 +98,8 @@ class PayPal implements PaymentGatewayInterface{
 			'mode'							=>	$this->mode,
 			'token_id_identifier'			=>	$order_id,
 			'is_approved'					=>	0,
-			'is_payment_captured'			=>	0
+			'is_payment_captured'			=>	0,
+			'status'						=>	(int) TransactionStatus::PENDING->value
 		]);
 	}
 

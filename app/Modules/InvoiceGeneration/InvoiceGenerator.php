@@ -39,7 +39,7 @@ class InvoiceGenerator{
 	protected int $time_offset_minutes;
 	private Invoice $live_invoice_data;
 	private string $filename = '';
-	private string $disk = 'temp_invoices';
+	private string $disk = INVOICES_DISK;
 	private array $data;
 
 	/**
