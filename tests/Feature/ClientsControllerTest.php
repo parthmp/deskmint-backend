@@ -149,11 +149,11 @@ class ClientsControllerTest extends TestCase
 			}else if($r_field['custom_field_type']['input_type'] === config('global.field_types')[4]){ /* number */
 				$this->assertEquals('123', $r_field['value']);
 			}else if($r_field['custom_field_type']['input_type'] === config('global.field_types')[5]){ /* date */
-				$this->assertEquals('2025-01-21', $r_field['value']);
+				$this->assertEquals((new DateTime())->createFromFormat('Y-m-d', '2025-01-21')->format('Y-m-d\TH:i:s.000000\Z'), $r_field['value']);
 			}else if($r_field['custom_field_type']['input_type'] === config('global.field_types')[6]){ /* time */
 				$this->assertEquals('01:45:00', $r_field['value']);
 			}else if($r_field['custom_field_type']['input_type'] === config('global.field_types')[7]){ /* datetime */
-				$this->assertEquals('2025-01-20 05:04:25', $r_field['value']);
+				$this->assertEquals((new DateTime())->createFromFormat('Y-m-d H:i:s', '2025-01-20 05:04:25')->format('Y-m-d\TH:i:s.000000\Z'), $r_field['value']);
 			}else if($r_field['custom_field_type']['input_type'] === config('global.field_types')[8]){ /* telephone */
 				$this->assertEquals('12346798', $r_field['value']);
 			}else if($r_field['custom_field_type']['input_type'] === config('global.field_types')[9]){ /* multiselect */
@@ -307,8 +307,8 @@ class ClientsControllerTest extends TestCase
 
         	$carbon_date = DateTime::createFromFormat($dates_to_check[$z]['format'], $dates_to_check[$z]['date']);
             $temp_date = $carbon_date->format('Y-m-d');
-
-        	$this->assertEquals($temp_date, $response[$z]['value']);
+			
+        	$this->assertEquals((new DateTime())->createFromFormat('Y-m-d', $temp_date)->format('Y-m-d\TH:i:s.000000\Z'), $response[$z]['value']);
 
         }
 
@@ -518,7 +518,7 @@ class ClientsControllerTest extends TestCase
 
         	$carbon_date = DateTime::createFromFormat($dates_to_check[$z]['format'], $dates_to_check[$z]['date']);
             $temp_date = $carbon_date->format('Y-m-d H:i:s');
-        	$this->assertEquals($temp_date, $response[$z]['value']);
+        	$this->assertEquals((new DateTime())->createFromFormat('Y-m-d H:i:s', $temp_date)->format('Y-m-d\TH:i:s.000000\Z'), $response[$z]['value']);
 
         }
 

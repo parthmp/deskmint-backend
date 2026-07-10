@@ -56,7 +56,7 @@ return [
 
 		INVOICES_DISK => [
 			'driver' => 'local',
-			'root' => storage_path('app/private/temp/invoices'),
+			'root' => storage_path('app/private/invoices'),
 			'visibility' => 'private',
 			'throw' => false,
 		],

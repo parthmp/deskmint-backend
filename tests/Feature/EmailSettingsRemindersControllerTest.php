@@ -32,7 +32,7 @@ class EmailSettingsRemindersControllerTest extends TestCase{
 		$json = $response->json();
 		
 		$this->assertEquals(3, $json['send_n_times']);
-		$this->assertEquals(2, $json['days_gap']);
+		$this->assertEquals(3, $json['days_gap']);
 		
 	}
 

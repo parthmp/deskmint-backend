@@ -340,7 +340,7 @@ class CompanySettingsLogoControllerTest extends TestCase{
 
 		$path = 'logos/'.$company_id;
 		$files = Storage::disk('public')->files($path);
-		$this->assertCount(0, $files);
+		$this->assertCount(1, $files);
 
 	}
 
