@@ -219,11 +219,11 @@ class InvoiceValidationService extends ProductFieldService {
 			}
 
 			if((int) $invoice->status === (int) InvoiceStatus::PAID->value || (int) $invoice->status === (int) InvoiceStatus::PARTIALLY_PAID->value){
-				throw new InvoiceException('Readonly : This invoice has payments attached to it', 'invalid_request_tab2', config('global.error_code'), 2);
+				throw new InvoiceException('Readonly : This invoice has payments attached to it', 'invalid_payment_attached', config('global.error_code'), 2);
 			}
 
 			if((int) $invoice->status === (int) InvoiceStatus::CANCELLED->value){
-				throw new InvoiceException('Readonly : This invoice has been cancelled', 'invalid_request_tab2', config('global.error_code'), 2);
+				throw new InvoiceException('Readonly : This invoice has been cancelled', 'invalid_invoice_cancelled', config('global.error_code'), 2);
 			}
 
 		}

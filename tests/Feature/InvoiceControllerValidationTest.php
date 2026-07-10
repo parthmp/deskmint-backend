@@ -8,9 +8,11 @@ use App\Models\Client;
 use App\Models\Country;
 use App\Models\Currency;
 use App\Models\Industry;
+use App\Models\Invoice;
 use App\Models\InvoicesCustomField;
 use App\Models\Product;
 use App\Models\SettingsSection;
+use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Traits\SettingsDefault;
 use Database\Factories\AdditionalProductColumnsFieldFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -1358,6 +1360,153 @@ class InvoiceControllerValidationTest extends TestCase
 
 
 	}
+
+
+	public function test_invoice_posting_with_custom_fields_valid_tabs_for_update_invoices_1_icvt(){ 
+
+		$device = 'device 123';
+		$c = $this->set_access($device);
+		$company_id = $this->set_default_company();
+
+		$client = $this->insertClient($company_id, $c['headers']);
+		$this->addAllCustomFields($company_id, $c['headers'], -1,'invoice');
+		$temp = $this->setCustomFields(false, InvoicesCustomField::class);
+		$custom_fields_post = $temp['fields'];
+
+		$data = [];
+		Arr::set($data, 'company_id', $company_id);
+		Arr::set($data, 'data.invoice_details.client.client_id', $client->id);
+		Arr::set($data, 'data.invoice_details.invoice_date.value', '2026-06-23T14:32:47.853Z');
+		Arr::set($data, 'data.invoice_details.invoice_number.value', '123');
+		Arr::set($data, 'data.invoice_details.due_date.value', '2026-06-23T14:32:47.853Z');
+
+		Product::factory()->count(5)->create([
+			'company_id'	=>	$company_id
+		]);
+
+		AdditionalProductColumnsField::insert([
+			[
+				'company_id'	=>	$company_id,
+				'label'			=>	'c field',
+				'type'			=>	'normal',
+				'tax_rate'		=>	'5.5'
+			],
+			[
+				'company_id'	=>	$company_id,
+				'label'			=>	'ctax 1',
+				'type'			=>	'tax',
+				'tax_rate'		=>	'5.5'
+			],
+			[
+				'company_id'	=>	$company_id,
+				'label'			=>	'ctax 2',
+				'type'			=>	'tax',
+				'tax_rate'		=>	'0'
+			]
+		]);
+		
+	
+		SettingsSection::insert([
+			'id' => 1,
+			'company_id'	=>	$company_id,
+			'type'	=> ISC_PRODUCT_COLUMNS_TYPE,
+			'settings_json'	=>	'[{"id": 1, "tax": false, "text": "Item", "type": "normal", "value": "item", "mapped": ["product_id"]}, {"id": 2, "tax": false, "text": "Description", "type": "normal", "value": "description", "mapped": ["description"]}, {"id": 3, "tax": false, "text": "Unit cost", "type": "normal", "value": "unit_cost", "mapped": ["unit_price"]}, {"id": 4, "tax": false, "text": "Quantity", "type": "normal", "value": "quantity", "mapped": ["quantity"]}, {"id": 6, "tax": true, "text": "Tax", "type": "normal", "value": "tax", "mapped": ["tax"], "tax_rate": 0}, {"id": 13, "tax": false, "text": "c field", "type": "custom", "value": "c field", "mapped": "", "tax_rate": 0, "id_column": 1}, {"id": 7, "tax": false, "text": "Line total", "type": "normal", "value": "line_total", "mapped": ["line_total"]}, {"id": 12, "tax": true, "text": "ctax 1", "type": "custom", "value": "ctax 1", "mapped": "", "tax_rate": 5, "id_column": 2}, {"id": 13, "tax": true, "text": "ctax 2", "type": "custom", "value": "ctax 2", "mapped": "", "tax_rate": 2.5, "id_column": 3}]'
+			
+		]);
+
+		$data['data']['product_rows'] = [
+			[
+				"id"		 		=> "b2c4ec6a-0ed8-4238-9737-ab6a7d3f4b30",
+				"row_index" 		=>  0,
+				"row_uuid" 			=> uniqid(time()),
+				"line_subtotal" 	=> '  ',
+				"tax_amount"	 	=> '  ',
+				"line_total" 		=> "16.33",
+				"product_id" 		=>  1,
+				"item" 				=> "prod 3",
+				"description" 		=> "prod 3 desc",
+				"unit_price" 		=> 15.55,
+				"quantity" 			=> 1,
+				"tax" 				=> 5,
+				"normal_c_field" 	=> "555",
+				"custom_tax_ctax_1" 	=> "6",
+				"custom_tax_ctax_2" 	=> "7",
+			]
+		];
+
+		$data['custom_fields'] = $custom_fields_post;
+		$data['timezone_offset_minutes'] = 330;
+		$data['settings'] = [
+			'payment_method'		=>	'4',
+			'send_invoice_in_email'	=>	false,
+		];
+		
+		$response = $this->post('/api/manage-invoices', $data, $c['headers']);
+		$response->assertStatus(200);
+
+		$json = $response->json();
+		$this->assertEquals('invoice_created', $json['validity']);
+
+		//update invoice status
+		$invoice = Invoice::where('id', '=', 1)->first();
+		$invoice->status = InvoiceStatus::PARTIALLY_PAID->value;
+		$invoice->save();
+
+		$response = $this->patch('/api/manage-invoices/1', $data, $c['headers']);
+		$response->assertStatus((int) config('global.error_code'));
+		$json = $response->json();
+		$this->assertEquals('invalid_payment_attached', $json['validity']);
+		$this->assertEquals(2, (int) $json['tab_switch']);
+
+
+		//update invoice status
+		$invoice = Invoice::where('id', '=', 1)->first();
+		$invoice->status = InvoiceStatus::PAID->value;
+		$invoice->save();
+
+		$response = $this->patch('/api/manage-invoices/1', $data, $c['headers']);
+		$response->assertStatus((int) config('global.error_code'));
+		$json = $response->json();
+		$this->assertEquals('invalid_payment_attached', $json['validity']);
+		$this->assertEquals(2, (int) $json['tab_switch']);
+
+		//update invoice status
+		$invoice = Invoice::where('id', '=', 1)->first();
+		$invoice->status = InvoiceStatus::PENDING->value;
+		$invoice->save();
+
+		$response = $this->patch('/api/manage-invoices/1', $data, $c['headers']);
+		$response->assertStatus(200);
+		$json = $response->json();
+		$this->assertEquals('invoice_created', $json['validity']);
+
+
+		//update invoice status for cancelled
+		$invoice = Invoice::where('id', '=', 1)->first();
+		$invoice->status = InvoiceStatus::CANCELLED->value;
+		$invoice->save();
+
+		$response = $this->patch('/api/manage-invoices/1', $data, $c['headers']);
+		$response->assertStatus((int) config('global.error_code'));
+		$json = $response->json();
+		$this->assertEquals('invalid_invoice_cancelled', $json['validity']);
+		$this->assertEquals(2, (int) $json['tab_switch']);
+
+
+		//update invoice status for invalid payment gateway
+		$data['settings']['payment_method'] = 560;
+		//update invoice status for cancelled
+		$invoice = Invoice::where('id', '=', 1)->first();
+		$invoice->status = InvoiceStatus::PENDING->value;
+		$invoice->save();
+		$response = $this->patch('/api/manage-invoices/1', $data, $c['headers']);
+		$response->assertStatus((int) config('global.error_code'));
+		$json = $response->json();
+		$this->assertEquals('invalid_payment_gateway', $json['validity']);
+		$this->assertEquals(2, (int) $json['tab_switch']);
+
+	}
+
 
 
 }
