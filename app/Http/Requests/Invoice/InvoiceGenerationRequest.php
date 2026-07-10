@@ -40,7 +40,7 @@ class InvoiceGenerationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'invoice_id'			=>	'required|numeric',
+            'invoice_id'			=>	'required|numeric|exists:invoices,id',
             'company_id'			=>	'required|numeric',
             'time_offset_minutes'	=>	'required|numeric'
         ];

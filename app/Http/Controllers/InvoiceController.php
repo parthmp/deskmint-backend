@@ -176,7 +176,7 @@ class InvoiceController extends Controller{
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 		$invoice_id = (int) Sanitize::input((string) $invoice_id);
 
-		if(!$this->invoice_service->ifInvoiceExists($invoice_id)){
+		if(!$this->invoice_service->ifInvoiceExists($invoice_id, $company_id)){
 			return response(['message' => 'invalid data', 'validity' => 'invalid_data', 'tab_switch' => 0], config('global.error_code'));
 		}
 
@@ -220,9 +220,9 @@ class InvoiceController extends Controller{
 	}
 
 	public function show(FetchInvoiceRequest $request, int $invoice_id){
-
+		
 		$data = $request->validated();
-
+		
 		try{
 			
 			$invoice_id = (int) Sanitize::input($invoice_id);
@@ -266,7 +266,7 @@ class InvoiceController extends Controller{
 		
 		try{
 
-			$invoice = $this->invoice_service->fetchInvoiceById((int) $data['invoice_id']);
+			$invoice = $this->invoice_service->fetchInvoiceById((int) $data['invoice_id'], (int) $data['company_id']);
 			
 			if(!$invoice){
 				return response(['message' => 'Invalid invoice provided', 'validity' => 'invalid_invoice'], config('global.error_code'));
@@ -309,7 +309,7 @@ class InvoiceController extends Controller{
 		$company_id = (int) $request->query('company_id');
 		$invoice_id = (int) $request->query('invoice_id');
 
-		$invoice = $this->invoice_service->fetchInvoiceById((int) $invoice_id);
+		$invoice = $this->invoice_service->fetchInvoiceById((int) $invoice_id, (int) $company_id);
 			
 		if(!$invoice){
 			return response(['message' => 'Invalid invoice provided', 'validity' => 'invalid_invoice'], config('global.error_code'));
@@ -339,7 +339,7 @@ class InvoiceController extends Controller{
 
 		$data = $request->validated();
 
-		$invoice = $this->invoice_service->fetchInvoiceById((int) $data['invoice_id']);
+		$invoice = $this->invoice_service->fetchInvoiceById((int) $data['invoice_id'], (int) $data['company_id']);
 
 		if(!$invoice){
 			return response(['message' => 'Invalid invoice provided', 'validity' => 'invalid_invoice'], config('global.error_code'));

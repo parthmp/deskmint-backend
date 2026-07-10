@@ -212,7 +212,7 @@ class InvoiceValidationService extends ProductFieldService {
 
 		if($invoice_id > 0){
 
-			$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id);
+			$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id, $company_id);
 
 			if(!$invoice){
 				throw new InvoiceException('Invalid data provided', 'invalid_request_tab2', config('global.error_code'), 2);

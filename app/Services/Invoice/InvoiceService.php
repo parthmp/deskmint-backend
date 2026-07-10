@@ -161,11 +161,12 @@ class InvoiceService{
 	 * ifInvoiceExists function
 	 *
 	 * @param integer $invoice_id
+	 * @param integer $company_id
 	 * @return boolean
 	 */
-	public function ifInvoiceExists(int $invoice_id) : bool {
+	public function ifInvoiceExists(int $invoice_id, int $company_id) : bool {
 		
-		$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id);
+		$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id, $company_id);
 		
 		return ($invoice) ? true : false;
 
@@ -190,11 +191,11 @@ class InvoiceService{
 		}
 
 		if($this->invoice_repository->ifInvoiceLockedMultiple($ids)){
-			throw new InvoiceException('One or more invoices has payment attached, unable to delete.', 'unable to delete', config('global.error_code'));
+			throw new InvoiceException('One or more invoices has payment attached, unable to delete.', 'unable_to_delete', config('global.error_code'));
 		}
 
 		if($this->invoice_repository->ifInvoiceLockedMultipleCancelled($ids)){
-			throw new InvoiceException('One or more invoices has been cancelled, unable to delete.', 'unable to delete cancelled', config('global.error_code'));
+			throw new InvoiceException('One or more invoices has been cancelled, unable to delete.', 'unable_to_delete_cancelled', config('global.error_code'));
 		}
 
 		try{
@@ -267,10 +268,11 @@ class InvoiceService{
 	 * fetchInvoiceById function
 	 *
 	 * @param integer $invoice_id
+	 * @param integer $company_id
 	 * @return invoice|null
 	 */
-	public function fetchInvoiceById(int $invoice_id) : ?Invoice {
-		return $this->invoice_repository->fetchInvoiceObjById($invoice_id);
+	public function fetchInvoiceById(int $invoice_id, int $company_id) : ?Invoice {
+		return $this->invoice_repository->fetchInvoiceObjById($invoice_id, $company_id);
 	}
 
 	/**

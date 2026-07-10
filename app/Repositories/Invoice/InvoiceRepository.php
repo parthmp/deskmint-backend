@@ -66,7 +66,7 @@ class InvoiceRepository{
 			$invoice->reminders_sent = 0;
 			$invoice->last_reminder_sent_at = now();
 		}else{
-			$invoice = $this->fetchInvoiceObjById($invoice_id);
+			$invoice = $this->fetchInvoiceObjById($invoice_id, $company_id);
 		}
 		
 		$invoice->client_id = $client_id;
@@ -185,10 +185,11 @@ class InvoiceRepository{
 	 * fetchInvoiceObjById function
 	 *
 	 * @param integer $invoice_id
+	 * @param integer $company_id
 	 * @return Invoice|null
 	 */
-	public function fetchInvoiceObjById(int $invoice_id) : ?Invoice {
-		return Invoice::where('id', '=', $invoice_id)->first();
+	public function fetchInvoiceObjById(int $invoice_id, int $company_id) : ?Invoice {
+		return Invoice::where([['id', '=', $invoice_id], ['company_id', '=', $company_id]])->first();
 	}
 
 	/**
