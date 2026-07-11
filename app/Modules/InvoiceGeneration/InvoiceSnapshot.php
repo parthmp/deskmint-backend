@@ -327,6 +327,7 @@ class InvoiceSnapshot {
 		}
 
 		$this->snapshot['invoice'] = $invoice_details_with_values;
+		$this->snapshot['meta']['refunded_amount']	= $this->invoice->refunded_amount;
 		$this->snapshot['meta']['currency']	= $this->invoice->client_wt->currency->code;
 		$this->snapshot['meta']['company_id']	= $this->invoice->company_id;
 		$this->snapshot['meta']['payment_method'] = $this->invoice->payment_method;

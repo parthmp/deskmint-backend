@@ -190,6 +190,12 @@ class InvoiceRenderer extends InvoiceGenerator{
 
 		}
 
+		if((float) $this->data['meta']['refunded_amount'] > 0){
+			$total_fields .= '<p>';
+			$total_fields .= 'Refunded amount: '.$this->data['meta']['refunded_amount'].' '.$this->data['meta']['currency'];
+			$total_fields .= '</p>';
+		}
+
 		$this->contents = str_ireplace('{{$render_total_fields}}', $total_fields, $this->contents);
 
 		return $this;
