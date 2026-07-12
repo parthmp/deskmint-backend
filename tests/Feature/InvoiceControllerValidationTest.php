@@ -1506,6 +1506,12 @@ class InvoiceControllerValidationTest extends TestCase
 		$this->assertEquals('invalid_payment_gateway', $json['validity']);
 		$this->assertEquals(2, (int) $json['tab_switch']);
 
+		$response = $this->patch('/api/manage-invoices/100', $data, $c['headers']);
+		$response->assertStatus((int) config('global.error_code'));
+		$json = $response->json();
+		$this->assertEquals('invalid_data', $json['validity']);
+		$this->assertEquals(0, (int) $json['tab_switch']);
+
 	}
 
 	public function test_for_initial_data_fetching_for_invoices_1_ivvt(){
