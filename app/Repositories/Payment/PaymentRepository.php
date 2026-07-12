@@ -5,6 +5,7 @@ namespace App\Repositories\Payment;
 use App\Models\Invoice;
 use App\Models\Transaction;
 use App\Modules\Payment\Enums\InvoiceStatus;
+use App\Modules\Payment\Enums\TransactionStatus;
 
 class PaymentRepository{
 
@@ -43,7 +44,7 @@ class PaymentRepository{
 	 * @return Transaction|null
 	 */
 	public function fetchTransactionOfPast(int $invoice_id) : ?Transaction {
-		return Transaction::where([['invoice_id', '=', $invoice_id], ['created_at', '>', now()->subHours(2)]])->with('payment_url')->orderBy('id', 'desc')->first();
+		return Transaction::where([['invoice_id', '=', $invoice_id], ['created_at', '>', now()->subHours(2)], ['status', '<>', TransactionStatus::VOID->value]])->with('payment_url')->orderBy('id', 'desc')->first();
 	}
 
 	/**

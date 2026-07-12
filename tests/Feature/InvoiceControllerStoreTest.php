@@ -386,7 +386,7 @@ class InvoiceControllerStoreTest extends TestCase
 
 
 		$files = Storage::disk(INVOICES_DISK)->allFiles((string) $invoice->id);
-		$this->assertCount(0, $files);
+		$this->assertCount(1, $files);
 
 
 	}
