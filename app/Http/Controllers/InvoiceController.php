@@ -171,7 +171,7 @@ class InvoiceController extends Controller{
 
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 		$invoice_id = (int) Sanitize::input((string) $invoice_id);
-
+		
 		if(!$this->invoice_service->ifInvoiceExists($invoice_id, $company_id)){
 			return response(['message' => 'invalid data', 'validity' => 'invalid_data', 'tab_switch' => 0], config('global.error_code'));
 		}
@@ -181,7 +181,7 @@ class InvoiceController extends Controller{
 			$this->invoice_service->validateAllForInvoice($request, $company_id, $invoice_id);
 
 			try{
-
+				
 				$do_send = (bool) Sanitize::input($request->input('settings.send_invoice_in_email'));
 
 				DB::transaction(function() use ($request, $company_id, $do_send, $invoice_id) {
@@ -201,7 +201,7 @@ class InvoiceController extends Controller{
 					$message .= ' and invoice has been sent';
 				}
 
-				return response(['message' => $message, 'validity' => 'invoice_created'], 200);
+				return response(['message' => $message, 'validity' => 'invoice_updated'], 200);
 
 			}catch(Exception $e){
 				return General::wentWrong();

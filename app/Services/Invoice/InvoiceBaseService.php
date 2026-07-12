@@ -247,7 +247,9 @@ class InvoiceBaseService{
 
 		$timezone_offset_minutes = Sanitize::input($request->input('timezone_offset_minutes'));
 
-		$invoice_number = $this->getInvoiceNumber($invoice_number, $company_id, (int) $timezone_offset_minutes);
+		//$invoice_number = $this->getInvoiceNumber($invoice_number, $company_id, (int) $timezone_offset_minutes);
+		$invoice_number_raw = $request->input('data.invoice_details.invoice_number.value') ?? $this->getInvoiceNumber($invoice_number, $company_id, (int) $timezone_offset_minutes);
+		$invoice_number = Sanitize::input($invoice_number_raw);
 		
 		$settings = $this->invoice_settings_service->setCompany((int) $company_id);
 		$patten_result = (new HandleInvoiceNumbers((int) $company_id, $settings->getInvoiceNumbers(), (int) $timezone_offset_minutes))->checkPatternWithSuffix($invoice_number);
@@ -337,8 +339,11 @@ class InvoiceBaseService{
 		//to upsert custom product rows/cols
 		$this->upsertCustomProductRows($request, $invoice->id, $company_id);
 
-		/* override manual reset here */
-		$this->resetManualInvoieNumberResetFlag($company_id);
+		if($add){
+			/* override manual reset here */
+			$this->resetManualInvoieNumberResetFlag($company_id);
+		}
+		
 
 		$snapshot = app(Snapshot::class)
 						->setCompanyId($company_id)

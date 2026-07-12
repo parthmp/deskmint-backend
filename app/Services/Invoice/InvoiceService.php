@@ -165,9 +165,7 @@ class InvoiceService{
 	 * @return boolean
 	 */
 	public function ifInvoiceExists(int $invoice_id, int $company_id) : bool {
-		
 		$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id, $company_id);
-		
 		return ($invoice) ? true : false;
 
 	}
