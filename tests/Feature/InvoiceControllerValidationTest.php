@@ -1479,7 +1479,7 @@ class InvoiceControllerValidationTest extends TestCase
 		$response = $this->patch('/api/manage-invoices/1', $data, $c['headers']);
 		$response->assertStatus(200);
 		$json = $response->json();
-		$this->assertEquals('invoice_created', $json['validity']);
+		$this->assertEquals('invoice_updated', $json['validity']);
 
 
 		//update invoice status for cancelled
