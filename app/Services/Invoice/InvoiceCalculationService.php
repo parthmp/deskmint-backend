@@ -24,6 +24,10 @@ class InvoiceCalculationService{
 	private BigDecimal $global_discount_amount_pre_tax;
 
 	public function __construct(){
+		$this->resetTotals();
+	}
+
+	private function resetTotals() : void {
 		$this->global_subtotal = BigDecimal::of(0);
 		$this->global_tax_amount = BigDecimal::of(0);
 		$this->global_total = BigDecimal::of(0);
@@ -124,12 +128,14 @@ class InvoiceCalculationService{
 	 */
 	public function calculateInvoice(array $product_rows, string $discount_type, string $discount_number) : array {
 
+		$this->resetTotals();
+		
 		$rows = [];
 
 		foreach($product_rows as $product_row){
 			$rows[] = $this->calculateRow($product_row);
 		}
-
+		
 		$discount_number_dec = BigDecimal::of($discount_number);
 
 		if($discount_type === 'amount'){
