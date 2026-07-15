@@ -14,6 +14,7 @@ use App\Models\InvoiceSnapshot;
 use App\Models\Product;
 use App\Models\SettingsSection;
 use App\Traits\SettingsDefault;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Arr;
@@ -173,6 +174,7 @@ class InvoiceControllerFetchTest extends TestCase
 
 	public function test_if_it_fetches_initial_data_invoice_number_pattern_change_5_icft(){
 
+		
 		$device = 'device 123';
 		$c = $this->set_access($device);
 		$company_id = $this->set_default_company();
@@ -241,7 +243,20 @@ class InvoiceControllerFetchTest extends TestCase
 		$default_product_columns = $this->getDefaultProductColumnsSettings($company_id);
 		$default_total_fields = $this->getDefaultTotalFieldsSettings();
 		
-		$this->assertEquals('INV---'.date('Y').'_'.date('m').'_'.date('d').'_'.date('l').''.date('d').''.date('m').''.date('F').'-'.date('M').date('Y').'0124', $json['invoice_number']);
+		$expected_date = Carbon::now('UTC')->addMinutes(330); // match this test's offset
+
+		$expected_invoice_number = 'INV---'
+			. $expected_date->format('Y') . '_'
+			. $expected_date->format('m') . '_'
+			. $expected_date->format('d') . '_'
+			. $expected_date->format('l')
+			. $expected_date->format('d')
+			. $expected_date->format('m')
+			. $expected_date->format('F') . '-'
+			. $expected_date->format('M') . $expected_date->format('Y')
+			. '0124';
+
+		$this->assertEquals($expected_invoice_number, $json['invoice_number']);
 		$this->assertJsonWithoutIds($default_product_columns['rows'], $json['product_columns']);
 		$this->assertJsonWithoutIds($default_total_fields['rows'], $json['total_fields']['rows']);
 		$this->assertEmpty($json['custom_fields']);
@@ -250,7 +265,7 @@ class InvoiceControllerFetchTest extends TestCase
 	}
 
 	public function test_if_it_fetches_initial_data_invoice_number_pattern_change_6_icft(){
-
+		
 		$device = 'device 123';
 		$c = $this->set_access($device);
 		$company_id = $this->set_default_company();
@@ -321,7 +336,19 @@ class InvoiceControllerFetchTest extends TestCase
 		$default_product_columns = $this->getDefaultProductColumnsSettings($company_id);
 		$default_total_fields = $this->getDefaultTotalFieldsSettings();
 		
-		$this->assertEquals('INV---'.date('Y').'_'.date('m').'_'.date('d').'_'.date('l').''.date('d').''.date('m').''.date('F').'-'.date('M').date('Y').'1266', $json['invoice_number']);
+		$expected_date = Carbon::now('UTC')->addMinutes(330);
+
+		$expected_invoice_number = 'INV---'
+			. $expected_date->format('Y') . '_'
+			. $expected_date->format('m') . '_'
+			. $expected_date->format('d') . '_'
+			. $expected_date->format('l')
+			. $expected_date->format('d')
+			. $expected_date->format('m')
+			. $expected_date->format('F') . '-'
+			. $expected_date->format('M') . $expected_date->format('Y')
+			. '1266';
+		$this->assertEquals($expected_invoice_number, $json['invoice_number']);
 		$this->assertJsonWithoutIds($default_product_columns['rows'], $json['product_columns']);
 		$this->assertJsonWithoutIds($default_total_fields['rows'], $json['total_fields']['rows']);
 		$this->assertEmpty($json['custom_fields']);
@@ -330,7 +357,7 @@ class InvoiceControllerFetchTest extends TestCase
 	}
 
 	public function test_if_it_fetches_initial_data_invoice_number_pattern_change_with_reset_7_icft(){
-
+		
 		$device = 'device 123';
 		$c = $this->set_access($device);
 		$company_id = $this->set_default_company();
@@ -407,7 +434,20 @@ class InvoiceControllerFetchTest extends TestCase
 		$default_product_columns = $this->getDefaultProductColumnsSettings($company_id);
 		$default_total_fields = $this->getDefaultTotalFieldsSettings();
 		
-		$this->assertEquals('INV---'.date('Y').'_'.date('m').'_'.date('d').'_'.date('l').''.date('d').''.date('m').''.date('F').'-'.date('M').date('Y').'001', $json['invoice_number']);
+		$expected_date = Carbon::now('UTC')->addMinutes(330); // match whatever offset this test sends
+
+		$expected_invoice_number = 'INV---'
+			. $expected_date->format('Y') . '_'
+			. $expected_date->format('m') . '_'
+			. $expected_date->format('d') . '_'
+			. $expected_date->format('l')
+			. $expected_date->format('d')
+			. $expected_date->format('m')
+			. $expected_date->format('F') . '-'
+			. $expected_date->format('M') . $expected_date->format('Y')
+			. '001';
+
+		$this->assertEquals($expected_invoice_number, $json['invoice_number']);
 		$this->assertJsonWithoutIds($default_product_columns['rows'], $json['product_columns']);
 		$this->assertJsonWithoutIds($default_total_fields['rows'], $json['total_fields']['rows']);
 		$this->assertEmpty($json['custom_fields']);
