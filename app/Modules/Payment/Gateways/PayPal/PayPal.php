@@ -27,10 +27,11 @@ class PayPal implements PaymentGatewayInterface{
 		private string $mode,
 		private ?string $currency,
 		private float $amount,
-		?DatabaseOperations $database_operations = null
+		?DatabaseOperations $database_operations = null,
+		?PayPalClient $provider = null
 	){
 		$this->database_operations = $database_operations ?? new DatabaseOperations(new SettingsSectionRepository());
-		$this->provider = new PayPalClient($this->wireUpCreds());
+		$this->provider = $provider ?? new PayPalClient($this->wireUpCreds());
 		$token = $this->provider->getAccessToken();
 	}
 
