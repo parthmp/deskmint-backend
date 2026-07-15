@@ -10,6 +10,7 @@ use App\Models\Currency;
 use App\Models\Industry;
 use App\Models\Invoice;
 use App\Models\InvoicesCustomField;
+use App\Models\InvoiceSnapshot;
 use App\Models\Product;
 use App\Models\SettingsSection;
 use App\Traits\SettingsDefault;
@@ -629,5 +630,382 @@ class InvoiceControllerFetchTest extends TestCase
 		$this->assertEquals('Stripe', $json['gateways'][3]['text']);
 
 	}
+
+	public function test_if_it_fetches_products_12_icft(){
+
+		$device = 'device 123';
+		$c = $this->set_access($device);
+		$company_id = $this->set_default_company();
+
+		$client = $this->insertClient($company_id, $c['headers']);
+
+		$response = $this->get('/api/manage-invoices/fetch-products?company_id='.$company_id.'&searched=whatever', $c['headers']);
+		$json = $response->json();
+		
+		$this->assertEmpty($json);
+		
+	}
+
+	public function test_if_it_fetches_products_13_icft(){
+
+		$device = 'device 123';
+		$c = $this->set_access($device);
+		$company_id = $this->set_default_company();
+
+		$client = $this->insertClient($company_id, $c['headers']);
+
+		$response = $this->post('/api/manage-products', [
+			'product_name'				=>	'test product',
+			'price'						=>	'99.95',
+			'sku'						=>	'SKU 123',
+			'description'				=>	'whatever here',
+			'company_id'				=>	$company_id
+		], $c['headers']);
+
+		$response = $this->post('/api/manage-products', [
+			'product_name'				=>	'some else',
+			'price'						=>	'5',
+			'sku'						=>	'456',
+			'description'				=>	'desc',
+			'company_id'				=>	$company_id
+		], $c['headers']);
+
+		$response = $this->get('/api/manage-invoices/fetch-products?company_id='.$company_id.'&searched=whatever', $c['headers']);
+		$json = $response->json();
+		$this->assertEmpty($json);
+		
+	}
+
+	public function test_if_it_fetches_products_14_icft(){
+
+		$device = 'device 123';
+		$c = $this->set_access($device);
+		$company_id = $this->set_default_company();
+
+		$client = $this->insertClient($company_id, $c['headers']);
+
+		$response = $this->post('/api/manage-products', [
+			'product_name'				=>	'test product',
+			'price'						=>	'99.95',
+			'sku'						=>	'SKU 123',
+			'description'				=>	'whatever here',
+			'company_id'				=>	$company_id
+		], $c['headers']);
+
+		$response = $this->post('/api/manage-products', [
+			'product_name'				=>	'some else',
+			'price'						=>	'5',
+			'sku'						=>	'456',
+			'description'				=>	'desc',
+			'company_id'				=>	$company_id
+		], $c['headers']);
+
+		$response = $this->get('/api/manage-invoices/fetch-products?company_id='.$company_id.'&searched=some', $c['headers']);
+		$json = $response->json();
+
+		$this->assertNotEmpty($json);
+		$this->assertEquals('some else', $json[0]['data']['product']['product_name']);
+		
+	}
+
+	public function test_if_it_fetches_products_15_icft(){
+
+		$device = 'device 123';
+		$c = $this->set_access($device);
+		$company_id = $this->set_default_company();
+
+		$client = $this->insertClient($company_id, $c['headers']);
+
+		$response = $this->post('/api/manage-products', [
+			'product_name'				=>	'test product',
+			'price'						=>	'99.95',
+			'sku'						=>	'SKU 123',
+			'description'				=>	'whatever here',
+			'company_id'				=>	$company_id
+		], $c['headers']);
+
+		$response = $this->post('/api/manage-products', [
+			'product_name'				=>	'some else',
+			'price'						=>	'5',
+			'sku'						=>	'456',
+			'description'				=>	'desc',
+			'company_id'				=>	$company_id
+		], $c['headers']);
+
+		$response = $this->post('/api/manage-products', [
+			'product_name'				=>	'thing some',
+			'price'						=>	'5',
+			'sku'						=>	'456',
+			'description'				=>	'desc',
+			'company_id'				=>	$company_id
+		], $c['headers']);
+
+		$response = $this->get('/api/manage-invoices/fetch-products?company_id='.$company_id.'&searched=some', $c['headers']);
+		$json = $response->json();
+		
+		$this->assertNotEmpty($json);
+		$this->assertEquals(2, (int) count($json));
+		$this->assertEquals('some else', $json[0]['data']['product']['product_name']);
+		$this->assertEquals('thing some', $json[1]['data']['product']['product_name']);
+		
+	}
+
+	public function test_if_it_fetches_index_default_16_icft(){
+
+		$device = 'device 123';
+		$c = $this->set_access($device);
+		$company_id = $this->set_default_company();
+
+		$client = $this->insertClient($company_id, $c['headers']);
+
+		$response = $this->get('/api/manage-invoices?company_id='.$company_id.'&default_per_page=5', $c['headers']);
+		$response->assertStatus(200);
+		$json = $response->json();
+		
+		$this->assertEquals(9, (int) count($json['table_data']['columns']));
+		
+	}
+
+	public function test_if_it_fetches_invoice_for_edit_17_icft(){
+
+		$device = 'device 123';
+		$c = $this->set_access($device);
+		$company_id = $this->set_default_company();
+
+		$client = $this->insertClient($company_id, $c['headers']);
+
+		//insert invoice
+		$this->addAllCustomFields($company_id, $c['headers'], -1,'invoice');
+		$temp = $this->setCustomFields(false, InvoicesCustomField::class);
+		$custom_fields_post = $temp['fields'];
+		
+		
+		$data = [];
+		Arr::set($data, 'company_id', $company_id);
+		Arr::set($data, 'data.invoice_details.client.client_id', $client->id);
+		Arr::set($data, 'data.invoice_details.invoice_date.value', '2026-06-23T14:32:47.853Z');
+		Arr::set($data, 'data.invoice_details.invoice_number.value', '123');
+		Arr::set($data, 'data.invoice_details.due_date.value', '2026-06-23T14:32:47.853Z');
+
+		$paypal_settings = json_encode([
+			'secret'		=>	encrypt(env('TEST_STRIPE_SECRET_KEY')),
+			'webhook_secret'	=>	encrypt(env('TEST_STRIPE_WEBHOOK_SECRET_KEY')),
+		]);
+
+		SettingsSection::insert([
+			'id'	=>	1,
+			'company_id'	=>	$company_id,
+			'type'	=>	PAYMENTS_STRIPE_TYPE,
+			'settings_json'	=>	$paypal_settings
+		]);
+
+		Product::factory()->count(5)->create([
+			'company_id'	=>	$company_id
+		]);
+
+		$data['data']['product_rows'] = [
+			[
+				"id"		 		=> "b2c4ec6a-0ed8-4238-9737-ab6a7d3f4b30",
+				"row_index" 		=>  0,
+				"row_uuid" 			=> "bla-123",
+				"line_subtotal" 	=> '  ',
+				"tax_amount"	 	=> '  ',
+				"line_total" 		=> "16.33",
+				"product_id" 		=>  1,
+				"item" 				=> "prod 3",
+				"description" 		=> "prod 3 desc",
+				"unit_price" 		=> 15.55,
+				"quantity" 			=> 1,
+				"tax" 				=> 5,
+				"discount" 				=> 0,
+				"normal_c_field" 	=> "555"
+			]
+		];
+
+		$data['custom_fields'] = $custom_fields_post;
+		$data['timezone_offset_minutes'] = 330;
+		$data['settings'] = [
+			'payment_method'		=>	PAYMENT_NETBANKING,
+			'send_invoice_in_email'	=>	false,
+		];
+		
+		$response = $this->post('/api/manage-invoices', $data, $c['headers']);
+		$response->assertStatus(200);
+
+		$json = $response->json();
+		
+		$this->assertEquals('invoice_created', $json['validity']);
+
+		$response = $this->get('/api/manage-invoices/1?company_id='.$company_id, $c['headers']);
+		$response->assertStatus(200);
+		$json = $response->json();
+		
+		$this->assertEquals(1, (int) $json['invoice']['id']);
+		$this->assertNull($json['invoice']['deleted_at']);
+		$this->assertEquals('123', $json['invoice']['invoice_number']);
+		$this->assertEquals('2026-06-23T14:32:47.000000Z', $json['invoice']['invoice_date']);
+		$this->assertEquals('2026-06-23T14:32:47.000000Z', $json['invoice']['due_date']);
+		$this->assertEquals('', $json['invoice']['po_number']);
+		$this->assertEquals('16.33', $json['invoice']['balance_due']);
+		$this->assertEquals('16.33', $json['invoice']['total']);
+		$this->assertEquals('1', $json['invoice']['company_id']);
+		$this->assertEquals('1', $json['invoice']['client_id']);
+		$this->assertEquals('0', $json['invoice']['discount']);
+		$this->assertEquals('1', $json['invoice']['discount_type']);
+		$this->assertEquals('0', $json['invoice']['discount_amount_post_tax']);
+		$this->assertEquals('15.55', $json['invoice']['subtotal']);
+		$this->assertEquals('0.78', $json['invoice']['tax_amount']);
+		$this->assertEquals('', $json['invoice']['invoice_terms']);
+		$this->assertEquals('2', $json['invoice']['payment_method']);
+		$this->assertEquals('0', $json['invoice']['discount_amount_pre_tax']);
+		$this->assertEquals('330', $json['invoice']['timezone_offset_minutes']);
+		$this->assertEquals('test firstname', $json['invoice']['first_name']);
+		$this->assertEquals('test lastname', $json['invoice']['last_name']);
+		$this->assertEquals('test firstname test lastname', $json['invoice']['full_name']);
+		$this->assertEquals('', $json['invoice']['client_company']);
+		$this->assertEquals('5', $json['invoice']['currency_id']);
+		$this->assertEquals('1', $json['invoice']['status']);
+		$this->assertNotEmpty($json['invoice']['pdf_file']);
+		$this->assertEmpty($json['invoice']['xml_file']);
+		$this->assertEquals('0', $json['invoice']['reminders_sent']);
+		$this->assertEquals('0', $json['invoice']['refunded_amount']);
+		$this->assertEquals('USD', $json['invoice']['currency_code']);
+		$this->assertNotEmpty($json['invoice']['last_reminder_sent_at']);
+
+		$this->assertEquals(10, (int) count($json['custom_fields']));
+
+		$this->assertArrayHasKey('invoices_custom_field', $json['custom_fields'][0]);
+		$this->assertArrayHasKey('invoices_custom_field', $json['custom_fields'][1]);
+		$this->assertArrayHasKey('invoices_custom_field', $json['custom_fields'][2]);
+		$this->assertArrayHasKey('invoices_custom_field', $json['custom_fields'][3]);
+		$this->assertArrayHasKey('invoices_custom_field', $json['custom_fields'][4]);
+		$this->assertArrayHasKey('invoices_custom_field', $json['custom_fields'][5]);
+		$this->assertArrayHasKey('invoices_custom_field', $json['custom_fields'][6]);
+		$this->assertArrayHasKey('invoices_custom_field', $json['custom_fields'][7]);
+		$this->assertArrayHasKey('invoices_custom_field', $json['custom_fields'][8]);
+		$this->assertArrayHasKey('invoices_custom_field', $json['custom_fields'][9]);
+
+		$this->assertArrayHasKey('custom_field_type', $json['custom_fields'][0]['invoices_custom_field']);
+		$this->assertArrayHasKey('custom_field_type', $json['custom_fields'][1]['invoices_custom_field']);
+		$this->assertArrayHasKey('custom_field_type', $json['custom_fields'][2]['invoices_custom_field']);
+		$this->assertArrayHasKey('custom_field_type', $json['custom_fields'][3]['invoices_custom_field']);
+		$this->assertArrayHasKey('custom_field_type', $json['custom_fields'][4]['invoices_custom_field']);
+		$this->assertArrayHasKey('custom_field_type', $json['custom_fields'][5]['invoices_custom_field']);
+		$this->assertArrayHasKey('custom_field_type', $json['custom_fields'][6]['invoices_custom_field']);
+		$this->assertArrayHasKey('custom_field_type', $json['custom_fields'][7]['invoices_custom_field']);
+		$this->assertArrayHasKey('custom_field_type', $json['custom_fields'][8]['invoices_custom_field']);
+		$this->assertArrayHasKey('custom_field_type', $json['custom_fields'][9]['invoices_custom_field']);
+
+
+		$this->assertEquals('some text', $json['custom_fields'][0]['field_value']);
+		$this->assertEquals('some textarea text', $json['custom_fields'][1]['field_value']);
+		$this->assertEquals('email@value.com', $json['custom_fields'][2]['field_value']);
+		$this->assertEquals('one', $json['custom_fields'][3]['field_value']);
+		$this->assertEquals('1234678', $json['custom_fields'][4]['field_value']);
+		$this->assertEquals('2018-01-20T00:00:00.000Z', $json['custom_fields'][5]['field_value']);
+		$this->assertEquals('10:15 AM', $json['custom_fields'][6]['field_value']);
+		$this->assertEquals('2018-01-19T11:08:15Z', $json['custom_fields'][7]['field_value']);
+		$this->assertEquals('+123457890', $json['custom_fields'][8]['field_value']);
+		$this->assertEquals('["one"]', $json['custom_fields'][9]['field_value']);
+
+
+		$this->assertEquals('bla-123', $json['product_rows'][0]['row_uuid']);
+		$this->assertEquals('15.55', $json['product_rows'][0]['line_subtotal']);
+		$this->assertEquals('0.78', $json['product_rows'][0]['tax_amount']);
+		$this->assertEquals('16.33', $json['product_rows'][0]['line_total']);
+		$this->assertEquals('1', $json['product_rows'][0]['product_id']);
+		$this->assertEquals('prod 3 desc', $json['product_rows'][0]['description']);
+		$this->assertEquals('15.55', $json['product_rows'][0]['unit_price']);
+		$this->assertEquals('1', $json['product_rows'][0]['quantity']);
+		$this->assertEquals('0', $json['product_rows'][0]['discount']);
+		$this->assertEquals('5', $json['product_rows'][0]['tax']);
+
+
+		$this->assertFalse($json['locked']);
+		$this->assertFalse($json['cancelled']);
+		
+	}
+
+	public function test_if_it_fetches_invoice_for_snapshot_18_icft(){
+
+		$device = 'device 123';
+		$c = $this->set_access($device);
+		$company_id = $this->set_default_company();
+
+		$client = $this->insertClient($company_id, $c['headers']);
+
+		//insert invoice
+		$this->addAllCustomFields($company_id, $c['headers'], -1,'invoice');
+		$temp = $this->setCustomFields(false, InvoicesCustomField::class);
+		$custom_fields_post = $temp['fields'];
+		
+		
+		$data = [];
+		Arr::set($data, 'company_id', $company_id);
+		Arr::set($data, 'data.invoice_details.client.client_id', $client->id);
+		Arr::set($data, 'data.invoice_details.invoice_date.value', '2026-06-23T14:32:47.853Z');
+		Arr::set($data, 'data.invoice_details.invoice_number.value', '123');
+		Arr::set($data, 'data.invoice_details.due_date.value', '2026-06-23T14:32:47.853Z');
+
+		$paypal_settings = json_encode([
+			'secret'		=>	encrypt(env('TEST_STRIPE_SECRET_KEY')),
+			'webhook_secret'	=>	encrypt(env('TEST_STRIPE_WEBHOOK_SECRET_KEY')),
+		]);
+
+		SettingsSection::insert([
+			'id'	=>	1,
+			'company_id'	=>	$company_id,
+			'type'	=>	PAYMENTS_STRIPE_TYPE,
+			'settings_json'	=>	$paypal_settings
+		]);
+
+		Product::factory()->count(5)->create([
+			'company_id'	=>	$company_id
+		]);
+
+		$data['data']['product_rows'] = [
+			[
+				"id"		 		=> "b2c4ec6a-0ed8-4238-9737-ab6a7d3f4b30",
+				"row_index" 		=>  0,
+				"row_uuid" 			=> "bla-123",
+				"line_subtotal" 	=> '  ',
+				"tax_amount"	 	=> '  ',
+				"line_total" 		=> "16.33",
+				"product_id" 		=>  1,
+				"item" 				=> "prod 3",
+				"description" 		=> "prod 3 desc",
+				"unit_price" 		=> 15.55,
+				"quantity" 			=> 1,
+				"tax" 				=> 5,
+				"discount" 				=> 0,
+				"normal_c_field" 	=> "555"
+			]
+		];
+
+		$data['custom_fields'] = $custom_fields_post;
+		$data['timezone_offset_minutes'] = 330;
+		$data['settings'] = [
+			'payment_method'		=>	PAYMENT_NETBANKING,
+			'send_invoice_in_email'	=>	false,
+		];
+		
+		$response = $this->post('/api/manage-invoices', $data, $c['headers']);
+		$response->assertStatus(200);
+
+		$json = $response->json();
+		
+		$this->assertEquals('invoice_created', $json['validity']);
+
+		$response = $this->get('/api/manage-invoices/snapshot/1?company_id='.$company_id, $c['headers']);
+		$response->assertStatus(200);
+		$json = $response->json();
+		
+		$snapshot = InvoiceSnapshot::where('invoice_id', '=', 1)->first();
+
+		$this->assertEquals($snapshot->snapshot, $json);
+		
+		
+	}
+
 
 }
