@@ -189,7 +189,7 @@ class InvoiceService{
 		}
 
 		if($this->invoice_repository->ifInvoiceLockedMultiple($ids)){
-			throw new InvoiceException('One or more invoices has payment attached, unable to delete.', 'unable_to_delete', config('global.error_code'));
+			throw new InvoiceException('One or more invoices has payment attached, unable to delete.', 'unable_to_delete_payment_attached', config('global.error_code'));
 		}
 
 		if($this->invoice_repository->ifInvoiceLockedMultipleCancelled($ids)){
