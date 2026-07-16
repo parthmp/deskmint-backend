@@ -116,7 +116,7 @@ class Stripe implements PaymentGatewayInterface{
 	 * @param Request $request
 	 * @return boolean
 	 */
-	private function verifyAuthenticity(Request $request) : bool {
+	protected function verifyAuthenticity(Request $request) : bool {
 
 		$payload = $request->getContent();
 		$sig_header = $request->header('Stripe-Signature');

@@ -17,18 +17,20 @@ class StripeController extends Controller{
 	public function handlePaymentWebhook(Request $request){
 		
 		$data = $request->all();
+		
 		try{
-
+			
 			$settings = $this->database_operations->fetchStripeSettings($data);
+			
 			$webhook_data = $settings['webhook_data'];
-
+			
 			$stripe_object = new Stripe($webhook_data['invoice_id'], decrypt($settings['settings']['secret']), $webhook_data['currency_code'], $webhook_data['balance_due']);
 			$stripe_object->setWebhookSecret(decrypt($settings['settings']['webhook_secret']));
-
+			
 			$payment = new Payment($stripe_object);
 
 			$data['order_id'] = $settings['order_id'];
-
+			
 			$payment->handlePayment($data, $request);
 
 			return response('ok', 200);
@@ -39,7 +41,7 @@ class StripeController extends Controller{
 				return response('ok', 200);
 			}
 
-			return response('processing failed', 500);
+			return response($e->getMessage(), $e->getCode());
 			
 		}catch(Exception $e){
 			return response('processing failed', 500);
