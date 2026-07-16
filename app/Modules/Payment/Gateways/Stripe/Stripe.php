@@ -98,7 +98,8 @@ class Stripe implements PaymentGatewayInterface{
 
 		}catch(Exception $e){
 			logger(json_encode($e->getMessage()));
-			throw new PaymentException("Unable to generate payment url", "url_generation_failed", config('global.error_code'));
+			return null;
+			//throw new PaymentException("Unable to generate payment url", "url_generation_failed", config('global.error_code'));
 		}
 
 		$checkout_url = $session->url;
