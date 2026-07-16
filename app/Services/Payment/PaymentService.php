@@ -161,14 +161,14 @@ class PaymentService{
 		}
 
 		$invoice = $this->payment_repository->fetchInvoiceById($invoice_id);
-
+		
 		if(!$invoice){
 			return null;
 		}
 
 		$invoice_balance_due = BigDecimal::of($invoice->balance_due);
 		$transaction_amount = BigDecimal::of($transaction->amount);
-
+		
 		if((int) $invoice->payment_method !== (int) $transaction->payment_method || !$invoice_balance_due->isEqualTo($transaction_amount)){
 			return null;
 		}

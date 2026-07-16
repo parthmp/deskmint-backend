@@ -72,7 +72,7 @@ class PaymentUrlGenerationTest extends TestCase
 	}
 
 	public function test_stripe_generate_url_throws_payment_exception_on_stripe_error(){
-		
+
 		$device = 'device 123';
 		$c = $this->set_access($device);
 		$company_id = $this->set_default_company();

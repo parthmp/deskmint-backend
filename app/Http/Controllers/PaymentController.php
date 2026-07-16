@@ -20,7 +20,7 @@ class PaymentController extends Controller
     public function showPaymentPage(Request $request, string $uuid){
 
 		$uuid = Sanitize::input($uuid);
-
+		
 		$invoice = $this->payment_service->fetchInvoiceByUuid($uuid);
 
 		if(!$invoice){
@@ -57,7 +57,7 @@ class PaymentController extends Controller
 
 		//check if payment url already exist for past 2 hours with same payment method, total.
 		$existing_url = $this->payment_service->fetchExistingPaymentUrl($invoice->id);
-
+		
 		if($existing_url === null){
 
 			//generate url.
