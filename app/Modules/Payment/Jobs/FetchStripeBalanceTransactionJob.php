@@ -23,12 +23,13 @@ class FetchStripeBalanceTransactionJob implements ShouldQueue
         private string $payment_intent_id,
         private int $transaction_id,
         private string $secret,
-        private string $currency
+        private string $currency,
+		private ?StripeClient $stripe_client = null
     ){}
 
     public function handle() : void {
 		
-        $stripe = new StripeClient($this->secret);
+        $stripe = $this->stripe_client ?? new StripeClient($this->secret);
 
         $payment_intent = $stripe->paymentIntents->retrieve($this->payment_intent_id, [
             'expand' => ['latest_charge.balance_transaction']
