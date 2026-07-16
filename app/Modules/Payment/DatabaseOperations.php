@@ -69,7 +69,7 @@ class DatabaseOperations{
 		if(!$event_type){
 			throw new PaymentException('Invalid data provided', 'invalid_event_type', config('global.error_code'));
 		}
-
+		
 		return match($event_type) {
 			'CHECKOUT.ORDER.APPROVED'   => $data['resource']['id'],
 			'PAYMENT.CAPTURE.COMPLETED' => $data['resource']['supplementary_data']['related_ids']['order_id'],
@@ -86,9 +86,10 @@ class DatabaseOperations{
 	 * @return Transaction|null
 	 */
 	private function fetchRequiredDataForWebhook(string $order_id) : ?Transaction {
+		
 		return Transaction::join('invoices', 'invoices.id', '=', 'transactions.invoice_id')
 				->join('clients', 'clients.id', '=', 'invoices.client_id')
-				->join('currencies', 'currencies.id', '=', 'clients.currency_id')
+				->join('currencies', 'currencies.id', '=', 'invoices.currency_id')
 				->where('transactions.token_id_identifier', '=', $order_id)
 				->select(
 						'currencies.code as currency_code',
@@ -116,7 +117,7 @@ class DatabaseOperations{
 		}
 
 		$webhook_data = $this->fetchRequiredDataForWebhook($order_id);
-
+		
 		if(!$webhook_data){
 			throw new PaymentException('Invalid data provided', 'invalid_data', config('global.error_code'));
 		}
@@ -218,18 +219,18 @@ class DatabaseOperations{
 	public function updatePaymentTransaction(array $data) : bool {
 		
 		try {
-
+			
 			$event_type = $data['event_type'] ?? null;
 
 			$order_id = $this->findOrderId($data, $event_type);
 
 			$transaction = Transaction::where('token_id_identifier', '=', $order_id)->first();
-
+			
 			if(!$transaction){
 				Log::error('Payment update failed $transaction was null');
 				throw new PaymentException('failed to update database', 'db_failed', config('global.error_code'));
 			}
-
+			
 			$saved = false;
 
 			if($event_type === 'CHECKOUT.ORDER.APPROVED'){
@@ -259,14 +260,14 @@ class DatabaseOperations{
 				$transaction->paid_at = now();
 				
 				$saved = $transaction->save();
-
+				
 				TransactionGatewayDetail::updateOrCreate(
 					['transaction_id' => $transaction->id],
 					['payment_captured_details' => json_encode($data)]
 				);
 				
 				$this->markInvoicePaidnDeduct($transaction, (float) $data['resource']['amount']['value']);
-
+				
 				$this->updateInvoiceSnapshot((int) $transaction->invoice_id);
 
 				
@@ -359,7 +360,7 @@ class DatabaseOperations{
 	private function updateInvoiceSnapshot(int $invoice_id) : void {
 		
 		$invoice = $this->fetchInvoiceById($invoice_id);
-
+		
 		if($invoice !== null){
 			$snapshot = app(Snapshot::class)
 						->setCompanyId($invoice->company_id)
@@ -374,7 +375,7 @@ class DatabaseOperations{
 						->setTotalsSnapshot()
 						->setTermsSnapshot()
 						->output();
-
+			
 				InvoiceSnapshot::updateOrCreate(
 					['invoice_id' 	=> $invoice->id],
 					['snapshot' 	=> $snapshot]

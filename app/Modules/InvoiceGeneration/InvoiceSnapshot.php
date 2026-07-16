@@ -362,6 +362,10 @@ class InvoiceSnapshot {
 
 		$product_rows_data = $this->invoice_settings_resolver->fetchProductRowsSettings($this->invoice);
 		$invoice_items = $this->invoice_db_operations->fetchInvoiceItemsWithCustomCols();
+		
+		if(isset($product_rows_data['dropdown'])){
+			$product_rows_data = $product_rows_data['rows'];
+		}
 
 		$rows = [
 			'headers' 	=> [],

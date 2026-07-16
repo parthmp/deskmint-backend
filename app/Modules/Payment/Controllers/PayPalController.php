@@ -20,9 +20,10 @@ class PayPalController extends Controller{
 	public function handlePaymentWebhook(Request $request){
 
 		$data = $request->all();
-
+		
 		try{
 			$settings = $this->database_operations->fetchPayPalSettings($data);
+			
 			$webhook_data = $settings['webhook_data'];
 			
 			$payment = new Payment(new PayPal(

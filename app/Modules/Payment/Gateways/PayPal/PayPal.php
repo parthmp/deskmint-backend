@@ -151,7 +151,7 @@ class PayPal implements PaymentGatewayInterface{
 	 * @return boolean
 	 */
 	public function handlePayment(array $data, Request $request) : bool {
-
+		
 		if(!$this->verifyAuthenticity($request, $data['webhook_id'])){
 			throw new PaymentException('unauthorized', 'unauthorized', 401);
 		}
@@ -173,20 +173,20 @@ class PayPal implements PaymentGatewayInterface{
 		}
 		
 		if((string) $event_type === 'PAYMENT.CAPTURE.COMPLETED'){
-
+			
 			$status = $data['resource']['status'];
 
 			if($status !== 'COMPLETED'){
 				return true;
 			}
-
+			
 			$transaction = $this->database_operations->fetchTransactionByTokenId($data['order_id']);
-
+			
 			if($transaction->is_payment_captured){
 
 				return true;
 			}
-
+			
 		}
 		
 		return $this->database_operations->updatePaymentTransaction($data);
