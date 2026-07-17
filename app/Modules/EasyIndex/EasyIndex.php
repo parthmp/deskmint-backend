@@ -342,12 +342,14 @@ class EasyIndex{
 						
 						
 					}else{
-						$show_columns = array_merge($show_columns, $this->processCustomColumns($clients_custom_columns, $user_data[$z][$this->type.'s_custom_fields_id'], $this->type));
+						if($this->custom_fields_class){
+							$show_columns = array_merge($show_columns, $this->processCustomColumns($clients_custom_columns, $user_data[$z][$this->type.'s_custom_fields_id'], $this->type));
+						}
 					}
 				}
 				
 				if($user_data[$z]['type'] === 'normal'){
-					if($user_data[$z]['searchable'] === true){
+					if((bool) $user_data[$z]['searchable'] === true){
 						if($user_data[$z]['is_date'] === true){
 							$searchable_dates[] = $this->type.'s.'.$user_data[$z]['label'];
 						}else{

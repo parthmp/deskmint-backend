@@ -48,13 +48,13 @@ class Fetch{
 	 *
 	 * @param string $columns_json
 	 * @param string $type
-	 * @param string $custom_fields_model
+	 * @param string|null $custom_fields_model
 	 * @param integer $company_id
 	 * @param array $table_columns
 	 * @param array $additional_fields
 	 * @return array
 	 */
-	private function parseSavedData(string $columns_json, string $type, string $custom_fields_model, int $company_id, array $table_columns, array $additional_fields = []) : array {
+	private function parseSavedData(string $columns_json, string $type, ?string $custom_fields_model, int $company_id, array $table_columns, array $additional_fields = []) : array {
 
 		$user_fields = [];
 
@@ -67,7 +67,11 @@ class Fetch{
 		$saved_labels_normal = $splitted['normal'];
 		$saved_ids_custom = $splitted['custom'];
 
-		$general_custom_columns_ids = $this->database_operations->setModel($custom_fields_model)->pluckIdsByCompanyIdC($company_id);
+		$general_custom_columns_ids = [];
+		if($custom_fields_model){
+			$general_custom_columns_ids = $this->database_operations->setModel($custom_fields_model)->pluckIdsByCompanyIdC($company_id);
+		}
+		
 		
 		$additional_fields_flattern = [];
 
@@ -310,13 +314,13 @@ class Fetch{
 	 * @param Request $request
 	 * @param string $feature_name
 	 * @param string $original_table
-	 * @param string $custom_fields_model
+	 * @param string|null $custom_fields_model
 	 * @param string $type
 	 * @param array $remove_columns
 	 * @param array $additional_fields
 	 * @return array
 	 */
-	public function fetchArrangedColumnsData(Request $request, string $feature_name, string $original_table, string $custom_fields_model, string $type, array $remove_columns = [], array $additional_fields = []) : array {
+	public function fetchArrangedColumnsData(Request $request, string $feature_name, string $original_table, ?string $custom_fields_model, string $type, array $remove_columns = [], array $additional_fields = []) : array {
 		
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 
@@ -332,7 +336,11 @@ class Fetch{
 			$table_columns = array_values(array_diff($table_columns, $remove_columns));
 		}
 		
-		$general_custom_columns = $this->database_operations->setModel($custom_fields_model)->fetchGeneralCustomColumns($company_id);
+		$general_custom_columns = [];
+		if($custom_fields_model){
+			$general_custom_columns = $this->database_operations->setModel($custom_fields_model)->fetchGeneralCustomColumns($company_id);
+		}
+		
 
 		$user_fields = [];
 

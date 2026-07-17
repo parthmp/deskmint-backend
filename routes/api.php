@@ -190,6 +190,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	/**
 	 * manage transactions routes
 	 */
+	Route::get('manage-transactions/fetch-arranged-columns', [TransactionsController::class, 'fetchArrangedColumns']);
+	Route::post('manage-transactions/save-arranged-columns', [TransactionsController::class, 'saveArrangedColumns']);
 	Route::resource('manage-transactions', TransactionsController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
-
+	
 });

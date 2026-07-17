@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use App\Modules\DataTable\DataTable;
 use App\Modules\EasyIndex\EasyIndex;
 use App\Modules\Payment\Enums\InvoiceStatus;
+use App\Modules\Payment\Enums\TransactionStatus;
 use App\Repositories\Product\ProductRepository;
 use Illuminate\Http\Request;
 
@@ -22,10 +23,10 @@ class TransactionService {
 		$joins = [
 					[
 						'table' => 'invoices',
-						'first' => 'invoices.id',
+						'first' => 'transactions.invoice_id',
 						'operator' => '=',
-						'second' => 'transactions.invoice_id',
-						'columns' => '' //this will be replaced by EasyIndex class.
+						'second' => 'invoices.id',
+						'columns' => ['invoices.full_name as full_name', 'invoices.invoice_number as invoice_number']
 					],
 					[
 						'table' => 'currencies',
@@ -37,8 +38,8 @@ class TransactionService {
 				];
 
 			$default_columns = [
-				'searchable_columns'	=>	['invoices.invoice_number', 'invoices.full_name', 'transactions.amount', 'currencies.code', 'transactions.payment_method', 'transactions.status', ],
-				'searchable_dates'		=>	['transactions.created_at', 'invoices.due_date', 'invoices.invoice_date', 'invoices.last_reminder_sent_at'],
+				'searchable_columns'	=>	['invoices.invoice_number', 'invoices.full_name', 'transactions.amount', 'currencies.code', 'transactions.payment_method', 'transactions.status', 'invoices.invoice_number'],
+				'searchable_dates'		=>	['transactions.created_at', 'transactions.paid_at'],
 				'show_columns'			=>	[
 					[
 						'label'	=>	'invoice_number',
@@ -49,8 +50,8 @@ class TransactionService {
 	 					'text'	=>	'Full name',
 					],
 					[
-						'label'	=>	'Amount',
-						'text'	=>	'amount',
+						'label'	=>	'amount',
+						'text'	=>	'Amount',
 					],
 					[
 						'label'	=>	'c_code',
@@ -73,62 +74,98 @@ class TransactionService {
 
 			$rewrites = [
 				'data' => [
-					'invoices.discount_type' => [
-						1	=>	'Percentage',
-						2	=>	"Amount"
-					],
-					'invoices.status' => [
-						InvoiceStatus::PENDING->value				=>	InvoiceStatus::PENDING->label(),
-						InvoiceStatus::CANCELLED->value				=>	InvoiceStatus::CANCELLED->label(),
-						InvoiceStatus::PARTIALLY_PAID->value		=>	InvoiceStatus::PARTIALLY_PAID->label(),
-						InvoiceStatus::PAID->value					=>	InvoiceStatus::PAID->label(),
+					'transactions.status' => [
+						TransactionStatus::PENDING->value				=>	TransactionStatus::PENDING->label(),
+						TransactionStatus::REFUNDED->value				=>	TransactionStatus::REFUNDED->label(),
+						TransactionStatus::COMPLETED->value				=>	TransactionStatus::COMPLETED->label(),
+						TransactionStatus::VOID->value					=>	TransactionStatus::VOID->label(),
 					],
 					'transactions.payment_method' => [
-						1	=>	'Cash',
-						2	=>	'Netbanking',
-						3	=>	'PayPal',
-						4	=>	'Stripe',
+						PAYMENT_CASH			=>	'Cash',
+						PAYMENT_NETBANKING		=>	'Netbanking',
+						PAYMENT_PAYPAL			=>	'PayPal',
+						PAYMENT_STRIPE			=>	'Stripe',
+					],
+					'transactions.is_approved' => [
+						0			=>	'No',
+						1			=>	'Yes'
+					],
+					'transactions.is_payment_captured' => [
+						0			=>	'No',
+						1			=>	'Yes'
+					],
+					'transactions.is_echeck' => [
+						0			=>	'No',
+						1			=>	'Yes'
 					]
 				],
 				'ui'	=>	[
-					'discount_type'	=>	[
+					'is_approved' => [
 						[
-							'type'			=>	'label',
-							'highlight'		=>	'success',
-							'text'			=>	'Percentage',
-							'value'			=>	1,
+							'type'		=>	'label',
+							'highlight'	=>	'error',
+							'text'		=>	'No',
+							'value'		=>	0,
 						],
 						[
-							'type'			=>	'label',
-							'highlight'		=>	'success',
-							'text'			=>	'Amount',
-							'value'			=>	2,
+							'type'		=>	'label',
+							'highlight'	=>	'success',
+							'text'		=>	'Yes',
+							'value'		=>	1,
+						]
+					],
+					'is_payment_captured' => [
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'error',
+							'text'		=>	'No',
+							'value'		=>	0,
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'success',
+							'text'		=>	'Yes',
+							'value'		=>	1,
+						]
+					],
+					'is_echeck' => [
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'error',
+							'text'		=>	'No',
+							'value'		=>	0,
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'success',
+							'text'		=>	'Yes',
+							'value'		=>	1,
 						]
 					],
 					'status'	=>	[
 						[
 							'type'		=>	'label',
 							'highlight'	=>	'error',
-							'text'		=>	InvoiceStatus::CANCELLED->label(),
-							'value'		=>	InvoiceStatus::CANCELLED->value,
+							'text'		=>	TransactionStatus::VOID->label(),
+							'value'		=>	TransactionStatus::VOID->value,
 						],
 						[
 							'type'		=>	'label',
 							'highlight'	=>	'info',
-							'text'		=>	InvoiceStatus::PENDING->label(),
-							'value'		=>	InvoiceStatus::PENDING->value
+							'text'		=>	TransactionStatus::PENDING->label(),
+							'value'		=>	TransactionStatus::PENDING->value
 						],
 						[
 							'type'		=>	'label',
 							'highlight'	=>	'success',
-							'text'		=>	InvoiceStatus::PARTIALLY_PAID->label(),
-							'value'		=>	InvoiceStatus::PARTIALLY_PAID->value
+							'text'		=>	TransactionStatus::COMPLETED->label(),
+							'value'		=>	TransactionStatus::COMPLETED->value
 						],
 						[
 							'type'		=>	'label',
-							'highlight'	=>	'success',
-							'text'		=>	InvoiceStatus::PAID->label(),
-							'value'		=>	InvoiceStatus::PAID->value
+							'highlight'	=>	'info',
+							'text'		=>	TransactionStatus::REFUNDED->label(),
+							'value'		=>	TransactionStatus::REFUNDED->value
 						]
 					],
 					'payment_method'	=>	[
@@ -136,33 +173,35 @@ class TransactionService {
 							'type'		=>	'label',
 							'highlight'	=>	'info',
 							'text'		=>	'Cash',
-							'value'		=>	1,
+							'value'		=>	PAYMENT_CASH,
 						],
 						[
 							'type'		=>	'label',
 							'highlight'	=>	'info',
 							'text'		=>	'Netbanking',
-							'value'		=>	2
+							'value'		=>	PAYMENT_NETBANKING
 						],
 						[
 							'type'		=>	'label',
 							'highlight'	=>	'info',
 							'text'		=>	'PayPal',
-							'value'		=>	3
+							'value'		=>	PAYMENT_PAYPAL
 						],
 						[
 							'type'		=>	'label',
 							'highlight'	=>	'info',
 							'text'		=>	'Stripe',
-							'value'		=>	4
+							'value'		=>	PAYMENT_STRIPE
 						]
 					]
 				]
 
 			];
 
-		return $this->easy_index->setType('invoice')->setJoins($joins)->setExceptionClass(TransactionException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
-			'c_code'				=>		'currencies.code'
+		return $this->easy_index->setType('transaction')->setJoins($joins)->setExceptionClass(TransactionException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
+			'c_code'						=>		'currencies.code',
+			'full_name'						=>		'invoices.full_name',
+			'invoice_number'				=>		'invoices.invoice_number',
 		 ])->setRewrites($rewrites)->setModel(Transaction::class)->fetchIndex();
 	}
 

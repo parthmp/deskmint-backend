@@ -26,7 +26,7 @@ class Save{
 	 * saveArrangedColumnsData function
 	 *
 	 * @param Request $request
-	 * @param string $custom_fields_model
+	 * @param string|null $custom_fields_model
 	 * @param string $feature_name
 	 * @param string $original_table
 	 * @param string $type
@@ -34,7 +34,7 @@ class Save{
 	 * @param array $date_fields
 	 * @return boolean
 	 */
-	public function saveArrangedColumnsData(Request $request, string $custom_fields_model, string $feature_name, string $original_table, string $type, array $additional_fields = [], $date_fields = []) : bool {
+	public function saveArrangedColumnsData(Request $request, ?string $custom_fields_model, string $feature_name, string $original_table, string $type, array $additional_fields = [], $date_fields = []) : bool {
 		
 		$validated = $this->validation->validatePostedColumns($request);
 		if(!$validated){
@@ -53,7 +53,10 @@ class Save{
 		
 		$general_columns = array_values(array_diff($general_columns, ['deleted_at', 'updated_at']));
 		
-		$general_custom_column_ids = $custom_fields_model::where('company_id', '=', $company_id)->pluck('id')->toArray();
+		$general_custom_column_ids = [];
+		if($custom_fields_model){
+			$general_custom_column_ids = $custom_fields_model::where('company_id', '=', $company_id)->pluck('id')->toArray();
+		}
 
 		$additional_fields_names = [];
 
