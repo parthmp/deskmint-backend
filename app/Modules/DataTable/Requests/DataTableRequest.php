@@ -55,7 +55,7 @@ class DataTableRequest extends FormRequest
 			'searched_term'			=>	'sometimes',
 			'current_page'			=>	'sometimes',
 			'sorted_column'			=>	'sometimes',
-			'default_per_page'		=>	'sometimes',
+			//'default_per_page'		=>	'sometimes',
 			'date_range'			=>	'sometimes'
         ];
     }

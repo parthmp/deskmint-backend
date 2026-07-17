@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Validator;
 class EasyIndex{
 
 	private string $type;
-	private string $custom_fields_class;
+	private ?string $custom_fields_class = null;
 	private array $joins = [];
 	private string $exception_class;
 	private Request $request;
@@ -323,7 +323,10 @@ class EasyIndex{
 		if($user_data){
 			
 			$user_data =  json_decode($user_data->columns_json, true);
-			$clients_custom_columns = $this->custom_fields->fetchCustomFieldsArray($this->custom_fields_class, $company_id); /*ClientsCustomField::class*/
+			$clients_custom_columns = [];
+			if($this->custom_fields_class){
+				$clients_custom_columns = $this->custom_fields->fetchCustomFieldsArray($this->custom_fields_class, $company_id); /*ClientsCustomField::class*/
+			}
 
 			for($z = 0 ; $z < count($user_data) ; $z++){
 				$temp_label2 = $user_data[$z]['label'];

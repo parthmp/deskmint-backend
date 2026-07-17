@@ -26,6 +26,7 @@ class Stripe implements PaymentGatewayInterface{
 	private string $webhook_secret;
 
 	public function __construct(
+		private string $company_id,
 		private string $invoice_id,
 		private string $secret,
 		private string $currency,
@@ -57,6 +58,7 @@ class Stripe implements PaymentGatewayInterface{
 	 */
 	private function createTransaction(string $order_id) : Transaction {
 		return $this->database_operations->insertTransaction([
+			'company_id'					=>	$this->company_id,
 			'invoice_id'					=>	$this->invoice_id,
 			'amount'						=>	$this->amount,
 			'payment_method'				=>	PAYMENT_STRIPE,

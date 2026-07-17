@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\Transaction;
 use App\Modules\Payment\Enums\TransactionStatus;
@@ -21,6 +22,7 @@ class TransactionFactory extends Factory
     {
         return [
 			'invoice_id'			=> Invoice::factory(),
+			'company_id'			=> Company::factory(),
 			'amount'				=> 10,
 			'gateway_fees_amount'	=> 2,
 			'received_amount'		=> 8,

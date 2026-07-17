@@ -45,6 +45,7 @@ class DatabaseOperations{
 	 */
 	public function insertTransaction(array $data) : Transaction {
 		$transaction = $this->createEmptyTransaction();
+		$transaction->company_id = $data['company_id'];
 		$transaction->invoice_id = $data['invoice_id'];
 		$transaction->amount = $data['amount'];
 		$transaction->payment_method = $data['payment_method'];

@@ -79,6 +79,7 @@ class PaymentPayPalWebhookTest extends TestCase
 		
 		$invoice = Invoice::factory()->create([
 			'uuid'			=>	'123',
+			'company_id'	=>	$company_id,
 			'client_id'		=>	$client->id,
 			'currency_id'	=>	5,
 			'status'		=>	InvoiceStatus::PENDING->value,
@@ -87,6 +88,7 @@ class PaymentPayPalWebhookTest extends TestCase
 		]);
 
 		$transaction = Transaction::factory()->create([
+			'company_id'				=>	$company_id,
 			'invoice_id'				=>	$invoice->id,
 			'amount'					=>	$amount,
 			'token_id_identifier'		=>	$data['resource']['id'],
@@ -117,6 +119,7 @@ class PaymentPayPalWebhookTest extends TestCase
 		$s->save();
 		
 		$invoice = Invoice::factory()->create([
+			'company_id'	=>	$company_id,
 			'uuid'			=>	'123',
 			'client_id'		=>	$client->id,
 			'currency_id'	=>	5,
@@ -126,6 +129,7 @@ class PaymentPayPalWebhookTest extends TestCase
 		]);
 
 		$transaction = Transaction::factory()->create([
+			'company_id'	=>	$company_id,
 			'invoice_id'				=>	$invoice->id,
 			'amount'					=>	$amount,
 			'token_id_identifier'		=>	$data['resource']['id'],
@@ -156,6 +160,7 @@ class PaymentPayPalWebhookTest extends TestCase
 		$s->save();
 		
 		$invoice = Invoice::factory()->create([
+			'company_id'	=>	$company_id,
 			'uuid'			=>	'123',
 			'client_id'		=>	$client->id,
 			'currency_id'	=>	5,
@@ -165,6 +170,7 @@ class PaymentPayPalWebhookTest extends TestCase
 		]);
 
 		$transaction = Transaction::factory()->create([
+			'company_id'	=>	$company_id,
 			'invoice_id'				=>	$invoice->id,
 			'amount'					=>	$amount,
 			'token_id_identifier'		=>	$data['resource']['id'],
@@ -178,6 +184,7 @@ class PaymentPayPalWebhookTest extends TestCase
 		$mock_provider->shouldReceive('verifyWebHookLocally')->once()->andReturn(true);
 
 		$paypal = new PayPal(
+			company_id: $company_id,
 			invoice_id: (string) $invoice->id,
 			client_id: 'fake', app_id: 'fake', secret: 'fake', mode: 'sandbox',
 			currency: 'USD', amount: (float) $amount,
@@ -216,6 +223,7 @@ class PaymentPayPalWebhookTest extends TestCase
 		$s->save();
 		
 		$invoice = Invoice::factory()->create([
+			'company_id'	=>	$company_id,
 			'uuid'			=>	'123',
 			'client_id'		=>	$client->id,
 			'currency_id'	=>	5,
@@ -225,6 +233,7 @@ class PaymentPayPalWebhookTest extends TestCase
 		]);
 
 		$transaction = Transaction::factory()->create([
+			'company_id'	=>	$company_id,
 			'invoice_id'				=>	$invoice->id,
 			'amount'					=>	$amount,
 			'token_id_identifier'		=>	$data['resource']['supplementary_data']['related_ids']['order_id'],
@@ -238,6 +247,7 @@ class PaymentPayPalWebhookTest extends TestCase
 		$mock_provider->shouldReceive('verifyWebHookLocally')->once()->andReturn(true);
 
 		$paypal = new PayPal(
+			company_id: $company_id,
 			invoice_id: (string) $invoice->id,
 			client_id: 'fake', 
 			app_id: 'fake', 
@@ -295,6 +305,7 @@ class PaymentPayPalWebhookTest extends TestCase
 		$s->save();
 		
 		$invoice = Invoice::factory()->create([
+			'company_id'	=>	$company_id,
 			'uuid'			=>	'123',
 			'client_id'		=>	$client->id,
 			'currency_id'	=>	5,
@@ -304,6 +315,7 @@ class PaymentPayPalWebhookTest extends TestCase
 		]);
 
 		$transaction = Transaction::factory()->create([
+			'company_id'	=>	$company_id,
 			'invoice_id'				=>	$invoice->id,
 			'amount'					=>	$amount,
 			'token_id_identifier'		=>	$data['resource']['supplementary_data']['related_ids']['order_id'],
@@ -317,6 +329,7 @@ class PaymentPayPalWebhookTest extends TestCase
 		$mock_provider->shouldReceive('verifyWebHookLocally')->once()->andReturn(true);
 
 		$paypal = new PayPal(
+			company_id:$company_id,
 			invoice_id: (string) $invoice->id,
 			client_id: 'fake', 
 			app_id: 'fake', 

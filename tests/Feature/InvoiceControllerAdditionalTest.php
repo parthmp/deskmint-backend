@@ -204,6 +204,7 @@ class InvoiceControllerAdditionalTest extends TestCase
 		$invoice->save();
 
 		$t = new Transaction();
+		$t->company_id = $company_id;
 		$t->invoice_id = 1;
 		$t->amount = 1;
 		$t->gateway_fees_amount = 1;

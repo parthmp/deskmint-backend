@@ -44,8 +44,8 @@ class PaymentService{
 
 		$payment = match($payment_gateway){
 
-			PAYMENT_PAYPAL 	=> new Payment(new PayPal($data['invoice_id'], $data['client_id'], $data['app_id'], $data['secret'], $data['mode'], $data['currency'], (float) $data['amount'])),
-			PAYMENT_STRIPE 	=> new Payment(new Stripe($data['invoice_id'], $data['secret'], $data['currency'], (float) $data['amount'])),
+			PAYMENT_PAYPAL 	=> new Payment(new PayPal($data['company_id'], $data['invoice_id'], $data['client_id'], $data['app_id'], $data['secret'], $data['mode'], $data['currency'], (float) $data['amount'])),
+			PAYMENT_STRIPE 	=> new Payment(new Stripe($data['company_id'], $data['invoice_id'], $data['secret'], $data['currency'], (float) $data['amount'])),
 			default			=>	null
 		};
 		
@@ -116,6 +116,7 @@ class PaymentService{
 			$payment_settings['amount'] = $invoice->balance_due;
 			$payment_settings['secret'] = decrypt($payment_settings['secret']);
 			$payment_settings['invoice_id'] = $invoice->id;
+			$payment_settings['company_id'] = $invoice->company_id;
 
 			$payment_gateway_url = $this->generateGatewayUrl((int) $invoice->payment_method, $payment_settings);
 

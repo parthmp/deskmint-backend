@@ -90,6 +90,7 @@ class PaymentStripeWebhookTest extends TestCase
 		$s->save();
 		
 		$invoice = Invoice::factory()->create([
+			'company_id'	=>	$company_id,
 			'uuid'			=>	'123',
 			'client_id'		=>	$client->id,
 			'currency_id'	=>	5,
@@ -99,6 +100,7 @@ class PaymentStripeWebhookTest extends TestCase
 		]);
 
 		$transaction = Transaction::factory()->create([
+			'company_id'	=>	$company_id,
 			'invoice_id'				=>	$invoice->id,
 			'amount'					=>	$amount,
 			'token_id_identifier'		=>	$data['data']['object']['metadata']['payment_id'],
@@ -135,6 +137,7 @@ class PaymentStripeWebhookTest extends TestCase
 		$s->save();
 		
 		$invoice = Invoice::factory()->create([
+			'company_id'	=>	$company_id,
 			'uuid'			=>	'123',
 			'client_id'		=>	$client->id,
 			'currency_id'	=>	5,
@@ -144,6 +147,7 @@ class PaymentStripeWebhookTest extends TestCase
 		]);
 
 		$transaction = Transaction::factory()->create([
+			'company_id'	=>	$company_id,
 			'invoice_id'				=>	$invoice->id,
 			'amount'					=>	$amount,
 			'token_id_identifier'		=>	$data['data']['object']['metadata']['payment_id'],
@@ -171,7 +175,7 @@ class PaymentStripeWebhookTest extends TestCase
 		$mock_stripe_client = Mockery::mock(StripeClient::class);
 		$mock_stripe_client->paymentIntents = $mock_payment_intents;
 
-		$stripe = Mockery::mock(Stripe::class, [(string) $invoice->id, 'fake', 'USD', (float) $amount, new DatabaseOperations(new SettingsSectionRepository()), $mock_stripe_client])->makePartial();
+		$stripe = Mockery::mock(Stripe::class, [(string) $company_id, (string) $invoice->id, 'fake', 'USD', (float) $amount, new DatabaseOperations(new SettingsSectionRepository()), $mock_stripe_client])->makePartial();
 		$stripe->shouldAllowMockingProtectedMethods();
 		$stripe->shouldReceive('verifyAuthenticity')->once()->andReturn(true);
 
@@ -225,6 +229,7 @@ class PaymentStripeWebhookTest extends TestCase
 		$s->save();
 		
 		$invoice = Invoice::factory()->create([
+			'company_id'	=>	$company_id,
 			'uuid'			=>	'123',
 			'client_id'		=>	$client->id,
 			'currency_id'	=>	5,
@@ -234,6 +239,7 @@ class PaymentStripeWebhookTest extends TestCase
 		]);
 
 		$transaction = Transaction::factory()->create([
+			'company_id'	=>	$company_id,
 			'invoice_id'				=>	$invoice->id,
 			'amount'					=>	$amount,
 			'token_id_identifier'		=>	$data['data']['object']['metadata']['payment_id'],
@@ -261,7 +267,7 @@ class PaymentStripeWebhookTest extends TestCase
 		$mock_stripe_client = Mockery::mock(StripeClient::class);
 		$mock_stripe_client->paymentIntents = $mock_payment_intents;
 
-		$stripe = Mockery::mock(Stripe::class, [(string) $invoice->id, 'fake', 'USD', (float) $amount, new DatabaseOperations(new SettingsSectionRepository()), $mock_stripe_client])->makePartial();
+		$stripe = Mockery::mock(Stripe::class, [(string) $company_id, (string) $invoice->id, 'fake', 'USD', (float) $amount, new DatabaseOperations(new SettingsSectionRepository()), $mock_stripe_client])->makePartial();
 		$stripe->shouldAllowMockingProtectedMethods();
 		$stripe->shouldReceive('verifyAuthenticity')->once()->andReturn(true);
 

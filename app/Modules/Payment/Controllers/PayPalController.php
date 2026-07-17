@@ -27,6 +27,7 @@ class PayPalController extends Controller{
 			$webhook_data = $settings['webhook_data'];
 			
 			$payment = new Payment(new PayPal(
+												$webhook_data['company_id'], 
 												$webhook_data['invoice_id'], 
 												$settings['settings']['client_id'], 
 												$settings['settings']['app_id'], 

@@ -37,6 +37,8 @@ use App\Http\Middleware\IfUserHasAccessToFeature;
 use App\Http\Middleware\ValidateDeviceAndTokens;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PaymentSettingsController;
+use App\Http\Controllers\TransactionsController;
+use App\Models\Transaction;
 
 Route::middleware(['throttle:60,1'])->group(function () {
 	Route::post('login', [LoginController::class, 'login'])->name('login');
@@ -184,5 +186,10 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-stripe-settings', [PaymentSettingsStripeController::class, 'show']);
 	Route::post('manage-stripe-settings', [PaymentSettingsStripeController::class, 'upsert']);
 	Route::delete('manage-stripe-settings', [PaymentSettingsStripeController::class, 'destroy']);
+
+	/**
+	 * manage transactions routes
+	 */
+	Route::resource('manage-transactions', TransactionsController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 
 });

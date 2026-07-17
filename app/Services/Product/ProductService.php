@@ -56,7 +56,7 @@ class ProductService{
 	 * @param array $data
 	 * @return array
 	 */
-	public function fetch(array $data) : array{
+	public function fetch(array $data) : array {
 
 		$fields = $this->datatable
 		->setVars($data)
