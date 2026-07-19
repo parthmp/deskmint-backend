@@ -7,7 +7,7 @@ use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
 use App\Http\Requests\Invoice\FetchInvoiceRequest;
 use App\Http\Requests\Invoice\InvoiceGenerationRequest;
-use App\Http\Requests\Product\SearchProductRequest;
+use App\Http\Requests\Product\AutoCompleteSearchRequest;
 use App\Http\Requests\ToggleCancelRequest;
 use App\Jobs\GenerateInvoiceJob;
 use App\Jobs\SendInvoiceEmailJob;
@@ -75,7 +75,7 @@ class InvoiceController extends Controller{
 
 	}
 
-	public function fetchProducts(SearchProductRequest $request){
+	public function fetchProducts(AutoCompleteSearchRequest $request){
 		
 		$data = $request->validated();
 

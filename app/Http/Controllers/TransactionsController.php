@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\General;
+use App\Http\Requests\GenericRequest;
+use App\Http\Requests\Product\AutoCompleteSearchRequest;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
 use App\Modules\DataTable\Requests\DataTableRequest;
@@ -81,6 +83,19 @@ class TransactionsController extends Controller {
 		}catch(Exception $e){
 			return General::wentWrong();
 		}
+
+	}
+
+	public function fetchInit(GenericRequest $request){
+
+		return $this->transaction_service->fetchInit();
+
+	}
+
+	public function fetchInvoices(AutoCompleteSearchRequest $request){
+
+		$data = $request->validated();
+		return $this->transaction_service->fetchInvoices((int) $data['company_id'], (string) $data['searched']);
 
 	}
 

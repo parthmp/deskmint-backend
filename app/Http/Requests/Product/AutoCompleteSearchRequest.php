@@ -5,7 +5,7 @@ namespace App\Http\Requests\Product;
 use App\Helpers\Sanitize;
 use Illuminate\Foundation\Http\FormRequest;
 
-class SearchProductRequest extends FormRequest
+class AutoCompleteSearchRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
