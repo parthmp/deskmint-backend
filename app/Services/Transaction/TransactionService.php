@@ -235,8 +235,9 @@ class TransactionService {
 	 *
 	 * @return array
 	 */
-	public function fetchInit() : array {
-		return [
+	public function fetchInit(?int $invoice_id = null) : array {
+		
+		$data = [
 			'offline_payment_methods' => [
 				[
 					'value'		=>	PAYMENT_CASH,
@@ -246,8 +247,16 @@ class TransactionService {
 					'value'		=>	PAYMENT_NETBANKING,
 					'text'		=>	'Netbanking'
 				]
-			]
+			],
+			'invoice_data' => null
 		];
+
+		if($invoice_id){
+			$invoice_data = $this->transaction_repository->fetchInvoiceDataById($invoice_id);
+			$data['invoice_data'] = $invoice_data;
+		}
+
+		return $data;
 	}
 
 	/**
@@ -315,6 +324,16 @@ class TransactionService {
 	 */
 	public function generateSnapshot(int $invoice_id){
 		$this->updateInvoiceSnapshot($invoice_id);
+	}
+
+	/**
+	 * validateInvoiceForTransaction function
+	 *
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function validateInvoiceForTransaction(int $invoice_id) : array {
+		return $this->transaction_repository->validateInvoiceForTransaction($invoice_id);
 	}
 
 

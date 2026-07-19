@@ -288,7 +288,7 @@ class InvoiceControllerFetchTest extends TestCase
 		//change the pattern
 		$response = $this->post('/api/manage-invoice-settings-numbers', [
 			'number_padding'		=>		'1',
-			'reset_counter'			=>		'monthly',
+			'reset_counter'			=>		'never',
 			'number_pattern'		=>		'INV---{$year}_{$month_number}_{$day_number}_{$day_name}{$day_number}{$month_number}{$month_full_name}-{$month_short_name}{$year}',
 			'company_id'			=>		$company_id
 		], $c['headers']);

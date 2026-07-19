@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\General;
+use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
 use App\Http\Requests\Product\AutoCompleteSearchRequest;
 use App\Http\Requests\TransactionStoreRequest;
@@ -93,6 +94,11 @@ class TransactionsController extends Controller {
 
 	public function fetchInit(GenericRequest $request){
 
+		$invoice_id = Sanitize::input($request->input('id'));
+		if($invoice_id){
+			return $this->transaction_service->fetchInit((int) $invoice_id);
+		}
+
 		return $this->transaction_service->fetchInit();
 
 	}
@@ -107,6 +113,17 @@ class TransactionsController extends Controller {
 	public function store(TransactionStoreRequest $request){
 
 		$data = $request->validated();
+		
+		$validated = $this->transaction_service->validateInvoiceForTransaction((int) $data['invoice_id']);
+		
+		if(!$validated['exists']){
+			return response(['message' => 'Invalid invoice number provided', 'validity' => 'invalid_invoice'], config('global.error_code'));
+		}
+
+		if($validated['cancelled']){
+			return response(['message' => 'You can not create transactions for cancelled invoice', 'validity' => 'invalid_cancelled'], config('global.error_code'));
+		}
+
 
 		if(!$this->transaction_service->validateAmounts($data['amount'], $data['gateway_fees'], $data['received_amount'])){
 			return response(['message' => 'Invalid amounts provided', 'validity' => 'invalid_amounts'], config('global.error_code'));

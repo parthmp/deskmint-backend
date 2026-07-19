@@ -4,6 +4,7 @@ namespace App\Repositories\Transaction;
 
 use App\Models\Invoice;
 use App\Models\Transaction;
+use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Enums\TransactionStatus;
 use Illuminate\Support\Str;
 
@@ -64,6 +65,45 @@ class TransactionRepository {
 		$transaction->save();
 
 		return $transaction;
+
+	}
+	
+	/**
+	 * fetchInvoiceDataById function
+	 *
+	 * @param integer $invoice_id
+	 * @return array|null
+	 */
+	public function fetchInvoiceDataById(int $invoice_id) : ?array {
+
+		$invoice = Invoice::select('invoices.id as id', 'invoices.invoice_number as invoice_number', 'currencies.code as currency_code')->join('currencies', 'currencies.id', '=', 'invoices.currency_id')->where('invoices.id', '=', $invoice_id)->first();
+
+		if(!$invoice){
+			return null;
+		}
+
+		return [
+			'invoice_id'	=> $invoice->id,
+			'value'			=> $invoice->invoice_number.' ('.$invoice->currency_code.')',
+			'error'			=> ''
+		];
+
+	}
+
+	/**
+	 * validateInvoiceForTransaction function
+	 *
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function validateInvoiceForTransaction(int $invoice_id) : array {
+
+		$invoice = Invoice::where('id', '=', $invoice_id)->first();
+
+		return [
+			'exists'	=>	$invoice ? true : false,
+			'cancelled'	=>	$invoice ? $invoice->status === InvoiceStatus::CANCELLED->value : false,
+		];
 
 	}
 
