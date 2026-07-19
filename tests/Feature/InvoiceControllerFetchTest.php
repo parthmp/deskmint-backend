@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Helpers\General;
+use App\Models\AccessTokenData;
 use App\Models\AdditionalProductColumnsField;
 use App\Models\Client;
 use App\Models\Country;
@@ -12,6 +13,7 @@ use App\Models\Invoice;
 use App\Models\InvoicesCustomField;
 use App\Models\InvoiceSnapshot;
 use App\Models\Product;
+use App\Models\RefreshToken;
 use App\Models\SettingsSection;
 use App\Traits\SettingsDefault;
 use Carbon\Carbon;
@@ -28,6 +30,12 @@ use Tests\Traits\SetAccess;
 class InvoiceControllerFetchTest extends TestCase
 {
 	use SettingsDefault, RefreshDatabase, SetAccess, DefaultCompany, CustomFields, GeneralFunctions;
+
+	// protected function tearDown(): void
+    // {
+    //     Carbon::setTestNow(null);
+    //     parent::tearDown();
+    // }
 
 	public function insertClient(int $company_id, mixed $headers, int $currency_id = 5) : Client {
 		DB::table('clients')->truncate();
@@ -253,10 +261,14 @@ class InvoiceControllerFetchTest extends TestCase
 			. $expected_date->format('d')
 			. $expected_date->format('m')
 			. $expected_date->format('F') . '-'
-			. $expected_date->format('M') . $expected_date->format('Y')
-			. '0124';
+			. $expected_date->format('M') . $expected_date->format('Y');
 
-		$this->assertEquals($expected_invoice_number, $json['invoice_number']);
+		if(strtolower(date('D')) === 'sun'){
+			$this->assertEquals($expected_invoice_number.'0001', $json['invoice_number']);
+		}else{
+			$this->assertEquals($expected_invoice_number.'0124', $json['invoice_number']);
+		}
+		
 		$this->assertJsonWithoutIds($default_product_columns['rows'], $json['product_columns']);
 		$this->assertJsonWithoutIds($default_total_fields['rows'], $json['total_fields']['rows']);
 		$this->assertEmpty($json['custom_fields']);
@@ -265,6 +277,7 @@ class InvoiceControllerFetchTest extends TestCase
 	}
 
 	public function test_if_it_fetches_initial_data_invoice_number_pattern_change_6_icft(){
+
 		
 		$device = 'device 123';
 		$c = $this->set_access($device);
@@ -275,7 +288,7 @@ class InvoiceControllerFetchTest extends TestCase
 		//change the pattern
 		$response = $this->post('/api/manage-invoice-settings-numbers', [
 			'number_padding'		=>		'1',
-			'reset_counter'			=>		'weekly',
+			'reset_counter'			=>		'monthly',
 			'number_pattern'		=>		'INV---{$year}_{$month_number}_{$day_number}_{$day_name}{$day_number}{$month_number}{$month_full_name}-{$month_short_name}{$year}',
 			'company_id'			=>		$company_id
 		], $c['headers']);
@@ -1046,6 +1059,106 @@ class InvoiceControllerFetchTest extends TestCase
 		
 		
 	}
+
+	public function test_if_it_fetches_initial_data_invoice_number_pattern_change_19_icft(){
+		
+		
+		$device = 'device 123';
+		$c = $this->set_access($device);
+		$company_id = $this->set_default_company();
+		
+		$client = $this->insertClient($company_id, $c['headers']);
+
+		//insert client
+		$data = [];
+		Arr::set($data, 'company_id', $company_id);
+		Arr::set($data, 'data.invoice_details.client.client_id', $client->id);
+		Arr::set($data, 'data.invoice_details.invoice_date.value', '2026-06-23T14:32:47.853Z');
+		Arr::set($data, 'data.invoice_details.invoice_number.value', '123');
+		Arr::set($data, 'data.invoice_details.due_date.value', '2026-06-23T14:32:47.853Z');
+		Arr::set($data, 'data.invoice_details.po_number', 'po number here');
+		Arr::set($data, 'data.invoice_details.global_discount', '5');
+		Arr::set($data, 'data.invoice_details.global_discount_type', 'percentage');
+		Arr::set($data, 'data.invoice_terms', 'invoice terms here');
+
+		Product::factory()->count(5)->create([
+			'company_id'	=>	$company_id
+		]);
+
+		$data['data']['product_rows'] = [
+			[
+				"id"		 		=> "b2c4ec6a-0ed8-4238-9737-ab6a7d3f4b30",
+				"row_index" 		=>  0,
+				"row_uuid" 			=> "bla-123",
+				"line_subtotal" 	=> '  ',
+				"tax_amount"	 	=> '  ',
+				"line_total" 		=> "16.33",
+				"product_id" 		=>  1,
+				"item" 				=> "prod 3",
+				"description" 		=> "prod 3 desc",
+				"unit_price" 		=> 15.55,
+				"quantity" 			=> 1,
+				"tax" 				=> 5,
+				"normal_c_field" 	=> "555",
+				"custom_tax_ctax_1" 	=> "6",
+				"discount" 			=> 0,
+				"custom_tax_ctax_2" 	=> "7",
+				
+			]
+		];
+
+		$data['custom_fields'] = [];
+		$data['timezone_offset_minutes'] = 330;
+		$data['settings'] = [
+			'payment_method'		=>	PAYMENT_NETBANKING,
+			'send_invoice_in_email'	=>	false,
+		];
+		
+		$response = $this->post('/api/manage-invoices', $data, $c['headers']);
+
+		//change the pattern
+		$response = $this->post('/api/manage-invoice-settings-numbers', [
+			'number_padding'		=>		'0001',
+			'reset_counter'			=>		'monthly',
+			'number_pattern'		=>		'INV---{$year}_{$month_number}_{$day_number}_{$day_name}{$day_number}{$month_number}{$month_full_name}-{$month_short_name}{$year}',
+			'company_id'			=>		$company_id
+		], $c['headers']);
+		
+		Carbon::setTestNow(Carbon::create(2026, 1, 1, 12, 0, 0));
+		AccessTokenData::where('device', $device)->update(['created_at' => now()]);
+		RefreshToken::where('device', $device)->update(['created_at' => now()]);
+		
+		$response = $this->get('/api/manage-invoices/fetch-initial-data?company_id='.$company_id.'&timezone_offset_minutes=330', $c['headers']);
+		$response->assertStatus(200);
+		$json = $response->json();
+		
+		$default_product_columns = $this->getDefaultProductColumnsSettings($company_id);
+		$default_total_fields = $this->getDefaultTotalFieldsSettings();
+		
+		$expected_date = Carbon::now('UTC')->addMinutes(330); // match this test's offset
+
+		$expected_invoice_number = 'INV---'
+			. $expected_date->format('Y') . '_'
+			. $expected_date->format('m') . '_'
+			. $expected_date->format('d') . '_'
+			. $expected_date->format('l')
+			. $expected_date->format('d')
+			. $expected_date->format('m')
+			. $expected_date->format('F') . '-'
+			. $expected_date->format('M') . $expected_date->format('Y');
+
+		
+		$this->assertEquals($expected_invoice_number.'0001', $json['invoice_number']);
+		
+		$this->assertJsonWithoutIds($default_product_columns['rows'], $json['product_columns']);
+		$this->assertJsonWithoutIds($default_total_fields['rows'], $json['total_fields']['rows']);
+		$this->assertEmpty($json['custom_fields']);
+		$this->assertEquals(2, (int) count($json['gateways']));
+
+		Carbon::setTestNow();
+
+	}
+
 
 
 }

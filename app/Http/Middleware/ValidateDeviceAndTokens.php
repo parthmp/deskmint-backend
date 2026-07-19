@@ -48,7 +48,7 @@ class ValidateDeviceAndTokens
         $device_id = Sanitize::input($request->header('X-Device-Id'));
 
 		$access_token_id = $this->getAccessTokenId($user);
-
+		
 		$access_token_data = $this->checkAccessTokenWithDevice($access_token_id, $device_id);
 		
 		if(!$access_token_data){
