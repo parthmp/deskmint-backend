@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\General;
 use App\Http\Requests\GenericRequest;
 use App\Http\Requests\Product\AutoCompleteSearchRequest;
+use App\Http\Requests\TransactionStoreRequest;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
 use App\Modules\DataTable\Requests\DataTableRequest;
@@ -47,6 +48,10 @@ class TransactionsController extends Controller {
 			'label'			=>	'is_echeck',
 			'text'			=>	'Echeck'
 		],
+		[
+			'label'			=>	'u_user',
+			'text'			=>	'Voided by'
+		],
 		
 	];
 
@@ -69,7 +74,7 @@ class TransactionsController extends Controller {
 	}
 
 	public function fetchArrangedColumns(Request $request){
-		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'transactions', 'transactions', null, 'transaction', remove_columns:['company_id', 'timezone_offset_minutes', 'currency_id', 'token_id_identifier', 'invoice_id', 'gateway_fees_amount', 'is_approved', 'is_payment_captured', 'is_echeck'], additional_fields: $this->additional_fields);
+		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'transactions', 'transactions', null, 'transaction', remove_columns:['company_id', 'timezone_offset_minutes', 'currency_id', 'token_id_identifier', 'invoice_id', 'gateway_fees_amount', 'is_approved', 'is_payment_captured', 'is_echeck', 'voided_by'], additional_fields: $this->additional_fields);
 	}
 	
 
@@ -96,6 +101,34 @@ class TransactionsController extends Controller {
 
 		$data = $request->validated();
 		return $this->transaction_service->fetchInvoices((int) $data['company_id'], (string) $data['searched']);
+
+	}
+
+	public function store(TransactionStoreRequest $request){
+
+		$data = $request->validated();
+
+		if(!$this->transaction_service->validateAmounts($data['amount'], $data['gateway_fees'], $data['received_amount'])){
+			return response(['message' => 'Invalid amounts provided', 'validity' => 'invalid_amounts'], config('global.error_code'));
+		}
+
+		try{
+
+			$transaction = $this->transaction_service->createManualTransaction((int) $data['company_id'], (int) $data['invoice_id'], (float) $data['amount'], (float) $data['gateway_fees'], (float) $data['received_amount'], (int) $data['payment_method']);
+		
+			//update invoice
+			$this->transaction_service->updateInvoiceForTransaction($transaction, (float) $data['amount']);
+
+			//process snapshot
+			$this->transaction_service->generateSnapshot((int) $data['invoice_id']);
+
+			return response(['message' => 'Transaction saved successfully', 'validity' => 'transaction_saved'], 200);
+
+		}catch(Exception $e){
+
+			return General::wentWrong();
+
+		}
 
 	}
 

@@ -2,10 +2,69 @@
 
 namespace App\Repositories\Transaction;
 
+use App\Models\Invoice;
+use App\Models\Transaction;
+use App\Modules\Payment\Enums\TransactionStatus;
+use Illuminate\Support\Str;
+
 /**
  * TransactionRepository class
  */
 class TransactionRepository {
 
+	/**
+	 * searchInvoicesByInvoiceNumber function
+	 *
+	 * @param integer $company_id
+	 * @param string $searched
+	 * @return array
+	 */
+	public function searchInvoicesByInvoiceNumber(int $company_id, string $searched) : array {
+
+		$escaped_search = str_replace(['%', '_'], ['\%', '\_'], $searched);
+
+		$invoices = Invoice::select('invoices.id as id', 'invoices.invoice_number as invoice_number', 'currencies.code as currency_code')->join('currencies', 'currencies.id', '=', 'invoices.currency_id')->where('company_id', '=', $company_id)->where('invoice_number', 'LIKE', '%'.$escaped_search.'%')->orderBy('invoice_number', 'ASC')->limit(50)->get()->map(function($invoice){
+			return [
+				'text'		=>	$invoice->invoice_number.' ('.$invoice->currency_code.')',
+				'value'		=>	$invoice->id
+			];
+		})->toArray();
+
+		return $invoices;
+
+	}
+
+	/**
+	 * createManualTransaction function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param float $amount
+	 * @param float $gateway_fees
+	 * @param float $received_amount
+	 * @param integer $payment_method
+	 * @return Transaction
+	 */
+	public function createManualTransaction(int $company_id, int $invoice_id, float $amount, float $gateway_fees, float $received_amount, int $payment_method) : Transaction {
+
+		$transaction = new Transaction();
+		$transaction->company_id = $company_id;
+		$transaction->invoice_id = $invoice_id;
+		$transaction->amount = $amount;
+		$transaction->gateway_fees_amount = $gateway_fees;
+		$transaction->received_amount = $received_amount;
+		$transaction->payment_method = $payment_method;
+		$transaction->mode = 'Manual';
+		$transaction->token_id_identifier = Str::uuid();
+		$transaction->is_approved = 1;
+		$transaction->is_payment_captured = 1;
+		$transaction->status = TransactionStatus::COMPLETED->value;
+		$transaction->is_echeck = 0;
+		$transaction->paid_at = now();
+		$transaction->save();
+
+		return $transaction;
+
+	}
 
 }
