@@ -337,4 +337,14 @@ class TransactionService {
 	}
 
 
+	/**
+	 * fetchTransaction function
+	 *
+	 * @param integer $transaction_id
+	 * @return array
+	 */
+	public function fetchTransactionView(int $transaction_id, int $company_id) : array {
+		return $this->transaction_repository->fetchTransactionView($transaction_id, $company_id);
+	}
+
 }

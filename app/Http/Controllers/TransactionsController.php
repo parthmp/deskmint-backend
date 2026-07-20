@@ -149,8 +149,26 @@ class TransactionsController extends Controller {
 
 	}
 
-	public function show(Request $request){
-		return 'test';
+	public function show(GenericRequest $request, int $transaction_id){
+		
+		$transaction_id = (int) Sanitize::input($transaction_id);
+		$data = $request->validated();
+
+		try{
+			
+			$transaction = $this->transaction_service->fetchTransactionView($transaction_id, (int) $data['company_id']);
+			
+			if(empty($transaction)){
+				return response(['message' => 'Invalid transaction provided', 'validity' => 'invalid_transaction'], config('global.error_code'));
+			}
+
+			return $transaction;
+
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+		
+
 	}
 
 }

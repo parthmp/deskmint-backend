@@ -2,8 +2,10 @@
 
 namespace App\Repositories\Transaction;
 
+use App\Helpers\General;
 use App\Models\Invoice;
 use App\Models\Transaction;
+use App\Models\TransactionGatewayDetail;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Enums\TransactionStatus;
 use Illuminate\Support\Str;
@@ -64,6 +66,13 @@ class TransactionRepository {
 		$transaction->paid_at = now();
 		$transaction->save();
 
+		$tgd = new TransactionGatewayDetail();
+		$tgd->transaction_id = $transaction->id;
+		$tgd->payment_approved_details = '';
+		$tgd->payment_captured_details = '';
+		$tgd->echeck_pending_details = '';
+		$tgd->save();
+
 		return $transaction;
 
 	}
@@ -104,6 +113,37 @@ class TransactionRepository {
 			'exists'	=>	$invoice ? true : false,
 			'cancelled'	=>	$invoice ? $invoice->status === InvoiceStatus::CANCELLED->value : false,
 		];
+
+	}
+
+	/**
+	 * fetchTransactionView function
+	 *
+	 * @param integer $transaction_id
+	 * @return array
+	 */
+	public function fetchTransactionView(int $transaction_id, int $company_id) : array {
+
+		$transaction = Transaction::select(
+			'transactions.*',
+			'currencies.code as currency_code',
+			'invoices.invoice_number as invoice_number',
+			'users.name as voided_by_name',
+		)->where([['transactions.id', '=', $transaction_id], ['transactions.company_id', '=', $company_id]])->join('invoices', 'invoices.id', '=', 'transactions.invoice_id')->join('currencies', 'currencies.id', '=', 'invoices.currency_id')->leftjoin('users', 'users.id', '=', 'transactions.voided_by')->first();
+
+		if(!$transaction){
+			return [];
+		}
+
+		$transaction = $transaction->toArray();
+
+		$transaction['payment_method'] = General::getPaymentMethodName((int) $transaction['payment_method']);
+		$transaction['status'] = TransactionStatus::getTransactionStatusLabel((int) $transaction['status']);
+		$transaction['is_approved'] = ((int) $transaction['is_approved'] === 1) ? 'Yes' : 'No';
+		$transaction['is_payment_captured'] = ((int) $transaction['is_payment_captured'] === 1) ? 'Yes' : 'No';
+		$transaction['is_echeck'] = ((int) $transaction['is_echeck'] === 1) ? 'Yes' : 'No';
+
+		return $transaction;
 
 	}
 
