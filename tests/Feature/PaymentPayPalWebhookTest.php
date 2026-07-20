@@ -229,6 +229,7 @@ class PaymentPayPalWebhookTest extends TestCase
 			'currency_id'	=>	5,
 			'status'		=>	InvoiceStatus::PENDING->value,
 			'balance_due'	=>	$amount,
+			'total'			=>	$amount,
 			'payment_method'=> PAYMENT_PAYPAL
 		]);
 
@@ -311,6 +312,7 @@ class PaymentPayPalWebhookTest extends TestCase
 			'currency_id'	=>	5,
 			'status'		=>	InvoiceStatus::PENDING->value,
 			'balance_due'	=>	($amount+20),
+			'total'			=>	($amount+20),
 			'payment_method'=> PAYMENT_PAYPAL
 		]);
 

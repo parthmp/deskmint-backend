@@ -143,6 +143,7 @@ class PaymentStripeWebhookTest extends TestCase
 			'currency_id'	=>	5,
 			'status'		=>	InvoiceStatus::PENDING->value,
 			'balance_due'	=>	$amount,
+			'total'			=>	$amount,
 			'payment_method'=> PAYMENT_STRIPE
 		]);
 
@@ -235,6 +236,7 @@ class PaymentStripeWebhookTest extends TestCase
 			'currency_id'	=>	5,
 			'status'		=>	InvoiceStatus::PENDING->value,
 			'balance_due'	=>	$amount+25,
+			'total'	=>	$amount+25,
 			'payment_method'=> PAYMENT_STRIPE
 		]);
 

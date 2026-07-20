@@ -8,6 +8,8 @@ use App\Models\Transaction;
 use App\Models\TransactionGatewayDetail;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Enums\TransactionStatus;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 /**
@@ -147,4 +149,34 @@ class TransactionRepository {
 
 	}
 
+	/**
+	 * fetchTransactionStatus function
+	 *
+	 * @param integer $company_id
+	 * @param integer $transaction_id
+	 * @return Transaction
+	 */
+	public function fetchTransaction(int $company_id, int $transaction_id) : Transaction {
+		return Transaction::where([['transactions.id', '=', $transaction_id], ['transactions.company_id', '=', $company_id]])->first();
+	}
+
+	/**
+	 * markTransactionVoid function
+	 *
+	 * @param integer $company_id
+	 * @param integer $transaction_id
+	 * @return Transaction
+	 */
+	public function markTransactionVoid(int $company_id, int $transaction_id) : Transaction {
+
+		$transaction = $this->fetchTransaction($company_id, $transaction_id);
+		$transaction->status = TransactionStatus::VOID->value;
+		$transaction->voided_at = now();
+		$transaction->voided_by = Auth::user()->id;
+		$transaction->save();
+
+		return $transaction;
+
+	}
+	
 }

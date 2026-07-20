@@ -228,7 +228,7 @@ class DatabaseOperations{
 					['payment_captured_details' => json_encode($data)]
 				);
 				
-				$this->markInvoicePaidnDeduct($transaction, (float) $data['resource']['amount']['value']);
+				$this->updateInvoiceStatusForPayments($transaction);
 				
 				$this->updateInvoiceSnapshot((int) $transaction->invoice_id);
 
@@ -305,7 +305,7 @@ class DatabaseOperations{
 		$amount = (int) $data['data']['object']['amount_total'];
 		$amount = BigDecimal::of($amount)->dividedBy(100, 2, RoundingMode::HalfUp)->toFloat();
 
-		$saved = $transaction->save() && $this->markInvoicePaidnDeduct($transaction, $amount);
+		$saved = $transaction->save() && $this->updateInvoiceStatusForPayments($transaction);
 
 		$this->updateInvoiceSnapshot((int) $transaction->invoice_id);
 

@@ -7,9 +7,11 @@ use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
 use App\Http\Requests\Product\AutoCompleteSearchRequest;
 use App\Http\Requests\TransactionStoreRequest;
+use App\Http\Requests\VoidTransactionRequest;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
 use App\Modules\DataTable\Requests\DataTableRequest;
+use App\Modules\Payment\Enums\TransactionStatus;
 use App\Services\Transaction\TransactionService;
 use Exception;
 use Illuminate\Http\Request;
@@ -169,6 +171,33 @@ class TransactionsController extends Controller {
 		}
 		
 
+	}
+
+	public function voidTransaction(VoidTransactionRequest $request){
+
+		$data = $request->validated();
+
+		$transaction = $this->transaction_service->fetchTransaction((int) $data['company_id'], (int) $data['id']);
+
+		if(!$transaction){
+			return response(['message' => 'Invalid transaction provided', 'validity' => 'invalid_transaction'], config('global.error_code'));
+		}
+
+		if((int) $transaction->status !== TransactionStatus::COMPLETED->value){
+			return response(['message' => 'You can not void incomplete transaction', 'validity' => 'incomplete_transaction'], config('global.error_code'));
+		}
+
+		if((int) $transaction->payment_method !== PAYMENT_CASH && (int) $transaction->payment_method !== PAYMENT_NETBANKING){
+			return response(['message' => 'You can not void online transaction', 'validity' => 'online_transaction'], config('global.error_code'));
+		}
+		try{
+
+			$this->transaction_service->voidTransaction((int) $data['company_id'], (int) $data['id']);
+			return response(['message' => 'Voided successfully', 'validity' => 'voided_success'], 200);
+			
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 	}
 
 }

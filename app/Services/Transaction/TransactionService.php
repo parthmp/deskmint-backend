@@ -9,6 +9,8 @@ use App\Modules\Payment\Enums\TransactionStatus;
 use App\Modules\Payment\Traits\UpdateInvoiceForTransaction;
 use App\Repositories\Transaction\TransactionRepository;
 use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
 /**
@@ -222,7 +224,7 @@ class TransactionService {
 
 			];
 
-		return $this->easy_index->setType('transaction')->setJoins($joins)->setAndWhere([['transactions.status', '=', (int) TransactionStatus::COMPLETED->value]])->setExceptionClass(TransactionException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
+		return $this->easy_index->setType('transaction')->setJoins($joins)->setAndWhere([['transactions.status', '<>', (int) TransactionStatus::PENDING->value]])->setExceptionClass(TransactionException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
 			'c_code'						=>		'currencies.code',
 			'full_name'						=>		'invoices.full_name',
 			'invoice_number'				=>		'invoices.invoice_number',
@@ -313,7 +315,7 @@ class TransactionService {
 	 * @return void
 	 */
 	public function updateInvoiceForTransaction(Transaction $transaction, float $amount){
-		$this->markInvoicePaidnDeduct($transaction, $amount, false);
+		$this->updateInvoiceStatusForPayments($transaction, false);
 	}
 
 	/**
@@ -345,6 +347,29 @@ class TransactionService {
 	 */
 	public function fetchTransactionView(int $transaction_id, int $company_id) : array {
 		return $this->transaction_repository->fetchTransactionView($transaction_id, $company_id);
+	}
+
+	/**
+	 * fetchTransaction function
+	 *
+	 * @param integer $company_id
+	 * @param integer $transaction_id
+	 * @return Transaction
+	 */
+	public function fetchTransaction(int $company_id, int $transaction_id) : Transaction {
+		return $this->transaction_repository->fetchTransaction($company_id, $transaction_id);
+	}
+
+	
+
+	public function voidTransaction(int $company_id, int $transaction_id) : void {
+
+		$transaction = $this->transaction_repository->markTransactionVoid((int) $company_id, (int) $transaction_id);
+		
+		$this->updateInvoiceStatusForPayments($transaction, false);
+
+		$this->updateInvoiceSnapshot($transaction->invoice_id);
+
 	}
 
 }
