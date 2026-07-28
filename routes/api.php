@@ -192,9 +192,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	 */
 	Route::get('manage-transactions/fetch-arranged-columns', [TransactionsController::class, 'fetchArrangedColumns']);
 	Route::post('manage-transactions/save-arranged-columns', [TransactionsController::class, 'saveArrangedColumns']);
-	Route::get('manage-transactions/fetch-init', [TransactionsController::class, 'fetchInit']);
-	Route::get('manage-transactions/fetch-invoices', [TransactionsController::class, 'fetchInvoices']);
-	Route::patch('manage-transactions/void-transaction', [TransactionsController::class, 'voidTransaction']);
-	Route::resource('manage-transactions', TransactionsController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
+	Route::get('manage-transactions/{id}', [TransactionsController::class, 'show']);
+	Route::get('manage-transactions', [TransactionsController::class, 'index']);
 	
 });

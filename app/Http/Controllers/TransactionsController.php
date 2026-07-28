@@ -5,13 +5,10 @@ namespace App\Http\Controllers;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
-use App\Http\Requests\Product\AutoCompleteSearchRequest;
 use App\Http\Requests\TransactionStoreRequest;
-use App\Http\Requests\VoidTransactionRequest;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
 use App\Modules\DataTable\Requests\DataTableRequest;
-use App\Modules\Payment\Enums\TransactionStatus;
 use App\Services\Transaction\TransactionService;
 use Exception;
 use Illuminate\Http\Request;
@@ -94,63 +91,6 @@ class TransactionsController extends Controller {
 
 	}
 
-	public function fetchInit(GenericRequest $request){
-
-		$invoice_id = Sanitize::input($request->input('id'));
-		if($invoice_id){
-			return $this->transaction_service->fetchInit((int) $invoice_id);
-		}
-
-		return $this->transaction_service->fetchInit();
-
-	}
-
-	public function fetchInvoices(AutoCompleteSearchRequest $request){
-
-		$data = $request->validated();
-		return $this->transaction_service->fetchInvoices((int) $data['company_id'], (string) $data['searched']);
-
-	}
-
-	public function store(TransactionStoreRequest $request){
-
-		$data = $request->validated();
-		
-		$validated = $this->transaction_service->validateInvoiceForTransaction((int) $data['invoice_id']);
-		
-		if(!$validated['exists']){
-			return response(['message' => 'Invalid invoice number provided', 'validity' => 'invalid_invoice'], config('global.error_code'));
-		}
-
-		if($validated['cancelled']){
-			return response(['message' => 'You can not create transactions for cancelled invoice', 'validity' => 'invalid_cancelled'], config('global.error_code'));
-		}
-
-
-		if(!$this->transaction_service->validateAmounts($data['amount'], $data['gateway_fees'], $data['received_amount'])){
-			return response(['message' => 'Invalid amounts provided', 'validity' => 'invalid_amounts'], config('global.error_code'));
-		}
-
-		try{
-
-			$transaction = $this->transaction_service->createManualTransaction((int) $data['company_id'], (int) $data['invoice_id'], (float) $data['amount'], (float) $data['gateway_fees'], (float) $data['received_amount'], (int) $data['payment_method']);
-		
-			//update invoice
-			$this->transaction_service->updateInvoiceForTransaction($transaction, (float) $data['amount']);
-
-			//process snapshot
-			$this->transaction_service->generateSnapshot((int) $data['invoice_id']);
-
-			return response(['message' => 'Transaction saved successfully', 'validity' => 'transaction_saved'], 200);
-
-		}catch(Exception $e){
-
-			return General::wentWrong();
-
-		}
-
-	}
-
 	public function show(GenericRequest $request, int $transaction_id){
 		
 		$transaction_id = (int) Sanitize::input($transaction_id);
@@ -171,33 +111,6 @@ class TransactionsController extends Controller {
 		}
 		
 
-	}
-
-	public function voidTransaction(VoidTransactionRequest $request){
-
-		$data = $request->validated();
-
-		$transaction = $this->transaction_service->fetchTransaction((int) $data['company_id'], (int) $data['id']);
-
-		if(!$transaction){
-			return response(['message' => 'Invalid transaction provided', 'validity' => 'invalid_transaction'], config('global.error_code'));
-		}
-
-		if((int) $transaction->status !== TransactionStatus::COMPLETED->value){
-			return response(['message' => 'You can not void incomplete transaction', 'validity' => 'incomplete_transaction'], config('global.error_code'));
-		}
-
-		if((int) $transaction->payment_method !== PAYMENT_CASH && (int) $transaction->payment_method !== PAYMENT_NETBANKING){
-			return response(['message' => 'You can not void online transaction', 'validity' => 'online_transaction'], config('global.error_code'));
-		}
-		try{
-
-			$this->transaction_service->voidTransaction((int) $data['company_id'], (int) $data['id']);
-			return response(['message' => 'Voided successfully', 'validity' => 'voided_success'], 200);
-			
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
 	}
 
 }

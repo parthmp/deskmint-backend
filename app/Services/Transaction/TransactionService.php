@@ -232,81 +232,7 @@ class TransactionService {
 		 ])->setRewrites($rewrites)->setModel(Transaction::class)->fetchIndex();
 	}
 
-	/**
-	 * fetchInit function
-	 *
-	 * @return array
-	 */
-	public function fetchInit(?int $invoice_id = null) : array {
-		
-		$data = [
-			'offline_payment_methods' => [
-				[
-					'value'		=>	PAYMENT_CASH,
-					'text'		=>	'Cash'
-				],
-				[
-					'value'		=>	PAYMENT_NETBANKING,
-					'text'		=>	'Netbanking'
-				]
-			],
-			'invoice_data' => null
-		];
-
-		if($invoice_id){
-			$invoice_data = $this->transaction_repository->fetchInvoiceDataById($invoice_id);
-			$data['invoice_data'] = $invoice_data;
-		}
-
-		return $data;
-	}
-
-	/**
-	 * fetchInvoices function
-	 *
-	 * @param integer $company_id
-	 * @param string $searched
-	 * @return array
-	 */
-	public function fetchInvoices(int $company_id, string $searched) : array {
-		return $this->transaction_repository->searchInvoicesByInvoiceNumber($company_id, $searched);
-	}
-
-	/**
-	 * validateAmounts function
-	 *
-	 * @param string $amount
-	 * @param string $gateway_fees
-	 * @param string $received_amount
-	 * @return boolean
-	 */
-	public function validateAmounts(string $amount, string $gateway_fees, string $received_amount) : bool {
-		
-		$amount = BigDecimal::of($amount);
-		$gateway_fees = BigDecimal::of($gateway_fees);
-		$received_amount = BigDecimal::of($received_amount);
-
-		$combined = $gateway_fees->plus($received_amount);
-
-		return $amount->isEqualTo($combined);
-
-	}
-
-	/**
-	 * createManualTransaction function
-	 *
-	 * @param integer $company_id
-	 * @param integer $invoice_id
-	 * @param float $amount
-	 * @param float $gateway_fees
-	 * @param float $received_amount
-	 * @param integer $payment_method
-	 * @return Transaction
-	 */
-	public function createManualTransaction(int $company_id, int $invoice_id, float $amount, float $gateway_fees, float $received_amount, int $payment_method) : Transaction {
-		return $this->transaction_repository->createManualTransaction($company_id, $invoice_id, $amount, $gateway_fees, $received_amount, $payment_method);
-	}
-
+	
 	/**
 	 * updateInvoiceForTransaction function
 	 *
@@ -329,17 +255,6 @@ class TransactionService {
 	}
 
 	/**
-	 * validateInvoiceForTransaction function
-	 *
-	 * @param integer $invoice_id
-	 * @return array
-	 */
-	public function validateInvoiceForTransaction(int $invoice_id) : array {
-		return $this->transaction_repository->validateInvoiceForTransaction($invoice_id);
-	}
-
-
-	/**
 	 * fetchTransaction function
 	 *
 	 * @param integer $transaction_id
@@ -358,18 +273,6 @@ class TransactionService {
 	 */
 	public function fetchTransaction(int $company_id, int $transaction_id) : Transaction {
 		return $this->transaction_repository->fetchTransaction($company_id, $transaction_id);
-	}
-
-	
-
-	public function voidTransaction(int $company_id, int $transaction_id) : void {
-
-		$transaction = $this->transaction_repository->markTransactionVoid((int) $company_id, (int) $transaction_id);
-		
-		$this->updateInvoiceStatusForPayments($transaction, false);
-
-		$this->updateInvoiceSnapshot($transaction->invoice_id);
-
 	}
 
 }
