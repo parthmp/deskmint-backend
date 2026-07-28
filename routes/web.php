@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PaymentController;
+use App\Models\User;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\InvoiceGeneration\InvoiceGenerator;
 use App\Modules\InvoiceGeneration\InvoiceSettingsResolver;
@@ -15,7 +16,6 @@ Route::get('/', function () {
 	//$snapshot = app(InvoiceSnapshot::class)->setCompanyId(1)->setInvoiceId(88)->setTimezoneOffset(-330)->setLogoSnapsot()->setGeneralSettings()->setClientSnapshot()->setCompanySnapshot()->setInvoiceSnapshot()->setInvoiceRowsSnapshot()->setTotalsSnapshot()->setTermsSnapshot();
 	//return $snapshot->output();
 	//app(NotificationService::class)->notify(1, 'test', 'title here', 'message here', ['whatever']);
-    return 'welcome';
 });
 
 Route::get('/pay-invoice/{uuid}', [PaymentController::class, 'showPaymentPage'])->name('invoice.pay')->middleware('signed');
