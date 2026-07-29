@@ -39,6 +39,36 @@ class SettingRepository{
 		return $setting;
 
 	}
+
+	/**
+	 * fetchUserLoginSettingsForAdminArea function
+	 *
+	 * @param string $type
+	 * @param integer $company_id
+	 * @param integer $user_id
+	 * @return Setting
+	 */
+	public function fetchUserLoginSettingsForAdminArea(string $type, int $company_id, int $user_id) : Setting {
+
+		$global = Setting::where([['company_id', '=', null], ['user_id', '=', null]])->first();
+
+		if($type === 'global'){
+			return $global;
+		}
+
+		$setting = Setting::where([['company_id', '=', $company_id], ['user_id', '=', $user_id]])->first();
+
+		if(!$setting){
+			$setting = Setting::where('company_id', '=', $company_id)->first();
+		}
+		logger($setting);
+		if(!$setting){
+			$setting = $global;
+		}
+
+		return $setting;
+
+	}
 	
 	/**
 	 * updateSettings function
@@ -87,7 +117,7 @@ class SettingRepository{
 
 		$setting_c->login_limits_attempts = $settings['login_limits_attempts'];
 		$setting_c->login_limits_minutes = $settings['login_limits_minutes'];
-		
+
 		return $setting_c->save();
 
 	}

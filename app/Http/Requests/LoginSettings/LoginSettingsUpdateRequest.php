@@ -24,6 +24,7 @@ class LoginSettingsUpdateRequest extends FormRequest
 		$type = Sanitize::input($this->input('type'));
 		$login_limits_attempts = Sanitize::input($this->input('login_limits_attempts'));
 		$login_limits_minutes = Sanitize::input($this->input('login_limits_minutes'));
+		$id = Sanitize::input($this->input('id') ?? '');
 
 		$this->merge([
 			'company_id'			=>	$company_id,
@@ -32,7 +33,8 @@ class LoginSettingsUpdateRequest extends FormRequest
 			'two_factor_auth_flag'	=>	(bool) $this->input('two_factor_auth_flag'),
 			'login_email_flag'		=>	(bool) $this->input('login_email_flag'),
 			'login_limits_attempts'	=>	$login_limits_attempts,
-			'login_limits_minutes'	=>	$login_limits_minutes
+			'login_limits_minutes'	=>	$login_limits_minutes,
+			'id'					=>	$id
 		]);
 
 	}
@@ -51,6 +53,7 @@ class LoginSettingsUpdateRequest extends FormRequest
 			'login_email_flag'		=>	'required|boolean',
 			'login_limits_attempts'	=>	'required|integer|gt:1',
 			'login_limits_minutes'	=>	'required|integer|gt:1',
+			'id'					=>	'sometimes',
 			'type'					=>	'required|in:local,global'
         ];
     }

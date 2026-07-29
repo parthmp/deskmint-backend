@@ -19,9 +19,17 @@ class LoginSettingsController extends Controller {
 	public function show(LoginSettingsShowRequest $request){
 
 		$data = $request->validated();
-
+		
 		try{
-			return $this->login_settings_service->fetchLoginSettings($data['type'], $data['company_id']);
+
+			$user_id = (int) Auth::user()->id;
+
+			if((string) $data['id'] !== ''){
+				$user_id = (int) $data['id'];
+			}
+			
+			return $this->login_settings_service->fetchUserLoginSettingsForAdminArea($data['type'], $data['company_id'], $user_id);
+			
 		}catch(Exception $e){
 			return General::wentWrong();
 		}
@@ -33,7 +41,7 @@ class LoginSettingsController extends Controller {
 		$data = $request->validated();
 
 		try{
-			
+
 			$update = [
 				'login_email_flag'		=>	(bool) $data['login_email_flag'],
 				'login_limits_flag'		=>	(bool) $data['login_limits_flag'],
@@ -42,7 +50,13 @@ class LoginSettingsController extends Controller {
 				'login_limits_minutes'	=>	(int) $data['login_limits_minutes'],
 			];
 
-			$this->login_settings_service->updateSettings($update, $data['type'], (int) $data['company_id'], (int) Auth::user()->id);
+			$user_id = (int) Auth::user()->id;
+
+			if($data['id'] !== ''){
+				$user_id = (int) $data['id'];
+			}
+			
+			$this->login_settings_service->updateSettings($update, $data['type'], (int) $data['company_id'], (int) $user_id);
 
 			return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
 

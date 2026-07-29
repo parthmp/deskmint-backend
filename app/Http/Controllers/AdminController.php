@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\UpdateAdminRequest;
 use App\Models\User;
 use App\Services\Admin\AdminService;
 use App\Services\DeleteService;
+use App\Services\LoginSettings\LoginSettingsService;
 use Doctrine\DBAL\Query\QueryException;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -16,7 +17,11 @@ use Illuminate\Http\Response;
 
 class AdminController extends Controller{
 
-	public function __construct(private AdminService $admin_service, private DeleteService $delete_service){
+	public function __construct(
+		private AdminService $admin_service,
+		private DeleteService $delete_service,
+		private LoginSettingsService $login_settings_service
+	){
 
 	}
     
@@ -34,8 +39,10 @@ class AdminController extends Controller{
 	public function store(CreateAdminRequest $request){
 
 		try{
-			
-			$this->admin_service->create($request->validated());
+
+			$data = $request->validated();
+			$user = $this->admin_service->create($data);
+			$this->login_settings_service->updateSettings($data, 'local', (int) $data['company_id'], (int) $user->id);
 			return response(['message' => 'Admin created successfully', 'validity' => 'admin_created'], 200);
 
 		}catch(QueryException $e){
@@ -57,7 +64,9 @@ class AdminController extends Controller{
 
 	public function update(UpdateAdminRequest $request, int $id){
 		try {
-			$this->admin_service->update($request->validated(), $id);
+			$data = $request->validated();
+			$user = $this->admin_service->update($data, $id);
+			$this->login_settings_service->updateSettings($data, 'local', (int) $data['company_id'], (int) $user->id);
 			return response(['message' => 'Admin updated successfully', 'validity' => 'admin_updated'], 200);
 		}catch(ModelNotFoundException $e){
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));

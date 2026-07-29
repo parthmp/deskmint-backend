@@ -51,4 +51,16 @@ class LoginSettingsService{
 		return $this->setting_repository->updateSettings($settings, $type, $company_id, $user_id);
 	}
 
+	/**
+	 * fetchUserLoginSettingsForAdminArea function
+	 *
+	 * @param string $type
+	 * @param integer $company_id
+	 * @param integer $user_id
+	 * @return Setting
+	 */
+	public function fetchUserLoginSettingsForAdminArea(string $type, int $company_id, int $user_id) : Setting {
+		return $this->setting_repository->fetchUserLoginSettingsForAdminArea($type, $company_id, $user_id);
+	}
+
 }

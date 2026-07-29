@@ -21,11 +21,13 @@ class LoginSettingsShowRequest extends FormRequest
 	protected function prepareForValidation(){
 
 		$type = Sanitize::input($this->input('type'));
+		$id = Sanitize::input($this->input('id'));
 		$company_id = Sanitize::input($this->input('company_id'));
 		
 		$this->merge([
 			'type'				=>	$type,
-			'company_id'		=>	$company_id
+			'company_id'		=>	$company_id,
+			'id'				=>	$id
 		]);
 
 	}
@@ -39,6 +41,7 @@ class LoginSettingsShowRequest extends FormRequest
     {
         return [
             'company_id'		=>	'required',
+            'id'				=>	'sometimes',
             'type'				=>	'required|in:local,global'
         ];
     }
