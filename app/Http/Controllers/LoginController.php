@@ -41,6 +41,7 @@ class LoginController extends Controller{
 			return response(['message'	=> 'Invalid email or password entered','validity'	=>	'invalid_email_and_password'], config('global.error_code'));
 		}
 
+		//TODO: modify this for company_id after we have users features, not just admins.
 		$setting = $this->setting_service->fetchUserLoginSettings(null, (int) $user->id);
 
 		$this->login_attempt_service->resetAttempts($user, $setting);

@@ -29,6 +29,7 @@ use App\Http\Controllers\InvoiceSettingsNumbersController;
 use App\Http\Controllers\InvoiceSettingsProductColumnsController;
 use App\Http\Controllers\InvoiceSettingsTotalFieldsController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\LoginSettingsController;
 use App\Http\Controllers\PaymentSettingsPaypalController;
 use App\Http\Controllers\PaymentSettingsStripeController;
 use App\Http\Controllers\ProductsController;
@@ -186,6 +187,12 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-stripe-settings', [PaymentSettingsStripeController::class, 'show']);
 	Route::post('manage-stripe-settings', [PaymentSettingsStripeController::class, 'upsert']);
 	Route::delete('manage-stripe-settings', [PaymentSettingsStripeController::class, 'destroy']);
+
+	/**
+	 * login settings
+	 */
+	Route::get('manage-login-settings', [LoginSettingsController::class, 'show']);
+	Route::patch('manage-login-settings', [LoginSettingsController::class, 'update']);
 
 	/**
 	 * manage transactions routes

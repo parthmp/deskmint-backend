@@ -21,6 +21,8 @@ class SettingFactory extends Factory
     public function definition(): array
     {
         return [
+            'company_id'			=>		null,
+            'user_id'				=>		null,
             'login_limits_flag'		=>		$this->faker->boolean(),
             'login_limits_attempts'	=>		$this->faker->numberBetween(1, 5),
             'login_limits_minutes'	=>		$this->faker->numberBetween(2, 15),

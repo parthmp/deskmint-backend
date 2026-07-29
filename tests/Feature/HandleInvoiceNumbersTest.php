@@ -96,7 +96,7 @@ class HandleInvoiceNumbersTest extends TestCase {
 		
 		$this->assertEquals(date('Y').date('m').date('d').'AbC'.date('d').date('F').date('M').date('m').date('l').date('d').date('Y').'001', (string) $invoice_number);
 	}
-	//TODO : continue testing for reset conter for invoice number after invoice insert tests
+	
 	// public function test_invoice_number_behaviour_with_pattern_reset_counter_1_hin(){
 
 	// 	$settings = $this->getDefaultInvoiceNumbersSettings();
