@@ -12,6 +12,7 @@ use App\Modules\EasyIndex\EasyIndex;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\InvoiceGeneration\InvoiceSettingsResolver;
 use App\Modules\Payment\Enums\InvoiceStatus;
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Repositories\Invoice\InvoiceRepository;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use App\Services\HandleInvoiceNumbers;
@@ -55,6 +56,8 @@ class InvoiceFetchService{
 
 		// /* get payment integration data */
 		$gateways = $this->settings_section_repository->getGateWayNames((int) $company_id);
+		//$gateways = PaymentGateway::configuredOptions();
+		//$gateways = PaymentGateway::STRIPE->value;
 
 		return [
 			'invoice_number'	=>	(new HandleInvoiceNumbers((int) $company_id, $invoice_settings->getInvoiceNumbers(), (int) $timezone_offset_minutes))->getNextInvoiceNumber(),
