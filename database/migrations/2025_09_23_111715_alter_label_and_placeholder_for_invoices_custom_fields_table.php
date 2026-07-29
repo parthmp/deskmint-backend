@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('invoices_custom_fields', function (Blueprint $table) {
-			$table->text('label', 255)->change();
-			$table->text('placeholder', 255)->change();
+			$table->string('label', 255)->change();
+			$table->string('placeholder', 255)->change();
         });
     }
 
@@ -23,8 +23,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('invoices_custom_fields', function (Blueprint $table) {
-			$table->text('label', 20)->change();
-			$table->text('placeholder', 20)->change();
+			$table->string('label', 20)->change();
+			$table->string('placeholder', 20)->change();
         });
     }
 };

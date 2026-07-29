@@ -18,12 +18,14 @@ class SettingService{
 	public function __construct(private SettingRepository $setting_repository){}
 
 	/**
-	 * fetchFirst function
+	 * fetchUserLoginSettings function
 	 *
-	 * @return Setting
+	 * @param integer|null $company_id
+	 * @param integer|null $user_id
+	 * @return Setting|null
 	 */
-	public function fetchFirst() : ?Setting {
-		return $this->setting_repository->fetchFirst();
+	public function fetchUserLoginSettings(?int $company_id, ?int $user_id) : ?Setting {
+		return $this->setting_repository->fetchUserLoginSettings($company_id, $user_id);
 	}
 
 	

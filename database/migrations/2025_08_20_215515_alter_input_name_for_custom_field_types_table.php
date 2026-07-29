@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
 		Schema::table('custom_field_types', function (Blueprint $table) {
-			$table->text('input_name', 255)->change();
+			$table->string('input_name', 255)->change();
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
 		Schema::table('custom_field_types', function (Blueprint $table) {
-			$table->text('input_name', 50)->change();
+			$table->string('input_name', 50)->change();
         });
     }
 };

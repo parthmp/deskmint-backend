@@ -9,6 +9,7 @@ use App\Modules\InvoiceGeneration\InvoiceSnapshot;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
+	
 	//return (new InvoiceGenerator(1, 4))->modifyInvoiceTemplate()->getInvoiceHTML();
 	//return (new InvoiceGenerator(1, 52, 330))->generatePDF(save:true, add_random:false)->stream();
 	//return (new InvoiceGenerator(1, 4, 330))->generatePDF(save:true, add_random:true)->generateEInvoice()->sendEmail();
@@ -16,6 +17,7 @@ Route::get('/', function () {
 	//$snapshot = app(InvoiceSnapshot::class)->setCompanyId(1)->setInvoiceId(88)->setTimezoneOffset(-330)->setLogoSnapsot()->setGeneralSettings()->setClientSnapshot()->setCompanySnapshot()->setInvoiceSnapshot()->setInvoiceRowsSnapshot()->setTotalsSnapshot()->setTermsSnapshot();
 	//return $snapshot->output();
 	//app(NotificationService::class)->notify(1, 'test', 'title here', 'message here', ['whatever']);
+	return 'welcome';
 });
 
 Route::get('/pay-invoice/{uuid}', [PaymentController::class, 'showPaymentPage'])->name('invoice.pay')->middleware('signed');

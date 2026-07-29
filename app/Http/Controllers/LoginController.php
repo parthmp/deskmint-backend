@@ -32,8 +32,7 @@ class LoginController extends Controller{
 		$email = strtolower((string) $data['email_address']);
 		
 		$user =	$this->user_service->fetchUserByEmail($email);
-		$setting = $this->setting_service->fetchFirst();
-
+		
 		if(!Turnstile::validate($data['turnstile_token'])){
 			return response(['message' 	=> 'Invalid request','validity'	=> 'invalid_turnstile'], config('global.error_code'));
 		}
@@ -41,6 +40,8 @@ class LoginController extends Controller{
 		if(!$user){
 			return response(['message'	=> 'Invalid email or password entered','validity'	=>	'invalid_email_and_password'], config('global.error_code'));
 		}
+
+		$setting = $this->setting_service->fetchUserLoginSettings(null, (int) $user->id);
 
 		$this->login_attempt_service->resetAttempts($user, $setting);
 
@@ -148,9 +149,9 @@ class LoginController extends Controller{
 			$this->login_service->invalidatePastTokens($found_token->user, $data['device']);
 			$tokens = $this->login_service->issueTokens($found_token->user, $data['device'], $request);
 
-			$setting = $this->setting_service->fetchFirst();
+			$setting = $this->setting_service->fetchUserLoginSettings(null, (int) $found_token->user->id);
 			
-			if($setting->login_email_flag == 1){
+			if((int) $setting->login_email_flag === 1){
 				$this->login_service->sendLoginEmail($found_token->user);
 			}
 

@@ -21,7 +21,7 @@ return new class extends Migration
 			$table->unsignedBigInteger('invoices_custom_field_id');
 			$table->foreign('invoices_custom_field_id')->references('id')->on('invoices_custom_fields')->onDelete('cascade');
 
-			$table->text('field_value', 500);
+			$table->text('field_value');
 
             $table->timestamps();
 

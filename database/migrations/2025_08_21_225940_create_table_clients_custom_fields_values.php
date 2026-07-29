@@ -18,7 +18,7 @@ return new class extends Migration
 			$table->unsignedBigInteger('clients_custom_field_id');
 			$table->foreign('clients_custom_field_id')->references('id')->on('clients_custom_fields')->onDelete('cascade');
 
-			$table->text('field_value', 500);
+			$table->text('field_value');
 
             $table->timestamps();
 

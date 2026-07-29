@@ -164,11 +164,17 @@ class LoginControllerTest extends TestCase
 			'email'		=>	'foo@bar.com',
 			'password'	=> Hash::make('123456789')
 		]);
-		Setting::factory()->create([
-			'login_limits_flag'     => 1,
-			'login_limits_minutes'  => 15,
-			'login_limits_attempts' => 3
-		]);
+		// Setting::factory()->create([
+		// 	'login_limits_flag'     => 1,
+		// 	'login_limits_minutes'  => 15,
+		// 	'login_limits_attempts' => 3
+		// ]);
+
+		$setting = Setting::where('id', '=', 1)->first();
+		$setting->login_limits_flag = 1;
+		$setting->login_limits_minutes = 15;
+		$setting->login_limits_attempts = 3;
+		$setting->save();
 
 		LoginAttempt::factory()->create([
 			'user_id'               => $user->id,
@@ -207,11 +213,12 @@ class LoginControllerTest extends TestCase
 			'email'		=>	'foo@bar.com',
 			'password'	=> 	Hash::make('123456789_temp')
 		]);
-		Setting::factory()->create([
-			'login_limits_flag'     => 1,
-			'login_limits_minutes'  => 15,
-			'login_limits_attempts' => 3
-		]);
+
+		$setting = Setting::where('id', '=', 1)->first();
+		$setting->login_limits_flag = 1;
+		$setting->login_limits_minutes = 15;
+		$setting->login_limits_attempts = 3;
+		$setting->save();
 
 		LoginAttempt::factory()->create([
 			'user_id'               => $user->id,
@@ -337,12 +344,13 @@ class LoginControllerTest extends TestCase
 			'email'		=>	'foo@bar.com',
 			'password'	=> 	Hash::make('123456789')
 		]);
-		Setting::factory()->create([
-			'login_limits_flag'     => 	1,
-			'login_limits_minutes'  => 	15,
-			'login_limits_attempts' => 	3,
-			'two_factor_auth_flag'	=>	1
-		]);
+	
+		$setting = Setting::where('id', '=', 1)->first();
+		$setting->login_limits_flag = 1;
+		$setting->login_limits_minutes = 15;
+		$setting->login_limits_attempts = 3;
+		$setting->two_factor_auth_flag = 1;
+		$setting->save();
 
 		LoginAttempt::factory()->create([
 			'user_id'               => $user->id,
@@ -684,13 +692,14 @@ class LoginControllerTest extends TestCase
 			'created_at'	=>		now()->subMinutes(1)
 		]);
 
-		Setting::factory()->create([
-			'login_limits_flag'     => 1,
-			'login_limits_minutes'  => 15,
-			'login_limits_attempts' => 3,
-			'two_factor_auth_flag'	=>	1,
-			'login_email_flag'		=>	0
-		]);
+
+		$setting = Setting::where('id', '=', 1)->first();
+		$setting->login_limits_flag = 1;
+		$setting->login_limits_minutes = 15;
+		$setting->login_limits_attempts = 3;
+		$setting->two_factor_auth_flag = 1;
+		$setting->login_email_flag = 0;
+		$setting->save();
 
 		$response = $this->post('/api/validate-otp', [
 			'token' 			=> 	$token,
@@ -752,13 +761,13 @@ class LoginControllerTest extends TestCase
 			'created_at'	=>		now()->subMinutes(1)
 		]);
 
-		Setting::factory()->create([
-			'login_limits_flag'     => 1,
-			'login_limits_minutes'  => 15,
-			'login_limits_attempts' => 3,
-			'two_factor_auth_flag'	=>	1,
-			'login_email_flag'		=>	1
-		]);
+		$setting = Setting::where('id', '=', 1)->first();
+		$setting->login_limits_flag = 1;
+		$setting->login_limits_minutes = 15;
+		$setting->login_limits_attempts = 3;
+		$setting->two_factor_auth_flag = 1;
+		$setting->login_email_flag = 1;
+		$setting->save();
 
 		$response = $this->post('/api/validate-otp', [
 			'token' 			=> 	$token,
@@ -807,13 +816,13 @@ class LoginControllerTest extends TestCase
 			], 200)
 		]);
 
-		Setting::factory()->create([
-			'login_limits_flag'     => 	1,
-			'login_limits_minutes'  => 	15,
-			'login_limits_attempts' => 	3,
-			'two_factor_auth_flag'	=>	0,
-			'login_email_flag'		=>	0
-		]);
+		$setting = Setting::where('id', '=', 1)->first();
+		$setting->login_limits_flag = 1;
+		$setting->login_limits_minutes = 15;
+		$setting->login_limits_attempts = 3;
+		$setting->two_factor_auth_flag = 0;
+		$setting->login_email_flag = 0;
+		$setting->save();
 
 		$user = User::factory()->create([
 			'email'		=>	'one@test.com',
@@ -856,13 +865,13 @@ class LoginControllerTest extends TestCase
 			], 200)
 		]);
 
-		Setting::factory()->create([
-			'login_limits_flag'     => 	1,
-			'login_limits_minutes'  => 	15,
-			'login_limits_attempts' => 	3,
-			'two_factor_auth_flag'	=>	0,
-			'login_email_flag'		=>	1
-		]);
+		$setting = Setting::where('id', '=', 1)->first();
+		$setting->login_limits_flag = 1;
+		$setting->login_limits_minutes = 15;
+		$setting->login_limits_attempts = 3;
+		$setting->two_factor_auth_flag = 0;
+		$setting->login_email_flag = 1;
+		$setting->save();
 
 		$user = User::factory()->create([
 			'email'		=>	'one@test.com',

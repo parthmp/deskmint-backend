@@ -19,7 +19,7 @@ return new class extends Migration
 			$table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
 
 			$table->string('product_name', 255)->default('');
-			$table->double('price', 10, 2)->default(0);
+			$table->double('price')->default(0);
 			$table->string('sku', 255)->default('');
 			$table->text('description')->nullable();
 
