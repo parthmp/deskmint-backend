@@ -6,6 +6,7 @@ use App\Jobs\SendEmailJob;
 use App\Models\Invoice;
 use App\Models\Transaction;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Gateways\PayPal\PayPal;
 use App\Modules\Payment\Gateways\Stripe\Stripe;
 use App\Modules\Payment\Payment;
@@ -44,8 +45,8 @@ class PaymentService{
 
 		$payment = match($payment_gateway){
 
-			PAYMENT_PAYPAL 	=> new Payment(new PayPal($data['company_id'], $data['invoice_id'], $data['client_id'], $data['app_id'], $data['secret'], $data['mode'], $data['currency'], (float) $data['amount'])),
-			PAYMENT_STRIPE 	=> new Payment(new Stripe($data['company_id'], $data['invoice_id'], $data['secret'], $data['currency'], (float) $data['amount'])),
+			PaymentGateway::PAYPAL->value 	=> new Payment(new PayPal($data['company_id'], $data['invoice_id'], $data['client_id'], $data['app_id'], $data['secret'], $data['mode'], $data['currency'], (float) $data['amount'])),
+			PaymentGateway::STRIPE->value 	=> new Payment(new Stripe($data['company_id'], $data['invoice_id'], $data['secret'], $data['currency'], (float) $data['amount'])),
 			default			=>	null
 		};
 		
@@ -60,13 +61,13 @@ class PaymentService{
 	/**
 	 * sendUrlGenerationFailedEmail function
 	 *
-	 * @param integer $payment_method
+	 * @param integer $payment_gateway
 	 * @return void
 	 */
-	private function sendUrlGenerationFailedEmail(int $payment_method) : void {
+	private function sendUrlGenerationFailedEmail(int $payment_gateway) : void {
 
 		$data = [
-			'payment_method'		=>  (int) $payment_method === PAYMENT_PAYPAL ? 'PayPal' : 'Stripe'
+			'payment_gateway'		=>  PaymentGateway::getLabelByValue($payment_gateway)
 		];
 
 		$info = $this->invoice_db_operations->fetchAdminEmails();
@@ -100,11 +101,11 @@ class PaymentService{
 	 */
 	public function generatePaymentUrl(Invoice $invoice) : ?string {
 
-		if((int) $invoice->payment_method !== PAYMENT_CASH && (int) $invoice->payment_method !== PAYMENT_NETBANKING){
+		if((int) $invoice->payment_gateway !== PaymentGateway::NONE->value){
 
 			$payment_gateway_url = '';
 			$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId($invoice->company_id)->setInvoiceId($invoice->id)->execRequiredSettings();
-			$payment_settings = $this->invoice_db_operations->fetchPaymentSettings((int) $invoice->payment_method);
+			$payment_settings = $this->invoice_db_operations->fetchPaymentSettings((int) $invoice->payment_gateway);
 			
 			if(!$payment_settings){
 				logger('something went wrong with payment settings data -> '.json_encode($payment_settings));
@@ -118,11 +119,11 @@ class PaymentService{
 			$payment_settings['invoice_id'] = $invoice->id;
 			$payment_settings['company_id'] = $invoice->company_id;
 
-			$payment_gateway_url = $this->generateGatewayUrl((int) $invoice->payment_method, $payment_settings);
+			$payment_gateway_url = $this->generateGatewayUrl((int) $invoice->payment_gateway, $payment_settings);
 
 			if(!$payment_gateway_url){
 				//send an email to admins to notify the failure.
-				$this->sendUrlGenerationFailedEmail((int) $invoice->payment_method);
+				$this->sendUrlGenerationFailedEmail((int) $invoice->payment_gateway);
 			}
 
 			return $payment_gateway_url;
@@ -152,12 +153,8 @@ class PaymentService{
 	public function fetchExistingPaymentUrl(int $invoice_id) : ?string {
 
 		$transaction = $this->payment_repository->fetchTransactionOfPast($invoice_id);
-
+		
 		if(!$transaction){
-			return null;
-		}
-
-		if(!$transaction->payment_url){
 			return null;
 		}
 
@@ -170,11 +167,11 @@ class PaymentService{
 		$invoice_balance_due = BigDecimal::of($invoice->balance_due);
 		$transaction_amount = BigDecimal::of($transaction->amount);
 		
-		if((int) $invoice->payment_method !== (int) $transaction->payment_method || !$invoice_balance_due->isEqualTo($transaction_amount)){
+		if((int) $invoice->payment_gateway !== (int) $transaction->payment_gateway || !$invoice_balance_due->isEqualTo($transaction_amount)){
 			return null;
 		}
 
-		return $transaction->payment_url->url;
+		return $transaction->payment_url;
 
 	}
 

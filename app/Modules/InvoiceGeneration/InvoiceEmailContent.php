@@ -5,6 +5,7 @@ namespace App\Modules\InvoiceGeneration;
 use App\Helpers\General;
 use App\Models\Invoice;
 use App\Modules\Payment\Enums\InvoiceStatus;
+use App\Modules\Payment\Enums\PaymentGateway;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -125,7 +126,7 @@ class InvoiceEmailContent {
 		
 		$payment_gateway_url = '';
 		
-		if((int) $this->invoice->payment_method !== PAYMENT_CASH && (int) $this->invoice->payment_method !== PAYMENT_NETBANKING){
+		if((int) $this->invoice->payment_gateway !== PaymentGateway::NONE->value){
 			$payment_gateway_url = URL::signedRoute('invoice.pay', ['uuid' => $this->invoice->uuid]);
 		}
 		
@@ -148,7 +149,7 @@ class InvoiceEmailContent {
 			$payment_gateway_url
 		];
 
-		if((int) $this->invoice->payment_method === PAYMENT_CASH || (int) $this->invoice->payment_method === PAYMENT_NETBANKING || (int) $this->invoice->status === (int) InvoiceStatus::PAID->value){
+		if((int) $this->invoice->payment_gateway === PaymentGateway::NONE->value){
 			$content = $this->replaceBetweenTags($content,  '[{online-payment-start}]', '[{online-payment-end}]', '');
 		}
 

@@ -6,6 +6,7 @@ use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
 use App\Modules\Payment\Enums\InvoiceStatus;
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Services\Payment\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
@@ -27,7 +28,6 @@ class PaymentController extends Controller
 			die('invalid request');
 		}
 
-		$payment_method_name = General::getPaymentMethodName((int) $invoice->payment_method);
 		$checkout_url = URL::signedRoute('invoice.pay.checkout', ['uuid' => $invoice->uuid]);
 
 		$is_paid = ((int) InvoiceStatus::PAID->value === (int) $invoice->status);
@@ -35,7 +35,7 @@ class PaymentController extends Controller
 
 		$due_date = General::formatDateTime($invoice->due_date, $invoice->timezone_offset_minutes);
 
-		return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => $payment_method_name, 'checkout_url' => $checkout_url, 'is_paid' => $is_paid, 'due_date' => $due_date, 'is_cancelled' => $is_cancelled]);
+		return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => PaymentGateway::getLabelByValue((int) $invoice->payment_gateway), 'checkout_url' => $checkout_url, 'is_paid' => $is_paid, 'due_date' => $due_date, 'is_cancelled' => $is_cancelled]);
 
 	}
 
@@ -48,11 +48,11 @@ class PaymentController extends Controller
 		}
 
 		if((int) $invoice->status === (int) InvoiceStatus::PAID->value || (int) $invoice->status === (int) InvoiceStatus::CANCELLED->value){
-			$payment_method_name = General::getPaymentMethodName((int) $invoice->payment_method);
+			
 			$due_date = General::formatDateTime($invoice->due_date, $invoice->timezone_offset_minutes);
 			$is_paid = ((int) InvoiceStatus::PAID->value === (int) $invoice->status);
 			$is_cancelled = ((int) InvoiceStatus::CANCELLED->value === (int) $invoice->status);
-			return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => $payment_method_name, 'checkout_url' => '', 'is_paid' => $is_paid, 'is_cancelled' => $is_cancelled,'due_date' => $due_date]);
+			return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => PaymentGateway::getLabelByValue((int) $invoice->payment_gateway), 'checkout_url' => '', 'is_paid' => $is_paid, 'is_cancelled' => $is_cancelled,'due_date' => $due_date]);
 		}
 
 		//check if payment url already exist for past 2 hours with same payment method, total.
@@ -63,7 +63,7 @@ class PaymentController extends Controller
 			//generate url.
 			$url = $this->payment_service->generatePaymentUrl($invoice);
 
-			if($url === '' || ($url === null && $invoice->payment_method !== PAYMENT_CASH && $invoice->payment_method !== PAYMENT_NETBANKING)){
+			if($url === '' || ($url === null && (int) $invoice->payment_gateway !== PaymentGateway::NONE->value)){
 				return redirect('/pay-invoice/failure/'.$invoice->payment_method);
 			}
 
@@ -82,8 +82,8 @@ class PaymentController extends Controller
 			die('invalid request');
 		}
 
-		$payment_method_name = General::getPaymentMethodName((int) $payment_method);
-		if(!$payment_method_name){
+		$payment_method_name = PaymentGateway::getLabelByValue((int) $payment_method);
+		if($payment_method_name === ''){
 			die('invalid request');
 		}
 

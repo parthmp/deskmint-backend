@@ -6,6 +6,7 @@ use App\Models\Transaction;
 use App\Modules\InvoiceGeneration\InvoiceSnapshot;
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
 use App\Modules\Payment\DatabaseOperations;
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Enums\TransactionStatus;
 use App\Modules\Payment\Exceptions\PaymentException;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
@@ -95,9 +96,8 @@ class PayPal implements PaymentGatewayInterface{
 	private function createTransaction(string $order_id) : Transaction {
 		return $this->database_operations->insertTransaction([
 			'company_id'					=>	$this->company_id,
-			'invoice_id'					=>	$this->invoice_id,
 			'amount'						=>	$this->amount,
-			'payment_method'				=>	PAYMENT_PAYPAL,
+			'payment_gateway'				=>	PaymentGateway::PAYPAL->value,
 			'mode'							=>	$this->mode,
 			'token_id_identifier'			=>	$order_id,
 			'is_approved'					=>	0,
@@ -120,7 +120,7 @@ class PayPal implements PaymentGatewayInterface{
 				if($link['rel'] === 'approve'){
 					$transaction = $this->createTransaction($response['id']);
 					$url = $link['href'];
-					$this->database_operations->insertPaymentUrl($transaction->id, $response['id'], $url);
+					$this->database_operations->insertPaymentUrl($transaction->id, $this->invoice_id, $response['id'], $url);
 					return $url;
 				}
 			}

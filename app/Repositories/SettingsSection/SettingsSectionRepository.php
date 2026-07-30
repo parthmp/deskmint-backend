@@ -79,25 +79,6 @@ class SettingsSectionRepository{
 	}
 
 	/**
-	 * getGateWayNames function
-	 *
-	 * @param integer $company_id
-	 * @return array
-	 */
-	public function getGateWayNames(int $company_id) : array {
-		
-		$gateways = SettingsSection::select('type')->where('company_id', '=', $company_id)->where(function($query){
-			$query->where('type', '=', PAYMENTS_PAYPAL_TYPE);
-			$query->orwhere('type', '=', PAYMENTS_STRIPE_TYPE);
-		})->get()->map(function($ele){
-			return $ele->type === PAYMENTS_PAYPAL_TYPE ? ['text' => 'PayPal', 'value' => PAYMENT_PAYPAL] : ['text' => 'Stripe' ,'value' => PAYMENT_STRIPE];
-		})->toArray();
-
-		return array_merge([['text' => 'Cash', 'value' => PAYMENT_CASH], ['text' => 'Netbanking', 'value' => PAYMENT_NETBANKING]], $gateways);
-
-	}
-
-	/**
 	 * destroy function
 	 *
 	 * @param integer $company_id

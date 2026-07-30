@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Modules\Payment\Enums\InvoiceStatus;
+use App\Modules\Payment\Enums\PaymentGateway;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -42,11 +43,11 @@ class InvoiceFactory extends Factory
             'balance_due'							=>	0,
             'total'									=>	0,
             'refunded_amount'						=>	0,
-            'status'								=>	InvoiceStatus::PENDING->value,
+            'status'								=>	InvoiceStatus::DRAFT->value,
             'pdf_file'								=>	'',
             'xml_file'								=>	'',
             'invoice_terms'							=>	'',
-            'payment_method'						=>	PAYMENT_CASH,
+            'payment_gateway'						=>	PaymentGateway::NONE->value,
             'pattern_matched'						=>	0,
             'scan_chars'							=>	1,
             'timezone_offset_minutes'				=>	0,

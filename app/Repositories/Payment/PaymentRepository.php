@@ -44,7 +44,7 @@ class PaymentRepository{
 	 * @return Transaction|null
 	 */
 	public function fetchTransactionOfPast(int $invoice_id) : ?Transaction {
-		return Transaction::where([['invoice_id', '=', $invoice_id], ['created_at', '>', now()->subHours(2)], ['status', '<>', TransactionStatus::VOID->value]])->with('payment_url')->orderBy('id', 'desc')->first();
+		return Transaction::select('payment_urls.url as payment_url', 'transactions.amount as amount', 'transactions.payment_gateway as payment_gateway')->join('payment_urls', 'payment_urls.transaction_id', '=', 'transactions.id')->where([['transactions.created_at', '>', now()->subHours(2)], ['transactions.status', '<>', TransactionStatus::VOID->value]])->orderBy('transactions.id', 'desc')->first();
 	}
 
 	/**

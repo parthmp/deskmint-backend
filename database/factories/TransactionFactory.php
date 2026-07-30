@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\Transaction;
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Enums\TransactionStatus;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -26,7 +27,7 @@ class TransactionFactory extends Factory
 			'amount'				=> 10,
 			'gateway_fees_amount'	=> 2,
 			'received_amount'		=> 8,
-			'payment_method'		=> PAYMENT_PAYPAL,
+			'payment_gateway'		=> PaymentGateway::PAYPAL->value,
 			'mode'					=> 'sandbox',
 			'token_id_identifier'	=> '123',
 			'is_approved'			=> 0,

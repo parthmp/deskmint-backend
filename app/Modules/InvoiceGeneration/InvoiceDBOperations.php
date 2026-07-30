@@ -14,6 +14,7 @@ use App\Models\PaymentUrl;
 use App\Models\SettingsSection;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Repositories\Company\CompanyRepository;
 use App\Traits\SettingsDefault;
 use Illuminate\Database\Eloquent\Collection;
@@ -262,8 +263,15 @@ class InvoiceDBOperations{
 	 *
 	 * @return array|null
 	 */
-	public function fetchPaymentSettings(int $payment_method) : ?array {
-		return $this->filterArray($payment_method === PAYMENT_PAYPAL ? PAYMENTS_PAYPAL_TYPE : PAYMENTS_STRIPE_TYPE);
+	public function fetchPaymentSettings(int $payment_gateway) : ?array {
+
+		if((int) $payment_gateway === PaymentGateway::PAYPAL->value){
+			return $this->filterArray(PAYMENTS_PAYPAL_TYPE);
+		}else if((int) $payment_gateway === PaymentGateway::STRIPE->value){
+			return $this->filterArray(PAYMENTS_STRIPE_TYPE);
+		}
+		
+		return null;
 	}
 
 	/**

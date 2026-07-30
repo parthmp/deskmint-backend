@@ -40,7 +40,7 @@ class SendFailedPaymentURLGenerationEmail extends Mailable
         return new Content(
             view : 'emails.send_failed_payment_url_generation_email',
 			with : [
-				'payment_method'	=>	$this->data['payment_method']
+				'payment_gateway'	=>	$this->data['payment_gateway']
 			]
         );
     }

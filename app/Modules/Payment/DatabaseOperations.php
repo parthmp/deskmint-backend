@@ -43,9 +43,8 @@ class DatabaseOperations{
 	public function insertTransaction(array $data) : Transaction {
 		$transaction = $this->createEmptyTransaction();
 		$transaction->company_id = $data['company_id'];
-		$transaction->invoice_id = $data['invoice_id'];
 		$transaction->amount = $data['amount'];
-		$transaction->payment_method = $data['payment_method'];
+		$transaction->payment_gateway = $data['payment_gateway'];
 		$transaction->mode = $data['mode'];
 		$transaction->token_id_identifier = $data['token_id_identifier'];
 		$transaction->is_approved = $data['is_approved'];
@@ -331,9 +330,10 @@ class DatabaseOperations{
 	 * @param string $url_string
 	 * @return boolean
 	 */
-	public function insertPaymentUrl(int $transaction_id, string $gateway_url_identifier, string $url_string) : bool {
+	public function insertPaymentUrl(int $transaction_id, int $invoice_id, string $gateway_url_identifier, string $url_string) : bool {
 		
 		$payment_url = new PaymentUrl();
+		$payment_url->invoice_id = $invoice_id;
 		$payment_url->transaction_id = $transaction_id;
 		$payment_url->gateway_url_identifier = $gateway_url_identifier;
 		$payment_url->url = $url_string;
