@@ -55,10 +55,9 @@ class InvoiceFetchService{
 		$fields = $this->custom_fields->fetchCustomFields(InvoicesCustomField::class, $company_id);
 
 		// /* get payment integration data */
-		$gateways = $this->settings_section_repository->getGateWayNames((int) $company_id);
-		//$gateways = PaymentGateway::configuredOptions();
-		//$gateways = PaymentGateway::STRIPE->value;
-
+		//$gateways = $this->settings_section_repository->getGateWayNames((int) $company_id);
+		$gateways = PaymentGateway::configuredOptions();
+		
 		return [
 			'invoice_number'	=>	(new HandleInvoiceNumbers((int) $company_id, $invoice_settings->getInvoiceNumbers(), (int) $timezone_offset_minutes))->getNextInvoiceNumber(),
 			'product_columns' 	=> 	$invoice_settings->getProductColumns(),

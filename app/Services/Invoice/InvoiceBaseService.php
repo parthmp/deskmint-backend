@@ -242,7 +242,7 @@ class InvoiceBaseService{
 			}
 		}
 
-		$payment_method = Sanitize::input($request->input('settings.payment_method'));
+		$payment_gateway = Sanitize::input($request->input('settings.payment_gateway'));
 		$product_rows = $this->filterValidProductRows($request->input('data.product_rows'), $company_id);
 
 		$timezone_offset_minutes = Sanitize::input($request->input('timezone_offset_minutes'));
@@ -297,7 +297,7 @@ class InvoiceBaseService{
 			'global_total'						=>	$global_total,
 			'invoice_terms'						=>	$invoice_terms,
 			'send_email'						=>	$send_email,
-			'payment_method'					=>	$payment_method,
+			'payment_gateway'					=>	$payment_gateway,
 			'patten_matched'					=>	$patten_matched,
 			'scan_chars'						=>	$scan_chars,
 			'timezone_offset_minutes'			=>	$timezone_offset_minutes,

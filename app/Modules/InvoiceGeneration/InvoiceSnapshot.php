@@ -5,6 +5,7 @@ namespace App\Modules\InvoiceGeneration;
 use App\Helpers\General;
 use App\Models\Invoice;
 use App\Modules\InvoiceGeneration\InvoiceSettingsResolver;
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Repositories\Invoice\InvoiceRepository;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
@@ -330,7 +331,7 @@ class InvoiceSnapshot {
 		$this->snapshot['meta']['refunded_amount']	= $this->invoice->refunded_amount;
 		$this->snapshot['meta']['currency']	= $this->invoice->client_wt->currency->code;
 		$this->snapshot['meta']['company_id']	= $this->invoice->company_id;
-		$this->snapshot['meta']['payment_method'] = $this->invoice->payment_method;
+		$this->snapshot['meta']['payment_gateway'] = $this->invoice->payment_gateway;
 		$this->snapshot['meta']['created_at'] = $this->invoice->created_at;
 		$this->snapshot['meta']['timezone_offset_minutes'] = $this->timezone_offset_minutes;
 		$this->snapshot['meta']['company'] = $company;
@@ -340,12 +341,7 @@ class InvoiceSnapshot {
 		$this->snapshot['meta']['client'] = [
 			'client'	=>	$this->invoice->client_wt
 		];
-		$this->snapshot['meta']['payment_method_string'] = match((int) $this->invoice->payment_method){
-			PAYMENT_CASH 		=> 'Cash',
-			PAYMENT_NETBANKING 	=> 'NetBanking',
-			PAYMENT_PAYPAL 		=> 'PayPal',
-			PAYMENT_STRIPE 		=> 'Stripe',
-		};
+		$this->snapshot['meta']['payment_gateway_string'] = PaymentGateway::getLabelByValue($this->invoice->payment_gateway);
 		
 		$invoice_details_with_values = null;
 

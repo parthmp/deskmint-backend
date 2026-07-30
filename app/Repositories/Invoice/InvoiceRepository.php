@@ -44,7 +44,7 @@ class InvoiceRepository{
 		$global_total = $data['global_total'];
 		$invoice_terms = $data['invoice_terms'];
 		// $send_email = $data['send_email'];
-		$payment_method = $data['payment_method'];
+		$payment_gateway = $data['payment_gateway'];
 		$patten_matched = $data['patten_matched'];
 		$scan_chars = $data['scan_chars'];
 		$timezone_offset_minutes = $data['timezone_offset_minutes'];
@@ -92,7 +92,7 @@ class InvoiceRepository{
 		$invoice->total = $global_total;
 		$invoice->invoice_terms = $invoice_terms;
 		// $invoice->send_email = $send_email;
-		$invoice->payment_method = $payment_method;
+		$invoice->payment_gateway = $payment_gateway;
 		$invoice->pattern_matched = $patten_matched;
 		$invoice->scan_chars = $scan_chars;
 		$invoice->timezone_offset_minutes = $timezone_offset_minutes;

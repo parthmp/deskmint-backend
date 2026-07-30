@@ -6,9 +6,9 @@ use Illuminate\Support\Facades\DB;
 
 enum PaymentGateway: int {
 
-    case NONE = 0;
-    case PAYPAL = 1;
-    case STRIPE = 2;
+    case NONE = 1;
+    case PAYPAL = 2;
+    case STRIPE = 3;
 
 	/**
 	 * settingsType function
@@ -106,6 +106,38 @@ enum PaymentGateway: int {
         ));
 
     }
+
+	/**
+	 * getAllValues function
+	 *
+	 * @return array
+	 */
+	public static function getAllValues(): array {
+        return array_column(self::cases(), 'value');
+    }
+
+	/**
+	 * paymentGatewayExists function
+	 *
+	 * @return boolean
+	 */
+	public static function paymentGatewayExists(int $gateway_number) : bool {
+		return in_array($gateway_number, self::getAllValues());
+	}
+
+	/**
+	 * getLabelByValue function
+	 *
+	 * @return string
+	 */
+	public static function getLabelByValue(int $value) : string {
+		foreach(self::cases() as $case){
+			if($case->value === $value){
+				return $case->label();
+			}
+		}
+		return '';
+	}
 
 	/**
 	 * isConfigured function

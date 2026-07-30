@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Modules\CustomFields\CustomFields;
 use App\Modules\CustomFields\Exceptions\InvalidCustomFieldsException;
 use App\Modules\Payment\Enums\InvoiceStatus;
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Repositories\Client\ClientRepository;
 use App\Repositories\Invoice\InvoiceRepository;
 use App\Repositories\Product\ProductRepository;
@@ -54,10 +55,11 @@ class InvoiceValidationService extends ProductFieldService {
 	public function validateInvoiceSettings(Request $request) : bool {
 
 		$v = Validator::make($request->all(), [
-			'settings.payment_method'				=>	'required',
+			'settings.payment_gateway'				=>	'required',
 			'settings.send_invoice_in_email'		=>	'required|boolean',
 		]);
 
+		
 		return (bool) !$v->fails();
 
 	}
@@ -164,10 +166,10 @@ class InvoiceValidationService extends ProductFieldService {
 	 * validatePaymentGatewayCurrency function
 	 *
 	 * @param integer $client_id
-	 * @param integer $payment_method
+	 * @param integer $payment_gateway
 	 * @return array
 	 */
-	private function validatePaymentGatewayCurrency(int $client_id, int $payment_method) : array {
+	private function validatePaymentGatewayCurrency(int $client_id, int $payment_gateway) : array {
 		
 		$currency = $this->client_repository->fetchClientCurrencyById($client_id);
 		
@@ -175,30 +177,14 @@ class InvoiceValidationService extends ProductFieldService {
 
 		$is_valid = true;
 
-		if($payment_method === PAYMENT_PAYPAL){
+		if($payment_gateway === PaymentGateway::PAYPAL->value){
 			$is_valid = in_array($currency_code, config('payment.supported_currencies.paypal'));
-		}else if($payment_method === PAYMENT_STRIPE){
+		}else if($payment_gateway === PaymentGateway::STRIPE->value){
 			$is_valid = in_array($currency_code, config('payment.supported_currencies.stripe'));
 		}
 
 		return ['code' => $currency_code, 'valid' => $is_valid];
 
-	}
-
-	/**
-	 * getPaymentMethodName function
-	 *
-	 * @param integer $payment_method
-	 * @return string|null
-	 */
-	private function getPaymentMethodName(int $payment_method) : ?string {
-		return match($payment_method){
-			PAYMENT_CASH			=>	'Cash',
-			PAYMENT_NETBANKING		=>	'Netbanking',
-			PAYMENT_PAYPAL			=>	'PayPal',
-			PAYMENT_STRIPE			=>	'Stripe',
-			default					=>	null
-		};
 	}
 	
 	/**
@@ -263,18 +249,20 @@ class InvoiceValidationService extends ProductFieldService {
 		}
 
 		$client_id = (int) Sanitize::input($request->input('data.invoice_details.client.client_id'));
-		$payment_method = (int) Sanitize::input($request->input('settings.payment_method'));
-		$currency_validated = $this->validatePaymentGatewayCurrency($client_id, $payment_method);
+		
+		$payment_gateway_number = Sanitize::input($request->input('settings.payment_gateway'));
 
-		$payment_gateway_name = $this->getPaymentMethodName($payment_method);
-		if(!$payment_gateway_name){
+		$currency_validated = $this->validatePaymentGatewayCurrency($client_id, $payment_gateway_number);
+
+		
+		if(!PaymentGateway::paymentGatewayExists((int) $payment_gateway_number)){
 			throw new InvoiceException('Invalid request', 'invalid_payment_gateway', config('global.error_code'), 2);
 		}
 
 		if(!$currency_validated['valid']){
 			
 			
-			throw new InvoiceException('Currency '.$currency_validated['code'].' not supported with '.$payment_gateway_name, 'unsupported_currency', config('global.error_code'), 2);
+			throw new InvoiceException('Currency '.$currency_validated['code'].' not supported with '.PaymentGateway::getLabelByValue($payment_gateway_number), 'unsupported_currency', config('global.error_code'), 2);
 		}
 
 		if(!$request->has('timezone_offset_minutes')){
