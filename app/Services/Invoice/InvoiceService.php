@@ -284,4 +284,15 @@ class InvoiceService{
 		return $this->invoice_repository->updateInvoiceStatus($invoice_id, $status);
 	}
 
+	/**
+	 * markInvoiceSent function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return boolean
+	 */
+	public function markInvoiceSent(int $company_id, int $invoice_id) : bool {
+		return $this->invoice_repository->markInvoiceSent($company_id, $invoice_id);
+	}
+
 }

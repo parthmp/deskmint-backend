@@ -43,7 +43,7 @@ class InvoiceRepository{
 		$global_tax_amount = $data['global_tax_amount'];
 		$global_total = $data['global_total'];
 		$invoice_terms = $data['invoice_terms'];
-		// $send_email = $data['send_email'];
+		$send_email = $data['send_email'];
 		$payment_gateway = $data['payment_gateway'];
 		$patten_matched = $data['patten_matched'];
 		$scan_chars = $data['scan_chars'];
@@ -62,7 +62,10 @@ class InvoiceRepository{
 		if($invoice_id === 0){
 			$invoice = new Invoice();
 			$invoice->uuid = Str::uuid();
-			$invoice->status = (int) InvoiceStatus::PENDING->value;
+			$invoice->status = (int) InvoiceStatus::DRAFT->value;
+			if($send_email){
+				$invoice->status = (int) InvoiceStatus::SENT->value;
+			}
 			$invoice->reminders_sent = 0;
 			$invoice->last_reminder_sent_at = now();
 		}else{
@@ -92,6 +95,11 @@ class InvoiceRepository{
 		$invoice->total = $global_total;
 		$invoice->invoice_terms = $invoice_terms;
 		// $invoice->send_email = $send_email;
+		if($send_email){
+			$invoice->sent_at = now();
+		}else{
+			$invoice->sent_at = null;
+		}
 		$invoice->payment_gateway = $payment_gateway;
 		$invoice->pattern_matched = $patten_matched;
 		$invoice->scan_chars = $scan_chars;
@@ -261,7 +269,7 @@ class InvoiceRepository{
 	 * @return boolean
 	 */
 	public function ifInvoiceLockedMultiple(array $invoice_ids) : bool {
-		return Transaction::whereIn('invoice_id', $invoice_ids)->where('is_payment_captured', 1)->exists();
+		return Invoice::whereIn('id', $invoice_ids)->whereIn('status', [InvoiceStatus::PARTIALLY_PAID->value, InvoiceStatus::PAID->value])->exists();
 	}
 
 	public function ifInvoiceLockedMultipleCancelled(array $invoice_ids) : bool {
@@ -305,6 +313,20 @@ class InvoiceRepository{
 	public function updateInvoiceStatus(int $invoice_id, int $status) : bool {
 		return (bool) Invoice::where('id', '=', $invoice_id)->update([
 			'status'	=>	$status
+		]);
+	}
+
+	/**
+	 * markInvoiceSent function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return boolean
+	 */
+	public function markInvoiceSent(int $company_id, int $invoice_id) : bool {
+		return (bool) Invoice::where([['id', '=', $invoice_id], ['company_id', '=', $company_id]])->update([
+			'status'	=>	InvoiceStatus::SENT->value,
+			'sent_at'	=>	now()
 		]);
 	}
 

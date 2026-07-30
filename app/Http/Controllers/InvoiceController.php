@@ -129,11 +129,11 @@ class InvoiceController extends Controller{
 		
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 
-		//try{
+		try{
 
 			$this->invoice_service->validateAllForInvoice($request, $company_id);
 
-			//try{
+			try{
 				
 				$do_send = (bool) Sanitize::input($request->input('settings.send_invoice_in_email'));
 
@@ -155,15 +155,15 @@ class InvoiceController extends Controller{
 
 				return response(['message' => $message, 'validity' => 'invoice_created'], 200);
 
-		// 	}catch(Exception $e){
-		// 		return General::wentWrong();
-		// 	}
+			}catch(Exception $e){
+				return General::wentWrong();
+			}
 			
-		// }catch(InvoiceException $e){
-		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
-		// }catch(Exception $e){
-		// 	return General::wentWrong();
-		// }
+		}catch(InvoiceException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 	}
 
@@ -272,8 +272,15 @@ class InvoiceController extends Controller{
 				return response(['message' => 'You can not send cancelled invoice', 'validity' => 'can_not_send_cancelled'], config('global.error_code'));
 			}
 
-			$data = $this->invoice_service->prepareEmailData($data['invoice_id']);
-			SendInvoiceEmailJob::dispatch($data['invoice'], $data);
+			$this->invoice_service->markInvoiceSent((int) $data['company_id'], (int) $data['invoice_id']);
+
+			DB::transaction(function() use ($request, $data) {
+
+				DB::afterCommit(function() use ($data) {
+					GenerateInvoiceJob::dispatch((int) $data['company_id'], (int) $data['invoice_id'], true);
+				});
+
+			});
 			
 			return response(['message' => 'Invoice sent successfully', 'validity' => 'invoice_sent'], 200);
 

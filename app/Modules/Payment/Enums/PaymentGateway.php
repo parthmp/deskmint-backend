@@ -62,7 +62,7 @@ enum PaymentGateway: int {
 	 *
 	 * @return array
 	 */
-    public static function configuredOptions(): array {
+    public static function configuredOptions(bool $additional = true): array {
 
         $gateways = array_filter(self::cases(), fn ($gateway) => $gateway !== self::NONE);
 
@@ -70,19 +70,30 @@ enum PaymentGateway: int {
 
         $existing_keys = DB::table('settings_section')->whereIn('type', $all_keys)->pluck('type')->toArray();
 
-        $options = [
-			[
-				'text'	=>	self::NONE->label(),
-				'value'	=>	self::NONE
-			]
-		];
+		
+
+		if($additional){
+			$options = [
+				[
+					'text'	=>	self::NONE->label(),
+					'value'	=>	self::NONE
+				]
+			];
+		}else{
+			$options = [self::NONE->value => self::NONE->label()];
+		}
+       
 
         foreach ($gateways as $gateway) {
             if (in_array($gateway->settingsType(), $existing_keys, true)){
-                $options[] = [
-                    'text'  => $gateway->label(),
-                    'value' => $gateway->value,
-                ];
+				if($additional){
+					$options[] = [
+						'text'  => $gateway->label(),
+						'value' => $gateway->value,
+					];
+				}else{
+					$options[$gateway->value] = $gateway->label();
+				}
             }
         }
 

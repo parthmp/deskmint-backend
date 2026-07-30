@@ -75,6 +75,7 @@ class InvoiceFetchService{
 	 * @return array
 	 */
 	public function fetchIndex(Request $request) : array {
+		
 		$joins = [
 					[
 						'table' => 'invoices_flat',
@@ -159,6 +160,8 @@ class InvoiceFetchService{
 				],
 			];
 
+			$gateways = PaymentGateway::configuredOptions(false);
+
 			$rewrites = [
 				'data' => [
 					'invoices.discount_type' => [
@@ -166,17 +169,13 @@ class InvoiceFetchService{
 						2	=>	"Amount"
 					],
 					'invoices.status' => [
-						InvoiceStatus::PENDING->value				=>	InvoiceStatus::PENDING->label(),
+						InvoiceStatus::DRAFT->value					=>	InvoiceStatus::DRAFT->label(),
+						InvoiceStatus::SENT->value					=>	InvoiceStatus::SENT->label(),
 						InvoiceStatus::CANCELLED->value				=>	InvoiceStatus::CANCELLED->label(),
 						InvoiceStatus::PARTIALLY_PAID->value		=>	InvoiceStatus::PARTIALLY_PAID->label(),
 						InvoiceStatus::PAID->value					=>	InvoiceStatus::PAID->label(),
 					],
-					'invoices.payment_method' => [
-						1	=>	'Cash',
-						2	=>	'Netbanking',
-						3	=>	'PayPal',
-						4	=>	'Stripe',
-					]
+					'invoices.payment_gateway' => $gateways
 				],
 				'ui'	=>	[
 					'discount_type'	=>	[
@@ -203,8 +202,14 @@ class InvoiceFetchService{
 						[
 							'type'		=>	'label',
 							'highlight'	=>	'info',
-							'text'		=>	InvoiceStatus::PENDING->label(),
-							'value'		=>	InvoiceStatus::PENDING->value
+							'text'		=>	InvoiceStatus::DRAFT->label(),
+							'value'		=>	InvoiceStatus::DRAFT->value
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'success',
+							'text'		=>	InvoiceStatus::SENT->label(),
+							'value'		=>	InvoiceStatus::SENT->value
 						],
 						[
 							'type'		=>	'label',
@@ -219,35 +224,21 @@ class InvoiceFetchService{
 							'value'		=>	InvoiceStatus::PAID->value
 						]
 					],
-					'payment_method'	=>	[
-						[
-							'type'		=>	'label',
-							'highlight'	=>	'info',
-							'text'		=>	'Cash',
-							'value'		=>	1,
-						],
-						[
-							'type'		=>	'label',
-							'highlight'	=>	'info',
-							'text'		=>	'Netbanking',
-							'value'		=>	2
-						],
-						[
-							'type'		=>	'label',
-							'highlight'	=>	'info',
-							'text'		=>	'PayPal',
-							'value'		=>	3
-						],
-						[
-							'type'		=>	'label',
-							'highlight'	=>	'info',
-							'text'		=>	'Stripe',
-							'value'		=>	4
-						]
+					'payment_gateway'	=>	[
+						
 					]
 				]
 
 			];
+
+		foreach($gateways as $gateway_key => $gateway){
+			$rewrites['ui']['payment_gateway'][] = [
+				'type'		=>	'label',
+				'highlight'	=>	'info',
+				'text'		=>	$gateway,
+				'value'		=>	$gateway_key
+			];
+		}
 
 		return $this->easy_index->setType('invoice')->setCustomFieldClass(InvoicesCustomField::class)->setJoins($joins)->setExceptionClass(InvoiceException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
 			'c_code'				=>		'currencies.code'
@@ -359,7 +350,7 @@ class InvoiceFetchService{
 			'invoice'			=>	$invoice,
 			'custom_fields' 	=> 	$custom_fields,
 			'product_rows'		=>	$product_rows,
-			'locked'			=>	((int) $invoice->status !== (int) InvoiceStatus::PENDING->value),
+			'locked'			=>	((int) $invoice->status !== (int) InvoiceStatus::DRAFT->value && (int) $invoice->status !== (int) InvoiceStatus::SENT->value),
 			'cancelled'			=>	((int) $invoice->status === (int) InvoiceStatus::CANCELLED->value)
 		];
 

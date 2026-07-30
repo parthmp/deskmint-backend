@@ -48,7 +48,7 @@ class ToggleCancelRequest extends FormRequest
 								'numeric',
 								Rule::exists('invoices', 'id')->where('company_id', $this->company_id),
 							],
-            'status'		=> ['required', 'numeric', Rule::in([InvoiceStatus::PENDING->value, InvoiceStatus::CANCELLED->value])],
+            'status'		=> ['required', 'numeric', Rule::in([InvoiceStatus::DRAFT->value, InvoiceStatus::SENT->value, InvoiceStatus::CANCELLED->value])],
         ];
     }
 
