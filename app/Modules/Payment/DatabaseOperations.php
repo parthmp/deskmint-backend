@@ -78,17 +78,6 @@ class DatabaseOperations{
 
 	}
 
-	public function findCustomId(array $data, string $event_type) : int {
-
-		$resource = $data['resource'];
-
-		return (int) match($event_type) {
-			'CHECKOUT.ORDER.APPROVED'   => $resource['purchase_units'][0]['custom_id'] ?? null,
-			'PAYMENT.CAPTURE.COMPLETED' => $resource['custom_id'] ?? null,
-			'PAYMENT.CAPTURE.PENDING' 	=> $resource['custom_id'] ?? null,
-			default                     => null
-		};
-	}
 
 	/**
 	 * fetchRequiredDataForWebhook function
@@ -108,7 +97,8 @@ class DatabaseOperations{
 								'currencies.code as currency_code',
 								'invoices.company_id as company_id',
 								'invoices.id as invoice_id',
-								'invoices.balance_due as balance_due'
+								'invoices.balance_due as balance_due',
+								'clients.id as user_id'
 							)->first();
 
 	}
@@ -136,16 +126,11 @@ class DatabaseOperations{
 		}
 
 		$settings = $this->settings_section_repository->fetchSettings($webhook_data->company_id, PAYMENTS_PAYPAL_TYPE, true);
-		$ref_id = (int) $this->findCustomId($data, $event_type);
 		
-		$reference = $this->getTransactionRefById((int) $ref_id);
-		
-		$webhook_data['user_id'] = $reference->client_id;
-
 		return [
 			'order_id'				=>	$order_id,
 			'event_type'			=>	$event_type,
-			'webhook_data'			=>	$webhook_data,
+			'webhook_data'			=>	$webhook_data->toArray(),
 			'settings'				=>	$settings
 		];
 

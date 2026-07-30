@@ -71,7 +71,7 @@ class PayPal implements PaymentGatewayInterface{
 	 *
 	 * @return array
 	 */
-	private function orderData(int $ref_id) : array {
+	private function orderData() : array {
 		return [
 			"intent" => "CAPTURE",
 			"purchase_units" => [
@@ -79,8 +79,7 @@ class PayPal implements PaymentGatewayInterface{
 					"amount" => [
 						"currency_code" => $this->currency,
 						"value" 		=> $this->amount
-					],
-					'custom_id' => $ref_id
+					]
 				]
 			],
 			"application_context" => [
@@ -119,7 +118,7 @@ class PayPal implements PaymentGatewayInterface{
 
 		$transaction_reference = $this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, (int) $this->invoice_id);
 		
-		$response = $this->provider->createOrder($this->orderData((int) $transaction_reference->id));
+		$response = $this->provider->createOrder($this->orderData());
 
 		if(isset($response['id']) && $response['id'] != null){
 			foreach($response['links'] as $link) {

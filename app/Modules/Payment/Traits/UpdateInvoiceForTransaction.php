@@ -231,6 +231,9 @@ trait UpdateInvoiceForTransaction {
 		$paid_amount = BigDecimal::of($paid_amount);
 
 		$balance_due = $total->minus($paid_amount);
+		if($balance_due->isLessThan(BigDecimal::of(0))){
+			$balance_due = BigDecimal::of(0);
+		}
 
 		$paid_in_full = $paid_amount->isEqualTo($total);
 		$overpaid = $paid_amount->isGreaterThan($total);

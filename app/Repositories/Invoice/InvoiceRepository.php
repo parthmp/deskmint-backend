@@ -324,10 +324,17 @@ class InvoiceRepository{
 	 * @return boolean
 	 */
 	public function markInvoiceSent(int $company_id, int $invoice_id) : bool {
-		return (bool) Invoice::where([['id', '=', $invoice_id], ['company_id', '=', $company_id]])->update([
-			'status'	=>	InvoiceStatus::SENT->value,
-			'sent_at'	=>	now()
-		]);
+
+		$invoice = Invoice::where([['id', '=', $invoice_id], ['company_id', '=', $company_id]])->first();
+
+		if((int) $invoice->status === InvoiceStatus::DRAFT){
+			$invoice->status = InvoiceStatus::SENT->value;
+			$invoice->sent_at = now();
+			return $invoice->save();
+		}
+
+		return true;
+
 	}
 
 
