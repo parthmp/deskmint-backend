@@ -42,6 +42,7 @@ class DatabaseOperations{
 	 */
 	public function insertTransaction(array $data) : Transaction {
 		$transaction = $this->createEmptyTransaction();
+		$transaction->currency_id = $data['currency_id'];
 		$transaction->company_id = $data['company_id'];
 		$transaction->amount = $data['amount'];
 		$transaction->payment_gateway = $data['payment_gateway'];

@@ -22,6 +22,7 @@ class PayPal implements PaymentGatewayInterface{
 
 	public function __construct(
 		private string $company_id,
+		private string $currency_id,
 		private string $invoice_id,
 		private string $client_id,
 		private string $app_id,
@@ -95,6 +96,7 @@ class PayPal implements PaymentGatewayInterface{
 	 */
 	private function createTransaction(string $order_id) : Transaction {
 		return $this->database_operations->insertTransaction([
+			'currency_id'					=>	$this->currency_id,
 			'company_id'					=>	$this->company_id,
 			'amount'						=>	$this->amount,
 			'payment_gateway'				=>	PaymentGateway::PAYPAL->value,

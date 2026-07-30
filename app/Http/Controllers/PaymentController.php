@@ -62,9 +62,9 @@ class PaymentController extends Controller
 
 			//generate url.
 			$url = $this->payment_service->generatePaymentUrl($invoice);
-
+			
 			if($url === '' || ($url === null && (int) $invoice->payment_gateway !== PaymentGateway::NONE->value)){
-				return redirect('/pay-invoice/failure/'.$invoice->payment_method);
+				return redirect('/pay-invoice/failure/'.$invoice->payment_gateway);
 			}
 
 			return redirect($url);
