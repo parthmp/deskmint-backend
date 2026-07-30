@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\PaymentUrl;
 use App\Models\Transaction;
 use App\Models\TransactionGatewayDetail;
+use App\Models\TransactionReference;
 use App\Modules\Payment\Enums\TransactionStatus;
 use App\Modules\Payment\Exceptions\PaymentException;
 use App\Modules\Payment\Traits\UpdateInvoiceForTransaction;
@@ -77,6 +78,18 @@ class DatabaseOperations{
 
 	}
 
+	public function findCustomId(array $data, string $event_type) : int {
+
+		$resource = $data['resource'];
+
+		return (int) match($event_type) {
+			'CHECKOUT.ORDER.APPROVED'   => $resource['purchase_units'][0]['custom_id'] ?? null,
+			'PAYMENT.CAPTURE.COMPLETED' => $resource['custom_id'] ?? null,
+			'PAYMENT.CAPTURE.PENDING' 	=> $resource['custom_id'] ?? null,
+			default                     => null
+		};
+	}
+
 	/**
 	 * fetchRequiredDataForWebhook function
 	 *
@@ -85,17 +98,19 @@ class DatabaseOperations{
 	 */
 	private function fetchRequiredDataForWebhook(string $order_id) : ?Transaction {
 		
-		return Transaction::join('invoices', 'invoices.id', '=', 'transactions.invoice_id')
-				->join('clients', 'clients.id', '=', 'invoices.client_id')
-				->join('currencies', 'currencies.id', '=', 'invoices.currency_id')
-				->where('transactions.token_id_identifier', '=', $order_id)
-				->select(
-						'currencies.code as currency_code',
-						'invoices.company_id as company_id',
-						'invoices.id as invoice_id',
-						'invoices.balance_due as balance_due'
-					)
-			->first();
+		return Transaction::join('transaction_references', 'transaction_references.transaction_id', '=', 'transactions.id')
+							->join('invoices', 'invoices.id', '=', 'transaction_references.invoice_id')
+							->join('clients', 'clients.id', '=', 'invoices.client_id')
+							->join('currencies', 'currencies.id', '=', 'invoices.currency_id')
+							->where('transactions.token_id_identifier', '=', $order_id)
+							->select(
+								'transactions.currency_id as currency_id',
+								'currencies.code as currency_code',
+								'invoices.company_id as company_id',
+								'invoices.id as invoice_id',
+								'invoices.balance_due as balance_due'
+							)->first();
+
 	}
 
 	/**
@@ -121,6 +136,11 @@ class DatabaseOperations{
 		}
 
 		$settings = $this->settings_section_repository->fetchSettings($webhook_data->company_id, PAYMENTS_PAYPAL_TYPE, true);
+		$ref_id = (int) $this->findCustomId($data, $event_type);
+		
+		$reference = $this->getTransactionRefById((int) $ref_id);
+		
+		$webhook_data['user_id'] = $reference->client_id;
 
 		return [
 			'order_id'				=>	$order_id,
@@ -340,6 +360,44 @@ class DatabaseOperations{
 		$payment_url->url = $url_string;
 		return $payment_url->save();
 
+	}
+
+	/**
+	 * upsertTransactionReference function
+	 *
+	 * @param integer $company_id
+	 * @param integer $client_id
+	 * @param integer $invoice_id
+	 * @param integer|null $transaction_id
+	 * @param integer|null $id
+	 * @return TransactionReference
+	 */
+	public function upsertTransactionReference(int $company_id, int $client_id, int $invoice_id, ?int $transaction_id = null, ?int $id = null) : TransactionReference {
+
+		if(!$id){
+			$reference = new TransactionReference();
+		}else{
+			$reference = $this->getTransactionRefById($id);
+		}
+
+		$reference->company_id = $company_id;
+		$reference->client_id = $client_id;
+		$reference->invoice_id = $invoice_id;
+		$reference->transaction_id = $transaction_id;
+		$reference->save();
+		
+		return $reference;
+
+	}
+
+	/**
+	 * getTransactionRefById function
+	 *
+	 * @param integer $id
+	 * @return TransactionReference|null
+	 */
+	public function getTransactionRefById(int $id) : ?TransactionReference {
+		return TransactionReference::where('id', '=', $id)->first();
 	}
 
 }

@@ -7,22 +7,21 @@ use App\Helpers\Sanitize;
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Enums\PaymentGateway;
-use App\Services\Payment\PaymentService;
+use App\Services\Gateway\GatewayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 
-class PaymentController extends Controller
-{
+class GatewayController extends Controller {
 
 	public function __construct(
-		private PaymentService $payment_service
+		private GatewayService $gateway_service
 	){}
 
     public function showPaymentPage(Request $request, string $uuid){
 
 		$uuid = Sanitize::input($uuid);
 		
-		$invoice = $this->payment_service->fetchInvoiceByUuid($uuid);
+		$invoice = $this->gateway_service->fetchInvoiceByUuid($uuid);
 
 		if(!$invoice){
 			die('invalid request');
@@ -41,7 +40,7 @@ class PaymentController extends Controller
 
 	public function generateUrl(Request $request, string $uuid){
 
-		$invoice = $this->payment_service->fetchInvoiceByUuid($uuid);
+		$invoice = $this->gateway_service->fetchInvoiceByUuid($uuid);
 
 		if(!$invoice){
 			die('invalid request');
@@ -56,12 +55,12 @@ class PaymentController extends Controller
 		}
 
 		//check if payment url already exist for past 2 hours with same payment method, total.
-		$existing_url = $this->payment_service->fetchExistingPaymentUrl($invoice->id);
+		$existing_url = $this->gateway_service->fetchExistingPaymentUrl($invoice->id);
 		
 		if($existing_url === null){
 
 			//generate url.
-			$url = $this->payment_service->generatePaymentUrl($invoice);
+			$url = $this->gateway_service->generatePaymentUrl($invoice);
 			
 			if($url === '' || ($url === null && (int) $invoice->payment_gateway !== PaymentGateway::NONE->value)){
 				return redirect('/pay-invoice/failure/'.$invoice->payment_gateway);

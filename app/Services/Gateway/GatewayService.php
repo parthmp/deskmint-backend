@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Payment;
+namespace App\Services\Gateway;
 
 use App\Jobs\SendEmailJob;
 use App\Models\Invoice;
@@ -10,17 +10,17 @@ use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Gateways\PayPal\PayPal;
 use App\Modules\Payment\Gateways\Stripe\Stripe;
 use App\Modules\Payment\Payment;
-use App\Repositories\Payment\PaymentRepository;
+use App\Repositories\Gateway\GatewayRepository;
 use App\Traits\CustomMailSettings;
 use Brick\Math\BigDecimal;
 use Exception;
 
-class PaymentService{
+class GatewayService{
 
 	use CustomMailSettings;
 
 	public function __construct(
-		private PaymentRepository $payment_repository,
+		private GatewayRepository $gateway_repository,
 		private InvoiceDBOperations $invoice_db_operations
 	){}
 
@@ -31,7 +31,7 @@ class PaymentService{
 	 * @return boolean
 	 */
 	public function ifInvoiceIsPaid(string $uuid) : bool {
-		return $this->payment_repository->ifInvoiceIsPaid($uuid);
+		return $this->gateway_repository->ifInvoiceIsPaid($uuid);
 	}
 
 	/**
@@ -45,7 +45,7 @@ class PaymentService{
 
 		$payment = match($payment_gateway){
 
-			PaymentGateway::PAYPAL->value 	=> new Payment(new PayPal($data['company_id'], $data['currency_id'] ,$data['invoice_id'], $data['client_id'], $data['app_id'], $data['secret'], $data['mode'], $data['currency'], (float) $data['amount'])),
+			PaymentGateway::PAYPAL->value 	=> new Payment(new PayPal($data['company_id'], $data['currency_id'] ,$data['invoice_id'], $data['user_id'], $data['client_id'], $data['app_id'], $data['secret'], $data['mode'], $data['currency'], (float) $data['amount'])),
 			PaymentGateway::STRIPE->value 	=> new Payment(new Stripe($data['company_id'], $data['invoice_id'], $data['secret'], $data['currency'], (float) $data['amount'])),
 			default			=>	null
 		};
@@ -119,6 +119,7 @@ class PaymentService{
 			$payment_settings['invoice_id'] = $invoice->id;
 			$payment_settings['company_id'] = $invoice->company_id;
 			$payment_settings['currency_id'] = $invoice->currency_id;
+			$payment_settings['user_id'] = $invoice->client_id;
 
 			$payment_gateway_url = $this->generateGatewayUrl((int) $invoice->payment_gateway, $payment_settings);
 
@@ -142,7 +143,7 @@ class PaymentService{
 	 * @return Invoice|null
 	 */
 	public function fetchInvoiceByUuid(string $uuid) : ?Invoice {
-		return $this->payment_repository->fetchInvoiceByUuid($uuid);
+		return $this->gateway_repository->fetchInvoiceByUuid($uuid);
 	}
 
 	/**
@@ -153,13 +154,13 @@ class PaymentService{
 	 */
 	public function fetchExistingPaymentUrl(int $invoice_id) : ?string {
 
-		$transaction = $this->payment_repository->fetchTransactionOfPast($invoice_id);
+		$transaction = $this->gateway_repository->fetchTransactionOfPast($invoice_id);
 		
 		if(!$transaction){
 			return null;
 		}
 
-		$invoice = $this->payment_repository->fetchInvoiceById($invoice_id);
+		$invoice = $this->gateway_repository->fetchInvoiceById($invoice_id);
 		
 		if(!$invoice){
 			return null;

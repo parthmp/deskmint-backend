@@ -21,9 +21,10 @@ class PayPal implements PaymentGatewayInterface{
 	private PayPalClient $provider;
 
 	public function __construct(
-		private string $company_id,
-		private string $currency_id,
-		private string $invoice_id,
+		private int $company_id,
+		private int $currency_id,
+		private int $invoice_id,
+		private int $user_id,
 		private string $client_id,
 		private string $app_id,
 		private string $secret,
@@ -70,7 +71,7 @@ class PayPal implements PaymentGatewayInterface{
 	 *
 	 * @return array
 	 */
-	private function orderData() : array {
+	private function orderData(int $ref_id) : array {
 		return [
 			"intent" => "CAPTURE",
 			"purchase_units" => [
@@ -78,7 +79,8 @@ class PayPal implements PaymentGatewayInterface{
 					"amount" => [
 						"currency_code" => $this->currency,
 						"value" 		=> $this->amount
-					]
+					],
+					'custom_id' => $ref_id
 				]
 			],
 			"application_context" => [
@@ -114,13 +116,16 @@ class PayPal implements PaymentGatewayInterface{
 	 * @return string|null
 	 */
 	public function generateURL() : ?string {
+
+		$transaction_reference = $this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, (int) $this->invoice_id);
 		
-		$response = $this->provider->createOrder($this->orderData());
+		$response = $this->provider->createOrder($this->orderData((int) $transaction_reference->id));
 
 		if(isset($response['id']) && $response['id'] != null){
 			foreach($response['links'] as $link) {
 				if($link['rel'] === 'approve'){
 					$transaction = $this->createTransaction($response['id']);
+					$this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, (int) $this->invoice_id, (int) $transaction->id, (int) $transaction_reference->id);
 					$url = $link['href'];
 					$this->database_operations->insertPaymentUrl($transaction->id, $this->invoice_id, $response['id'], $url);
 					return $url;

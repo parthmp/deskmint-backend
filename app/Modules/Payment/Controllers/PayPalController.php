@@ -20,16 +20,22 @@ class PayPalController extends Controller{
 	public function handlePaymentWebhook(Request $request){
 
 		$data = $request->all();
-		
-		try{
+
+
+		//try{
+
 			$settings = $this->database_operations->fetchPayPalSettings($data);
+
+			
 			
 			$webhook_data = $settings['webhook_data'];
 			
 			$payment = new Payment(new PayPal(
 												$webhook_data['company_id'], 
-												$webhook_data['invoice_id'], 
-												$settings['settings']['client_id'], 
+												$webhook_data['currency_id'],
+												$webhook_data['invoice_id'],
+												$webhook_data['user_id'], //this is user_id
+												$settings['settings']['client_id'], //this is for paypal access data, not user_id or client_id from db.
 												$settings['settings']['app_id'], 
 												decrypt($settings['settings']['secret']), 
 												$settings['settings']['mode'], 
@@ -42,12 +48,12 @@ class PayPalController extends Controller{
 
 			$payment->handlePayment($data, $request);
 
-		}catch(PaymentException $e){
-			return response($e->getMessage(), $e->getCode());
+		// }catch(PaymentException $e){
+		// 	return response($e->getMessage(), $e->getCode());
 
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
 
 		
 		

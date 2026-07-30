@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\GatewayController;
 use App\Models\User;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\InvoiceGeneration\InvoiceGenerator;
@@ -20,6 +20,6 @@ Route::get('/', function () {
 	return 'welcome';
 });
 
-Route::get('/pay-invoice/{uuid}', [PaymentController::class, 'showPaymentPage'])->name('invoice.pay')->middleware('signed');
-Route::post('/pay-invoice/checkout/{uuid}', [PaymentController::class, 'generateUrl'])->name('invoice.pay.checkout')->middleware('signed');
-Route::get('/pay-invoice/failure/{payment_method}', [PaymentController::class, 'failedToConnect']);
+Route::get('/pay-invoice/{uuid}', [GatewayController::class, 'showPaymentPage'])->name('invoice.pay')->middleware('signed');
+Route::post('/pay-invoice/checkout/{uuid}', [GatewayController::class, 'generateUrl'])->name('invoice.pay.checkout')->middleware('signed');
+Route::get('/pay-invoice/failure/{payment_method}', [GatewayController::class, 'failedToConnect']);

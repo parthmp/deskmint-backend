@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Repositories\Payment;
+namespace App\Repositories\Gateway;
 
 use App\Models\Invoice;
 use App\Models\Transaction;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Enums\TransactionStatus;
 
-class PaymentRepository{
+class GatewayRepository{
 
 	/**
 	 * ifInvoiceIsPaid function
