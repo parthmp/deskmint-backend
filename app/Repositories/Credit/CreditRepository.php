@@ -35,12 +35,13 @@ class CreditRepository {
 	 * @param integer $client_id
 	 * @param integer $currency_id
 	 * @param string $amount
+	 * @param string $applied_amount
 	 * @param string $amount_left_to_apply
 	 * @param integer $status
 	 * @param integer|null $id
 	 * @return Credit
 	 */
-	public function createOrUpdate(int $company_id, int $client_id, int $currency_id, string $amount, string $amount_left_to_apply, int $status, ?int $id = null) : Credit {
+	public function createOrUpdate(int $company_id, int $client_id, int $currency_id, string $amount, string $applied_amount, string $amount_left_to_apply, int $status, ?int $id = null) : Credit {
 
 		if(!$id){
 			$credit = new Credit();
@@ -53,6 +54,7 @@ class CreditRepository {
 		$credit->currency_id = $currency_id;
 		$credit->status = $status;
 		$credit->amount = $amount;
+		$credit->applied_amount = $applied_amount;
 		$credit->amount_left_to_be_applied = $amount_left_to_apply;
 		$credit->save();
 

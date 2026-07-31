@@ -113,6 +113,7 @@ class ClientRepository{
 		$client->client_company_name = $data['client_company_name'];
 		$client->first_name = $data['personal_info_first_name'];
 		$client->last_name = $data['personal_info_last_name'];
+		$client->full_name = $data['personal_info_first_name'].' '.$data['personal_info_last_name'];
 		$client->tax_number = $data['personal_info_tax_id'];
 		$client->website = $data['website'];
 		$client->email = $data['email'];
