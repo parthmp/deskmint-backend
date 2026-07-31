@@ -10,6 +10,7 @@ use App\Http\Controllers\CompanySettingsDefaultsController;
 use App\Http\Controllers\CompanySettingsDetailsController;
 use App\Http\Controllers\CompanySettingsLogoController;
 use App\Http\Controllers\CountriesController;
+use App\Http\Controllers\CreditsController;
 use App\Http\Controllers\CurrenciesControlller;
 use App\Http\Controllers\EmailSettingsContentController;
 use App\Http\Controllers\EmailSettingsRemindersController;
@@ -201,5 +202,10 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::post('manage-transactions/save-arranged-columns', [TransactionsController::class, 'saveArrangedColumns']);
 	Route::get('manage-transactions/{id}', [TransactionsController::class, 'show']);
 	Route::get('manage-transactions', [TransactionsController::class, 'index']);
+
+	/**
+	 * manage credits
+	 */
+	Route::resource('manage-credits', CreditsController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	
 });

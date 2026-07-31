@@ -18,7 +18,7 @@ class DefaultCompany
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
     public function handle(Request $request, Closure $next): Response{
-
+		//TODO: when we have users make sure that the user is allowed for the selected company else reject.
 		$v = Validator::make($request->all(), [
 			'company_id'		=>	'required|exists:companies,id'
 		]);
