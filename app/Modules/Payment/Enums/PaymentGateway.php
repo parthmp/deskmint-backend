@@ -58,17 +58,17 @@ enum PaymentGateway: int {
 	/**
 	 * configuredOptions function
 	 *
-	 * Returns [['text' => 'PayPal', 'value' => 1], ...] for gateways
-	 *
+	 * @param integer $company_id
+	 * @param boolean $additional
 	 * @return array
 	 */
-    public static function configuredOptions(bool $additional = true): array {
+    public static function configuredOptions(int $company_id, bool $additional = true): array {
 
         $gateways = array_filter(self::cases(), fn ($gateway) => $gateway !== self::NONE);
 
         $all_keys = array_map(fn ($gateway) => $gateway->settingsType(), $gateways);
 
-        $existing_keys = DB::table('settings_section')->whereIn('type', $all_keys)->pluck('type')->toArray();
+        $existing_keys = DB::table('settings_section')->where('company_id', '=', $company_id)->whereIn('type', $all_keys)->pluck('type')->toArray();
 
 		
 

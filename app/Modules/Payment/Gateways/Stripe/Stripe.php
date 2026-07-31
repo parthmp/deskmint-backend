@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\Transaction;
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
 use App\Modules\Payment\DatabaseOperations;
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Enums\TransactionStatus;
 use App\Modules\Payment\Exceptions\PaymentException;
 use App\Modules\Payment\Jobs\FetchStripeBalanceTransactionJob;
@@ -27,7 +28,9 @@ class Stripe implements PaymentGatewayInterface{
 
 	public function __construct(
 		private string $company_id,
+		private string $currency_id,
 		private string $invoice_id,
+		private string $user_id,
 		private string $secret,
 		private string $currency,
 		private float $amount,
@@ -59,9 +62,10 @@ class Stripe implements PaymentGatewayInterface{
 	private function createTransaction(string $order_id) : Transaction {
 		return $this->database_operations->insertTransaction([
 			'company_id'					=>	$this->company_id,
+			'currency_id'					=>	$this->currency_id,
 			'invoice_id'					=>	$this->invoice_id,
 			'amount'						=>	$this->amount,
-			'payment_method'				=>	PAYMENT_STRIPE,
+			'payment_gateway'				=>	PaymentGateway::STRIPE->value,
 			'mode'							=>	'-',
 			'token_id_identifier'			=>	$order_id,
 			'is_approved'					=>	0,
@@ -72,10 +76,8 @@ class Stripe implements PaymentGatewayInterface{
 
 	public function generateUrl() : ?string {
 
-		$payment_id = Str::uuid();
+		$uuid_token = Str::uuid();
 		
-		$transaction = $this->createTransaction($payment_id);
-
 		try{
 
 			$session = $this->stripe_client->checkout->sessions->create([
@@ -94,9 +96,13 @@ class Stripe implements PaymentGatewayInterface{
 				'success_url' 	=> env('APP_URL').PAYMENT_SUCCESS_URL,
 				'cancel_url' 	=> env('APP_URL').PAYMENT_CANCEL_URL,
 				'metadata' => [
-					'payment_id' => $payment_id
+					'order_id' => $uuid_token
 				]
 			]);
+
+			$transaction = $this->createTransaction($uuid_token);
+			$this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, (int) $this->invoice_id, (int) $transaction->id);
+		
 
 		}catch(Exception $e){
 			logger(json_encode($e->getMessage()));
@@ -106,7 +112,7 @@ class Stripe implements PaymentGatewayInterface{
 
 		$checkout_url = $session->url;
 
-		$this->database_operations->insertPaymentUrl($transaction->id, $payment_id, $checkout_url);
+		$this->database_operations->insertPaymentUrl($transaction->id, $this->invoice_id, $uuid_token, $checkout_url);
 	
 		return $checkout_url;
 		

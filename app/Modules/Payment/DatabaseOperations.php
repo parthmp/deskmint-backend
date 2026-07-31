@@ -150,11 +150,11 @@ class DatabaseOperations{
 
 		}
 
-		if(!isset($data['data']['object']['metadata']['payment_id'])){
+		if(!isset($data['data']['object']['metadata']['order_id'])){
 			throw new PaymentException('Invalid data provided', 'unsupported_event', config('global.error_code'));
 		}
 		
-		$order_id = $data['data']['object']['metadata']['payment_id'];
+		$order_id = $data['data']['object']['metadata']['order_id'];
 
 		if(!$order_id){
 			throw new PaymentException('Invalid data provided', 'invalid_order_id', config('global.error_code'));
@@ -171,7 +171,7 @@ class DatabaseOperations{
 		return [
 			'order_id'				=>	$order_id,
 			'event_type'			=>	$event_type,
-			'webhook_data'			=>	$webhook_data,
+			'webhook_data'			=>	$webhook_data->toArray(),
 			'settings'				=>	$settings
 		];
 

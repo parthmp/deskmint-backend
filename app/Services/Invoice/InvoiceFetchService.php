@@ -56,7 +56,7 @@ class InvoiceFetchService{
 
 		// /* get payment integration data */
 		//$gateways = $this->settings_section_repository->getGateWayNames((int) $company_id);
-		$gateways = PaymentGateway::configuredOptions();
+		$gateways = PaymentGateway::configuredOptions((int) $company_id);
 		
 		return [
 			'invoice_number'	=>	(new HandleInvoiceNumbers((int) $company_id, $invoice_settings->getInvoiceNumbers(), (int) $timezone_offset_minutes))->getNextInvoiceNumber(),
@@ -160,7 +160,9 @@ class InvoiceFetchService{
 				],
 			];
 
-			$gateways = PaymentGateway::configuredOptions(false);
+			$company_id = (int) Sanitize::input($request->input('company_id'));
+
+			$gateways = PaymentGateway::configuredOptions($company_id, false);
 
 			$rewrites = [
 				'data' => [

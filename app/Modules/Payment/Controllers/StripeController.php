@@ -24,7 +24,7 @@ class StripeController extends Controller{
 			
 			$webhook_data = $settings['webhook_data'];
 			
-			$stripe_object = new Stripe($webhook_data['company_id'], $webhook_data['invoice_id'], decrypt($settings['settings']['secret']), $webhook_data['currency_code'], $webhook_data['balance_due']);
+			$stripe_object = new Stripe($webhook_data['company_id'], $webhook_data['currency_id'], $webhook_data['invoice_id'], $webhook_data['user_id'], decrypt($settings['settings']['secret']), $webhook_data['currency_code'], $webhook_data['balance_due']);
 			$stripe_object->setWebhookSecret(decrypt($settings['settings']['webhook_secret']));
 			
 			$payment = new Payment($stripe_object);

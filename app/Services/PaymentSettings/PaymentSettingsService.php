@@ -2,6 +2,7 @@
 
 namespace App\Services\PaymentSettings;
 
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 
 /**
@@ -18,8 +19,8 @@ class PaymentSettingsService{
 	 * @return array
 	 */
 	public function getGatewayNames(int $company_id) : array {
-
-		return $this->settings_section_repository->getGateWayNames($company_id);
+		return PaymentGateway::configuredOptions($company_id);
+		//return $this->settings_section_repository->getGateWayNames($company_id);
 
 	}
 

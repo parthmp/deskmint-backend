@@ -3,6 +3,7 @@
 namespace App\Services\Transaction;
 
 use App\Exceptions\TransactionException;
+use App\Helpers\Sanitize;
 use App\Models\Transaction;
 use App\Modules\EasyIndex\EasyIndex;
 use App\Modules\Payment\Enums\PaymentGateway;
@@ -72,7 +73,9 @@ class TransactionService {
 				],
 			];
 
-			$gateways = PaymentGateway::configuredOptions(false);
+			$company_id = (int) Sanitize::input($request->input('company_id'));
+
+			$gateways = PaymentGateway::configuredOptions($company_id, false);
 
 			$rewrites = [
 				'data' => [

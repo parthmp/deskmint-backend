@@ -13,7 +13,6 @@ class PaymentSettingsController extends Controller{
 
 		$data = $request->validated();
 		$company_id = $data['company_id'];
-		//return array_map("strtolower", $this->payment_settings_service->getGateWayNames((int) $company_id));
 		return $this->payment_settings_service->getGateWayNames((int) $company_id);
 		
 	}
