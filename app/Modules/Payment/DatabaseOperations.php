@@ -191,7 +191,7 @@ class DatabaseOperations{
 
 			$order_id = $this->findOrderId($data, $event_type);
 
-			$transaction = Transaction::where('token_id_identifier', '=', $order_id)->first();
+			$transaction = Transaction::where('token_id_identifier', '=', $order_id)->with('reference')->first();
 			
 			if(!$transaction){
 				Log::error('Payment update failed $transaction was null');
@@ -235,7 +235,7 @@ class DatabaseOperations{
 				
 				$this->updateInvoiceStatusForPayments($transaction);
 				
-				$this->updateInvoiceSnapshot((int) $transaction->invoice_id);
+				$this->updateInvoiceSnapshot((int) $transaction->reference->invoice_id);
 
 				
 
@@ -277,17 +277,30 @@ class DatabaseOperations{
 	}
 
 	/**
+	 * insertEmptyTransactionGatewayDetails function
+	 *
+	 * @param integer $transaction_id
+	 * @return TransactionGatewayDetail
+	 */
+	public function insertEmptyTransactionGatewayDetails(int $transaction_id) : TransactionGatewayDetail {
+		$transaction_details = new TransactionGatewayDetail();
+		$transaction_details->transaction_id = $transaction_id;
+		$transaction_details->save();
+		return $transaction_details;
+	}
+
+	/**
 	 * updateStripePaymentTransaction function
 	 *
 	 * @param array $data
 	 * @return boolean
 	 */
 	public function updateStripePaymentTransaction(array $data) : bool {
-
+		
 		$order_id = $data['order_id'];
-
-		$transaction = Transaction::where('token_id_identifier', '=', $order_id)->first();
-
+		
+		$transaction = Transaction::where('token_id_identifier', '=', $order_id)->with('reference')->first();
+		
 		if(!$transaction){
 			Log::error('Payment update failed $transaction was null');
 			throw new PaymentException('failed to update database', 'db_failed', config('global.error_code'));
@@ -301,7 +314,7 @@ class DatabaseOperations{
 		$transaction->received_amount = $data['received_amount'];
 		$transaction->paid_at = now();
 		$transaction->save();
-
+		
 		TransactionGatewayDetail::updateOrCreate(
 			['transaction_id' => $transaction->id],
 			['payment_captured_details' => json_encode($data)]
@@ -309,10 +322,10 @@ class DatabaseOperations{
 		
 		$amount = (int) $data['data']['object']['amount_total'];
 		$amount = BigDecimal::of($amount)->dividedBy(100, 2, RoundingMode::HalfUp)->toFloat();
-
+		
 		$saved = $transaction->save() && $this->updateInvoiceStatusForPayments($transaction);
-
-		$this->updateInvoiceSnapshot((int) $transaction->invoice_id);
+		
+		$this->updateInvoiceSnapshot((int) $transaction->reference->invoice_id);
 
 		return $saved;
 

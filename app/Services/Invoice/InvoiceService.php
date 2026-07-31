@@ -132,7 +132,7 @@ class InvoiceService{
 		
 		$filename = $invoice_generator->getFilename();
 		$this->invoice_repository->updateInvoiceFiles((int) $invoice_id, $filename.'.pdf', ($xml_on) ? $filename.'.xml' : '');
-
+		
 	}
 
 	/**

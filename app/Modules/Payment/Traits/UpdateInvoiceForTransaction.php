@@ -293,6 +293,7 @@ trait UpdateInvoiceForTransaction {
 				);
 
 			//regenerate pdf
+			
 			GenerateInvoiceJob::dispatch($invoice->company_id, $invoice->id);
 		}
 		

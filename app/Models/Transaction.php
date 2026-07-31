@@ -15,8 +15,8 @@ class Transaction extends Model
 		'paid_at'	=>	'datetime'
 	];
 
-	public function invoice_wt(){
-		return $this->belongsTo(Invoice::class, 'invoice_id')->withTrashed();
+	public function reference(){
+		return $this->hasOne(TransactionReference::class, 'transaction_id');
 	}
 
 	public function payment_url(){

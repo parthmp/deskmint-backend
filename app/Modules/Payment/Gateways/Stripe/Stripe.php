@@ -102,7 +102,7 @@ class Stripe implements PaymentGatewayInterface{
 
 			$transaction = $this->createTransaction($uuid_token);
 			$this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, (int) $this->invoice_id, (int) $transaction->id);
-		
+			$this->database_operations->insertEmptyTransactionGatewayDetails($transaction->id);
 
 		}catch(Exception $e){
 			logger(json_encode($e->getMessage()));
@@ -198,7 +198,7 @@ class Stripe implements PaymentGatewayInterface{
 			
 			$data['gateway_fees_amount'] = $gateway_fee;
 			$data['received_amount'] = $net_amount;
-
+			
 			return $this->database_operations->updateStripePaymentTransaction($data);
 
 		}

@@ -125,6 +125,7 @@ class PayPal implements PaymentGatewayInterface{
 				if($link['rel'] === 'approve'){
 					$transaction = $this->createTransaction($response['id']);
 					$this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, (int) $this->invoice_id, (int) $transaction->id, (int) $transaction_reference->id);
+					$this->database_operations->insertEmptyTransactionGatewayDetails($transaction->id);
 					$url = $link['href'];
 					$this->database_operations->insertPaymentUrl($transaction->id, $this->invoice_id, $response['id'], $url);
 					return $url;

@@ -326,8 +326,8 @@ class InvoiceRepository{
 	public function markInvoiceSent(int $company_id, int $invoice_id) : bool {
 
 		$invoice = Invoice::where([['id', '=', $invoice_id], ['company_id', '=', $company_id]])->first();
-
-		if((int) $invoice->status === InvoiceStatus::DRAFT){
+		
+		if((int) $invoice->status === InvoiceStatus::DRAFT->value){
 			$invoice->status = InvoiceStatus::SENT->value;
 			$invoice->sent_at = now();
 			return $invoice->save();
