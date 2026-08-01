@@ -90,7 +90,7 @@ class PaymentReminder extends Command
 						])
 						->where(function($q){
 								$q->where('invoices.status', '=', InvoiceStatus::PARTIALLY_PAID->value)
-								->orWhere('invoices.status', '=', InvoiceStatus::PENDING->value);
+								->orWhere('invoices.status', '=', InvoiceStatus::SENT->value);
 						})
 						->chunkById(200, function($invoices) use ($settings){
 							foreach ($invoices as $invoice) {
