@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\CreditException;
 use App\Helpers\General;
+use App\Helpers\Sanitize;
 use App\Http\Requests\Credits\CreditCreateRequest;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
@@ -79,7 +81,36 @@ class CreditsController extends Controller {
 	}
 
 	public function index(Request $request){
-		return $this->credit_service->fetchIndex($request);
+
+		try{
+			return $this->credit_service->fetchIndex($request);
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
+	}
+
+	public function destroy(Request $request){
+
+		$ids = $request->input('ids');
+
+		if(!$ids){
+			return response(['message' => 'No valid IDs provided', 'validity' => 'invalid_ids'], config('global.error_code'));
+		}
+		
+		try{
+			
+			$ids = Sanitize::recursive($ids);
+
+			$this->credit_service->deleteCredits($ids);
+			return response(['message' => 'Credit(s) deleted successfully', 'validity' => 'delete_success'], 200);
+
+		}catch(CreditException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+		
 	}
 
 }

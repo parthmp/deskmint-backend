@@ -4,13 +4,11 @@ namespace App\Services\Credit;
 
 use App\Enums\Credits\CreditStatus;
 use App\Exceptions\CreditException;
-use App\Helpers\Sanitize;
 use App\Models\Credit;
 use App\Modules\EasyIndex\EasyIndex;
-use App\Repositories\Country\CountryRepository;
 use App\Repositories\Credit\CreditRepository;
+use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 
 /**
  * CreditService class
@@ -37,7 +35,13 @@ class CreditService {
 
 	}
 
-	public function fetchIndex(Request $request){
+	/**
+	 * fetchIndex function
+	 *
+	 * @param Request $request
+	 * @return array
+	 */
+	public function fetchIndex(Request $request) : array {
 		$joins = [
 					[
 						'table' => 'clients',
@@ -129,6 +133,35 @@ class CreditService {
 			'c_code'						=>		'currencies.code',
 			'full_name'						=>		'clients.full_name'
 		 ])->setRewrites($rewrites)->setModel(Credit::class)->fetchIndex();
+
+	}
+
+	/**
+	 * deleteCredits function
+	 *
+	 * @param array $ids
+	 * @return boolean
+	 */
+	public function deleteCredits(array $ids) : bool {
+
+		if($this->credit_repository->ifAnyCreditsAreApplied($ids)){
+			
+			$message = 'Can not delete : One of the credits are applied to an invoice.';
+			if((int) count($ids) === 1){
+				$message = 'Can not delete : Credit is applied to an invoice.';
+			}
+
+			throw new CreditException($message, 'blocked_applied_credit', (int) config('global.error_code'));
+
+		}
+
+		$del_response = $this->credit_repository->deleteMultipleCredits($ids);
+
+		if(!$del_response){
+			throw new Exception();
+		}
+
+		return $del_response;
 
 	}
 

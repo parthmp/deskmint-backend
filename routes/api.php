@@ -209,5 +209,6 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-credits/fetch-arranged-columns', [CreditsController::class, 'fetchArrangedColumns']);
 	Route::post('manage-credits/save-arranged-columns', [CreditsController::class, 'saveArrangedColumns']);
 	Route::resource('manage-credits', CreditsController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
+	Route::delete('manage-credits', [CreditsController::class, 'destroy']);
 	
 });

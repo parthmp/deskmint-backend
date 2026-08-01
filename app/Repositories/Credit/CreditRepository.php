@@ -2,8 +2,10 @@
 
 namespace App\Repositories\Credit;
 
+use App\Enums\Credits\CreditStatus;
 use App\Models\Client;
 use App\Models\Credit;
+use Illuminate\Database\Eloquent\Collection;
 
 class CreditRepository {
 
@@ -62,5 +64,27 @@ class CreditRepository {
 
 	}
 
+	/**
+	 * ifAnyCreditsAreApplied function
+	 *
+	 * @param array $ids
+	 * @return boolean
+	 */
+	public function ifAnyCreditsAreApplied(array $ids) : bool {
+		$counted = Credit::where(function($q){
+			$q->where('status', '=', CreditStatus::APPLIED)->orWhere('status', '=', CreditStatus::PARTIALLY_APPLIED);
+		})->whereIn('id', $ids)->count();
+		return (int) $counted > 0;
+	}
+
+	/**
+	 * deleteMultipleCredits function
+	 *
+	 * @param array $ids
+	 * @return bool
+	 */
+	public function deleteMultipleCredits(array $ids) : bool {
+		return Credit::whereIn('id', $ids)->delete();
+	}
 
 }
