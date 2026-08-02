@@ -13,10 +13,10 @@ class CreditRepository {
 	 * fetchById function
 	 *
 	 * @param integer $id
-	 * @return Credit
+	 * @return Credit|null
 	 */
-	public function fetchById(int $id) : Credit {
-		return Credit::where('id', '=', $id)->first();
+	public function fetchById(int $company_id, int $id) : ?Credit {
+		return Credit::where([['id', '=', $id], ['company_id', '=', $company_id]])->first();
 	}
 
 	/**
@@ -49,7 +49,7 @@ class CreditRepository {
 			$credit = new Credit();
 			$credit->company_id = $company_id;
 		}else{
-			$credit = $this->fetchById((int) $id);
+			$credit = $this->fetchById((int) $company_id, (int) $id);
 		}
 		
 		$credit->client_id = $client_id;
@@ -85,6 +85,18 @@ class CreditRepository {
 	 */
 	public function deleteMultipleCredits(array $ids) : bool {
 		return Credit::whereIn('id', $ids)->delete();
+	}
+
+	/**
+	 * fetchCreditForEdit function
+	 *
+	 * @param integer $company_id
+	 * @param integer $id
+	 * @return array
+	 */
+	public function fetchCreditForEdit(int $company_id, int $id) : array {
+		$credit = Credit::select('credits.*', 'clients.full_name as full_name', 'credit_currencies.code as credit_currency', 'client_currencies.code as client_currency')->join('clients', 'clients.id', '=', 'credits.client_id')->join('currencies as credit_currencies', 'credits.currency_id', '=', 'credit_currencies.id')->join('currencies as client_currencies', 'clients.currency_id', '=', 'client_currencies.id')->where([['credits.company_id', '=', $company_id], ['credits.id', '=', $id]])->first();
+		return $credit->toArray();
 	}
 
 }

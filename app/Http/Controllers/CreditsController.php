@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Credits\CreditStatus;
 use App\Exceptions\CreditException;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Http\Requests\Credits\CreditCreateRequest;
+use App\Http\Requests\GenericRequest;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
 use App\Services\Credit\CreditService;
@@ -80,6 +82,30 @@ class CreditsController extends Controller {
 
 	}
 
+	public function update(CreditCreateRequest $request, int $id){
+
+		$data = $request->validated();
+
+		$company_id = (int) $data['company_id'];
+		$client_id = (int) $data['client_id'];
+		$amount = (string) $data['amount'];
+		$credit_id = (int) Sanitize::input($id);
+
+		try{
+
+			$this->credit_service->update($company_id, $client_id, $amount, $credit_id);
+
+			return response(['message' => 'Credit updated successfully', 'validity' => 'credit_updated'], 200);
+
+		}catch(CreditException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+		
+
+	}
+
 	public function index(Request $request){
 
 		try{
@@ -111,6 +137,31 @@ class CreditsController extends Controller {
 			return General::wentWrong();
 		}
 		
+	}
+
+	public function show(GenericRequest $request, int $id){
+
+		$mode = Sanitize::input($request->segment(3));
+		$id = (int) Sanitize::input($id);
+
+		$applied_entries = [];
+
+		if($mode === 'view'){
+			//fetch applied entries here.
+		}
+
+		$data = $request->validated();
+
+		$response['credit'] = $this->credit_service->fetchCreditForEdit((int) $data['company_id'], (int) $id);
+		$response['applied_entries'] = $applied_entries;
+
+		$response['full_access'] = 0;
+		if((int) $response['credit']['status'] === CreditStatus::NOT_APPLIED->value){
+			$response['full_access'] = 1;
+		}
+
+		return $response;
+
 	}
 
 }

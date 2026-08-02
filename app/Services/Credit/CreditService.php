@@ -7,8 +7,11 @@ use App\Exceptions\CreditException;
 use App\Models\Credit;
 use App\Modules\EasyIndex\EasyIndex;
 use App\Repositories\Credit\CreditRepository;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * CreditService class
@@ -162,6 +165,80 @@ class CreditService {
 		}
 
 		return $del_response;
+
+	}
+
+	/**
+	 * fetchCredit function
+	 *
+	 * @param integer $company_id
+	 * @param integer $id
+	 * @return array
+	 */
+	public function fetchCreditForEdit(int $company_id, int $id) : array {
+		return $this->credit_repository->fetchCreditForEdit($company_id, $id);
+	}
+
+	/**
+	 * update function
+	 *
+	 * @param integer $company_id
+	 * @param integer $client_id
+	 * @param string $amount
+	 * @param integer $credit_id
+	 * @return Credit
+	 */
+	public function update(int $company_id, int $client_id, string $amount, int $credit_id) : Credit {
+
+		return DB::transaction(function () use ($company_id, $client_id, $amount, $credit_id) {
+
+			//check access first.
+			$credit = $this->credit_repository->fetchById($company_id, $credit_id);
+
+			if(!$credit){
+				throw new CreditException('Invalid credit provided', 'invalid_credit', (int) config('global.error_code'));
+			}
+
+			$currency_id = $this->credit_repository->fetchClientCurrencyId($company_id, $client_id);
+
+			if((int) $credit->status === CreditStatus::NOT_APPLIED->value){
+				//update it fully.
+				return $this->credit_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, '0.00', $amount, CreditStatus::NOT_APPLIED->value, $credit_id);
+			}
+
+			//else check for further.
+			//client should not be changed.
+			//currency should not be changed.
+			//amount must not be lower than applied amount.
+			//update.
+
+			if((int) $client_id !== (int) $credit->client_id){
+				throw new CreditException('You can not change client for this entry', 'unable_to_change_client', (int) config('global.error_code'));
+			}
+
+			if((int) $currency_id !== (int) $credit->currency_id){
+				throw new CreditException('You can not change currency for this entry', 'unable_to_change_currency', (int) config('global.error_code'));
+			}
+
+			$applied_amount = BigDecimal::of($credit->applied_amount);
+			$amount = BigDecimal::of($amount);
+
+			if($amount->isLessThan($applied_amount)){
+				throw new CreditException('You can not update it for amount less than '.$credit->applied_amount, 'unable_to_update_invalid_amount', (int) config('global.error_code'));
+			}
+
+			$left_to_apply = $amount->minus($applied_amount);
+
+			$status = CreditStatus::PARTIALLY_APPLIED->value;
+
+			if($left_to_apply->isEqualTo(BigDecimal::of(0))){
+				$status = CreditStatus::APPLIED->value;
+			}
+
+			$left_to_apply = $left_to_apply->toScale(2, RoundingMode::HalfUp)->__toString();
+			return $this->credit_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, $credit->applied_amount, $left_to_apply, $status, $credit_id);
+
+		});
 
 	}
 

@@ -208,7 +208,12 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	 */
 	Route::get('manage-credits/fetch-arranged-columns', [CreditsController::class, 'fetchArrangedColumns']);
 	Route::post('manage-credits/save-arranged-columns', [CreditsController::class, 'saveArrangedColumns']);
-	Route::resource('manage-credits', CreditsController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
+	
+	Route::get('manage-credits/edit/{id}', [CreditsController::class, 'show']);
+	Route::get('manage-credits/view/{id}', [CreditsController::class, 'show']);
+	Route::get('manage-credits', [CreditsController::class, 'index']);
+	Route::post('manage-credits', [CreditsController::class, 'store']);
+	Route::patch('manage-credits/{id}', [CreditsController::class, 'update']);
 	Route::delete('manage-credits', [CreditsController::class, 'destroy']);
 	
 });
