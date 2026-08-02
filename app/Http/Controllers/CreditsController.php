@@ -143,14 +143,14 @@ class CreditsController extends Controller {
 
 		$mode = Sanitize::input($request->segment(3));
 		$id = (int) Sanitize::input($id);
+		$data = $request->validated();
+
 
 		$applied_entries = [];
 
 		if($mode === 'view'){
-			//fetch applied entries here.
+			$applied_entries = $this->credit_service->fetchAppliedCreditInvoices((int) $data['company_id'], (int) $id);
 		}
-
-		$data = $request->validated();
 
 		$response['credit'] = $this->credit_service->fetchCreditForEdit((int) $data['company_id'], (int) $id);
 		$response['applied_entries'] = $applied_entries;

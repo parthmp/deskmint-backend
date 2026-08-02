@@ -3,8 +3,11 @@
 namespace App\Repositories\Credit;
 
 use App\Enums\Credits\CreditStatus;
+use App\Helpers\General;
 use App\Models\Client;
 use App\Models\Credit;
+use App\Models\InvoiceLedger;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 
 class CreditRepository {
@@ -95,8 +98,48 @@ class CreditRepository {
 	 * @return array
 	 */
 	public function fetchCreditForEdit(int $company_id, int $id) : array {
+		
 		$credit = Credit::select('credits.*', 'clients.full_name as full_name', 'credit_currencies.code as credit_currency', 'client_currencies.code as client_currency')->join('clients', 'clients.id', '=', 'credits.client_id')->join('currencies as credit_currencies', 'credits.currency_id', '=', 'credit_currencies.id')->join('currencies as client_currencies', 'clients.currency_id', '=', 'client_currencies.id')->where([['credits.company_id', '=', $company_id], ['credits.id', '=', $id]])->first();
-		return $credit->toArray();
+		
+		$credit = $credit->toArray();
+		
+		$credit['status_text'] = CreditStatus::NOT_APPLIED->label();
+		if((int) $credit['status'] === CreditStatus::PARTIALLY_APPLIED->value){
+			$credit['status_text'] = CreditStatus::PARTIALLY_APPLIED->label();
+		}else if((int) $credit['status'] === CreditStatus::APPLIED->value){
+			$credit['status_text'] = CreditStatus::APPLIED->label();
+		}
+
+		return $credit;
+		
+	}
+
+	/**
+	 * fetchAppliedCreditInvoices function
+	 *
+	 * @param integer $company_id
+	 * @param integer $credit_id
+	 * @return array
+	 */
+	public function fetchAppliedCreditInvoices(int $company_id, int $credit_id) : array {
+
+		$invoices = Credit::select('il.applied_amount_from_credits as applied_amount', 'invoices.invoice_number', 'il.created_at as applied_on')
+							->join('invoice_ledger as il', 'il.credit_id', '=', 'credits.id')
+							->join('invoices', 'il.invoice_id', '=', 'invoices.id')
+							->where([['credits.company_id', '=', $company_id], ['credits.id', '=', $credit_id]])->get();
+		
+		$invoices = $invoices->toArray();
+
+		foreach($invoices as $key => $entry){
+			foreach($entry as $sub_key => $sub_entry){
+				if(General::isMySQLDateTime($sub_entry)){
+					$invoices[$key][$sub_key] = Carbon::parse($sub_entry)->toISOString();
+				}
+			}
+		}
+
+		return $invoices;
+
 	}
 
 }

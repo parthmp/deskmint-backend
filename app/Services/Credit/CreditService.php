@@ -242,4 +242,15 @@ class CreditService {
 
 	}
 
+	/**
+	 * fetchAppliedCreditInvoices function
+	 *
+	 * @param integer $company_id
+	 * @param integer $credit_id
+	 * @return array
+	 */
+	public function fetchAppliedCreditInvoices(int $company_id, int $credit_id) : array {
+		return $this->credit_repository->fetchAppliedCreditInvoices($company_id, $credit_id);
+	}
+
 }
