@@ -39,6 +39,7 @@ use App\Http\Middleware\IfUserHasAccessToFeature;
 use App\Http\Middleware\ValidateDeviceAndTokens;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PaymentSettingsController;
+use App\Http\Controllers\PaymentTypeController;
 use App\Http\Controllers\TransactionsController;
 use App\Models\Transaction;
 
@@ -215,5 +216,12 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::post('manage-credits', [CreditsController::class, 'store']);
 	Route::patch('manage-credits/{id}', [CreditsController::class, 'update']);
 	Route::delete('manage-credits', [CreditsController::class, 'destroy']);
+
+	/**
+	 * payment types
+	 */
+	Route::post('manage-payment-types', [PaymentTypeController::class, 'store']);
+	Route::patch('manage-payment-types/{id}', [PaymentTypeController::class, 'store']);
+	Route::delete('manage-payment-types', [PaymentTypeController::class, 'destroy']);
 	
 });
