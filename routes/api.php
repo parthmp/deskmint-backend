@@ -223,5 +223,6 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::post('manage-payment-types', [PaymentTypeController::class, 'store']);
 	Route::patch('manage-payment-types/{id}', [PaymentTypeController::class, 'store']);
 	Route::delete('manage-payment-types', [PaymentTypeController::class, 'destroy']);
+	Route::get('manage-payment-types', [PaymentTypeController::class, 'index']);
 	
 });

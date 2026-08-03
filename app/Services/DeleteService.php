@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helpers\Sanitize;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -21,7 +22,7 @@ class DeleteService{
 
         try{
 
-            $ids = $request->input('ids');
+            $ids = Sanitize::recursive($request->input('ids'));
             
             $count = $model::whereIn('id', $ids)->count();
             
