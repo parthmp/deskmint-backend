@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\PaymentTypeException;
 use App\Helpers\General;
+use App\Helpers\Sanitize;
+use App\Http\Requests\GenericRequest;
 use App\Http\Requests\PaymentType\PaymentTypeCreateEditRequest;
 use App\Models\PaymentType;
 use App\Modules\DataTable\Requests\DataTableRequest;
@@ -40,7 +42,7 @@ class PaymentTypeController extends Controller {
 
 	}
 
-	
+
 	public function index(DataTableRequest $request){
 		$data = $request->validated();
 		return $this->payment_type_service->fetch($data);
@@ -58,6 +60,41 @@ class PaymentTypeController extends Controller {
 
 			return General::wentWrong();
 
+		}
+
+	}
+
+	public function show(GenericRequest $request, int $id){
+
+		$request->validated();
+		$id = (int) Sanitize::input($id);
+		$payment_type = $this->payment_type_service->fetchById($id);
+
+		if(empty($payment_type)){
+			return response(['message' => 'Invalid payment type provided', 'validity', 'payment_type_invalid'], (int) config('global.error_code'));
+		}
+
+		return $payment_type;
+
+	}
+
+	public function update(PaymentTypeCreateEditRequest $request, int $id){
+
+		$data = $request->validated();
+
+		try{
+
+			$this->payment_type_service->update((string) $data['payment_type'], (int) $id);
+			return response(['message' => 'Payment type updated successfully', 'validity', 'payment_type_updated'], 200);
+
+		}catch(PaymentTypeException $e){
+
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+
+		}catch(Exception $e){
+
+			return General::wentWrong();
+			
 		}
 
 	}

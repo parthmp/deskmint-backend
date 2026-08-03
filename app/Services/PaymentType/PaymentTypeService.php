@@ -2,6 +2,7 @@
 
 namespace App\Services\PaymentType;
 
+use App\Models\Payment;
 use App\Models\PaymentType;
 use App\Modules\DataTable\DataTable;
 use App\Repositories\PaymentType\PaymentTypeRepository;
@@ -73,6 +74,34 @@ class PaymentTypeService {
 			'current_page'	=>		$fields->currentPage()
 		];
 
+	}
+
+	/**
+	 * fetchById function
+	 *
+	 * @param integer $id
+	 * @return array
+	 */
+	public function fetchById(int $id) : array {
+
+		$pt = $this->payment_type_repository->fetchById($id)->toArray();
+
+		unset($pt['updated_at']);
+		unset($pt['deleted_at']);
+
+		return $pt;
+
+	}
+
+	/**
+	 * update function
+	 *
+	 * @param string $payment_type
+	 * @param integer $id
+	 * @return PaymentType
+	 */
+	public function update(string $payment_type, int $id) : PaymentType {
+		return $this->payment_type_repository->createOrUpdate($payment_type, $id);
 	}
 
 }
