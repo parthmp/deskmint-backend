@@ -232,5 +232,6 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	 */
 	Route::get('manage-payment-requests/fetch-init', [PaymentRequestsController::class, 'fetchInit']);
 	Route::post('manage-payment-requests', [PaymentRequestsController::class, 'store']);
+	Route::get('manage-payment-requests', [PaymentRequestsController::class, 'index']);
 	
 });
