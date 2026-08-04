@@ -15,7 +15,7 @@ return new class extends Migration
 			
             $table->unsignedBigInteger('transaction_id')->nullable()->change();
 
-			$table->unsignedBigInteger('payment_type_id')->after('transaction_id');
+			$table->unsignedBigInteger('payment_type_id')->nullable()->after('transaction_id');
 			$table->foreign('payment_type_id')->references('id')->on('payment_types')->onDelete('cascade');
 			
         });
@@ -28,8 +28,8 @@ return new class extends Migration
     {
         Schema::table('payments', function (Blueprint $table) {
             $table->unsignedBigInteger('transaction_id')->nullable(false)->change();
-			$table->dropForeign(['payment_types']);
-			$table->dropColumn('payment_types');
+			$table->dropForeign(['payment_type_id']);
+			$table->dropColumn('payment_type_id');
         });
     }
 };

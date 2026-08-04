@@ -31,6 +31,7 @@ use App\Http\Controllers\InvoiceSettingsProductColumnsController;
 use App\Http\Controllers\InvoiceSettingsTotalFieldsController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\LoginSettingsController;
+use App\Http\Controllers\PaymentRequestsController;
 use App\Http\Controllers\PaymentSettingsPaypalController;
 use App\Http\Controllers\PaymentSettingsStripeController;
 use App\Http\Controllers\ProductsController;
@@ -225,5 +226,11 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::delete('manage-payment-types', [PaymentTypeController::class, 'destroy']);
 	Route::get('manage-payment-types', [PaymentTypeController::class, 'index']);
 	Route::get('manage-payment-types/{id}', [PaymentTypeController::class, 'show']);
+
+	/**
+	 * payment requests
+	 */
+	Route::get('manage-payment-requests/fetch-init', [PaymentRequestsController::class, 'fetchInit']);
+	Route::post('manage-payment-requests', [PaymentRequestsController::class, 'store']);
 	
 });
