@@ -35,6 +35,12 @@ class CreateEmailSettingsContentRequest extends FormRequest
 		if($this->filled('email_content_reminder')){
 			$email_content_reminder = Sanitize::input($this->input('email_content_reminder'));
 		}
+
+		$email_content_payment_request = '';
+
+		if($this->filled('email_content_payment_request')){
+			$email_content_payment_request = Sanitize::input($this->input('email_content_payment_request'));
+		}
 		
 		$payment_details = '';
 
@@ -43,10 +49,11 @@ class CreateEmailSettingsContentRequest extends FormRequest
 		}
 		
 		$this->merge([
-			'company_id'					=>	$company_id,
-			'email_content_invoice'			=>	$email_content_invoice,
-			'email_content_reminder'		=>	$email_content_reminder,
-			'payment_details'				=>	$payment_details
+			'company_id'							=>	$company_id,
+			'email_content_invoice'					=>	$email_content_invoice,
+			'email_content_reminder'				=>	$email_content_reminder,
+			'email_content_payment_request'			=>	$email_content_payment_request,
+			'payment_details'						=>	$payment_details
 		]);
 
 	}
@@ -59,10 +66,11 @@ class CreateEmailSettingsContentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_id'				=>	'required',
-            'email_content_invoice'		=>	'sometimes',
-            'email_content_reminder'	=>	'sometimes',
-            'payment_details'			=>	'sometimes'
+            'company_id'					=>	'required',
+            'email_content_invoice'			=>	'sometimes',
+            'email_content_reminder'		=>	'sometimes',
+            'email_content_payment_request'	=>	'sometimes',
+            'payment_details'				=>	'sometimes'
         ];
     }
 }

@@ -667,6 +667,13 @@ You have unpaid balance of {$unpaid_balance}
 PAYMENT URL BELOW
 {$payment_url}
 [{online-payment-end}]'),
+'email_content_payment_request'	=>	trim('Hello {$client_first_name} {$client_last_name},
+Amount {$unpaid_balance} is requested, please make payment.
+
+[{online-payment-start}]
+PAYMENT URL BELOW
+{$payment_url}
+[{online-payment-end}]'),
 				'payment_details'			=>	'',
 			];
 
