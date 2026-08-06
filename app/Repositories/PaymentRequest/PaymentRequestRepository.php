@@ -2,6 +2,7 @@
 
 namespace App\Repositories\PaymentRequest;
 
+use App\Enums\PaymentRequests\PaymentRequestStatus;
 use App\Models\PaymentRequest;
 use App\Modules\Payment\Enums\PaymentGateway;
 use \Illuminate\Support\Str;
@@ -37,6 +38,22 @@ class PaymentRequestRepository {
 	}
 
 	/**
+	 * fetchByIdWithCompanyId function
+	 *
+	 * @param integer $company_id
+	 * @param integer $id
+	 * @param boolean $with_trahsed
+	 * @return PaymentRequest
+	 */
+	public function fetchByIdWithCompanyId(int $company_id, int $id, $with_trahsed = false) : PaymentRequest {
+		$payment_request = PaymentRequest::where([['company_id', '=', $company_id], ['id', '=', $id]]);
+		if($with_trahsed){
+			$payment_request = $payment_request->withTrashed();
+		}
+		return $payment_request->first();
+	}
+
+	/**
 	 * createOrUpdate function
 	 *
 	 * @param array $data
@@ -51,7 +68,8 @@ class PaymentRequestRepository {
 			$payment_request = new PaymentRequest();
 			$payment_request->uuid = Str::uuid();
 			$payment_request->company_id = $data['company_id'];
-			$payment_request->sent_at = now();
+			$payment_request->last_reminder_sent_at = null;
+			$payment_request->hidden_sent_at = now();
 		}
 
 		$payment_request->client_id = $data['client_id'];
@@ -61,6 +79,7 @@ class PaymentRequestRepository {
 		$payment_request->amount = $data['amount'];
 		$payment_request->status = $data['status'];
 		$payment_request->payment_gateway = $data['payment_gateway'];
+		$payment_request->sent_at = $data['sent_at'];
 		$payment_request->save();
 		return $payment_request;
 	}
@@ -79,6 +98,22 @@ class PaymentRequestRepository {
 									->first();
 		
 		return $data->toArray();
+
+	}
+
+	/**
+	 * markSent function
+	 *
+	 * @param PaymentRequest $payment_request
+	 * @return boolean
+	 */
+	public function markSent(PaymentRequest $payment_request) : bool {
+
+		$payment_request->sent_at = now();
+		$payment_request->hidden_sent_at = now();
+		$payment_request->status = PaymentRequestStatus::SENT->value;
+
+		return $payment_request->save();
 
 	}
 

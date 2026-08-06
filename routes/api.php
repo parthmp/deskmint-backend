@@ -235,5 +235,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-payment-requests/fetch-init', [PaymentRequestsController::class, 'fetchInit']);
 	Route::post('manage-payment-requests', [PaymentRequestsController::class, 'store']);
 	Route::get('manage-payment-requests', [PaymentRequestsController::class, 'index']);
+	Route::patch('manage-payment-requests/send/{id}', [PaymentRequestsController::class, 'send']);
+	Route::patch('manage-payment-requests/mark-sent/{id}', [PaymentRequestsController::class, 'send']);
 	
 });

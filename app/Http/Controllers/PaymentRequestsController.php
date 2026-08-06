@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\PaymentRequestException;
 use App\Helpers\General;
+use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
 use App\Http\Requests\PaymentRequest\CreateEditPaymentRequestRequest;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
@@ -33,6 +34,7 @@ class PaymentRequestsController extends Controller {
 
 	private array $date_fields = [
 		'created_at',
+		'last_reminder_sent_at',
 		'sent_at'
 	];
 
@@ -42,7 +44,7 @@ class PaymentRequestsController extends Controller {
 	){}
 
 	public function fetchArrangedColumns(Request $request){
-		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'payment_requests', 'payment_requests', null, 'payment_request', remove_columns:['company_id', 'token_id_identifier', 'client_id', 'transaction_id', 'deleted_at', 'updated_at', 'currency_id'], additional_fields: $this->additional_fields);
+		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'payment_requests', 'payment_requests', null, 'payment_request', remove_columns:['company_id', 'token_id_identifier', 'client_id', 'transaction_id', 'deleted_at', 'updated_at', 'currency_id', 'hidden_sent_at'], additional_fields: $this->additional_fields);
 	}
 	
 
@@ -69,21 +71,21 @@ class PaymentRequestsController extends Controller {
 
 		$data = $request->validated();
 		
-		//try{
+		try{
 
 			$payment_request = $this->payment_request_service->create($data);
 			
-			if((bool) $data['send_send_request']){
+			if((bool) $data['send_request']){
 				$this->payment_request_service->sendRequest((int) $data['company_id'], (int) $payment_request->id);
 			}
 
 			return response(['message' => 'Payment request created successfully', 'validity' => 'payment_request_created'], 200);
 
-		// }catch(PaymentRequestException $e){
-		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
-		// }catch(Exception $e){
-		// 	return General::wentWrong();
-		// }
+		}catch(PaymentRequestException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 		
 	}
 
@@ -92,6 +94,37 @@ class PaymentRequestsController extends Controller {
 		$data = $request->validated();
 		
 		return $this->payment_request_service->fetch($request);
+
+	}
+
+	public function send(GenericRequest $request, int $id){
+
+		$data = $request->validated();
+
+		$id = (int) Sanitize::input($id);
+
+		$segment = (string) Sanitize::input($request->segment(3));
+		
+		try{
+
+			$this->payment_request_service->markSent((int) $data['company_id'], (int) $id);
+			
+			if($segment === 'send'){
+				$this->payment_request_service->sendRequest((int) $data['company_id'], (int) $id);
+			}
+
+			if($segment === 'send'){
+				return response(['message' => 'Sent successfully', 'validity' => 'sent_success'], 200);
+			}else{
+				return response(['message' => 'Marked sent successfully', 'validity' => 'marked_sent'], 200);
+			}
+			
+
+		}catch(PaymentRequestException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 	}
 	

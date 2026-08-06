@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('payment_requests', function (Blueprint $table) {
-            $table->renameColumn('last_reminder_sent_at', 'sent_at');
+            $table->dateTime('hidden_sent_at')->after('last_reminder_sent_at');
+            $table->dateTime('sent_at')->nullable()->after('hidden_sent_at');
+			$table->dateTime('last_reminder_sent_at')->nullable(true)->change();
         });
     }
 
@@ -22,7 +24,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('payment_requests', function (Blueprint $table) {
-            $table->renameColumn('sent_at', 'last_reminder_sent_at');
+            $table->dropColumn('hidden_sent_at');
+            $table->dropColumn('sent_at');
+			$table->dateTime('last_reminder_sent_at')->nullable(false)->change();
         });
     }
 };

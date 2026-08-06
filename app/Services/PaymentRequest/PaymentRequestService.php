@@ -165,6 +165,7 @@ class PaymentRequestService {
 		$pass_data['status'] = ((bool) $data['send_request']) ? PaymentRequestStatus::SENT->value : PaymentRequestStatus::DRAFT->value;
 		$pass_data['payment_gateway'] = (int) $data['payment_gateway'];
 		$pass_data['reminders_sent'] = 0;
+		$pass_data['sent_at'] = ((bool) $data['send_request']) ? now() : null;
 
 		return $this->payment_request_repository->createOrUpdate($pass_data);
 	}
@@ -317,6 +318,25 @@ class PaymentRequestService {
 			'c_code'				=>		'currencies.code',
 			'full_name'				=>		'clients.full_name'
 		 ])->setRewrites($rewrites)->setModel(PaymentRequest::class)->fetchIndex();
+	}
+
+	/**
+	 * markSent function
+	 *
+	 * @param integer $company_id
+	 * @param integer $payment_request_id
+	 * @return boolean
+	 */
+	public function markSent(int $company_id, int $payment_request_id) : bool {
+
+		$payment_request = $this->payment_request_repository->fetchByIdWithCompanyId($company_id, $payment_request_id);
+
+		if((int) $payment_request->status === PaymentRequestStatus::CANCELLED->value || (int) $payment_request->status === PaymentRequestStatus::COMPLETED->value){
+			throw new PaymentRequestException('You can not send this request', 'not_allowed_to_send', (int) config('global.error_code'));
+		}
+
+		return $this->payment_request_repository->markSent($payment_request);
+
 	}
 
 }
