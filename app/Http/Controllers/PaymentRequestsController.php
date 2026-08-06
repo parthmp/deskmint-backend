@@ -168,6 +168,48 @@ class PaymentRequestsController extends Controller {
 		}
 
 	}
+
+	public function show(GenericRequest $request, int $id){
+
+		$data = $request->validated();
+
+		$id = (int) Sanitize::input($id);
+		
+		try{
+
+			return $this->payment_request_service->fetchPaymentRequest((int) $data['company_id'], (int) $id);
+			
+		}catch(PaymentRequestException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
+	}
+
+	public function update(CreateEditPaymentRequestRequest $request, int $id){
+
+		$data = $request->validated();
+
+		$id = (int) Sanitize::input($id);
+		
+		try{
+
+			$payment_request = $this->payment_request_service->update($data, (int) $data['company_id'], (int) $id);
+			
+			if((bool) $data['send_request']){
+				$this->payment_request_service->sendRequest((int) $data['company_id'], (int) $payment_request->id);
+			}
+
+			return response(['message' => 'Payment request updated successfully', 'validity' => 'payment_request_updated'], 200);
+
+		}catch(PaymentRequestException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+		
+	}
 	
 
 }

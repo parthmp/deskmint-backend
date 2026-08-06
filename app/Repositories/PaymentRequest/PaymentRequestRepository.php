@@ -64,12 +64,14 @@ class PaymentRequestRepository {
 
 		if($id){
 			$payment_request = $this->fetchById($id);
+			$payment_request->hidden_sent_at = $data['hidden_sent_at'];;
 		}else{
 			$payment_request = new PaymentRequest();
 			$payment_request->uuid = Str::uuid();
 			$payment_request->company_id = $data['company_id'];
 			$payment_request->last_reminder_sent_at = null;
 			$payment_request->hidden_sent_at = now();
+			
 		}
 
 		$payment_request->client_id = $data['client_id'];
@@ -128,6 +130,24 @@ class PaymentRequestRepository {
 		$payment_request->status = PaymentRequestStatus::CANCELLED->value;
 
 		return $payment_request->save();
+
+	}
+
+	/**
+	 * fetchForEdit function
+	 *
+	 * @param integer $company_id
+	 * @param integer $id
+	 * @return array
+	 */
+	public function fetchForEdit(int $company_id, int $id) : array {
+
+		return PaymentRequest::select('clients.full_name as full_name', 'cc.code as client_currency', 'cc.id as client_currency_id','pc.code as payment_request_currency', 'pc.id as payment_request_currency_id', 'payment_requests.*', 'clients.id as client_id')
+								->join('clients', 'clients.id', '=', 'payment_requests.client_id')
+								->join('currencies as pc', 'pc.id', '=', 'payment_requests.currency_id')
+								->join('currencies as cc', 'cc.id', '=', 'clients.currency_id')
+									->where([['payment_requests.company_id', '=', $company_id], ['payment_requests.id', '=', $id]])
+									->first()->toArray();
 
 	}
 

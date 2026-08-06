@@ -238,6 +238,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::patch('manage-payment-requests/send/{id}', [PaymentRequestsController::class, 'send']);
 	Route::patch('manage-payment-requests/mark-sent/{id}', [PaymentRequestsController::class, 'send']);
 	Route::patch('manage-payment-requests/cancel/{id}', [PaymentRequestsController::class, 'cancel']);
+	Route::patch('manage-payment-requests/{id}', [PaymentRequestsController::class, 'update']);
 	Route::delete('manage-payment-requests', [PaymentRequestsController::class, 'destroy']);
+	Route::get('manage-payment-requests/{id}', [PaymentRequestsController::class, 'show']);
 	
 });

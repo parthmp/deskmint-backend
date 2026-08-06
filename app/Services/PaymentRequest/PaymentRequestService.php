@@ -171,6 +171,44 @@ class PaymentRequestService {
 	}
 
 	/**
+	 * update function
+	 *
+	 * @param array $data
+	 * @param integer $id
+	 * @return PaymentRequest
+	 */
+	public function update(array $data, int $company_id, int $id) : PaymentRequest {
+
+		$currency = $this->client_repository->fetchClientCurrencyById((int) $data['client_id']);
+
+		if(!$this->ifCurrencyAllowed((int) $data['payment_gateway'], $currency->code)){
+			throw new PaymentRequestException('Currency '.$currency->code.' is not supported by '.PaymentGateway::getLabelByValue((int) $data['payment_gateway']), 'currency_not_supported', (int) config('global.error_code'));
+		}
+
+		$payment_request = $this->payment_request_repository->fetchByIdWithCompanyId($company_id, $id);
+
+		if((int) $payment_request->status === PaymentRequestStatus::CANCELLED->value || (int) $payment_request->status === PaymentRequestStatus::COMPLETED->value){
+			throw new PaymentRequestException('You are not allowed to modify cancelled and completed requests', 'not_allowed_cancelled_and_completed', (int) config('global.error_code'));
+		}
+
+		$pass_data = [];
+
+		$pass_data['client_id'] = (int) $data['client_id'];
+		$pass_data['currency_id'] = (int) $currency->id;
+		$pass_data['transaction_id'] = $payment_request->transaction_id;
+		$pass_data['label'] = (string) $data['label'];
+		$pass_data['amount'] = (string) $data['amount'];
+		$pass_data['status'] = ((bool) $data['send_request']) ? PaymentRequestStatus::SENT->value : $payment_request->status;
+		$pass_data['payment_gateway'] = (int) $data['payment_gateway'];
+		$pass_data['sent_at'] = ((bool) $data['send_request']) ? now() : $payment_request->sent_at;
+		$pass_data['hidden_sent_at'] = ((bool) $data['send_request']) ? now() : $payment_request->hidden_sent_at;
+
+		return $this->payment_request_repository->createOrUpdate($pass_data, $id);
+
+
+	}
+
+	/**
 	 * fetch function
 	 *
 	 * @param Request $request
@@ -356,6 +394,22 @@ class PaymentRequestService {
 
 		return $this->payment_request_repository->markCancel($payment_request);
 
+	}
+
+	public function fetchPaymentRequest(int $company_id, int $id) : array {
+
+		$data = $this->payment_request_repository->fetchForEdit($company_id, $id);
+
+		return [
+			'full_name'					=> $data['full_name'],
+			'client_id'					=> $data['client_id'],
+			'client_currency'			=> $data['client_currency'],
+			'payment_request_currency'	=> $data['payment_request_currency'],
+			'label'						=> $data['label'],
+			'amount'					=> $data['amount'],
+			'payment_gateway'			=> $data['payment_gateway'],
+			'payment_gateways' 			=> $this->payment_request_repository->fetchInit($company_id)
+		];
 	}
 
 }
