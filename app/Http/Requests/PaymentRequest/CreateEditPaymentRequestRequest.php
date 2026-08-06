@@ -27,7 +27,6 @@ class CreateEditPaymentRequestRequest extends FormRequest
 		$amount = Sanitize::input($this->input('amount'));
 		$label = Sanitize::input($this->input('label'));
 		$payment_gateway = Sanitize::input($this->input('payment_gateway'));
-		$send_reminders = $this->input('send_reminders');
 		$send_request = $this->input('send_request');
 
 		$this->merge([
@@ -36,7 +35,6 @@ class CreateEditPaymentRequestRequest extends FormRequest
 			'amount'			=>	$amount,
 			'label'				=>	$label,
 			'payment_gateway'	=>	$payment_gateway,
-			'send_reminders'	=>	$send_reminders,
 			'send_request'		=>	$send_request
 		]);
 
@@ -57,7 +55,6 @@ class CreateEditPaymentRequestRequest extends FormRequest
 			'amount'			=>	'required|numeric|gt:0',
 			'label'				=>	'required',
 			'payment_gateway'	=>	['required', 'integer', Rule::in(PaymentGateway::cases())],
-			'send_reminders'	=>	'required|boolean',
 			'send_request'		=>	'required|boolean',
         ];
     }
@@ -74,8 +71,6 @@ class CreateEditPaymentRequestRequest extends FormRequest
 			'payment_gateway.required' 		=> 'Please select the payment gateway',
 			'payment_gateway.integer' 		=> 'Please select the payment gateway',
 			'payment_gateway.in' 			=> 'Invalid payment gateway provided',
-			'send_reminders.required' 		=> 'Invalid send reminders value',
-			'send_reminders.boolean' 		=> 'Invalid send reminders value',
 			'send_request.required' 		=> 'Invalid send reminders value',
 			'send_request.boolean' 			=> 'Invalid send reminders value'
 		];

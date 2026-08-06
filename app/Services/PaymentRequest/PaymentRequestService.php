@@ -4,22 +4,30 @@ namespace App\Services\PaymentRequest;
 
 use App\Enums\PaymentRequests\PaymentRequestStatus;
 use App\Exceptions\PaymentRequestException;
+use App\Helpers\General;
 use App\Helpers\Sanitize;
+use App\Jobs\SendGenericEmailJob;
 use App\Models\PaymentRequest;
 use App\Modules\EasyIndex\EasyIndex;
+use App\Modules\InvoiceGeneration\Traits\Generic;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Repositories\Client\ClientRepository;
 use App\Repositories\PaymentRequest\PaymentRequestRepository;
+use App\Services\EmailSettingsContent\EmailSettingsContentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 
 /**
  * PaymentRequestService class
  */
 class PaymentRequestService {
 
+	use Generic;
+
 	public function __construct(
 		private PaymentRequestRepository $payment_request_repository,
 		private ClientRepository $client_repository,
+		private EmailSettingsContentService $email_settings_content_service,
 		private EasyIndex $easy_index
 	){}
 
@@ -34,14 +42,117 @@ class PaymentRequestService {
 	}
 
 	/**
+	 * parseEmailContent function
+	 *
+	 * @param string $content
+	 * @param array $data
+	 * @param string $url_type
+	 * @return string
+	 */
+	private function parseEmailContent(string $content, array $data, string $url_type) : string {
+		
+		$currency = $data['currency'];
+		$client_first_name = $data['first_name'];
+		$client_last_name = $data['last_name'];
+		
+		$payment_gateway_url = '';
+		
+		if((int) $data['payment_gateway'] !== PaymentGateway::NONE->value){
+			$payment_gateway_url = URL::signedRoute($url_type, ['uuid' => $data['uuid']]);
+		}
+		
+
+		$search = [
+			'{$client_first_name}',
+			'{$client_last_name}',
+			'{$payment_url}'
+		];
+
+		$replace = [
+			$client_first_name,
+			$client_last_name,
+			$payment_gateway_url
+		];
+
+		if((int) $data['payment_gateway'] === PaymentGateway::NONE->value){
+			$content = $this->replaceBetweenTags($content,  '[{online-payment-start}]', '[{online-payment-end}]', '');
+		}
+
+		$content = str_ireplace($search, $replace, $content);
+		$content = str_ireplace('{$unpaid_balance}', $data['amount'].' '.$currency, $content);
+		$content = str_ireplace('[{online-payment-start}]', '', $content);
+		$content = str_ireplace('[{online-payment-end}]', '', $content);
+		
+		return $content;
+
+	}
+
+	/**
+	 * sendRequest function
+	 *
+	 * @param integer $company_id
+	 * @param int $payment_request_id
+	 * @return void
+	 */
+	public function sendRequest(int $company_id, int $payment_request_id) : void {
+
+		$email_settings = $this->email_settings_content_service->fetchRecord($company_id);
+		if(!$email_settings){
+			throw new PaymentRequestException('invalid email content', 'invalid_email_content', (int) config('global.error_code'));
+		}
+
+		$content = json_decode($email_settings->settings_json, true);
+		$content = $content['email_content_payment_request'];
+
+		$data = $this->payment_request_repository->fetchDataForSendingRequest($company_id, $payment_request_id);
+		$content = $this->parseEmailContent($content, $data, 'payment_request.pay');
+
+		SendGenericEmailJob::dispatch([
+			'subject'		=>	'You have received a payment request for '.$data['amount'],
+			'email'			=>	$data['email'],
+			'first_name'	=>	$data['first_name'],
+			'last_name'		=>	$data['last_name'],
+			'content'		=>	$content,
+		]);
+
+	}
+
+	/**
+	 * ifCurrencyAllowed function
+	 *
+	 * @param integer $payment_gateway
+	 * @param string $currency_code
+	 * @return boolean
+	 */
+	public function ifCurrencyAllowed(int $payment_gateway, string $currency_code) : bool {
+
+		if((int) $payment_gateway === PaymentGateway::NONE->value){
+			return true;
+		}
+
+		if((int) $payment_gateway === PaymentGateway::PAYPAL->value){
+			return in_array($currency_code, config('payment.supported_currencies.paypal'));
+		}else if((int) $payment_gateway === PaymentGateway::STRIPE->value){
+			return in_array($currency_code, config('payment.supported_currencies.stripe'));
+		}
+
+		return false;
+
+	}
+
+	/**
 	 * create function
 	 *
 	 * @param array $data
-	 * @return boolean
+	 * @return PaymentRequest
 	 */
-	public function create(array $data) : bool {
+	public function create(array $data) : PaymentRequest {
 
 		$currency = $this->client_repository->fetchClientCurrencyById((int) $data['client_id']);
+
+		if(!$this->ifCurrencyAllowed((int) $data['payment_gateway'], $currency->code)){
+			throw new PaymentRequestException('Currency '.$currency->code.' is not supported by '.PaymentGateway::getLabelByValue((int) $data['payment_gateway']), 'currency_not_supported', (int) config('global.error_code'));
+		}
 
 		$pass_data = [];
 
@@ -53,7 +164,6 @@ class PaymentRequestService {
 		$pass_data['amount'] = (string) $data['amount'];
 		$pass_data['status'] = ((bool) $data['send_request']) ? PaymentRequestStatus::SENT->value : PaymentRequestStatus::DRAFT->value;
 		$pass_data['payment_gateway'] = (int) $data['payment_gateway'];
-		$pass_data['send_reminders'] = ((bool) $data['send_reminders']) ? 1 : 0;
 		$pass_data['reminders_sent'] = 0;
 
 		return $this->payment_request_repository->createOrUpdate($pass_data);
@@ -204,7 +314,7 @@ class PaymentRequestService {
 			}
 
 		return $this->easy_index->setType('payment_request')->setJoins($joins)->setExceptionClass(PaymentRequestException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
-			'c_code'						=>		'currencies.code',
+			'c_code'				=>		'currencies.code',
 			'full_name'				=>		'clients.full_name'
 		 ])->setRewrites($rewrites)->setModel(PaymentRequest::class)->fetchIndex();
 	}

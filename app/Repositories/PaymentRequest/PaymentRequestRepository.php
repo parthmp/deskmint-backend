@@ -41,9 +41,9 @@ class PaymentRequestRepository {
 	 *
 	 * @param array $data
 	 * @param integer|null $id
-	 * @return boolean
+	 * @return PaymentRequest
 	 */
-	public function createOrUpdate(array $data, ?int $id = null) : bool {
+	public function createOrUpdate(array $data, ?int $id = null) : PaymentRequest {
 
 		if($id){
 			$payment_request = $this->fetchById($id);
@@ -51,7 +51,7 @@ class PaymentRequestRepository {
 			$payment_request = new PaymentRequest();
 			$payment_request->uuid = Str::uuid();
 			$payment_request->company_id = $data['company_id'];
-			$payment_request->last_reminder_sent_at = now();
+			$payment_request->sent_at = now();
 		}
 
 		$payment_request->client_id = $data['client_id'];
@@ -61,8 +61,25 @@ class PaymentRequestRepository {
 		$payment_request->amount = $data['amount'];
 		$payment_request->status = $data['status'];
 		$payment_request->payment_gateway = $data['payment_gateway'];
-		$payment_request->send_reminders = $data['send_reminders'];
-		return $payment_request->save();
+		$payment_request->save();
+		return $payment_request;
+	}
+
+	/**
+	 * fetchDataForSendingRequest function
+	 *
+	 * @param integer $company_id
+	 * @param integer $payment_request_id
+	 * @return array
+	 */
+	public function fetchDataForSendingRequest(int $company_id, int $payment_request_id) : array {
+
+		$data = PaymentRequest::select('clients.first_name as first_name', 'clients.last_name as last_name', 'currencies.code as currency', 'payment_requests.amount as amount', 'payment_requests.uuid as uuid', 'payment_requests.payment_gateway as payment_gateway', 'clients.email as email')->join('clients', 'clients.id', '=', 'payment_requests.client_id')->join('currencies', 'currencies.id', '=', 'payment_requests.currency_id')
+									->where([['payment_requests.company_id', '=', $company_id], ['payment_requests.id', '=', $payment_request_id]])
+									->first();
+		
+		return $data->toArray();
+
 	}
 
 }

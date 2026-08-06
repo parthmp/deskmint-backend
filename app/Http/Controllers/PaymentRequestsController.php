@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\PaymentRequestException;
 use App\Helpers\General;
 use App\Http\Requests\GenericRequest;
 use App\Http\Requests\PaymentRequest\CreateEditPaymentRequestRequest;
@@ -32,7 +33,7 @@ class PaymentRequestsController extends Controller {
 
 	private array $date_fields = [
 		'created_at',
-		'last_reminder_sent_at'
+		'sent_at'
 	];
 
 	public function __construct(
@@ -68,14 +69,21 @@ class PaymentRequestsController extends Controller {
 
 		$data = $request->validated();
 		
-		try{
+		//try{
 
-			$this->payment_request_service->create($data);
+			$payment_request = $this->payment_request_service->create($data);
+			
+			if((bool) $data['send_send_request']){
+				$this->payment_request_service->sendRequest((int) $data['company_id'], (int) $payment_request->id);
+			}
+
 			return response(['message' => 'Payment request created successfully', 'validity' => 'payment_request_created'], 200);
 
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
+		// }catch(PaymentRequestException $e){
+		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
 		
 	}
 

@@ -10,4 +10,9 @@ class PaymentRequest extends Model
 	use SoftDeletes;
 	
     protected $table = 'payment_requests';
+
+	public function currency(){
+		return $this->belongsTo(Currency::class, 'currency_id');
+	}
+
 }

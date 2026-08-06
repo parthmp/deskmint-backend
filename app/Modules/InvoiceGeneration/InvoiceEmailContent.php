@@ -4,6 +4,7 @@ namespace App\Modules\InvoiceGeneration;
 
 use App\Helpers\General;
 use App\Models\Invoice;
+use App\Modules\InvoiceGeneration\Traits\Generic;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Enums\PaymentGateway;
 use Exception;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 
 class InvoiceEmailContent {
+
+	use Generic;
 
 	private string $disk;
 	private Invoice $invoice;
@@ -84,32 +87,6 @@ class InvoiceEmailContent {
 	public function setAltClientLastName(string $client_last_name) : self {
 		$this->alt_client_last_name = $client_last_name;
 		return $this;
-	}
-
-	/**
-	 * replaceBetweenTags function
-	 *
-	 * @param string $text
-	 * @param string $starting_tag
-	 * @param string $ending_tag
-	 * @param string $new_content
-	 * @return string
-	 */
-	private function replaceBetweenTags(string $text, string $starting_tag, string $ending_tag, string $new_content) : string {
-
-		$start_pos = strpos($text, $starting_tag);
-
-		if ($start_pos === false) return $text;
-		
-		$end_pos = strpos($text, $ending_tag, $start_pos + strlen($starting_tag));
-
-		if ($end_pos === false) return $text;
-		
-		$before = substr($text, 0, $start_pos + strlen($starting_tag));
-		$after = substr($text, $end_pos);
-		
-		return $before.$new_content.$after;
-
 	}
 
 	/**
