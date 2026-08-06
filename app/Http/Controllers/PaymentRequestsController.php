@@ -7,9 +7,11 @@ use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
 use App\Http\Requests\PaymentRequest\CreateEditPaymentRequestRequest;
+use App\Models\PaymentRequest;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
 use App\Modules\DataTable\Requests\DataTableRequest;
+use App\Services\DeleteService;
 use App\Services\PaymentRequest\PaymentRequestService;
 use Exception;
 use Illuminate\Http\Request;
@@ -40,7 +42,8 @@ class PaymentRequestsController extends Controller {
 
 	public function __construct(
 		private PaymentRequestService $payment_request_service,
-		private ArrangedDataTableColumns $arranged_data_table_columns
+		private ArrangedDataTableColumns $arranged_data_table_columns,
+		private DeleteService $delete_service
 	){}
 
 	public function fetchArrangedColumns(Request $request){
@@ -124,6 +127,44 @@ class PaymentRequestsController extends Controller {
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
 			return General::wentWrong();
+		}
+
+	}
+
+	public function cancel(GenericRequest $request, int $id){
+
+		$data = $request->validated();
+
+		$id = (int) Sanitize::input($id);
+
+		
+		try{
+
+			$this->payment_request_service->markCancel((int) $data['company_id'], (int) $id);
+			
+			
+			return response(['message' => 'Cancelled successfully', 'validity' => 'cancel_success'], 200);
+			
+
+		}catch(PaymentRequestException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
+	}
+
+	public function destroy(Request $request){
+		
+		try{
+
+			$response = $this->delete_service->deleteByIds($request, PaymentRequest::class, 'Payment request');
+			return response($response[0], $response[1]);
+
+		}catch(Exception $e){
+
+			return General::wentWrong();
+
 		}
 
 	}

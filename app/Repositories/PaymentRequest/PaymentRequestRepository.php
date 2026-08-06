@@ -117,4 +117,18 @@ class PaymentRequestRepository {
 
 	}
 
+	/**
+	 * markCancel function
+	 *
+	 * @param PaymentRequest $payment_request
+	 * @return boolean
+	 */
+	public function markCancel(PaymentRequest $payment_request) : bool {
+
+		$payment_request->status = PaymentRequestStatus::CANCELLED->value;
+
+		return $payment_request->save();
+
+	}
+
 }

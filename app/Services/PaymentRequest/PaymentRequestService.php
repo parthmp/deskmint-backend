@@ -339,4 +339,23 @@ class PaymentRequestService {
 
 	}
 
+	/**
+	 * markCancel function
+	 *
+	 * @param integer $company_id
+	 * @param integer $payment_request_id
+	 * @return boolean
+	 */
+	public function markCancel(int $company_id, int $payment_request_id) : bool {
+
+		$payment_request = $this->payment_request_repository->fetchByIdWithCompanyId($company_id, $payment_request_id);
+
+		if((int) $payment_request->status === PaymentRequestStatus::CANCELLED->value || (int) $payment_request->status === PaymentRequestStatus::COMPLETED->value){
+			throw new PaymentRequestException('You can not cancel this request', 'not_allowed_to_cancel', (int) config('global.error_code'));
+		}
+
+		return $this->payment_request_repository->markCancel($payment_request);
+
+	}
+
 }
