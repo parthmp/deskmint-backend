@@ -55,6 +55,7 @@ class PaymentRequestRepository {
 		}
 
 		$payment_request->client_id = $data['client_id'];
+		$payment_request->currency_id = $data['currency_id'];
 		$payment_request->transaction_id = $data['transaction_id'];
 		$payment_request->label = $data['label'];
 		$payment_request->amount = $data['amount'];
