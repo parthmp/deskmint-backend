@@ -39,7 +39,7 @@ class EmailSettingsContentController extends Controller{
 
 		$email_content = $this->email_settings_content_service->fetchRecord($data['company_id']);
 
-		try{
+		//try{
 
 			if($this->email_settings_content_service->updateByObj($data, $email_content)){
 				return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
@@ -47,9 +47,9 @@ class EmailSettingsContentController extends Controller{
 
 			return General::wentWrong();
 
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
 
 	}
 

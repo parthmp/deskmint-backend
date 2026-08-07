@@ -53,7 +53,7 @@ class PaymentRequestService {
 	 * @param string $url_type
 	 * @return string
 	 */
-	private function parseEmailContent(string $content, array $data, string $url_type) : string {
+	public function parseEmailContent(string $content, array $data, string $url_type) : string {
 		
 		$currency = $data['currency'];
 		$client_first_name = $data['first_name'];

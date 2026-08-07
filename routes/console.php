@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('deskmint:payment-reminder')->everyThreeHours()->runInBackground();
+Schedule::command('deskmint:payment-reminder-requests')->everyThreeHours()->runInBackground();

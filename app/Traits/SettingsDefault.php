@@ -674,7 +674,13 @@ Amount {$unpaid_balance} is requested, please make payment.
 PAYMENT URL BELOW
 {$payment_url}
 [{online-payment-end}]'),
-				'payment_details'			=>	'',
+'email_content_reminder_payment_request'	=>	trim('Hello {$client_first_name} {$client_last_name},
+Amount {$unpaid_balance} is requested, please make payment.
+
+[{online-payment-start}]
+PAYMENT URL BELOW
+{$payment_url}
+[{online-payment-end}]')
 			];
 
 		}

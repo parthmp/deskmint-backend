@@ -68,10 +68,10 @@ class EmailSettingsContentService{
 			}
 			
 			$json_string = json_encode([
-				'email_content_invoice'				=>	$data['email_content_invoice'],
-				'email_content_reminder'			=>	$data['email_content_reminder'],
-				'email_content_payment_request'		=>	$data['email_content_payment_request'],
-				'payment_details'					=>	$data['payment_details']
+				'email_content_invoice'						=>	$data['email_content_invoice'],
+				'email_content_reminder'					=>	$data['email_content_reminder'],
+				'email_content_payment_request'				=>	$data['email_content_payment_request'],
+				'email_content_reminder_payment_request'	=>	$data['email_content_reminder_payment_request'],
 			]);
 
 			return $this->settings_section_repository->updateByObj($json_string, $email_content);
