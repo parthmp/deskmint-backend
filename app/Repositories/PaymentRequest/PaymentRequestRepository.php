@@ -3,8 +3,10 @@
 namespace App\Repositories\PaymentRequest;
 
 use App\Enums\PaymentRequests\PaymentRequestStatus;
+use App\Models\Payment;
 use App\Models\PaymentRequest;
 use App\Modules\Payment\Enums\PaymentGateway;
+use App\Modules\Payment\Enums\PaymentStatus;
 use \Illuminate\Support\Str;
 
 /**
@@ -148,6 +150,40 @@ class PaymentRequestRepository {
 								->join('currencies as cc', 'cc.id', '=', 'clients.currency_id')
 									->where([['payment_requests.company_id', '=', $company_id], ['payment_requests.id', '=', $id]])
 									->first()->toArray();
+
+	}
+
+	/**
+	 * markCompleted function
+	 *
+	 * @param PaymentRequest $pr
+	 * @return boolean
+	 */
+	public function markCompleted(PaymentRequest $pr) : bool {
+		$pr->status = PaymentRequestStatus::COMPLETED->value;
+		return $pr->save();
+	}
+
+	/**
+	 * createPaymentForRequest function
+	 *
+	 * @param array $data
+	 * @return Payment
+	 */
+	public function createPaymentForRequest(array $data) : Payment {
+
+		$payment = new Payment();
+		$payment->company_id = $data['company_id'];
+		$payment->client_id = $data['client_id'];
+		$payment->transaction_id = null;
+		$payment->payment_type_id = $data['payment_type_id'];
+		$payment->status = PaymentStatus::NOT_APPLIED->value;
+		$payment->amount = $data['amount'];
+		$payment->applied_amount = 0;
+		$payment->amount_left_to_be_applied = $data['amount'];
+		$payment->save();
+
+		return $payment;
 
 	}
 

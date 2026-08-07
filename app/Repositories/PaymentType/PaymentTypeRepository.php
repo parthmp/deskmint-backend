@@ -3,7 +3,9 @@
 namespace App\Repositories\PaymentType;
 
 use App\Exceptions\PaymentTypeException;
+use App\Models\Payment;
 use App\Models\PaymentType;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * PaymentTypeRepository class
@@ -44,6 +46,15 @@ class PaymentTypeRepository {
 
 		return $pt_object;
 
+	}
+
+	/**
+	 * fetchAllPaymentTypes function
+	 *
+	 * @return Collection
+	 */
+	public function fetchAllPaymentTypes() : Collection {
+		return PaymentType::select('id', 'payment_type')->orderBy('payment_type', 'asc')->get();
 	}
 
 }

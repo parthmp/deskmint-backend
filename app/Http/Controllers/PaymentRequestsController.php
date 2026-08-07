@@ -7,6 +7,7 @@ use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
 use App\Http\Requests\PaymentRequest\CreateEditPaymentRequestRequest;
+use App\Http\Requests\PaymentRequest\MarkPaymentRequestCompletedRequest;
 use App\Models\PaymentRequest;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
@@ -209,6 +210,42 @@ class PaymentRequestsController extends Controller {
 			return General::wentWrong();
 		}
 		
+	}
+
+	public function fetchPaymentTypes(GenericRequest $request){
+		
+		$data = $request->validated();
+		$payment_types = $this->payment_request_service->fetchPaymentTypes(true);
+		return $payment_types;
+
+	}
+
+	public function completed(MarkPaymentRequestCompletedRequest $request, int $id){
+
+		$data = $request->validated();
+
+		$id = (int) Sanitize::input($id);
+
+		$create_payment = (bool) Sanitize::input($data['create_payment']);
+		$payment_type = (int) Sanitize::input($data['payment_type']);
+
+		try{
+
+			$marked = $this->payment_request_service->markCompleted((int) $data['company_id'], (int) $id);
+
+			if($marked && $create_payment){
+				$this->payment_request_service->createPaymentForRequest((int) $data['company_id'], (int) $id, (int) $payment_type);
+			}
+
+			return response(['message' => 'Payment marked completed successfully', 'validity' => 'payment_request_completed'], 200);
+
+		}catch(PaymentRequestException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
+
 	}
 	
 

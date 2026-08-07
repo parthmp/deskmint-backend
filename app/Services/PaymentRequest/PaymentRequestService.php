@@ -7,13 +7,16 @@ use App\Exceptions\PaymentRequestException;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Jobs\SendGenericEmailJob;
+use App\Models\Payment;
 use App\Models\PaymentRequest;
 use App\Modules\EasyIndex\EasyIndex;
 use App\Modules\InvoiceGeneration\Traits\Generic;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Repositories\Client\ClientRepository;
 use App\Repositories\PaymentRequest\PaymentRequestRepository;
+use App\Repositories\PaymentType\PaymentTypeRepository;
 use App\Services\EmailSettingsContent\EmailSettingsContentService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 
@@ -28,6 +31,7 @@ class PaymentRequestService {
 		private PaymentRequestRepository $payment_request_repository,
 		private ClientRepository $client_repository,
 		private EmailSettingsContentService $email_settings_content_service,
+		private PaymentTypeRepository $payment_type_repository,
 		private EasyIndex $easy_index
 	){}
 
@@ -396,6 +400,13 @@ class PaymentRequestService {
 
 	}
 
+	/**
+	 * fetchPaymentRequest function
+	 *
+	 * @param integer $company_id
+	 * @param integer $id
+	 * @return array
+	 */
 	public function fetchPaymentRequest(int $company_id, int $id) : array {
 
 		$data = $this->payment_request_repository->fetchForEdit($company_id, $id);
@@ -410,6 +421,76 @@ class PaymentRequestService {
 			'payment_gateway'			=> $data['payment_gateway'],
 			'payment_gateways' 			=> $this->payment_request_repository->fetchInit($company_id)
 		];
+	}
+
+	/**
+	 * markCompleted function
+	 *
+	 * @param integer $company_id
+	 * @param integer $id
+	 * @return boolean
+	 */
+	public function markCompleted(int $company_id, int $id) : bool {
+		
+		$pr = $this->payment_request_repository->fetchByIdWithCompanyId($company_id, $id);
+		
+		if((int) $pr->status === PaymentRequestStatus::CANCELLED->value || (int) $pr->status === PaymentRequestStatus::COMPLETED->value){
+			throw new PaymentRequestException('You can not mark this request as completed', 'not_allowed_to_completed', (int) config('global.error_code'));
+		}
+
+		return $this->payment_request_repository->markCompleted($pr);
+
+	}
+
+	/**
+	 * fetchPaymentTypes function
+	 *
+	 * @param boolean $for_select
+	 * @return array
+	 */
+	public function fetchPaymentTypes($for_select = false) : array {
+		
+		$fields = $this->payment_type_repository->fetchAllPaymentTypes();
+
+		if(!$for_select){
+			return $fields->toArray();
+		}
+
+		return $fields->map(function($item){
+			return [
+				'value' => $item->id,
+        		'text'  => $item->payment_type
+			];
+		})->toArray();
+
+	}
+
+	/**
+	 * createPaymentForRequest function
+	 *
+	 * @param integer $company_id
+	 * @param integer $pr_id
+	 * @param integer $payment_type_id
+	 * @return Payment
+	 */
+	public function createPaymentForRequest(int $company_id, int $pr_id, int $payment_type_id) : Payment {
+
+		$payment_type = $this->payment_type_repository->fetchById((int) $payment_type_id);
+		if(!$payment_type){
+			throw new PaymentRequestException('Invalid payment type provided', 'invalid_payment_type', (int) config('global.error_code'));
+		}
+
+		$pr = $this->payment_request_repository->fetchByIdWithCompanyId($company_id, $pr_id);
+
+		$data = [
+			'company_id'		=>	(int) $company_id,
+			'client_id'			=>	(int) $pr->client_id,
+			'payment_type_id'	=>	(int) $payment_type_id,
+			'amount'			=>	(string) $pr->amount
+		];
+
+		return $this->payment_request_repository->createPaymentForRequest($data);
+
 	}
 
 }
