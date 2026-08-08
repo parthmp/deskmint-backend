@@ -47,12 +47,6 @@ class CreateEmailSettingsContentRequest extends FormRequest
 			$email_content_reminder_payment_request = Sanitize::input($this->input('email_content_reminder_payment_request'));
 		}
 		
-		// $payment_details = '';
-
-		// if($this->filled('payment_details')){
-		// 	$payment_details = Sanitize::input($this->input('payment_details'));
-		// }
-		
 		$this->merge([
 			'company_id'							=>	$company_id,
 			'email_content_invoice'					=>	$email_content_invoice,

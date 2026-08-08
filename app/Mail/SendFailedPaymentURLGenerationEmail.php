@@ -28,7 +28,7 @@ class SendFailedPaymentURLGenerationEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Important: Check your payment gateway settings for '.$this->data['payment_method']
+            subject: 'Important: Check your payment gateway settings for '.$this->data['payment_gateway']
         );
     }
 

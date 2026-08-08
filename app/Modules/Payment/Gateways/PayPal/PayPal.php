@@ -23,7 +23,8 @@ class PayPal implements PaymentGatewayInterface{
 	public function __construct(
 		private int $company_id,
 		private int $currency_id,
-		private int $invoice_id,
+		private ?int $invoice_id,
+		private ?int $pr_id,
 		private int $user_id,
 		private string $client_id,
 		private string $app_id,
@@ -116,7 +117,7 @@ class PayPal implements PaymentGatewayInterface{
 	 */
 	public function generateURL() : ?string {
 
-		$transaction_reference = $this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, (int) $this->invoice_id);
+		$transaction_reference = $this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, $this->invoice_id, $this->pr_id);
 		
 		$response = $this->provider->createOrder($this->orderData());
 
@@ -124,7 +125,7 @@ class PayPal implements PaymentGatewayInterface{
 			foreach($response['links'] as $link) {
 				if($link['rel'] === 'approve'){
 					$transaction = $this->createTransaction($response['id']);
-					$this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, (int) $this->invoice_id, (int) $transaction->id, (int) $transaction_reference->id);
+					$this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, $this->invoice_id, $this->pr_id, (int) $transaction->id, (int) $transaction_reference->id);
 					$this->database_operations->insertEmptyTransactionGatewayDetails($transaction->id);
 					$url = $link['href'];
 					$this->database_operations->insertPaymentUrl($transaction->id, $this->invoice_id, $response['id'], $url);

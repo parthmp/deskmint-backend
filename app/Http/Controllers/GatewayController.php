@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PaymentRequests\PaymentRequestStatus;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
+use App\Models\PaymentRequest;
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Services\Gateway\GatewayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
+use Illuminate\View\View;
+use Stripe\PaymentMethod;
 
 class GatewayController extends Controller {
 
@@ -87,5 +91,75 @@ class GatewayController extends Controller {
 		}
 
 		return view('payment.url_generation_error', ['payment_method_name' => $payment_method_name]);
+	}
+
+	/**
+	 * showRequestPage function
+	 *
+	 * @param PaymentRequest $pr
+	 * @return View
+	 */
+	private function showRequestPage(PaymentRequest $pr) : View {
+
+		$is_completed = (int) $pr->status === PaymentRequestStatus::COMPLETED->value;
+		$is_cancelled = (int) $pr->status === PaymentRequestStatus::CANCELLED->value;
+
+		$checkout_url = URL::signedRoute('payment_request.pay.checkout', ['uuid' => $pr->uuid]);
+
+		return view('payment.payment_page_request', [
+			'pr'					=>	$pr,
+			'is_paid'				=>	$is_completed,
+			'is_cancelled'			=>	$is_cancelled,
+			'checkout_url'			=>	$checkout_url,
+			'payment_method_name'	=> 	PaymentGateway::getLabelByValue((int) $pr->payment_gateway)
+		]);
+
+	}
+
+	public function showPaymentPageForRequest(Request $request, string $uuid){
+
+		$uuid = Sanitize::input($uuid);
+		
+		$pr = $this->gateway_service->fetchRequestByUuid($uuid);
+
+		if(!$pr){
+			die('invalid request');
+		}
+
+		return $this->showRequestPage($pr);
+
+	}
+
+	public function generateUrlForRequest(Request $request, string $uuid){
+
+		$uuid = Sanitize::input($uuid);
+		
+		$pr = $this->gateway_service->fetchRequestByUuid($uuid);
+
+		if(!$pr){
+			die('invalid request');
+		}
+
+		if((int) $pr->status === PaymentRequestStatus::CANCELLED->value || (int) $pr->status === PaymentRequestStatus::COMPLETED->value){
+			return $this->showRequestPage($pr);
+		}
+
+		$existing_url = $this->gateway_service->fetchExistingPaymentUrlForRequest($pr->id);
+		
+		if($existing_url === null){
+			
+			//generate url.
+			$url = $this->gateway_service->generatePaymentUrl($pr);
+			
+			if($url === '' || ($url === null && (int) $pr->payment_gateway !== PaymentGateway::NONE->value)){
+				return redirect('/pay-request/failure/'.$pr->payment_gateway);
+			}
+
+			return redirect($url);
+
+		}
+
+		return redirect($existing_url);
+
 	}
 }

@@ -3,6 +3,7 @@
 namespace App\Repositories\Gateway;
 
 use App\Models\Invoice;
+use App\Models\PaymentRequest;
 use App\Models\Transaction;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Enums\TransactionStatus;
@@ -55,6 +56,36 @@ class GatewayRepository{
 	 */
 	public function fetchInvoiceById(int $invoice_id) : ?Invoice {
 		return Invoice::where('id', '=', $invoice_id)->first();
+	}
+
+	/**
+	 * fetchPaymentRequestById function
+	 *
+	 * @param integer $pr_id
+	 * @return PaymentRequest|null
+	 */
+	public function fetchPaymentRequestById(int $pr_id) : ?PaymentRequest {
+		return PaymentRequest::where('id', '=', $pr_id)->first();
+	}
+
+	/**
+	 * fetchRequestByUuid function
+	 *
+	 * @param string $uuid
+	 * @return PaymentRequest|null
+	 */
+	public function fetchRequestByUuid(string $uuid) : ?PaymentRequest {
+		return PaymentRequest::where('uuid', '=', $uuid)->first();
+	}
+
+	/**
+	 * fetchTransactionOfPastForRequests function
+	 *
+	 * @param integer $pr_id
+	 * @return Transaction|null
+	 */
+	public function fetchTransactionOfPastForRequests(int $pr_id) : ?Transaction {
+		return Transaction::select('payment_urls.url as payment_url', 'transactions.amount as amount', 'transactions.payment_gateway as payment_gateway')->join('transaction_references', 'transaction_references.transaction_id', '=', 'transactions.id')->join('payment_urls', 'payment_urls.transaction_id', '=', 'transactions.id')->where([['transactions.created_at', '>', now()->subHours(2)], ['transaction_references.payment_request_id', '=',$pr_id]])->orderBy('transactions.id', 'desc')->first();
 	}
 
 }

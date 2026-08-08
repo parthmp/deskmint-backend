@@ -4,6 +4,7 @@ namespace App\Services\Gateway;
 
 use App\Jobs\SendEmailJob;
 use App\Models\Invoice;
+use App\Models\PaymentRequest;
 use App\Models\Transaction;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\Payment\Enums\PaymentGateway;
@@ -45,7 +46,7 @@ class GatewayService{
 
 		$payment = match($payment_gateway){
 
-			PaymentGateway::PAYPAL->value 	=> new Payment(new PayPal($data['company_id'], $data['currency_id'], $data['invoice_id'], $data['user_id'], $data['client_id'], $data['app_id'], $data['secret'], $data['mode'], $data['currency'], (float) $data['amount'])),
+			PaymentGateway::PAYPAL->value 	=> new Payment(new PayPal($data['company_id'], $data['currency_id'], $data['invoice_id'], $data['pr_id'], $data['user_id'], $data['client_id'], $data['app_id'], $data['secret'], $data['mode'], $data['currency'], (float) $data['amount'])),
 			PaymentGateway::STRIPE->value 	=> new Payment(new Stripe($data['company_id'], $data['currency_id'], $data['invoice_id'], $data['user_id'], $data['secret'], $data['currency'], (float) $data['amount'])),
 			default			=>	null
 		};
@@ -96,16 +97,22 @@ class GatewayService{
 	/**
 	 * generatePaymentUrl function
 	 *
-	 * @param Invoice $invoice
+	 * @param Invoice|PaymentRequest $object
 	 * @return string|null
 	 */
-	public function generatePaymentUrl(Invoice $invoice) : ?string {
+	public function generatePaymentUrl(Invoice|PaymentRequest $object) : ?string {
 
-		if((int) $invoice->payment_gateway !== PaymentGateway::NONE->value){
-
+		if((int) $object->payment_gateway !== PaymentGateway::NONE->value){
+			$is_invoice = true;
 			$payment_gateway_url = '';
-			$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId($invoice->company_id)->setInvoiceId($invoice->id)->execRequiredSettings();
-			$payment_settings = $this->invoice_db_operations->fetchPaymentSettings((int) $invoice->payment_gateway);
+			if($object instanceof Invoice){
+				$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId($object->company_id)->setInvoiceId($object->id)->execRequiredSettings();
+			}else{
+				$is_invoice = false;
+				$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId($object->company_id)->execRequiredSettings();
+			}
+			
+			$payment_settings = $this->invoice_db_operations->fetchPaymentSettings((int) $object->payment_gateway);
 			
 			if(!$payment_settings){
 				logger('something went wrong with payment settings data -> '.json_encode($payment_settings));
@@ -113,19 +120,20 @@ class GatewayService{
 			}
 
 			$payment_settings = json_decode($payment_settings['settings_json'], true);
-			$payment_settings['currency'] = $invoice->currency->code;
-			$payment_settings['amount'] = $invoice->balance_due;
+			$payment_settings['currency'] = $object->currency->code;
+			$payment_settings['amount'] = ($is_invoice) ? $object->balance_due : $object->amount;
 			$payment_settings['secret'] = decrypt($payment_settings['secret']);
-			$payment_settings['invoice_id'] = $invoice->id;
-			$payment_settings['company_id'] = $invoice->company_id;
-			$payment_settings['currency_id'] = $invoice->currency_id;
-			$payment_settings['user_id'] = $invoice->client_id;
+			$payment_settings['invoice_id'] = ($is_invoice) ? $object->id : null;
+			$payment_settings['pr_id'] = (!$is_invoice) ? $object->id : null;
+			$payment_settings['company_id'] = $object->company_id;
+			$payment_settings['currency_id'] = $object->currency_id;
+			$payment_settings['user_id'] = $object->client_id;
 
-			$payment_gateway_url = $this->generateGatewayUrl((int) $invoice->payment_gateway, $payment_settings);
+			$payment_gateway_url = $this->generateGatewayUrl((int) $object->payment_gateway, $payment_settings);
 
 			if(!$payment_gateway_url){
 				//send an email to admins to notify the failure.
-				$this->sendUrlGenerationFailedEmail((int) $invoice->payment_gateway);
+				$this->sendUrlGenerationFailedEmail((int) $object->payment_gateway);
 			}
 
 			return $payment_gateway_url;
@@ -170,6 +178,47 @@ class GatewayService{
 		$transaction_amount = BigDecimal::of($transaction->amount);
 		
 		if((int) $invoice->payment_gateway !== (int) $transaction->payment_gateway || !$invoice_balance_due->isEqualTo($transaction_amount)){
+			return null;
+		}
+
+		return $transaction->payment_url;
+
+	}
+
+	/**
+	 * fetchRequestByUuid function
+	 *
+	 * @param string $uuid
+	 * @return PaymentRequest|null
+	 */
+	public function fetchRequestByUuid(string $uuid) : ?PaymentRequest {
+		return $this->gateway_repository->fetchRequestByUuid($uuid);
+	}
+
+	/**
+	 * fetchExistingPaymentUrlForRequest function
+	 *
+	 * @param integer $pr_id
+	 * @return string|null
+	 */
+	public function fetchExistingPaymentUrlForRequest(int $pr_id) : ?string {
+
+		$transaction = $this->gateway_repository->fetchTransactionOfPastForRequests($pr_id);
+		
+		if(!$transaction){
+			return null;
+		}
+
+		$pr = $this->gateway_repository->fetchPaymentRequestById($pr_id);
+		
+		if(!$pr){
+			return null;
+		}
+
+		$pr_amount = BigDecimal::of($pr->amount);
+		$transaction_amount = BigDecimal::of($transaction->amount);
+		
+		if((int) $pr->payment_gateway !== (int) $transaction->payment_gateway || !$pr_amount->isEqualTo($transaction_amount)){
 			return null;
 		}
 

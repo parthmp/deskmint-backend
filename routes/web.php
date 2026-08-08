@@ -20,7 +20,9 @@ Route::get('/', function () {
 	return 'welcome';
 });
 
-Route::get('/pay-request/{uuid}', [GatewayController::class, 'showPaymentPage'])->name('payment_request.pay')->middleware('signed');
+Route::get('/pay-request/{uuid}', [GatewayController::class, 'showPaymentPageForRequest'])->name('payment_request.pay')->middleware('signed');
+Route::post('/pay-request/checkout/{uuid}', [GatewayController::class, 'generateUrlForRequest'])->name('payment_request.pay.checkout')->middleware('signed');
+Route::get('/pay-request/failure/{payment_method}', [GatewayController::class, 'failedToConnect']);
 
 Route::get('/pay-invoice/{uuid}', [GatewayController::class, 'showPaymentPage'])->name('invoice.pay')->middleware('signed');
 Route::post('/pay-invoice/checkout/{uuid}', [GatewayController::class, 'generateUrl'])->name('invoice.pay.checkout')->middleware('signed');

@@ -345,11 +345,12 @@ class DatabaseOperations{
 	 * insertPaymentUrl function
 	 *
 	 * @param integer $transaction_id
+	 * @param integer|null $invoice_id
 	 * @param string $gateway_url_identifier
 	 * @param string $url_string
 	 * @return boolean
 	 */
-	public function insertPaymentUrl(int $transaction_id, int $invoice_id, string $gateway_url_identifier, string $url_string) : bool {
+	public function insertPaymentUrl(int $transaction_id, ?int $invoice_id, string $gateway_url_identifier, string $url_string) : bool {
 		
 		$payment_url = new PaymentUrl();
 		$payment_url->invoice_id = $invoice_id;
@@ -365,12 +366,13 @@ class DatabaseOperations{
 	 *
 	 * @param integer $company_id
 	 * @param integer $client_id
-	 * @param integer $invoice_id
+	 * @param integer|null $invoice_id
+	 * @param integer|null $pr_id
 	 * @param integer|null $transaction_id
 	 * @param integer|null $id
 	 * @return TransactionReference
 	 */
-	public function upsertTransactionReference(int $company_id, int $client_id, int $invoice_id, ?int $transaction_id = null, ?int $id = null) : TransactionReference {
+	public function upsertTransactionReference(int $company_id, int $client_id, ?int $invoice_id, ?int $pr_id, ?int $transaction_id = null, ?int $id = null) : TransactionReference {
 
 		if(!$id){
 			$reference = new TransactionReference();
@@ -381,6 +383,7 @@ class DatabaseOperations{
 		$reference->company_id = $company_id;
 		$reference->client_id = $client_id;
 		$reference->invoice_id = $invoice_id;
+		$reference->payment_request_id = $pr_id;
 		$reference->transaction_id = $transaction_id;
 		$reference->save();
 		
