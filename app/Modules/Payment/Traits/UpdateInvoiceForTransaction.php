@@ -158,6 +158,7 @@ trait UpdateInvoiceForTransaction {
 		$pr->amount = $transaction->amount;
 		$pr->status = PaymentRequestStatus::COMPLETED->value;
 		$pr->transaction_id = $transaction->id;
+		$pr->paid_at = now();
 		$pr->save();
 
 		if($payment){

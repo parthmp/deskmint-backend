@@ -161,6 +161,7 @@ class PaymentRequestRepository {
 	 */
 	public function markCompleted(PaymentRequest $pr) : bool {
 		$pr->status = PaymentRequestStatus::COMPLETED->value;
+		$pr->paid_at = now();
 		return $pr->save();
 	}
 

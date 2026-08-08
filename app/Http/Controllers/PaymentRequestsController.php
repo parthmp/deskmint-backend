@@ -38,7 +38,8 @@ class PaymentRequestsController extends Controller {
 	private array $date_fields = [
 		'created_at',
 		'last_reminder_sent_at',
-		'sent_at'
+		'sent_at',
+		'paid_at'
 	];
 
 	public function __construct(
