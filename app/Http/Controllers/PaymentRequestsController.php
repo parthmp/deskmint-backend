@@ -25,7 +25,7 @@ class PaymentRequestsController extends Controller {
 			'text'			=>	'Currency'
 		],
 		[
-			'label'			=>	'token_id_identifier',
+			'label'			=>	'token',
 			'text'			=>	'Token'
 		],
 		[

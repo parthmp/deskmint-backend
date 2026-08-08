@@ -23,7 +23,7 @@ class PayPalController extends Controller{
 
 
 		//try{
-
+		
 			$settings = $this->database_operations->fetchPayPalSettings($data);
 
 			
@@ -34,6 +34,7 @@ class PayPalController extends Controller{
 												$webhook_data['company_id'], 
 												$webhook_data['currency_id'],
 												$webhook_data['invoice_id'],
+												$webhook_data['payment_request_id'],
 												$webhook_data['user_id'], //this is user_id
 												$settings['settings']['client_id'], //this is for paypal access data, not user_id or client_id from db.
 												$settings['settings']['app_id'], 

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Payment\Traits;
 
+use App\Enums\PaymentRequests\PaymentRequestStatus;
 use App\Jobs\GenerateInvoiceJob;
 use App\Models\Invoice;
 use App\Models\InvoiceLedger;
@@ -152,9 +153,11 @@ trait UpdateInvoiceForTransaction {
 			'amount_left_to_be_applied' => $transaction->amount,
 		]);
 
-		//update payment request amount now in case if the amount changed unexpected.
-		$pr = PaymentRequest::where('id', '=', $ref->payment_request_id)->withTrahsed()->first();
+		//update payment request
+		$pr = PaymentRequest::where('id', '=', $ref->payment_request_id)->withTrashed()->first();
 		$pr->amount = $transaction->amount;
+		$pr->status = PaymentRequestStatus::COMPLETED->value;
+		$pr->transaction_id = $transaction->id;
 		$pr->save();
 
 		if($payment){

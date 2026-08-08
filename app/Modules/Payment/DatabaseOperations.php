@@ -103,6 +103,24 @@ class DatabaseOperations{
 
 	}
 
+	private function fetchRequiredDataForWebhookPaymentRequest(string $order_id) : ?Transaction {
+		
+		return Transaction::join('transaction_references', 'transaction_references.transaction_id', '=', 'transactions.id')
+							->join('payment_requests', 'payment_requests.id', '=', 'transaction_references.payment_request_id')
+							->join('clients', 'clients.id', '=', 'payment_requests.client_id')
+							->join('currencies', 'currencies.id', '=', 'payment_requests.currency_id')
+							->where('transactions.token_id_identifier', '=', $order_id)
+							->select(
+								'transactions.currency_id as currency_id',
+								'currencies.code as currency_code',
+								'payment_requests.company_id as company_id',
+								'payment_requests.id as payment_request_id',
+								'payment_requests.amount as balance_due',
+								'clients.id as user_id'
+							)->first();
+
+	}
+
 	/**
 	 * fetchPayPalSettings function
 	 *
@@ -119,19 +137,34 @@ class DatabaseOperations{
 			throw new PaymentException('Invalid data provided', 'invalid_order_id', config('global.error_code'));
 		}
 
-		$webhook_data = $this->fetchRequiredDataForWebhook($order_id);
+		$transaction = $this->fetchTransactionByTokenId($order_id);
+		if($transaction->reference->invoice_id){
+			$webhook_data = $this->fetchRequiredDataForWebhook($order_id);
+		}else{
+			//null invoice id means it is a payment request and not attached with any invoices.
+			$webhook_data = $this->fetchRequiredDataForWebhookPaymentRequest($order_id);
+		}
 		
 		if(!$webhook_data){
 			throw new PaymentException('Invalid data provided', 'invalid_data', config('global.error_code'));
 		}
 
-		$settings = $this->settings_section_repository->fetchSettings($webhook_data->company_id, PAYMENTS_PAYPAL_TYPE, true);
+		$webhook_data = $webhook_data->toArray();
+		if($transaction->reference->invoice_id){
+			$webhook_data['payment_request_id']	= null;
+		}else{
+			$webhook_data['invoice_id']	= null;
+		}
+		
+
+		$settings = $this->settings_section_repository->fetchSettings((int) $webhook_data['company_id'], PAYMENTS_PAYPAL_TYPE, true);
 		
 		return [
 			'order_id'				=>	$order_id,
 			'event_type'			=>	$event_type,
-			'webhook_data'			=>	$webhook_data->toArray(),
-			'settings'				=>	$settings
+			'webhook_data'			=>	$webhook_data,
+			'settings'				=>	$settings,
+			'is_invoice'			=>	($transaction->reference->invoice_id) ? true : false
 		];
 
 	}
@@ -146,9 +179,9 @@ class DatabaseOperations{
 
 		$event_type = $data['type'] ?? null;
 
-		if($event_type !== ''){
+		// if($event_type !== ''){
 
-		}
+		// }
 
 		if(!isset($data['data']['object']['metadata']['order_id'])){
 			throw new PaymentException('Invalid data provided', 'unsupported_event', config('global.error_code'));
@@ -160,18 +193,31 @@ class DatabaseOperations{
 			throw new PaymentException('Invalid data provided', 'invalid_order_id', config('global.error_code'));
 		}
 
-		$webhook_data = $this->fetchRequiredDataForWebhook($order_id);
+		$transaction = $this->fetchTransactionByTokenId($order_id);
+		if($transaction->reference->invoice_id){
+			$webhook_data = $this->fetchRequiredDataForWebhook($order_id);
+		}else{
+			//null invoice id means it is a payment request and not attached with any invoices.
+			$webhook_data = $this->fetchRequiredDataForWebhookPaymentRequest($order_id);
+		}
 
 		if(!$webhook_data){
 			throw new PaymentException('Invalid data provided', 'invalid_data', config('global.error_code'));
 		}
 
-		$settings = $this->settings_section_repository->fetchSettings($webhook_data->company_id, PAYMENTS_STRIPE_TYPE, true);
+		$webhook_data = $webhook_data->toArray();
+		if($transaction->reference->invoice_id){
+			$webhook_data['payment_request_id']	= null;
+		}else{
+			$webhook_data['invoice_id']	= null;
+		}
+
+		$settings = $this->settings_section_repository->fetchSettings($webhook_data['company_id'], PAYMENTS_STRIPE_TYPE, true);
 
 		return [
 			'order_id'				=>	$order_id,
 			'event_type'			=>	$event_type,
-			'webhook_data'			=>	$webhook_data->toArray(),
+			'webhook_data'			=>	$webhook_data,
 			'settings'				=>	$settings
 		];
 
