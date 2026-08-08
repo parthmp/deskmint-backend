@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceLedger;
 use App\Models\InvoiceSnapshot;
 use App\Models\Payment;
+use App\Models\PaymentRequest;
 use App\Models\Transaction;
 use App\Models\TransactionReference;
 use App\Modules\Notifications\Enums\NotificationType;
@@ -48,58 +49,6 @@ trait UpdateInvoiceForTransaction {
 		return $total->toScale(2, RoundingMode::HalfUp)->__toString();
 
 	}
-
-	/**
-	 * fetchAmountsOfTransactionsByInvoiceId function
-	 *
-	 * @param integer $company_id
-	 * @param integer $invoice_id
-	 * @return Collection
-	 */
-	// public function fetchAmountsOfTransactionsByInvoiceId(int $company_id, int $invoice_id) : Collection {
-
-	// 	return Transaction::select('amount')->where([['invoice_id', '=', $invoice_id], ['company_id', '=', $company_id], ['status', '<>', TransactionStatus::VOID->value], ['status', '<>', TransactionStatus::PENDING->value]])->get();
-
-	// }
-
-	// private function updateInvoiceStatusForPayments(Transaction $transaction, bool $notify = true) : bool {
-		
-	// 	$invoice = $this->fetchInvoiceById($transaction->invoice_id);
-
-	// 	$total = BigDecimal::of($invoice->total);
-
-	// 	$paid_amount = $this->sumOfAmounts($this->fetchAmountsOfTransactionsByInvoiceId($transaction->company_id, $transaction->invoice_id));
-
-	// 	$paid_amount = BigDecimal::of($paid_amount);
-
-	// 	$balance_due = $total->minus($paid_amount);
-
-	// 	$paid_in_full = $paid_amount->isEqualTo($total);
-	// 	$overpaid = $paid_amount->isGreaterThan($total);
-	// 	$partially_paid = $paid_amount->isLessThan($total) && $paid_amount->isGreaterThan(BigDecimal::of(0));
-
-	// 	if((int) $invoice->status === (int) InvoiceStatus::CANCELLED->value && $notify){
-	// 		app(Notification::class)->notify($invoice->company_id, NotificationType::INVOICE_CANCELLED_PAID, 'Your customer paid cancelled invoice', 'Invoice: '. $invoice->invoice_number.' was cancelled and customer made a payment towards it. Transaction id: '.$transaction->id.', Identifer: '.$transaction->token_id_identifier, []);
-	// 	}
-
-	// 	if($overpaid && $notify){
-	// 		app(Notification::class)->notify($invoice->company_id, NotificationType::INVOICE_OVERPAID, 'Your customer overpaid invoice', 'Invoice: '. $invoice->invoice_number.' was overpaid by your customer. Transaction id: '.$transaction->id.', Identifer: '.$transaction->token_id_identifier, []);
-	// 	}
-
-	// 	$status_indicator = InvoiceStatus::PENDING->value;
-
-	// 	if($paid_in_full || $overpaid){
-	// 		$status_indicator = InvoiceStatus::PAID->value;
-	// 	}else if($partially_paid){
-	// 		$status_indicator = InvoiceStatus::PARTIALLY_PAID->value;
-	// 	}
-
-	// 	$invoice->status = $status_indicator;
-	// 	$invoice->balance_due = $balance_due->toScale(2, RoundingMode::HalfUp)->__toString();
-
-	// 	return $invoice->save();
-
-	// }
 
 	/**
 	 * fetchTransactionRefByTransactionId function
@@ -164,15 +113,66 @@ trait UpdateInvoiceForTransaction {
 	}
 
 	/**
+	 * updateAndApplyPayment function
+	 *
+	 * @param Transaction $transaction
+	 * @param boolean $notify
+	 * @return boolean
+	 */
+	public function updateAndApplyPayment(Transaction $transaction, bool $notify = true) : bool {
+		
+		$ref = $this->fetchTransactionRefByTransactionId($transaction->id);
+
+		if($ref->invoice_id !== null && $ref->payment_request_id === null){
+			return $this->updateInvoiceStatusForPayments($transaction, $ref, $notify);
+		}else if($ref->invoice_id === null && $ref->payment_request_id !== null){
+			return $this->updatePaymentRequest($transaction, $ref, $notify);
+		}
+
+		return false;
+
+	}
+
+	/**
+	 * updatePaymentRequest function
+	 *
+	 * @param Transaction $transaction
+	 * @param boolean $notify
+	 * @return boolean
+	 */
+	public function updatePaymentRequest(Transaction $transaction, TransactionReference $ref, bool $notify = true) : bool {
+
+		$payment = $this->insertPayment([
+			'company_id' 				=> $transaction->company_id,
+			'client_id' 				=> $ref->client_id,
+			'transaction_id' 			=> $ref->transaction_id,
+			'status' 					=> PaymentStatus::NOT_APPLIED->value,
+			'amount' 					=> $transaction->amount,
+			'applied_amount' 			=> 0,
+			'amount_left_to_be_applied' => $transaction->amount,
+		]);
+
+		//update payment request amount now in case if the amount changed unexpected.
+		$pr = PaymentRequest::where('id', '=', $ref->payment_request_id)->withTrahsed()->first();
+		$pr->amount = $transaction->amount;
+		$pr->save();
+
+		if($payment){
+			return true;
+		}
+
+		return false;
+
+	}
+
+	/**
 	 * updateInvoiceStatusForPayments function
 	 *
 	 * @param Transaction $transaction
 	 * @param boolean $notify
 	 * @return boolean
 	 */
-	private function updateInvoiceStatusForPayments(Transaction $transaction, bool $notify = true) : bool {
-		
-		$ref = $this->fetchTransactionRefByTransactionId($transaction->id);
+	private function updateInvoiceStatusForPayments(Transaction $transaction, TransactionReference $ref, bool $notify = true) : bool {
 
 		$invoice = $this->fetchInvoiceById($ref->invoice_id);
 

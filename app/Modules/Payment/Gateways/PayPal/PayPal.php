@@ -31,7 +31,7 @@ class PayPal implements PaymentGatewayInterface{
 		private string $secret,
 		private string $mode,
 		private ?string $currency,
-		private float $amount,
+		private string $amount,
 		?DatabaseOperations $database_operations = null,
 		?PayPalClient $provider = null
 	){

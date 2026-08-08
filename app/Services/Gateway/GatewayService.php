@@ -46,8 +46,8 @@ class GatewayService{
 
 		$payment = match($payment_gateway){
 
-			PaymentGateway::PAYPAL->value 	=> new Payment(new PayPal($data['company_id'], $data['currency_id'], $data['invoice_id'], $data['pr_id'], $data['user_id'], $data['client_id'], $data['app_id'], $data['secret'], $data['mode'], $data['currency'], (float) $data['amount'])),
-			PaymentGateway::STRIPE->value 	=> new Payment(new Stripe($data['company_id'], $data['currency_id'], $data['invoice_id'], $data['user_id'], $data['secret'], $data['currency'], (float) $data['amount'])),
+			PaymentGateway::PAYPAL->value 	=> new Payment(new PayPal($data['company_id'], $data['currency_id'], $data['invoice_id'], $data['pr_id'], $data['user_id'], $data['client_id'], $data['app_id'], $data['secret'], $data['mode'], $data['currency'], (string) $data['amount'])),
+			PaymentGateway::STRIPE->value 	=> new Payment(new Stripe($data['company_id'], $data['currency_id'], $data['invoice_id'], $data['pr_id'], $data['user_id'], $data['secret'], $data['currency'], (string) $data['amount'])),
 			default			=>	null
 		};
 		

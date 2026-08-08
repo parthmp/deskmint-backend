@@ -22,24 +22,31 @@ class Stripe implements PaymentGatewayInterface{
 
 	private StripeClient $stripe_client;
 	private DatabaseOperations $database_operations;
-	private Invoice $invoice;
+	private ?Invoice $invoice;
 	private int $amount_in_cents;
 	private string $webhook_secret;
 
 	public function __construct(
 		private string $company_id,
 		private string $currency_id,
-		private string $invoice_id,
+		private ?string $invoice_id,
+		private ?string $pr_id,
 		private string $user_id,
 		private string $secret,
 		private string $currency,
-		private float $amount,
+		private string $amount,
 		?DatabaseOperations $database_operations = null,
 		?StripeClient $stripe_client = null
 	){
 		$this->stripe_client = $stripe_client ?? new StripeClient($secret);
 		$this->database_operations = $database_operations ?? new DatabaseOperations(new SettingsSectionRepository());
-		$this->invoice = $this->database_operations->fetchInvoiceById($this->invoice_id);
+		
+		$this->invoice = null;
+
+		if($this->invoice_id !== null){
+			$this->invoice = $this->database_operations->fetchInvoiceById($this->invoice_id);
+		}
+		
 		$this->amount_in_cents = BigDecimal::of($this->amount)->multipliedBy(100)->toScale(2, RoundingMode::HalfUp)->toInt();
 	}
 
@@ -63,7 +70,6 @@ class Stripe implements PaymentGatewayInterface{
 		return $this->database_operations->insertTransaction([
 			'company_id'					=>	$this->company_id,
 			'currency_id'					=>	$this->currency_id,
-			'invoice_id'					=>	$this->invoice_id,
 			'amount'						=>	$this->amount,
 			'payment_gateway'				=>	PaymentGateway::STRIPE->value,
 			'mode'							=>	'-',
@@ -80,13 +86,21 @@ class Stripe implements PaymentGatewayInterface{
 		
 		try{
 
+			$name = '# '.$uuid_token;
+			$desc = 'Payment for request # '.$uuid_token;
+
+			if($this->invoice){
+				$name = 'Invoice # '.$this->invoice->invoice_number;
+				$desc = 'Payment for invoice # '.$this->invoice->invoice_number;
+			}
+
 			$session = $this->stripe_client->checkout->sessions->create([
 				'line_items' => [[
 					'price_data' => [
 						'currency' => $this->currency,
 						'product_data' => [
-							'name' => 'Invoice # '.$this->invoice->invoice_number,
-							'description' => 'Payment for invoice # '.$this->invoice->invoice_number,
+							'name' => $name,
+							'description' => $desc,
 						],
 						'unit_amount' => $this->amount_in_cents, // Amount in cents ($20.00)
 					],
@@ -101,7 +115,7 @@ class Stripe implements PaymentGatewayInterface{
 			]);
 
 			$transaction = $this->createTransaction($uuid_token);
-			$this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, (int) $this->invoice_id, (int) $transaction->id);
+			$this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, $this->invoice_id, $this->pr_id, (int) $transaction->id);
 			$this->database_operations->insertEmptyTransactionGatewayDetails($transaction->id);
 
 		}catch(Exception $e){

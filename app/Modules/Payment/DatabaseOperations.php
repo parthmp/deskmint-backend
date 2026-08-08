@@ -233,10 +233,11 @@ class DatabaseOperations{
 					['payment_captured_details' => json_encode($data)]
 				);
 				
-				$this->updateInvoiceStatusForPayments($transaction);
+				$this->updateAndApplyPayment($transaction);
 				
-				$this->updateInvoiceSnapshot((int) $transaction->reference->invoice_id);
-
+				if($transaction->reference->invoice_id){
+					$this->updateInvoiceSnapshot((int) $transaction->reference->invoice_id);
+				}
 				
 
 			}else if($event_type === 'PAYMENT.CAPTURE.PENDING'){
@@ -323,9 +324,12 @@ class DatabaseOperations{
 		$amount = (int) $data['data']['object']['amount_total'];
 		$amount = BigDecimal::of($amount)->dividedBy(100, 2, RoundingMode::HalfUp)->toFloat();
 		
-		$saved = $transaction->save() && $this->updateInvoiceStatusForPayments($transaction);
+		$saved = $transaction->save() && $this->updateAndApplyPayment($transaction);
 		
-		$this->updateInvoiceSnapshot((int) $transaction->reference->invoice_id);
+		if($transaction->reference->invoice_id){
+			$this->updateInvoiceSnapshot((int) $transaction->reference->invoice_id);
+		}
+		
 
 		return $saved;
 
