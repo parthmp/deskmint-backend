@@ -186,11 +186,11 @@ trait UpdateInvoiceForTransaction {
 		
 		$diff_payment_amount = $transaction_amount->minus($balance_due);
 
-		$payment_status = PaymentStatus::NOT_APPLIED;
+		$payment_status = PaymentStatus::NOT_APPLIED->value;
 		if($diff_payment_amount->isEqualTo(BigDecimal::of(0)) || $diff_payment_amount->isLessThan(BigDecimal::of(0))){
-			$payment_status = PaymentStatus::APPLIED;
+			$payment_status = PaymentStatus::APPLIED->value;
 		}else if($diff_payment_amount->isGreaterThan(BigDecimal::of(0))){
-			$payment_status = PaymentStatus::PARTIALLY_APPLIED;
+			$payment_status = PaymentStatus::PARTIALLY_APPLIED->value;
 		}
 
 		$left_to_be_applied = BigDecimal::of(0);

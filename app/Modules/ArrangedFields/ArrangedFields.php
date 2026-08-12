@@ -126,6 +126,8 @@ class ArrangedFields{
 		$default = $this->arranged_object->fetchDefaultArrangedFieldsData($this->data['company_id']);
 		
 		$default = array_merge($default['dropdown'], $default['rows']);
+
+		$client_table_columns = Schema::getColumnListing($table);
 		
 		foreach($rows as $row){
 			
@@ -138,8 +140,6 @@ class ArrangedFields{
 				if(!is_array($row['mapped'])){
 					return false;
 				}
-				
-				$client_table_columns = Schema::getColumnListing($table);
 				
 				foreach($row['mapped'] as $mapped_col){
 					if(!in_array($mapped_col, $client_table_columns)){

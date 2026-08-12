@@ -49,7 +49,7 @@ class FieldTypesService{
 	 */
 	public function create(string $input_type, string $input_name) : bool {
 
-		return $this->custom_field_type_repository->create($input_name, $input_name);
+		return $this->custom_field_type_repository->create($input_type, $input_name);
 
 	}
 

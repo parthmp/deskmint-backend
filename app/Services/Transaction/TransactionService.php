@@ -204,9 +204,9 @@ class TransactionService {
 	 * @param float $amount
 	 * @return void
 	 */
-	public function updateInvoiceForTransaction(Transaction $transaction, float $amount){
-		$this->updateInvoiceStatusForPayments($transaction, false);
-	}
+	// public function updateInvoiceForTransaction(Transaction $transaction, float $amount){
+	// 	$this->updateInvoiceStatusForPayments($transaction, false);
+	// }
 
 	/**
 	 * generateSnapshot function
