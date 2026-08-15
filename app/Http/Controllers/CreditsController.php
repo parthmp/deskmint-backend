@@ -6,6 +6,8 @@ use App\Enums\Credits\CreditStatus;
 use App\Exceptions\CreditException;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
+use App\Http\Requests\Credits\ApplyUnapplyCreditsFetchCreditRequest;
+use App\Http\Requests\Credits\ApplyUnapplyCreditsSearchRequest;
 use App\Http\Requests\Credits\CreditCreateRequest;
 use App\Http\Requests\GenericRequest;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
@@ -161,6 +163,43 @@ class CreditsController extends Controller {
 		}
 
 		return $response;
+
+	}
+
+	public function applyUnapplyFetchCredit(ApplyUnapplyCreditsFetchCreditRequest $request){
+
+		$data = $request->validated();
+
+		try{
+
+			$credit_info = $this->credit_service->fetchCreditWithCurrencyInfo((int) $data['company_id'], (int) $data['credit_id']);
+
+			return $credit_info;
+
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
+		
+
+	}
+
+	public function applyUnapplySearchInvoices(ApplyUnapplyCreditsSearchRequest $request){
+
+		$data = $request->validated();
+
+		try{
+
+			$credit_info = $this->credit_service->fetchCreditWithCurrencyInfo((int) $data['company_id'], (int) $data['credit_id']);
+
+			$invoices = $this->credit_service->searchInvoices((int) $data['company_id'], (int) $credit_info['currency_id'], (int) $credit_info['client_id'], (array) $data['applied_ids'], (string) $data['searched']);
+
+			return $invoices;
+
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+		
 
 	}
 

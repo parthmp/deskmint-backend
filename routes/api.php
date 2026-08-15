@@ -208,6 +208,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	/**
 	 * manage credits
 	 */
+	Route::get('manage-credits/apply-unapply-fetch-credit', [CreditsController::class, 'applyUnapplyFetchCredit']);
+	Route::get('manage-credits/apply-unapply-search-invoices', [CreditsController::class, 'applyUnapplySearchInvoices']);
 	Route::get('manage-credits/fetch-arranged-columns', [CreditsController::class, 'fetchArrangedColumns']);
 	Route::post('manage-credits/save-arranged-columns', [CreditsController::class, 'saveArrangedColumns']);
 	

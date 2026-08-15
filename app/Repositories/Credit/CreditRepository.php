@@ -6,7 +6,9 @@ use App\Enums\Credits\CreditStatus;
 use App\Helpers\General;
 use App\Models\Client;
 use App\Models\Credit;
+use App\Models\Invoice;
 use App\Models\InvoiceLedger;
+use App\Modules\Payment\Enums\InvoiceStatus;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -139,6 +141,63 @@ class CreditRepository {
 		}
 
 		return $invoices;
+
+	}
+
+	/**
+	 * fetchCreditWithCurrencyInfo function
+	 *
+	 * @param integer $company_id
+	 * @param integer $credit_id
+	 * @return array
+	 */
+	public function fetchCreditWithCurrencyInfo(int $company_id, int $credit_id) : array {
+		return Credit::select(
+							'credits.id as id',
+							'credits.client_id as client_id',
+							'credits.amount as amount',
+							'credits.amount_left_to_be_applied as left',
+							'currencies.code as currency_code',
+							'currencies.id as currency_id',
+							'clients.full_name as full_name'
+						)
+						->join('clients', 'clients.id', '=', 'credits.client_id')
+						->join('currencies', 'currencies.id', '=', 'credits.currency_id')
+						->where([['credits.company_id', '=', $company_id], ['credits.id', '=', $credit_id]])
+						->first()
+						->toArray();
+	}
+
+	/**
+	 * searchInvoices function
+	 *
+	 * @param integer $company_id
+	 * @param integer $currency_id
+	 * @param integer $client_id
+	 * @param array $applied_ids
+	 * @param string $searched
+	 * @return array
+	 */
+	public function searchInvoices(int $company_id, int $currency_id, int $client_id, array $applied_ids, string $searched) : array {
+		
+		$invoices = Invoice::select('id as id', 'invoice_number as invoice', 'total as total', 'balance_due as due')->where([['currency_id', '=', $currency_id], ['company_id', '=', $company_id], ['client_id', '=', $client_id]])
+			->whereNotIn('id', $applied_ids)
+			->where(function($q) {
+				$q->where('status', '=', InvoiceStatus::SENT->value)
+				->orWhere('status', '=', InvoiceStatus::PARTIALLY_PAID->value);
+			})->when($searched, function ($query, $searched) {
+				$query->where(function ($q) use ($searched) {
+
+					$q->where('invoice_number', 'like', "%{$searched}%")
+					->orWhere('id', 'like', "%{$searched}%")
+					->orWhere('total', 'like', "%{$searched}%")
+					->orWhere('balance_due', 'like', "%{$searched}%")
+					->orWhere('total', 'like', "%{$searched}%");
+				});
+			})
+			->orderBy('id', 'desc')->limit(50)->get()->toArray();
+
+			return $invoices;
 
 	}
 

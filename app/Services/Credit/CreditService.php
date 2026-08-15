@@ -253,4 +253,29 @@ class CreditService {
 		return $this->credit_repository->fetchAppliedCreditInvoices($company_id, $credit_id);
 	}
 
+	/**
+	 * fetchCreditWithCurrencyInfo function
+	 *
+	 * @param integer $company_id
+	 * @param integer $credit_id
+	 * @return array
+	 */
+	public function fetchCreditWithCurrencyInfo(int $company_id, int $credit_id) : array {
+		return $this->credit_repository->fetchCreditWithCurrencyInfo($company_id, $credit_id);
+	}
+
+	/**
+	 * searchInvoices function
+	 *
+	 * @param integer $company_id
+	 * @param integer $currency_id
+	 * @param integer $client_id
+	 * @param array $applied_ids
+	 * @param string $searched
+	 * @return array
+	 */
+	public function searchInvoices(int $company_id, int $currency_id, int $client_id, array $applied_ids, string $searched) : array {
+		return $this->credit_repository->searchInvoices($company_id, $currency_id, $client_id, $applied_ids, $searched);
+	}
+
 }
