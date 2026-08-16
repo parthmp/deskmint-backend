@@ -190,7 +190,6 @@ class CreditRepository {
 
 					$q->where('invoice_number', 'like', "%{$searched}%")
 					->orWhere('id', 'like', "%{$searched}%")
-					->orWhere('total', 'like', "%{$searched}%")
 					->orWhere('balance_due', 'like', "%{$searched}%")
 					->orWhere('total', 'like', "%{$searched}%");
 				});
@@ -198,6 +197,19 @@ class CreditRepository {
 			->orderBy('id', 'desc')->limit(50)->get()->toArray();
 
 			return $invoices;
+
+	}
+
+	/**
+	 * Undocumented function
+	 *
+	 * @param integer $company_id
+	 * @param array $ids
+	 * @return Collection
+	 */
+	public function fetchMultipleInvoicesByIds(int $company_id, array $ids) : Collection {
+
+		return Invoice::select('id', 'balance_due')->where('company_id', '=', $company_id)->whereIn('id', $ids)->get();
 
 	}
 

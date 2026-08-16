@@ -12,6 +12,7 @@ use App\Http\Requests\Credits\CreditCreateRequest;
 use App\Http\Requests\GenericRequest;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
+use App\Services\Credit\CreditApplyValidationService;
 use App\Services\Credit\CreditService;
 use Exception;
 use Illuminate\Http\Request;
@@ -44,6 +45,7 @@ class CreditsController extends Controller {
 
 	public function __construct(
 		private CreditService $credit_service,
+		private CreditApplyValidationService $credit_apply_validation_service,
 		private ArrangedDataTableColumns $arranged_data_table_columns
 	){}
 
@@ -200,6 +202,20 @@ class CreditsController extends Controller {
 			return General::wentWrong();
 		}
 		
+
+	}
+
+	public function applyUnapplyCredit(Request $request){
+		
+		try{
+			$this->credit_apply_validation_service->validateApplyUnapply($request);
+		}catch(CreditException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+		
+
 
 	}
 
