@@ -4,8 +4,10 @@ namespace App\Services\Credit;
 
 use App\Enums\Credits\CreditStatus;
 use App\Exceptions\CreditException;
+use App\Helpers\Sanitize;
 use App\Models\Credit;
 use App\Modules\EasyIndex\EasyIndex;
+use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Repositories\Credit\CreditRepository;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
@@ -276,6 +278,174 @@ class CreditService {
 	 */
 	public function searchInvoices(int $company_id, int $currency_id, int $client_id, array $applied_ids, string $searched) : array {
 		return $this->credit_repository->searchInvoices($company_id, $currency_id, $client_id, $applied_ids, $searched);
+	}
+
+	/**
+	 * modifyCreditForApplying function
+	 *
+	 * @param integer $company_id
+	 * @param integer $credit_id
+	 * @param array $applied
+	 * @return boolean
+	 */
+	private function modifyCreditForApplying(int $company_id, int $credit_id, array $applied) : bool {
+
+		$applied_amount_sum = BigDecimal::of(0);
+
+		foreach($applied as $ele){
+
+			$ele['amount'] = Sanitize::input($ele['amount']);
+			$applied_amount = BigDecimal::of($ele['amount']);
+			$applied_amount_sum = $applied_amount_sum->plus($applied_amount);
+
+		}
+
+		$credit = $this->credit_repository->fetchById($company_id, $credit_id);
+
+		$credit_total_amount = BigDecimal::of($credit->amount);
+
+		$new_left_to_apply_amount = $credit_total_amount->minus($applied_amount_sum);
+
+		$status = CreditStatus::NOT_APPLIED->value;
+
+		if($applied_amount_sum->isLessThan($credit_total_amount)){
+			$status = CreditStatus::PARTIALLY_APPLIED->value;
+		}else if($applied_amount_sum->isEqualTo($credit_total_amount)){
+			$status = CreditStatus::APPLIED->value;
+		}
+
+		return $this->credit_repository->updateCreditForApplying($credit, $status, $applied_amount_sum->toScale(2, RoundingMode::HalfUp)->__toString(), $new_left_to_apply_amount->toScale(2, RoundingMode::HalfUp)->__toString());
+
+	}
+
+	/**
+	 * getInvoiceIds function
+	 *
+	 * @param array $applied
+	 * @return array
+	 */
+	private function getInvoiceIds(array $applied) : array {
+
+		$ids = [];
+
+		foreach($applied as $ele){
+			$ele['id'] = Sanitize::input($ele['id']);
+			if(!in_array($ele['id'], $ids)){
+				array_push($ids, $ele['id']);
+			}
+		}
+
+		return $ids;
+
+	}
+
+	/**
+	 * modifyLedger function
+	 *
+	 * @param integer $company_id
+	 * @param integer $credit_id
+	 * @param array $applied
+	 * @return void
+	 */
+	private function modifyLedger(int $company_id, int $credit_id, array $applied) : void {
+
+		$invoice_ids = $this->getInvoiceIds($applied);
+		$this->credit_repository->forceRemoveLedgreEntriesForCredit($company_id, $credit_id, $invoice_ids);
+
+		$data = [];
+
+		foreach($applied as $ele){
+
+			$ele['id'] = Sanitize::input($ele['id']);
+			$ele['amount'] = Sanitize::input($ele['amount']);
+
+			$data[] = [
+				'invoice_id'		=>	$ele['id'],
+				'applied_amount'	=>	$ele['amount']
+			];
+		}
+
+		$this->credit_repository->insertLedgerEntries($company_id, $credit_id, $data);
+
+	}
+
+	/**
+	 * modifyInvoices function
+	 *
+	 * @param integer $company_id
+	 * @param array $applied
+	 * @return array
+	 */
+	private function modifyInvoices(int $company_id, array $applied) : array {
+
+		$invoice_ids = $this->getInvoiceIds($applied);
+		$invoices = $this->credit_repository->fetchInvoicesForCreditApplying($company_id, $invoice_ids);
+		$ledger_entries = $this->credit_repository->fetchLedgerForCreditApplying($company_id, $invoice_ids);
+
+		$upsert = [];
+
+		foreach($applied as $ele){
+			
+			$temp = [];
+
+			$temp['id'] = (int) Sanitize::input($ele['id']);
+			
+			$applied_sum = BigDecimal::of(0);
+
+			foreach($ledger_entries as $entry){
+				if((int) $entry['invoice_id'] === (int) $temp['id']){
+					$applied_row_amount = BigDecimal::of($entry['total_applied']);
+					$applied_sum = $applied_sum->plus($applied_row_amount);
+				}
+			}
+
+			
+			foreach($invoices as $invoice){
+
+				if((int) $invoice['id'] === (int) $temp['id']){
+
+					$status = (int) $invoice['status'];
+
+					$total = BigDecimal::of($invoice['total']);
+
+					if($applied_sum->isLessThan($total)){
+						$status = InvoiceStatus::PARTIALLY_PAID->value;
+					}else if($applied_sum->isEqualTo($total)){
+						$status = InvoiceStatus::PAID->value;
+					}
+
+					$balance_due = $total->minus($applied_sum);
+
+					$temp['status'] = $status;
+					$temp['balance_due'] = $balance_due->toScale(2, RoundingMode::HalfUp)->__toString();
+
+					break;
+
+				}
+
+			}
+
+			$upsert[] = $temp;
+
+		}
+		
+		logger($upsert);
+
+		$this->credit_repository->upsertInvoicesForCreditApplying($upsert);
+
+		return $invoice_ids;
+
+	}
+
+
+	public function applyCreditAmountToInvoices(int $company_id, int $credit_id, array $applied) : void {
+
+		//TODO : add db transaction
+
+		$this->modifyCreditForApplying($company_id, $credit_id, $applied);
+		$this->modifyLedger($company_id, $credit_id, $applied);
+		$this->modifyInvoices($company_id, $applied);
+
 	}
 
 }

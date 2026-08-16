@@ -6,6 +6,7 @@ use App\Exceptions\CreditException;
 use App\Helpers\Sanitize;
 use App\Repositories\Credit\CreditRepository;
 use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Illuminate\Http\Request;
 
 /**
@@ -28,6 +29,7 @@ class CreditApplyValidationService {
 		$ids = [];
 
 		foreach($applied as $ele){
+			$ele['id'] = Sanitize::input($ele['id']);
 			if(!in_array($ele['id'], $ids)){
 				array_push($ids, $ele['id']);
 			}else{
@@ -62,7 +64,7 @@ class CreditApplyValidationService {
 
 					$invoice_balance_due = BigDecimal::of($invoice->balance_due);
 					$applied_amount = BigDecimal::of($ele['amount']);
-
+					
 					if($applied_amount->isGreaterThan($invoice_balance_due)){
 						return false;
 					}
@@ -101,12 +103,34 @@ class CreditApplyValidationService {
 	}
 
 	/**
+	 * ifAppliedInvoicesAreFromSameClient function
+	 *
+	 * @param integer $company_id
+	 * @param integer $client_id
+	 * @param array $applied
+	 * @return boolean
+	 */
+	private function ifAppliedInvoicesAreFromSameClient(int $company_id, int $client_id, int $currency_id, array $applied) : bool {
+
+		$ids = $this->getIds($applied);
+
+		$counted = $this->credit_repository->fetchCountForClientInvoicesWithIds($company_id, $client_id, $currency_id, $ids);
+
+		return (int) count($ids) === (int) $counted;
+
+	}
+
+	/**
 	 * validateApplyUnapply function
 	 *
 	 * @param Request $request
 	 * @return boolean
 	 */
 	public function validateApplyUnapply(Request $request) : bool {
+
+		if(!$request->has('credit_id') || !$request->has('company_id') || !$request->has('applied')){
+			throw new CreditException('Invalid request', 'invalid_request', (int) config('global.error_code'));
+		}
 
 		$credit_id = (int) Sanitize::input($request->input('credit_id'));
 		$company_id = (int) Sanitize::input($request->input('company_id'));
@@ -116,6 +140,10 @@ class CreditApplyValidationService {
 
 		if(!$credit){
 			throw new CreditException('Invalid credit', 'invalid_credit', (int) config('global.error_code'));
+		}
+
+		if(!$this->ifAppliedInvoicesAreFromSameClient($company_id, (int) $credit->client_id, (int) $credit->currency_id, $applied)){
+			throw new CreditException('Client or currency mismatch to apply credit on invoice(s)', 'client_currency_mismatch', (int) config('global.error_code'));
 		}
 
 		if(!$this->ifAppliedAmountLessThanBalanceDue($company_id, $applied)){

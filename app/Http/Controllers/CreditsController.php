@@ -207,13 +207,22 @@ class CreditsController extends Controller {
 
 	public function applyUnapplyCredit(Request $request){
 		
-		try{
+		//try{
+			
 			$this->credit_apply_validation_service->validateApplyUnapply($request);
-		}catch(CreditException $e){
-			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
+
+			$company_id = (int) Sanitize::input($request->input('company_id'));
+			$credit_id = (int) Sanitize::input($request->input('credit_id'));
+			$applied = $request->input('applied');
+
+			$this->credit_service->applyCreditAmountToInvoices($company_id, $credit_id, $applied);
+
+
+		// }catch(CreditException $e){
+		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
 		
 
 

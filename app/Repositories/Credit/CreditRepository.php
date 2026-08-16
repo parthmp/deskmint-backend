@@ -11,6 +11,7 @@ use App\Models\InvoiceLedger;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class CreditRepository {
 
@@ -211,6 +212,146 @@ class CreditRepository {
 
 		return Invoice::select('id', 'balance_due')->where('company_id', '=', $company_id)->whereIn('id', $ids)->get();
 
+	}
+
+	/**
+	 * fetchCountForClientInvoicesWithIds function
+	 *
+	 * @param integer $company_id
+	 * @param integer $client_id
+	 * @param integer $currency_id
+	 * @param array $ids
+	 * @return integer
+	 */
+	public function fetchCountForClientInvoicesWithIds(int $company_id, int $client_id, int $currency_id, array $ids) : int {
+		$counted = Invoice::where([['company_id', '=', $company_id], ['client_id', '=', $client_id], ['currency_id', '=', $currency_id]])->whereIn('id', $ids)->count();
+		return $counted;
+	}
+
+	/**
+	 * updateCreditForApplying function
+	 *
+	 * @param Credit $credit
+	 * @param integer $status
+	 * @param string $applied_amount
+	 * @param string $left_amount
+	 * @return boolean
+	 */
+	public function updateCreditForApplying(Credit $credit, int $status, string $applied_amount, string $left_amount) : bool {
+		$credit->status = $status;
+		$credit->applied_amount = $applied_amount;
+		$credit->amount_left_to_be_applied = $left_amount;
+		return $credit->save();
+	}
+
+	/**
+	 * forceRemoveLedgreEntriesForCredit function
+	 *
+	 * @param integer $company_id
+	 * @param integer $credit_id
+	 * @param array $invoice_ids
+	 * @return void
+	 */
+	public function forceRemoveLedgreEntriesForCredit(int $company_id, int $credit_id, array $invoice_ids) : void {
+		InvoiceLedger::where([['company_id', '=', $company_id], ['credit_id', '=', $credit_id]])->whereIn('invoice_id', $invoice_ids)->forceDelete();
+	}
+
+	/**
+	 * insertLedgerEntries function
+	 *
+	 * @param integer $company_id
+	 * @param integer $credit_id
+	 * @param array $data
+	 * @return void
+	 */
+	public function insertLedgerEntries(int $company_id, int $credit_id, array $data) : void {
+
+		$insert = [];
+
+		foreach($data as $row){
+			$insert[] = [
+				'company_id'						=>	$company_id,
+				'invoice_id'						=>	(int) $row['invoice_id'],
+				'payment_id'						=>	null,
+				'credit_id'							=>	$credit_id,
+				'applied_amount_from_payments'		=>	0,
+				'applied_amount_from_credits'		=>	$row['applied_amount'],
+				'total_applied'						=>	$row['applied_amount']
+			];
+		}
+
+		InvoiceLedger::insert($insert);
+
+	}
+
+	/**
+	 * fetchInvoicesForCreditApplying function
+	 *
+	 * @param integer $company_id
+	 * @param array $ids
+	 * @return array
+	 */
+	public function fetchInvoicesForCreditApplying(int $company_id, array $ids) : array {
+		return Invoice::select('id', 'total', 'balance_due', 'status')->where('company_id', '=', $company_id)->whereIn('id', $ids)->get()->toArray();
+	}
+
+	/**
+	 * fetchLedgerForCreditApplying function
+	 *
+	 * @param integer $company_id
+	 * @param array $ids
+	 * @return array
+	 */
+	public function fetchLedgerForCreditApplying(int $company_id, array $ids) : array {
+		return InvoiceLedger::select('total_applied', 'invoice_id')->where('company_id', '=', $company_id)->whereIn('invoice_id', $ids)->get()->toArray();
+	}
+
+	
+	/**
+	 * upsertInvoicesForCreditApplying function
+	 *
+	 * @param array $upsert
+	 * @return void
+	 */
+	public function upsertInvoicesForCreditApplying(array $upsert): void {
+
+		if(empty($upsert)){
+			return;
+		}
+
+		$status_case = 'CASE id ';
+		$balance_case = 'CASE id ';
+		$ids_placeholder = [];
+		$bindings = [];
+
+		foreach($upsert as $row){
+			$status_case .= 'WHEN ? THEN ? ';
+			$balance_case .= 'WHEN ? THEN ? ';
+			$ids_placeholder[] = '?';
+		}
+
+		$status_case .= 'END';
+		$balance_case .= 'END';
+
+		foreach($upsert as $row){
+			$bindings[] = $row['id'];
+			$bindings[] = $row['status'];
+		}
+		foreach($upsert as $row){
+			$bindings[] = $row['id'];
+			$bindings[] = $row['balance_due'];
+		}
+		foreach($upsert as $row){
+			$bindings[] = $row['id'];
+		}
+
+		$sql = "UPDATE invoices SET
+					status = ($status_case),
+					balance_due = ($balance_case),
+					updated_at = NOW()
+				WHERE id IN (".implode(',', $ids_placeholder).")";
+
+		DB::update($sql, $bindings);
 	}
 
 }
