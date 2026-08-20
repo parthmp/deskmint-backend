@@ -48,11 +48,12 @@ class CreditApplyValidationService {
 	 * @param array $applied
 	 * @return boolean
 	 */
-	private function ifAppliedAmountLessThanBalanceDue(int $company_id, array $applied) : bool {
+	private function ifAppliedAmountLessThanBalanceDue(int $company_id, int $credit_id, array $applied) : bool {
 
 		$ids = $this->getIds($applied);
 
 		$invoices = $this->credit_repository->fetchMultipleInvoicesByIds($company_id, $ids);
+		$ledger = $this->credit_repository->fetchAppliedCreditsLedger($company_id, $credit_id, $ids);
 
 		foreach($invoices as $invoice){
 			foreach($applied as $ele){
@@ -62,11 +63,21 @@ class CreditApplyValidationService {
 
 				if((int) $ele['id'] === (int) $invoice->id){
 
-					$invoice_balance_due = BigDecimal::of($invoice->balance_due);
+					$already_applied = BigDecimal::of(0);
+
+					foreach($ledger as $entry){
+						if((int) $entry->invoice_id === (int) $ele['id']){
+							$already_applied = $already_applied->plus($entry->applied_credit);
+							break;
+						}
+					}
+
+					$allowed = BigDecimal::of($invoice->balance_due);
+					$allowed = $allowed->plus($already_applied);
 					$applied_amount = BigDecimal::of($ele['amount']);
 					
-					if($applied_amount->isGreaterThan($invoice_balance_due)){
-						return false;
+					if($applied_amount->isGreaterThan($allowed)){
+						throw new CreditException('Amount '.$ele['amount'].' is greater than allowed amount', 'gt_allowed', (int) config('global.error_code'));
 					}
 					
 				}
@@ -146,7 +157,7 @@ class CreditApplyValidationService {
 			throw new CreditException('Client or currency mismatch to apply credit on invoice(s)', 'client_currency_mismatch', (int) config('global.error_code'));
 		}
 
-		if(!$this->ifAppliedAmountLessThanBalanceDue($company_id, $applied)){
+		if(!$this->ifAppliedAmountLessThanBalanceDue($company_id, $credit_id, $applied)){
 			throw new CreditException('Applied amount(s) are greater than balance due', 'applied_amount_greater_than_balance_due', (int) config('global.error_code'));
 		}
 

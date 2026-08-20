@@ -202,6 +202,18 @@ class CreditRepository {
 	}
 
 	/**
+	 * fetchAppliedCreditsLedger function
+	 *
+	 * @param integer $company_id
+	 * @param integer $credit_id
+	 * @param array $invoice_ids
+	 * @return Collection
+	 */
+	public function fetchAppliedCreditsLedger(int $company_id, int $credit_id, array $invoice_ids) : Collection {
+		return InvoiceLedger::select('id as ledger_id', 'applied_amount_from_credits as applied_credit', 'invoice_id as invoice_id')->where([['company_id', '=', $company_id], ['credit_id', '=', $credit_id]])->whereIn('invoice_id', $invoice_ids)->get();
+	}
+
+	/**
 	 * Undocumented function
 	 *
 	 * @param integer $company_id
@@ -211,7 +223,7 @@ class CreditRepository {
 	public function fetchMultipleInvoicesByIds(int $company_id, array $ids) : Collection {
 
 		return Invoice::select('id', 'balance_due')->where('company_id', '=', $company_id)->whereIn('id', $ids)->get();
-
+		
 	}
 
 	/**
