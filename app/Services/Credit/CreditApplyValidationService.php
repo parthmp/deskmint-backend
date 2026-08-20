@@ -139,7 +139,7 @@ class CreditApplyValidationService {
 	 */
 	public function validateApplyUnapply(Request $request) : bool {
 
-		if(!$request->has('credit_id') || !$request->has('company_id') || !$request->has('applied')){
+		if(!$request->has('credit_id') || !$request->has('company_id') || !$request->has('applied') || !$request->has('removed_ids')){
 			throw new CreditException('Invalid request', 'invalid_request', (int) config('global.error_code'));
 		}
 

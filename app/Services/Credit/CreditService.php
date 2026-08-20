@@ -5,6 +5,7 @@ namespace App\Services\Credit;
 use App\Enums\Credits\CreditStatus;
 use App\Exceptions\CreditException;
 use App\Helpers\Sanitize;
+use App\Jobs\GenerateInvoiceJob;
 use App\Models\Credit;
 use App\Modules\EasyIndex\EasyIndex;
 use App\Modules\Payment\Enums\InvoiceStatus;
@@ -272,12 +273,16 @@ class CreditService {
 	 * @param integer $company_id
 	 * @param integer $currency_id
 	 * @param integer $client_id
+	 * @param integer $credit_id
 	 * @param array $applied_ids
 	 * @param string $searched
 	 * @return array
 	 */
-	public function searchInvoices(int $company_id, int $currency_id, int $client_id, array $applied_ids, string $searched) : array {
-		return $this->credit_repository->searchInvoices($company_id, $currency_id, $client_id, $applied_ids, $searched);
+	public function searchInvoices(int $company_id, int $currency_id, int $client_id, int $credit_id, array $applied_ids, string $searched) : array {
+
+		$already_applied = $this->credit_repository->fetchAppliedInvoicesForCredit($company_id, $credit_id);
+		$applied = array_unique(array_merge($already_applied, $applied_ids));
+		return $this->credit_repository->searchInvoices($company_id, $currency_id, $client_id, $applied, $searched);
 	}
 
 	/**
@@ -349,8 +354,7 @@ class CreditService {
 	 */
 	private function modifyLedger(int $company_id, int $credit_id, array $applied) : void {
 
-		$invoice_ids = $this->getInvoiceIds($applied);
-		$this->credit_repository->forceRemoveLedgreEntriesForCredit($company_id, $credit_id, $invoice_ids);
+		$this->credit_repository->forceRemoveLedgreEntriesForCredit($company_id, $credit_id);
 
 		$data = [];
 
@@ -382,7 +386,7 @@ class CreditService {
 		$invoices = $this->credit_repository->fetchInvoicesForCreditApplying($company_id, $invoice_ids);
 		$ledger_entries = $this->credit_repository->fetchLedgerForCreditApplying($company_id, $invoice_ids);
 
-		$upsert = [];
+		$update = [];
 
 		foreach($applied as $ele){
 			
@@ -425,27 +429,55 @@ class CreditService {
 
 			}
 
-			$upsert[] = $temp;
+			$update[] = $temp;
 
 		}
 		
-		logger($upsert);
-
-		$this->credit_repository->upsertInvoicesForCreditApplying($upsert);
+		$this->credit_repository->updateInvoicesForCreditApplying($update);
 
 		return $invoice_ids;
 
 	}
 
+	//public function 
 
+	/**
+	 * applyCreditAmountToInvoices function
+	 *
+	 * @param integer $company_id
+	 * @param integer $credit_id
+	 * @param array $applied
+	 * @return void
+	 */
 	public function applyCreditAmountToInvoices(int $company_id, int $credit_id, array $applied) : void {
 
-		//TODO : add db transaction
+		DB::transaction(function() use ($company_id, $credit_id, $applied) {
 
-		$this->modifyCreditForApplying($company_id, $credit_id, $applied);
-		$this->modifyLedger($company_id, $credit_id, $applied);
-		$this->modifyInvoices($company_id, $applied);
+			$this->modifyCreditForApplying($company_id, $credit_id, $applied);
+			$this->modifyLedger($company_id, $credit_id, $applied);
+			$this->modifyInvoices($company_id, $applied);
+			
+			DB::afterCommit(function() use ($company_id, $applied) {
+				$ids = $this->getInvoiceIds($applied);
+				foreach($ids as $applied_invoice_id){
+					$invoice_id = (int) Sanitize::input($applied_invoice_id);
+					GenerateInvoiceJob::dispatch($company_id, $invoice_id, false);
+				}
+			});
+			
+		});
 
+	}
+
+	/**
+	 * fetchAlreadyAppliedInvoicesForCredit function
+	 *
+	 * @param integer $company_id
+	 * @param integer $credit_id
+	 * @return array
+	 */
+	public function fetchAlreadyAppliedInvoicesForCredit(int $company_id, int $credit_id) : array {
+		return $this->credit_repository->fetchAlreadyAppliedInvoicesForCredit($company_id, $credit_id);
 	}
 
 }

@@ -194,7 +194,7 @@ class CreditsController extends Controller {
 
 			$credit_info = $this->credit_service->fetchCreditWithCurrencyInfo((int) $data['company_id'], (int) $data['credit_id']);
 
-			$invoices = $this->credit_service->searchInvoices((int) $data['company_id'], (int) $credit_info['currency_id'], (int) $credit_info['client_id'], (array) $data['applied_ids'], (string) $data['searched']);
+			$invoices = $this->credit_service->searchInvoices((int) $data['company_id'], (int) $credit_info['currency_id'], (int) $credit_info['client_id'], (int) $data['credit_id'], (array) $data['applied_ids'], (string) $data['searched']);
 
 			return $invoices;
 
@@ -207,7 +207,7 @@ class CreditsController extends Controller {
 
 	public function applyUnapplyCredit(Request $request){
 		
-		//try{
+		try{
 			
 			$this->credit_apply_validation_service->validateApplyUnapply($request);
 
@@ -217,14 +217,24 @@ class CreditsController extends Controller {
 
 			$this->credit_service->applyCreditAmountToInvoices($company_id, $credit_id, $applied);
 
+			return response(['message' => 'Changes saved successfully', 'validity' => 'saved_success'], 200);
 
-		// }catch(CreditException $e){
-		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
-		// }catch(Exception $e){
-		// 	return General::wentWrong();
-		// }
-		
+		}catch(CreditException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
+	}
+
+
+	public function fetchAlreadyApplied(ApplyUnapplyCreditsFetchCreditRequest $request){
+
+		$data = $request->validated();
+
+		$applied = $this->credit_service->fetchAlreadyAppliedInvoicesForCredit((int) $data['company_id'], (int) $data['credit_id']);
+
+		return $applied;
 
 	}
 

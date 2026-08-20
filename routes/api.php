@@ -208,6 +208,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	/**
 	 * manage credits
 	 */
+	Route::get('manage-credits/fetch-already-applied', [CreditsController::class, 'fetchAlreadyApplied']);
 	Route::patch('manage-credits/apply-unapply-credit', [CreditsController::class, 'applyUnapplyCredit']);
 	Route::get('manage-credits/apply-unapply-fetch-credit', [CreditsController::class, 'applyUnapplyFetchCredit']);
 	Route::get('manage-credits/apply-unapply-search-invoices', [CreditsController::class, 'applyUnapplySearchInvoices']);

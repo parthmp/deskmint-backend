@@ -202,6 +202,17 @@ class CreditRepository {
 	}
 
 	/**
+	 * fetchAppliedInvoicesForCredit function
+	 *
+	 * @param integer $company_id
+	 * @param integer $credit_id
+	 * @return array
+	 */
+	public function fetchAppliedInvoicesForCredit(int $company_id, int $credit_id) : array {
+		return InvoiceLedger::where([['company_id', '=', $company_id], ['credit_id', '=', $credit_id]])->pluck('invoice_id')->toArray();
+	}
+
+	/**
 	 * fetchAppliedCreditsLedger function
 	 *
 	 * @param integer $company_id
@@ -261,11 +272,10 @@ class CreditRepository {
 	 *
 	 * @param integer $company_id
 	 * @param integer $credit_id
-	 * @param array $invoice_ids
 	 * @return void
 	 */
-	public function forceRemoveLedgreEntriesForCredit(int $company_id, int $credit_id, array $invoice_ids) : void {
-		InvoiceLedger::where([['company_id', '=', $company_id], ['credit_id', '=', $credit_id]])->whereIn('invoice_id', $invoice_ids)->forceDelete();
+	public function forceRemoveLedgreEntriesForCredit(int $company_id, int $credit_id) : void {
+		InvoiceLedger::where([['company_id', '=', $company_id], ['credit_id', '=', $credit_id]])->forceDelete();
 	}
 
 	/**
@@ -320,12 +330,12 @@ class CreditRepository {
 
 	
 	/**
-	 * upsertInvoicesForCreditApplying function
+	 * updateInvoicesForCreditApplying function
 	 *
 	 * @param array $upsert
 	 * @return void
 	 */
-	public function upsertInvoicesForCreditApplying(array $upsert): void {
+	public function updateInvoicesForCreditApplying(array $upsert): void {
 
 		if(empty($upsert)){
 			return;
@@ -364,6 +374,18 @@ class CreditRepository {
 				WHERE id IN (".implode(',', $ids_placeholder).")";
 
 		DB::update($sql, $bindings);
+	}
+
+
+	/**
+	 * fetchAlreadyAppliedInvoicesForCredit function
+	 *
+	 * @param integer $company_id
+	 * @param integer $credit_id
+	 * @return array
+	 */
+	public function fetchAlreadyAppliedInvoicesForCredit(int $company_id, int $credit_id) : array {
+		return Invoice::select('invoices.id as id', 'invoices.invoice_number as invoice', 'invoices.total as total', 'invoices.balance_due as due', 'il.applied_amount_from_credits as amount')->join('invoice_ledger as il', 'il.invoice_id', '=', 'invoices.id')->where([['il.company_id', '=', $company_id], ['il.credit_id', '=', $credit_id]])->get()->toArray();
 	}
 
 }
