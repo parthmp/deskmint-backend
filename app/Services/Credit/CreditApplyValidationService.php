@@ -108,7 +108,10 @@ class CreditApplyValidationService {
 			$applied_sum = $applied_sum->plus($applied_amount);
 
 		}
-
+		if($applied_sum->isEqualTo($amount_left)){
+			return true;
+		}
+		
 		return $applied_sum->isLessThan($amount_left);
 
 	}
@@ -183,7 +186,7 @@ class CreditApplyValidationService {
 			throw new CreditException('Applied amount(s) are greater than balance due', 'applied_amount_greater_than_balance_due', (int) config('global.error_code'));
 		}
 
-		if(!$this->ifSumOfAppliedLessThanCreditLeft((string) $credit->amount_left_to_be_applied, $applied)){
+		if(!$this->ifSumOfAppliedLessThanCreditLeft((string) $credit->amount, $applied)){
 			throw new CreditException('Applied amount(s) are greater than credit left', 'applied_amount_greater_than_credit_left', (int) config('global.error_code'));
 		}
 
