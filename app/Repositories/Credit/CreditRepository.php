@@ -388,4 +388,20 @@ class CreditRepository {
 		return Invoice::select('invoices.id as id', 'invoices.invoice_number as invoice', 'invoices.total as total', 'invoices.balance_due as due', 'il.applied_amount_from_credits as amount')->join('invoice_ledger as il', 'il.invoice_id', '=', 'invoices.id')->where([['il.company_id', '=', $company_id], ['il.credit_id', '=', $credit_id]])->get()->toArray();
 	}
 
+	/**
+	 * resetCredit function
+	 *
+	 * @param integer $company_id
+	 * @param integer $credit_id
+	 * @return Credit
+	 */
+	public function resetCredit(int $company_id, int $credit_id) : Credit {
+		$credit = $this->fetchById($company_id, $credit_id);
+		$credit->status = CreditStatus::NOT_APPLIED->value;
+		$credit->applied_amount = 0;
+		$credit->amount_left_to_be_applied = $credit->amount;
+		$credit->save();
+		return $credit;
+	}
+
 }

@@ -6,6 +6,7 @@ use App\Enums\Credits\CreditStatus;
 use App\Exceptions\CreditException;
 use App\Helpers\Sanitize;
 use App\Jobs\GenerateInvoiceJob;
+use App\Jobs\GenerateInvoiceSnapshotJob;
 use App\Models\Credit;
 use App\Modules\EasyIndex\EasyIndex;
 use App\Modules\Payment\Enums\InvoiceStatus;
@@ -14,6 +15,7 @@ use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -280,9 +282,9 @@ class CreditService {
 	 */
 	public function searchInvoices(int $company_id, int $currency_id, int $client_id, int $credit_id, array $applied_ids, string $searched) : array {
 
-		$already_applied = $this->credit_repository->fetchAppliedInvoicesForCredit($company_id, $credit_id);
-		$applied = array_unique(array_merge($already_applied, $applied_ids));
-		return $this->credit_repository->searchInvoices($company_id, $currency_id, $client_id, $applied, $searched);
+		// $already_applied = $this->credit_repository->fetchAppliedInvoicesForCredit($company_id, $credit_id);
+		// $applied = array_unique(array_merge($already_applied, $applied_ids));
+		return $this->credit_repository->searchInvoices($company_id, $currency_id, $client_id, $applied_ids, $searched);
 	}
 
 	/**
@@ -305,7 +307,7 @@ class CreditService {
 
 		}
 
-		$credit = $this->credit_repository->fetchById($company_id, $credit_id);
+		$credit = $this->credit_repository->resetCredit($company_id, $credit_id);
 
 		$credit_total_amount = BigDecimal::of($credit->amount);
 
@@ -313,7 +315,7 @@ class CreditService {
 
 		$status = CreditStatus::NOT_APPLIED->value;
 
-		if($applied_amount_sum->isLessThan($credit_total_amount)){
+		if($applied_amount_sum->isLessThan($credit_total_amount) && !$applied_amount_sum->isEqualTo(BigDecimal::of(0))){
 			$status = CreditStatus::PARTIALLY_APPLIED->value;
 		}else if($applied_amount_sum->isEqualTo($credit_total_amount)){
 			$status = CreditStatus::APPLIED->value;
@@ -378,11 +380,17 @@ class CreditService {
 	 *
 	 * @param integer $company_id
 	 * @param array $applied
+	 * @param boolean $removal_provided
 	 * @return array
 	 */
-	private function modifyInvoices(int $company_id, array $applied) : array {
+	private function modifyInvoices(int $company_id, array $applied, bool $removal_provided = false) : array {
 
-		$invoice_ids = $this->getInvoiceIds($applied);
+		if(!$removal_provided){
+			$invoice_ids = $this->getInvoiceIds($applied);
+		}else{
+			$invoice_ids = $applied;
+		}
+		
 		$invoices = $this->credit_repository->fetchInvoicesForCreditApplying($company_id, $invoice_ids);
 		$ledger_entries = $this->credit_repository->fetchLedgerForCreditApplying($company_id, $invoice_ids);
 
@@ -392,7 +400,7 @@ class CreditService {
 			
 			$temp = [];
 
-			$temp['id'] = (int) Sanitize::input($ele['id']);
+			$temp['id'] = $removal_provided ? (int) Sanitize::input($ele) : (int) Sanitize::input($ele['id']);
 			
 			$applied_sum = BigDecimal::of(0);
 
@@ -408,11 +416,11 @@ class CreditService {
 
 				if((int) $invoice['id'] === (int) $temp['id']){
 
-					$status = (int) $invoice['status'];
+					$status = InvoiceStatus::SENT->value;
 
 					$total = BigDecimal::of($invoice['total']);
 
-					if($applied_sum->isLessThan($total)){
+					if($applied_sum->isLessThan($total) && !$applied_sum->isEqualTo(BigDecimal::of(0))){
 						$status = InvoiceStatus::PARTIALLY_PAID->value;
 					}else if($applied_sum->isEqualTo($total)){
 						$status = InvoiceStatus::PAID->value;
@@ -439,7 +447,6 @@ class CreditService {
 
 	}
 
-	//public function 
 
 	/**
 	 * applyCreditAmountToInvoices function
@@ -449,19 +456,21 @@ class CreditService {
 	 * @param array $applied
 	 * @return void
 	 */
-	public function applyCreditAmountToInvoices(int $company_id, int $credit_id, array $applied) : void {
+	public function applyCreditAmountToInvoices(int $company_id, int $credit_id, array $applied, array $removed_ids) : void {
 
-		DB::transaction(function() use ($company_id, $credit_id, $applied) {
+		DB::transaction(function() use ($company_id, $credit_id, $applied, $removed_ids) {
 
-			$this->modifyCreditForApplying($company_id, $credit_id, $applied);
-			$this->modifyLedger($company_id, $credit_id, $applied);
-			$this->modifyInvoices($company_id, $applied);
-			
-			DB::afterCommit(function() use ($company_id, $applied) {
+			$this->modifyCreditForApplying($company_id, $credit_id, $applied); //reset credit and apply.
+			$this->modifyLedger($company_id, $credit_id, $applied); //remove ledger entries and add new ones.
+			$this->modifyInvoices($company_id, $removed_ids, true);
+			$this->modifyInvoices($company_id, $applied, false);
+
+			DB::afterCommit(function() use ($company_id, $applied, $removed_ids) {
 				$ids = $this->getInvoiceIds($applied);
-				foreach($ids as $applied_invoice_id){
+				$all_ids = array_unique(array_merge($ids, $removed_ids));
+				foreach($all_ids as $applied_invoice_id){
 					$invoice_id = (int) Sanitize::input($applied_invoice_id);
-					GenerateInvoiceJob::dispatch($company_id, $invoice_id, false);
+					GenerateInvoiceSnapshotJob::dispatch($company_id, $invoice_id, true, false);					
 				}
 			});
 			

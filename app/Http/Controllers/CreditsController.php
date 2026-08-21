@@ -214,8 +214,9 @@ class CreditsController extends Controller {
 			$company_id = (int) Sanitize::input($request->input('company_id'));
 			$credit_id = (int) Sanitize::input($request->input('credit_id'));
 			$applied = $request->input('applied');
+			$removed_ids = $request->input('removed_ids');
 
-			$this->credit_service->applyCreditAmountToInvoices($company_id, $credit_id, $applied);
+			$this->credit_service->applyCreditAmountToInvoices($company_id, $credit_id, $applied, $removed_ids);
 
 			return response(['message' => 'Changes saved successfully', 'validity' => 'saved_success'], 200);
 

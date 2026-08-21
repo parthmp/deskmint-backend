@@ -12,6 +12,8 @@ class Invoice extends Model{
 
 	protected $table = 'invoices';
 
+	protected $fillable = ['status', 'company_id'];
+
 	protected $casts = [
 		'invoice_date' 					=> 'datetime',
 		'due_date'     					=> 'datetime',

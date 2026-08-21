@@ -132,6 +132,23 @@ class CreditApplyValidationService {
 	}
 
 	/**
+	 * removedIdInApplied function
+	 *
+	 * @param array $applied
+	 * @param array $removed
+	 * @return boolean
+	 */
+	public function removedIdInApplied(array $applied, array $removed) : bool {
+		$ids = $this->getIds($applied);
+		foreach($ids as $applied_id){
+			if(in_array($applied_id, $removed)){
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * validateApplyUnapply function
 	 *
 	 * @param Request $request
@@ -146,6 +163,11 @@ class CreditApplyValidationService {
 		$credit_id = (int) Sanitize::input($request->input('credit_id'));
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 		$applied = $request->input('applied');
+		$removed_ids = $request->input('removed_ids');
+
+		if($this->removedIdInApplied($applied, $removed_ids)){
+			throw new CreditException('Unexpected error : removed invoice exists in applied invoice', 'unexpected_error', (int) config('global.error_code'));
+		}
 
 		$credit = $this->credit_repository->fetchById($company_id, $credit_id);
 
