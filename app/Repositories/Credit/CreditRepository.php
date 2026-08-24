@@ -175,13 +175,15 @@ class CreditRepository {
 	 * @param integer $company_id
 	 * @param integer $currency_id
 	 * @param integer $client_id
+	 * @param integer $credit_id
 	 * @param array $applied_ids
+	 * @param array $paid_ids
 	 * @param string $searched
 	 * @return array
 	 */
-	public function searchInvoices(int $company_id, int $currency_id, int $client_id, array $applied_ids, string $searched) : array {
+	public function searchInvoices(int $company_id, int $currency_id, int $client_id,  int $credit_id, array $applied_ids, array $paid_ids, string $searched) : array {
 		
-		$invoices = Invoice::select('id as id', 'invoice_number as invoice', 'total as total', 'balance_due as due')->where([['currency_id', '=', $currency_id], ['company_id', '=', $company_id], ['client_id', '=', $client_id]])
+		$unpaid_invoices = Invoice::select('id as id', 'invoice_number as invoice', 'total as total', 'balance_due as due')->where([['currency_id', '=', $currency_id], ['company_id', '=', $company_id], ['client_id', '=', $client_id]])
 			->whereNotIn('id', $applied_ids)
 			->where(function($q) {
 				$q->where('status', '=', InvoiceStatus::SENT->value)
@@ -197,7 +199,31 @@ class CreditRepository {
 			})
 			->orderBy('id', 'desc')->limit(50)->get()->toArray();
 
-			return $invoices;
+		$paid_invoices = [];
+
+		if(!empty($paid_ids)){
+			
+			$paid_invoices = Invoice::select('invoices.id as id', 'invoices.invoice_number as invoice', 'invoices.total as total', 'invoices.balance_due as due', 'il.applied_amount_from_credits as applied_amount')
+			->join('invoice_ledger as il', 'il.invoice_id', '=', 'invoices.id')
+			->where([['invoices.currency_id', '=', $currency_id], ['invoices.company_id', '=', $company_id], ['invoices.client_id', '=', $client_id], ['il.credit_id', '=', $credit_id]])
+			->whereIn('invoices.id', $paid_ids)
+			->where('invoices.status', '=', InvoiceStatus::PAID->value)->when($searched, function ($query, $searched) {
+				$query->where(function ($q) use ($searched) {
+
+					$q->where('invoices.invoice_number', 'like', "%{$searched}%")
+					->orWhere('invoices.id', 'like', "%{$searched}%")
+					->orWhere('invoices.balance_due', 'like', "%{$searched}%")
+					->orWhere('invoices.total', 'like', "%{$searched}%");
+				});
+			})
+			->orderBy('invoices.id', 'desc')->limit(50)->get()->toArray();
+
+		}
+
+		return [
+			'unpaid_invoices'	=>	$unpaid_invoices,
+			'paid_invoices'		=>	$paid_invoices
+		];
 
 	}
 

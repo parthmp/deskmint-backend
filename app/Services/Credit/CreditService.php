@@ -277,14 +277,15 @@ class CreditService {
 	 * @param integer $client_id
 	 * @param integer $credit_id
 	 * @param array $applied_ids
+	 * @param array $paid_ids
 	 * @param string $searched
 	 * @return array
 	 */
-	public function searchInvoices(int $company_id, int $currency_id, int $client_id, int $credit_id, array $applied_ids, string $searched) : array {
+	public function searchInvoices(int $company_id, int $currency_id, int $client_id, int $credit_id, array $applied_ids, array $paid_ids, string $searched) : array {
 
 		// $already_applied = $this->credit_repository->fetchAppliedInvoicesForCredit($company_id, $credit_id);
 		// $applied = array_unique(array_merge($already_applied, $applied_ids));
-		return $this->credit_repository->searchInvoices($company_id, $currency_id, $client_id, $applied_ids, $searched);
+		return $this->credit_repository->searchInvoices($company_id, $currency_id, $client_id, $credit_id, $applied_ids, $paid_ids, $searched);
 	}
 
 	/**
