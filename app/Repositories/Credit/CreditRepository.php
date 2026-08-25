@@ -170,6 +170,18 @@ class CreditRepository {
 	}
 
 	/**
+	 * fetchLedgerEntries function
+	 *
+	 * @param integer $company_id
+	 * @param integer $credit_id
+	 * @return array
+	 */
+	public function fetchLedgerEntries(int $company_id, int $credit_id, array $not_in_ids) : array {
+		$entries = InvoiceLedger::select('invoice_id as invoice_id', 'applied_amount_from_credits as applied_amount')->where([['company_id', '=', $company_id], ['credit_id', '=', $credit_id]])->whereNotIn('invoice_id', $not_in_ids)->get()->toArray();
+		return $entries;
+	}
+
+	/**
 	 * searchInvoices function
 	 *
 	 * @param integer $company_id
@@ -183,7 +195,7 @@ class CreditRepository {
 	 */
 	public function searchInvoices(int $company_id, int $currency_id, int $client_id,  int $credit_id, array $applied_ids, array $paid_ids, string $searched) : array {
 		
-		$unpaid_invoices = Invoice::select('id as id', 'invoice_number as invoice', 'total as total', 'balance_due as due')->where([['currency_id', '=', $currency_id], ['company_id', '=', $company_id], ['client_id', '=', $client_id]])
+		$unpaid_invoices_raw = Invoice::select('id as id', 'invoice_number as invoice', 'total as total', 'balance_due as due')->where([['currency_id', '=', $currency_id], ['company_id', '=', $company_id], ['client_id', '=', $client_id]])
 			->whereNotIn('id', $applied_ids)
 			->where(function($q) {
 				$q->where('status', '=', InvoiceStatus::SENT->value)
@@ -220,6 +232,22 @@ class CreditRepository {
 
 		}
 
+		//weave for unpaid invoices to have partially paid invoices applied_amount.
+		$entries = $this->fetchLedgerEntries($company_id, $credit_id, $applied_ids);
+		$unpaid_invoices = [];
+		foreach($unpaid_invoices_raw as $unpaid_invoice_raw){
+			$temp = $unpaid_invoice_raw;
+			$temp['applied_amount'] = '';
+			foreach($entries as $entry){
+				if((int) $entry['invoice_id'] === (int) $unpaid_invoice_raw['id']){
+					$temp['applied_amount'] = $entry['applied_amount'];
+					break;
+				}
+			}
+			$unpaid_invoices[] = $temp;
+		}
+		
+		
 		return [
 			'unpaid_invoices'	=>	$unpaid_invoices,
 			'paid_invoices'		=>	$paid_invoices
