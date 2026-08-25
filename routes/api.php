@@ -257,8 +257,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	// Route::patch('manage-credits/apply-unapply-credit', [CreditsController::class, 'applyUnapplyCredit']);
 	// Route::get('manage-credits/apply-unapply-fetch-credit', [CreditsController::class, 'applyUnapplyFetchCredit']);
 	// Route::get('manage-credits/apply-unapply-search-invoices', [CreditsController::class, 'applyUnapplySearchInvoices']);
-	// Route::get('manage-credits/fetch-arranged-columns', [CreditsController::class, 'fetchArrangedColumns']);
-	// Route::post('manage-credits/save-arranged-columns', [CreditsController::class, 'saveArrangedColumns']);
+	Route::get('manage-payments/fetch-arranged-columns', [PaymentsController::class, 'fetchArrangedColumns']);
+	Route::post('manage-payments/save-arranged-columns', [PaymentsController::class, 'saveArrangedColumns']);
 	
 	// Route::get('manage-credits/edit/{id}', [CreditsController::class, 'show']);
 	// Route::get('manage-credits/view/{id}', [CreditsController::class, 'show']);
