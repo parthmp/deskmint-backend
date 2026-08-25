@@ -190,7 +190,7 @@ class CreditsController extends Controller {
 
 		$data = $request->validated();
 		
-		//try{
+		try{
 
 			$credit_info = $this->credit_service->fetchCreditWithCurrencyInfo((int) $data['company_id'], (int) $data['credit_id']);
 
@@ -198,9 +198,9 @@ class CreditsController extends Controller {
 
 			return $invoices;
 
-		// }catch(Exception $e){
-		// 	return General::wentWrong();
-		// }
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 		
 
 	}

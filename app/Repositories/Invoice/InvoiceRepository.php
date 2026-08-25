@@ -413,6 +413,7 @@ class InvoiceRepository{
 		$payment->client_id = $invoice->client_id;
 		$payment->transaction_id = $transaction_id;
 		$payment->payment_type_id = $payment_type;
+		$payment->currency_id = $invoice->currency_id;
 		$payment->status = PaymentStatus::NOT_APPLIED->value;
 		$payment->amount = $amount;
 		$payment->applied_amount = 0;

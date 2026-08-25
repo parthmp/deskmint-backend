@@ -32,6 +32,7 @@ use App\Http\Controllers\InvoiceSettingsTotalFieldsController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\LoginSettingsController;
 use App\Http\Controllers\PaymentRequestsController;
+use App\Http\Controllers\PaymentsController;
 use App\Http\Controllers\PaymentSettingsPaypalController;
 use App\Http\Controllers\PaymentSettingsStripeController;
 use App\Http\Controllers\ProductsController;
@@ -248,5 +249,22 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::delete('manage-payment-requests', [PaymentRequestsController::class, 'destroy']);
 	Route::get('manage-payment-requests/payment-types', [PaymentRequestsController::class, 'fetchPaymentTypes']);
 	Route::get('manage-payment-requests/{id}', [PaymentRequestsController::class, 'show']);
+
+	/**
+	 * manage payments
+	 */
+	// Route::get('manage-credits/fetch-already-applied', [CreditsController::class, 'fetchAlreadyApplied']);
+	// Route::patch('manage-credits/apply-unapply-credit', [CreditsController::class, 'applyUnapplyCredit']);
+	// Route::get('manage-credits/apply-unapply-fetch-credit', [CreditsController::class, 'applyUnapplyFetchCredit']);
+	// Route::get('manage-credits/apply-unapply-search-invoices', [CreditsController::class, 'applyUnapplySearchInvoices']);
+	// Route::get('manage-credits/fetch-arranged-columns', [CreditsController::class, 'fetchArrangedColumns']);
+	// Route::post('manage-credits/save-arranged-columns', [CreditsController::class, 'saveArrangedColumns']);
+	
+	// Route::get('manage-credits/edit/{id}', [CreditsController::class, 'show']);
+	// Route::get('manage-credits/view/{id}', [CreditsController::class, 'show']);
+	Route::get('manage-payments', [PaymentsController::class, 'index']);
+	// Route::post('manage-credits', [CreditsController::class, 'store']);
+	// Route::patch('manage-credits/{id}', [CreditsController::class, 'update']);
+	// Route::delete('manage-credits', [CreditsController::class, 'destroy']);
 	
 });

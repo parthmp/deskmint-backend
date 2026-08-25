@@ -83,6 +83,7 @@ trait UpdateInvoiceForTransaction {
 		$payment->company_id = $data['company_id'];
 		$payment->client_id = $data['client_id'];
 		$payment->transaction_id = $data['transaction_id'];
+		$payment->currency_id = $data['currency_id'];
 		$payment->status = $data['status'];
 		$payment->amount = $data['amount'];
 		$payment->applied_amount = $data['applied_amount'];
@@ -147,6 +148,7 @@ trait UpdateInvoiceForTransaction {
 			'company_id' 				=> $transaction->company_id,
 			'client_id' 				=> $ref->client_id,
 			'transaction_id' 			=> $ref->transaction_id,
+			'currency_id' 				=> $transaction->currency_id,
 			'status' 					=> PaymentStatus::NOT_APPLIED->value,
 			'amount' 					=> $transaction->amount,
 			'applied_amount' 			=> 0,
@@ -206,6 +208,7 @@ trait UpdateInvoiceForTransaction {
 			'company_id' 				=> $transaction->company_id,
 			'client_id' 				=> $ref->client_id,
 			'transaction_id' 			=> $ref->transaction_id,
+			'currency_id' 				=> $transaction->currency_id,
 			'status' 					=> $payment_status,
 			'amount' 					=> $transaction->amount,
 			'applied_amount' 			=> $applied_amount_str,
