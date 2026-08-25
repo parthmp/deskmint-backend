@@ -2,12 +2,20 @@
 
 namespace App\Repositories\Invoice;
 
+use App\Enums\Credits\CreditStatus;
 use App\Models\Company;
+use App\Models\Credit;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\InvoiceLedger;
 use App\Models\InvoiceSnapshot;
+use App\Models\Payment;
+use App\Models\PaymentType;
 use App\Models\Transaction;
 use App\Modules\Payment\Enums\InvoiceStatus;
+use App\Modules\Payment\Enums\PaymentStatus;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
@@ -337,5 +345,218 @@ class InvoiceRepository{
 
 	}
 
+	/**
+	 * fetchPartialInvoiceData function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return Invoice
+	 */
+	public function fetchPartialInvoiceData(int $company_id, int $invoice_id) : Invoice {
+		$invoice = Invoice::select('client_id', 'currency_id', 'status', 'sent_at')->where([['id', '=', $invoice_id], ['company_id', '=', $company_id]])->first();
+		return $invoice;
+	}
+
+	/**
+	 * fetchFullInvoiceData function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return Invoice
+	 */
+	public function fetchFullInvoiceData(int $company_id, int $invoice_id) : Invoice {
+		$invoice = Invoice::where([['id', '=', $invoice_id], ['company_id', '=', $company_id]])->first();
+		return $invoice;
+	}
+
+	/**
+	 * addCredit function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param string $amount
+	 * @return Credit
+	 */
+	public function addCredit(int $company_id, int $invoice_id, string $amount) : Credit {
+
+		$invoice = $this->fetchPartialInvoiceData($company_id, $invoice_id);
+
+		$credit = new Credit();
+		$credit->company_id = $company_id;
+		$credit->client_id = $invoice->client_id;
+		$credit->currency_id = $invoice->currency_id;
+		$credit->status = CreditStatus::NOT_APPLIED->value;
+		$credit->amount = $amount;
+		$credit->applied_amount = 0;
+		$credit->amount_left_to_be_applied = $amount;
+		$credit->save();
+		return $credit;
+
+	}
+
+	/**
+	 * addPayment function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param string $amount
+	 * @param integer $payment_type
+	 * @param integer|null $transaction_id
+	 * @return Payment
+	 */
+	public function addPayment(int $company_id, int $invoice_id, string $amount, int $payment_type, ?int $transaction_id = null) : Payment {
+
+		$invoice = $this->fetchPartialInvoiceData($company_id, $invoice_id);
+
+		$payment = new Payment();
+		$payment->company_id = $company_id;
+		$payment->client_id = $invoice->client_id;
+		$payment->transaction_id = $transaction_id;
+		$payment->payment_type_id = $payment_type;
+		$payment->status = PaymentStatus::NOT_APPLIED->value;
+		$payment->amount = $amount;
+		$payment->applied_amount = 0;
+		$payment->amount_left_to_be_applied = $amount;
+		$payment->save();
+
+		return $payment;
+
+	}
+
+	/**
+	 * overwriteCreditForAmount function
+	 *
+	 * @param Credit $credit
+	 * @param string $apply_amount
+	 * @return Credit
+	 */
+	public function overwriteCreditForAmount(Credit $credit, string $apply_amount) : Credit {
+
+		$to_be_applied_amount = BigDecimal::of($apply_amount);
+		$credit_total = BigDecimal::of($credit->amount);
+		
+		$status = CreditStatus::NOT_APPLIED->value;
+
+		if($credit_total->isEqualTo($to_be_applied_amount)){
+			$status = CreditStatus::APPLIED->value;
+		}else if($to_be_applied_amount->isGreaterThan(BigDecimal::of(0)) && $credit_total->isLessThan($to_be_applied_amount)){
+			$status = CreditStatus::PARTIALLY_APPLIED->value;
+		}
+
+		$amount_left_to_be_applied = $credit_total->minus($to_be_applied_amount);
+
+		$credit->status = $status;
+		$credit->applied_amount = $to_be_applied_amount->toScale(2, RoundingMode::HalfUp)->__toString();
+		$credit->amount_left_to_be_applied = $amount_left_to_be_applied->toScale(2, RoundingMode::HalfUp)->__toString();
+		$credit->save();
+
+		return $credit;
+
+	}
+
+	/**
+	 * overwritePaymentForAmount function
+	 *
+	 * @param Payment $payment
+	 * @param string $apply_amount
+	 * @return Payment
+	 */
+	public function overwritePaymentForAmount(Payment $payment, string $apply_amount) : Payment {
+
+		$to_be_applied_amount = BigDecimal::of($apply_amount);
+		$payment_total = BigDecimal::of($payment->amount);
+		
+		$status = PaymentStatus::NOT_APPLIED->value;
+
+		if($payment_total->isEqualTo($to_be_applied_amount)){
+			$status = PaymentStatus::APPLIED->value;
+		}else if($to_be_applied_amount->isGreaterThan(BigDecimal::of(0)) && $payment_total->isLessThan($to_be_applied_amount)){
+			$status = PaymentStatus::PARTIALLY_APPLIED->value;
+		}
+
+		$amount_left_to_be_applied = $payment_total->minus($to_be_applied_amount);
+
+		$payment->status = $status;
+		$payment->applied_amount = $to_be_applied_amount->toScale(2, RoundingMode::HalfUp)->__toString();
+		$payment->amount_left_to_be_applied = $amount_left_to_be_applied->toScale(2, RoundingMode::HalfUp)->__toString();
+		$payment->save();
+
+		return $payment;
+
+	}
+
+	/**
+	 * addLedgerEntry function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param integer $payment_or_credit_id
+	 * @param string $applied_amount
+	 * @param string $type
+	 * @return boolean
+	 */
+	public function addLedgerEntry(int $company_id, int $invoice_id, int $payment_or_credit_id, string $applied_amount, string $type = 'credit') : bool{
+
+		$ledger = new InvoiceLedger();
+		$ledger->company_id = $company_id;
+		$ledger->invoice_id = $invoice_id;
+		if($type === 'credit'){
+			//credit
+			$ledger->payment_id = null;
+			$ledger->credit_id = $payment_or_credit_id;
+			$ledger->applied_amount_from_payments = 0;
+			$ledger->applied_amount_from_credits = $applied_amount;
+		}else{
+			//payment
+			$ledger->credit_id = null;
+			$ledger->payment_id = $payment_or_credit_id;
+			$ledger->applied_amount_from_payments = $applied_amount;
+			$ledger->applied_amount_from_credits = 0;
+		}
+
+		$ledger->total_applied = $applied_amount;
+
+		return $ledger->save();
+		
+
+	}
+
+	/**
+	 * ifPaymentTypeExists function
+	 *
+	 * @param integer $payment_type_id
+	 * @return boolean
+	 */
+	public function ifPaymentTypeExists(int $payment_type_id) : bool {
+		$counter = PaymentType::where('id', '=', $payment_type_id)->count();
+		return $counter > 0;
+	}
+
+	/**
+	 * fetchLedgerEntriesOfInvoice function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function fetchLedgerEntriesOfInvoice(int $company_id, int $invoice_id) : array {
+		return InvoiceLedger::select('total_applied', 'invoice_id')->where([['company_id', '=', $company_id], ['invoice_id', '=', $invoice_id]])->get()->toArray(); 
+	}
+
+	/**
+	 * Undocumented function
+	 *
+	 * @param Invoice $invoice
+	 * @param integer $status
+	 * @param string $balance_due
+	 * @return boolean
+	 */
+	public function updateInvoiceStatusAndAmount(Invoice $invoice, int $status, string $balance_due) : bool {
+
+		$invoice->status = $status;
+		$invoice->balance_due = $balance_due;
+		return $invoice->save();
+
+	}
 
 }

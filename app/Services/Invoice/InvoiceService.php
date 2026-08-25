@@ -2,16 +2,21 @@
 
 namespace App\Services\Invoice;
 
+use App\Jobs\GenerateInvoiceSnapshotJob;
 use App\Models\Invoice;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\InvoiceGeneration\InvoiceEmailContent;
 use App\Modules\InvoiceGeneration\InvoiceGenerator;
+use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Repositories\Client\ClientRepository;
 use App\Repositories\Invoice\InvoiceRepository;
 use App\Repositories\Product\ProductRepository;
 use App\Services\Invoice\Exceptions\InvoiceException;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class InvoiceService{
 
@@ -293,6 +298,137 @@ class InvoiceService{
 	 */
 	public function markInvoiceSent(int $company_id, int $invoice_id) : bool {
 		return $this->invoice_repository->markInvoiceSent($company_id, $invoice_id);
+	}
+
+	/**
+	 * addCreditForInvoice function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param string $amount
+	 * @return boolean
+	 */
+	public function addCreditForInvoice(int $company_id, int $invoice_id, string $amount) : bool {
+
+		$credit = $this->invoice_repository->addCredit($company_id, $invoice_id, $amount);
+		$credit = $this->invoice_repository->overwriteCreditForAmount($credit, $amount);
+		return $this->invoice_repository->addLedgerEntry($company_id, $invoice_id, $credit->id, $amount, 'credit');
+
+	}
+
+	/**
+	 * addPaymentForInvoice function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param string $amount
+	 * @param integer $payment_type
+	 * @return boolean
+	 */
+	public function addPaymentForInvoice(int $company_id, int $invoice_id, string $amount, int $payment_type) : bool {
+
+		$payment = $this->invoice_repository->addPayment($company_id, $invoice_id, $amount, $payment_type, null);
+		$payment = $this->invoice_repository->overwritePaymentForAmount($payment, $amount);
+		return $this->invoice_repository->addLedgerEntry($company_id, $invoice_id, $payment->id, $amount, 'payment');
+
+	}
+
+	/**
+	 * addCreditOrPaymentForInvoice function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param string $amount
+	 * @param integer $payment_type
+	 * @param string $type
+	 * @return array
+	 */
+	public function addCreditOrPaymentForInvoice(int $company_id, int $invoice_id, string $amount, int $payment_type, string $type = 'credit') : array {
+		
+		return DB::transaction(function() use ($company_id, $invoice_id, $amount, $payment_type, $type) {
+			if($type === 'credit'){
+				$this->addCreditForInvoice($company_id, $invoice_id, $amount);
+			}else if($type === 'payment'){
+				$this->addPaymentForInvoice($company_id, $invoice_id, $amount, $payment_type);
+			}else{
+				throw new InvoiceException('Invalid type provided', 'invalid_type', (int) config('global.error_code'));
+			}
+			//update invoice here
+			$data = $this->modifyInvoiceForAmount($company_id, $invoice_id);
+
+			DB::afterCommit(function() use ($company_id, $invoice_id) {
+				GenerateInvoiceSnapshotJob::dispatch($company_id, $invoice_id, true, false);
+			});
+
+			return $data;
+
+		});
+
+	}
+
+	/**
+	 * modifyInvoiceForAmount function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function modifyInvoiceForAmount(int $company_id, int $invoice_id) : array {
+		
+		$leger_entries = $this->invoice_repository->fetchLedgerEntriesOfInvoice($company_id, $invoice_id);
+
+		$so_far_applied_to_invoice = BigDecimal::of(0);
+
+		foreach($leger_entries as $entry){
+			$so_far_applied_to_invoice = $so_far_applied_to_invoice->plus($entry['total_applied']);
+		}
+
+		$invoice = $this->invoice_repository->fetchFullInvoiceData($company_id, $invoice_id);
+
+		$status = InvoiceStatus::DRAFT->value;
+		if($invoice->sent_at !== null || (int) $invoice->reminders_sent > 0){
+			$status = InvoiceStatus::SENT->value;
+		}
+		
+		$total = BigDecimal::of($invoice->total);
+
+		if($so_far_applied_to_invoice->isEqualTo($total)){
+			$status = InvoiceStatus::PAID->value;
+		}else if($so_far_applied_to_invoice->isLessThan($total) && $so_far_applied_to_invoice->isGreaterThan(BigDecimal::of(0))){
+			$status = InvoiceStatus::PARTIALLY_PAID->value;
+		}
+
+		
+		$balance_due = $total->minus($so_far_applied_to_invoice);
+		$balance_due = $balance_due->toScale(2, RoundingMode::HalfUp)->__toString();
+
+		$this->invoice_repository->updateInvoiceStatusAndAmount($invoice, $status, $balance_due);
+
+		$highlight = 'info';
+
+		if($status === InvoiceStatus::SENT->value || $status === InvoiceStatus::PARTIALLY_PAID->value || $status === InvoiceStatus::PAID->value){
+			$highlight = 'success';
+		}
+
+		return [
+			'highlight'		=>	$highlight,
+			'status'		=>	$status,
+			'balance_due'	=>	$balance_due,
+			'status_text'	=>	InvoiceStatus::getInvoiceStatusLabel($status)
+		];
+
+	}
+
+	/**
+	 * validatePaymentType function
+	 *
+	 * @param integer $payment_type
+	 * @return void
+	 */
+	public function validatePaymentType(int $payment_type) : void {
+		if(!$this->invoice_repository->ifPaymentTypeExists($payment_type)){
+			throw new InvoiceException('Invalid payment type provided', 'invalid_payment_type', (int) config('global.error_code'));
+		}
 	}
 
 }

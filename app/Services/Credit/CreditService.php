@@ -417,7 +417,11 @@ class CreditService {
 
 				if((int) $invoice['id'] === (int) $temp['id']){
 
-					$status = InvoiceStatus::SENT->value;
+					$status = InvoiceStatus::DRAFT->value;
+
+					if($invoice['sent_at'] !== null || (int) $invoice['reminders_sent'] > 0){
+						$status = InvoiceStatus::SENT->value;
+					}
 
 					$total = BigDecimal::of($invoice['total']);
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
+use App\Http\Requests\Invoice\AddCreditOrPaymentRequest;
 use App\Http\Requests\Invoice\FetchInvoiceRequest;
 use App\Http\Requests\Invoice\InvoiceGenerationRequest;
 use App\Http\Requests\Product\AutoCompleteSearchRequest;
@@ -362,6 +363,33 @@ class InvoiceController extends Controller{
 			return General::wentWrong();
 		}
 		
+	}
+
+	public function addCreditOrPayment(AddCreditOrPaymentRequest $request){
+
+		$data = $request->validated();
+
+		$type = (string) $data['type'];
+		$payment_type = (int) $data['payment_type'];
+
+		try{
+			
+			if($type === 'payment'){
+				$this->invoice_service->validatePaymentType($payment_type);
+			}
+
+			$data = $this->invoice_service->addCreditOrPaymentForInvoice((int) $data['company_id'], (int) $data['invoice_id'], (string) $data['amount'], (int) $payment_type, (string) $type);
+			
+			return response(['message' => 'Applied successfully', 'valdity' => 'applied_success', 'meta' => $data], 200);
+
+		}catch(InvoiceException $e){
+			return response(['message' => $e->getMessage(), 'valdity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
+		
+
 	}
 
 }

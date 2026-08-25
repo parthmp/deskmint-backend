@@ -368,7 +368,7 @@ class CreditRepository {
 	 * @return array
 	 */
 	public function fetchInvoicesForCreditApplying(int $company_id, array $ids) : array {
-		return Invoice::select('id', 'total', 'balance_due', 'status')->where('company_id', '=', $company_id)->whereIn('id', $ids)->get()->toArray();
+		return Invoice::select('id', 'total', 'balance_due', 'status', 'sent_at', 'reminders_sent')->where('company_id', '=', $company_id)->whereIn('id', $ids)->get()->toArray();
 	}
 
 	/**

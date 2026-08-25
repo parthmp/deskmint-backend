@@ -164,6 +164,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	//Route::post('manage-invoices', [InvoiceController::class, 'store']);
 	Route::get('manage-invoices/fetch-arranged-columns', [InvoiceController::class, 'fetchArrangedColumns']);
 	Route::post('manage-invoices/save-arranged-columns', [InvoiceController::class, 'saveArrangedColumns']);
+	Route::post('manage-invoices/add-credit-or-payment', [InvoiceController::class, 'addCreditOrPayment']);
 	Route::get('manage-invoices/send-invoice', [InvoiceController::class, 'sendInvoice']);
 	Route::resource('manage-invoices', InvoiceController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	Route::delete('manage-invoices', [InvoiceController::class, 'destroy']);
