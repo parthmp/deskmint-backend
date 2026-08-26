@@ -177,6 +177,7 @@ class PaymentRequestRepository {
 		$payment->company_id = $data['company_id'];
 		$payment->client_id = $data['client_id'];
 		$payment->transaction_id = null;
+		$payment->currency_id = $data['currency_id'];
 		$payment->payment_type_id = $data['payment_type_id'];
 		$payment->status = PaymentStatus::NOT_APPLIED->value;
 		$payment->amount = $data['amount'];

@@ -486,7 +486,8 @@ class PaymentRequestService {
 			'company_id'		=>	(int) $company_id,
 			'client_id'			=>	(int) $pr->client_id,
 			'payment_type_id'	=>	(int) $payment_type_id,
-			'amount'			=>	(string) $pr->amount
+			'amount'			=>	(string) $pr->amount,
+			'currency_id'		=>	(int) $pr->currency_id
 		];
 
 		return $this->payment_request_repository->createPaymentForRequest($data);

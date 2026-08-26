@@ -16,6 +16,7 @@ use App\Services\DeleteService;
 use App\Services\PaymentRequest\PaymentRequestService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PaymentRequestsController extends Controller {
 
@@ -231,13 +232,16 @@ class PaymentRequestsController extends Controller {
 		$payment_type = (int) Sanitize::input($data['payment_type']);
 
 		try{
+			
+			DB::transaction(function () use ($create_payment, $data, $payment_type, $id) {
+				$marked = $this->payment_request_service->markCompleted((int) $data['company_id'], (int) $id);
 
-			$marked = $this->payment_request_service->markCompleted((int) $data['company_id'], (int) $id);
+				if($marked && $create_payment){
+					$this->payment_request_service->createPaymentForRequest((int) $data['company_id'], (int) $id, (int) $payment_type);
+				}
 
-			if($marked && $create_payment){
-				$this->payment_request_service->createPaymentForRequest((int) $data['company_id'], (int) $id, (int) $payment_type);
-			}
-
+			});
+			
 			return response(['message' => 'Payment marked completed successfully', 'validity' => 'payment_request_completed'], 200);
 
 		}catch(PaymentRequestException $e){
