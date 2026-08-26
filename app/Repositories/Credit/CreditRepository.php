@@ -352,7 +352,9 @@ class CreditRepository {
 				'credit_id'							=>	$credit_id,
 				'applied_amount_from_payments'		=>	0,
 				'applied_amount_from_credits'		=>	$row['applied_amount'],
-				'total_applied'						=>	$row['applied_amount']
+				'total_applied'						=>	$row['applied_amount'],
+				'created_at'						=>	now(),
+				'updated_at'						=>	now()
 			];
 		}
 
