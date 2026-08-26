@@ -2,15 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\PaymentException;
 use App\Helpers\General;
+use App\Helpers\Sanitize;
+use App\Http\Requests\GenericRequest;
+use App\Http\Requests\Payments\PaymentCreateRequest;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
+use App\Modules\Payment\Enums\PaymentStatus;
 use App\Services\Payment\PaymentService;
 use Exception;
 use Illuminate\Http\Request;
 
 class PaymentsController extends Controller {
     
+	/**
+	 * additional_fields
+	 *
+	 * @var array
+	 */
 	private array $additional_fields = [
 		[
 			'label'			=>	'c_code',
@@ -81,6 +91,75 @@ class PaymentsController extends Controller {
 
 	public function index(Request $request){
 		return $this->payment_service->fetchIndex($request);
+	}
+
+	public function store(PaymentCreateRequest $request){
+
+		$data = $request->validated();
+
+		try{
+
+			$this->payment_service->create((int) $data['company_id'], (int) $data['client_id'], (string) $data['amount'], (int) $data['payment_type']);
+
+			return response(['message' => 'Payment created successfully', 'validity' => 'payment_created'], 200);
+
+		}catch(Exception $e){
+
+			return General::wentWrong();
+
+		}
+		
+
+	}
+
+	public function show(GenericRequest $request, int $id){
+
+		$mode = Sanitize::input($request->segment(3));
+		$id = (int) Sanitize::input($id);
+		$data = $request->validated();
+
+
+		$applied_entries = [];
+
+		if($mode === 'view'){
+			$applied_entries = $this->payment_service->fetchAppliedPaymentInvoices((int) $data['company_id'], (int) $id);
+		}
+
+		$response['payment'] = $this->payment_service->fetchPaymentForEdit((int) $data['company_id'], (int) $id);
+		$response['applied_entries'] = $applied_entries;
+
+		$response['full_access'] = 0;
+		if((int) $response['payment']['status'] === PaymentStatus::NOT_APPLIED->value){
+			$response['full_access'] = 1;
+		}
+
+		return $response;
+
+	}
+
+	public function update(PaymentCreateRequest $request, int $id){
+
+		$data = $request->validated();
+
+		$company_id = (int) $data['company_id'];
+		$client_id = (int) $data['client_id'];
+		$amount = (string) $data['amount'];
+		$payment_type_id = (string) $data['payment_type'];
+		$payment_id = (int) Sanitize::input($id);
+
+		try{
+
+			$this->payment_service->update($company_id, $client_id, $amount, $payment_id, $payment_type_id);
+
+			return response(['message' => 'Payment updated successfully', 'validity' => 'payment_updated'], 200);
+
+		}catch(PaymentException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+		
+
 	}
 
 }

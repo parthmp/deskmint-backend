@@ -8,7 +8,12 @@ use App\Models\Payment;
 use App\Modules\EasyIndex\EasyIndex;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Enums\PaymentStatus;
+use App\Repositories\Credit\CreditRepository;
+use App\Repositories\Payment\PaymentRepository;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * PaymentService class
@@ -16,7 +21,9 @@ use Illuminate\Http\Request;
 class PaymentService {
 
 	public function __construct(
-		private EasyIndex $easy_index
+		private EasyIndex $easy_index,
+		private CreditRepository $credit_repository,
+		private PaymentRepository $payment_repository
 	){}
 
 	/**
@@ -153,6 +160,110 @@ class PaymentService {
 			'token_id_identifier'			=>		'transactions.token_id_identifier',
 			'full_name'						=>		'clients.full_name'
 		 ])->setRewrites($rewrites)->setModel(Payment::class)->fetchIndex();
+
+	}
+
+	/**
+	 * create function
+	 *
+	 * @param integer $company_id
+	 * @param integer $client_id
+	 * @param string $amount
+	 * @param integer $payment_type_id
+	 * @return Payment
+	 */
+	public function create(int $company_id, int $client_id, string $amount, int $payment_type_id) : Payment {
+		$currency_id = $this->credit_repository->fetchClientCurrencyId($company_id, $client_id);
+		return $this->payment_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, '0.00', $amount, PaymentStatus::NOT_APPLIED->value, $payment_type_id);
+	}
+
+	/**
+	 * fetchAppliedPaymentInvoices function
+	 *
+	 * @param integer $company_id
+	 * @param integer $payment_id
+	 * @return array
+	 */
+	public function fetchAppliedPaymentInvoices(int $company_id, int $payment_id) : array {
+		return $this->payment_repository->fetchAppliedPaymentInvoices($company_id, $payment_id);
+	}
+
+	/**
+	 * fetchPaymentForEdit function
+	 *
+	 * @param integer $company_id
+	 * @param integer $id
+	 * @return array
+	 */
+	public function fetchPaymentForEdit(int $company_id, int $id) : array {
+		return $this->payment_repository->fetchPaymentForEdit($company_id, $id);
+	}
+
+	/**
+	 * update function
+	 *
+	 * @param integer $company_id
+	 * @param integer $client_id
+	 * @param string $amount
+	 * @param integer $payment_id
+	 * @param integer $payment_type_id
+	 * @return Payment
+	 */
+	public function update(int $company_id, int $client_id, string $amount, int $payment_id, int $payment_type_id) : Payment {
+
+		return DB::transaction(function () use ($company_id, $client_id, $amount, $payment_id, $payment_type_id) {
+
+			//check access first.
+			$payment = $this->payment_repository->fetchById($company_id, $payment_id);
+
+			if(!$payment){
+				throw new PaymentException('Invalid payment provided', 'invalid_payment', (int) config('global.error_code'));
+			}
+
+			if($payment->transaction_id !== null){
+				throw new PaymentException('You can not update payment gateway received payments', 'unable_to_update_rec_payments', (int) config('global.error_code'));
+			}
+
+			$currency_id = $this->credit_repository->fetchClientCurrencyId($company_id, $client_id);
+
+			if((int) $payment->status === PaymentStatus::NOT_APPLIED->value){
+				//update it fully.
+				return $this->payment_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, '0.00', $amount, PaymentStatus::NOT_APPLIED->value, $payment_type_id, null, $payment_id);
+			}
+
+			//else check for further.
+			//client should not be changed.
+			//currency should not be changed.
+			//amount must not be lower than applied amount.
+			//update.
+
+			if((int) $client_id !== (int) $payment->client_id){
+				throw new PaymentException('You can not change client for this entry', 'unable_to_change_client', (int) config('global.error_code'));
+			}
+
+			if((int) $currency_id !== (int) $payment->currency_id){
+				throw new PaymentException('You can not change currency for this entry', 'unable_to_change_currency', (int) config('global.error_code'));
+			}
+
+			$applied_amount = BigDecimal::of($payment->applied_amount);
+			$amount = BigDecimal::of($amount);
+
+			if($amount->isLessThan($applied_amount)){
+				throw new PaymentException('You can not update it for amount less than '.$payment->applied_amount, 'unable_to_update_invalid_amount', (int) config('global.error_code'));
+			}
+
+			$left_to_apply = $amount->minus($applied_amount);
+
+			$status = PaymentStatus::PARTIALLY_APPLIED->value;
+
+			if($left_to_apply->isEqualTo(BigDecimal::of(0))){
+				$status = PaymentStatus::APPLIED->value;
+			}
+
+			$left_to_apply = $left_to_apply->toScale(2, RoundingMode::HalfUp)->__toString();
+			return $this->payment_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, $payment->applied_amount, $left_to_apply, $status, $payment_type_id, null, $payment_id);
+
+		});
 
 	}
 

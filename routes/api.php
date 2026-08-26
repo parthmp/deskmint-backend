@@ -260,11 +260,11 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-payments/fetch-arranged-columns', [PaymentsController::class, 'fetchArrangedColumns']);
 	Route::post('manage-payments/save-arranged-columns', [PaymentsController::class, 'saveArrangedColumns']);
 	
-	// Route::get('manage-credits/edit/{id}', [CreditsController::class, 'show']);
+	Route::get('manage-payments/edit/{id}', [PaymentsController::class, 'show']);
 	// Route::get('manage-credits/view/{id}', [CreditsController::class, 'show']);
 	Route::get('manage-payments', [PaymentsController::class, 'index']);
-	// Route::post('manage-credits', [CreditsController::class, 'store']);
-	// Route::patch('manage-credits/{id}', [CreditsController::class, 'update']);
+	Route::post('manage-payments', [PaymentsController::class, 'store']);
+	Route::patch('manage-payments/{id}', [PaymentsController::class, 'update']);
 	// Route::delete('manage-credits', [CreditsController::class, 'destroy']);
 	
 });
