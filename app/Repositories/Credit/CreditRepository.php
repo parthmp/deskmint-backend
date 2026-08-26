@@ -78,7 +78,7 @@ class CreditRepository {
 	 */
 	public function ifAnyCreditsAreApplied(array $ids) : bool {
 		$counted = Credit::where(function($q){
-			$q->where('status', '=', CreditStatus::APPLIED)->orWhere('status', '=', CreditStatus::PARTIALLY_APPLIED);
+			$q->where('status', '=', CreditStatus::APPLIED->value)->orWhere('status', '=', CreditStatus::PARTIALLY_APPLIED->value);
 		})->whereIn('id', $ids)->count();
 		return (int) $counted > 0;
 	}

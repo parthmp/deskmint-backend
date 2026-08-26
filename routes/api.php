@@ -265,6 +265,6 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-payments', [PaymentsController::class, 'index']);
 	Route::post('manage-payments', [PaymentsController::class, 'store']);
 	Route::patch('manage-payments/{id}', [PaymentsController::class, 'update']);
-	// Route::delete('manage-credits', [CreditsController::class, 'destroy']);
+	Route::delete('manage-payments', [PaymentsController::class, 'destroy']);
 	
 });

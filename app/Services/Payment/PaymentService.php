@@ -12,6 +12,7 @@ use App\Repositories\Credit\CreditRepository;
 use App\Repositories\Payment\PaymentRepository;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -264,6 +265,37 @@ class PaymentService {
 			return $this->payment_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, $payment->applied_amount, $left_to_apply, $status, $payment_type_id, null, $payment_id);
 
 		});
+
+	}
+
+	public function deletePayments(int $company_id, array $ids) : bool {
+
+		$payments = $this->payment_repository->fetchPaymentIdWithTransactionId($company_id, $ids);
+
+		foreach($payments as $payment){
+			if($payment['transaction_id'] !== null){
+				throw new PaymentException('Can not delete: Payment(s) received by gateway', 'blocked_applied_payment_gateway', (int) config('global.error_code'));
+			}
+		}
+
+		if($this->payment_repository->ifAnyPaymentsAreApplied($ids)){
+			
+			$message = 'Can not delete : One of the payments are applied to an invoice.';
+			if((int) count($ids) === 1){
+				$message = 'Can not delete : Payment is applied to an invoice.';
+			}
+
+			throw new PaymentException($message, 'blocked_applied_payment', (int) config('global.error_code'));
+
+		}
+
+		$del_response = $this->payment_repository->deleteMultiplePayments($ids);
+
+		if(!$del_response){
+			throw new Exception();
+		}
+
+		return $del_response;
 
 	}
 

@@ -162,4 +162,28 @@ class PaymentsController extends Controller {
 
 	}
 
+	public function destroy(Request $request){
+
+		$ids = $request->input('ids');
+
+		if(!$ids){
+			return response(['message' => 'No valid IDs provided', 'validity' => 'invalid_ids'], config('global.error_code'));
+		}
+		
+		try{
+			
+			$ids = Sanitize::recursive($ids);
+			$company_id = (int) Sanitize::input($request->input('company_id'));
+
+			$this->payment_service->deletePayments($company_id, $ids);
+			return response(['message' => 'Payment(s) deleted successfully', 'validity' => 'delete_success'], 200);
+
+		}catch(PaymentException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+		
+	}
+
 }

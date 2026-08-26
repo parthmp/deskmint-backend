@@ -110,4 +110,41 @@ class PaymentRepository {
 		
 	}
 
+	/**
+	 * fetchPaymentIdWithTransactionId function
+	 *
+	 * @param integer $company_id
+	 * @param array $ids
+	 * @return array
+	 */
+	public function fetchPaymentIdWithTransactionId(int $company_id, array $ids) : array {
+
+		$payments = Payment::where('company_id', '=', $company_id)->whereIn('id', $ids)->get()->toArray();
+		return $payments;
+
+	}
+
+	/**
+	 * ifAnyPaymentsAreApplied function
+	 *
+	 * @param array $ids
+	 * @return boolean
+	 */
+	public function ifAnyPaymentsAreApplied(array $ids) : bool {
+		$counted = Payment::where(function($q){
+			$q->where('status', '=', PaymentStatus::APPLIED->value)->orWhere('status', '=', PaymentStatus::PARTIALLY_APPLIED->value);
+		})->whereIn('id', $ids)->count();
+		return (int) $counted > 0;
+	}
+
+	/**
+	 * deleteMultiplePayments function
+	 *
+	 * @param array $ids
+	 * @return boolean
+	 */
+	public function deleteMultiplePayments(array $ids) : bool {
+		return Payment::whereIn('id', $ids)->delete();
+	}
+
 }
