@@ -27,7 +27,28 @@ class PaymentsController extends Controller {
 		[
 			'label'			=>	'amount_left_to_be_applied',
 			'text'			=>	'Amount left'
+		],
+		[
+			'label'			=>	'received_amount',
+			'text'			=>	'Received'
+		],
+		[
+			'label'			=>	'gateway_fees_amount',
+			'text'			=>	'Fee'
+		],
+		[
+			'label'			=>	'payment_gateway',
+			'text'			=>	'Gateway'
+		],
+		[
+			'label'			=>	'token_id_identifier',
+			'text'			=>	'Token'
+		],
+		[
+			'label'			=>	'payment_type_n',
+			'text'			=>	'Payment type'
 		]
+		
 		
 	];
 
@@ -41,7 +62,7 @@ class PaymentsController extends Controller {
 	){}
 
 	public function fetchArrangedColumns(Request $request){
-		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'payments', 'payments', null, 'payment', remove_columns:['deleted_at', 'updated_at', 'company_id', 'amount_left_to_be_applied', 'applied_amount', 'client_id', 'currency_id'], additional_fields: $this->additional_fields);
+		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'payments', 'payments', null, 'payment', remove_columns:['deleted_at', 'updated_at', 'company_id', 'amount_left_to_be_applied', 'applied_amount', 'client_id', 'currency_id', 'transaction_id', 'payment_type_id'], additional_fields: $this->additional_fields);
 	}
 	
 
