@@ -4,8 +4,10 @@ namespace App\Services\Payment;
 
 use App\Exceptions\PaymentException;
 use App\Helpers\Sanitize;
+use App\Jobs\GenerateInvoiceSnapshotJob;
 use App\Models\Payment;
 use App\Modules\EasyIndex\EasyIndex;
+use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Enums\PaymentStatus;
 use App\Repositories\Credit\CreditRepository;
@@ -296,6 +298,223 @@ class PaymentService {
 		}
 
 		return $del_response;
+
+	}
+	
+	/**
+	 * fetchPaymentWithCurrencyInfo function
+	 *
+	 * @param integer $company_id
+	 * @param integer $payment_id
+	 * @return array
+	 */
+	public function fetchPaymentWithCurrencyInfo(int $company_id, int $payment_id) : array {
+		return $this->payment_repository->fetchPaymentWithCurrencyInfo($company_id, $payment_id);
+	}
+
+	/**
+	 * fetchAlreadyAppliedInvoicesForPayment function
+	 *
+	 * @param integer $company_id
+	 * @param integer $payment_id
+	 * @return array
+	 */
+	public function fetchAlreadyAppliedInvoicesForPayment(int $company_id, int $payment_id) : array {
+		return $this->payment_repository->fetchAlreadyAppliedInvoicesForPayment($company_id, $payment_id);
+	}
+
+	/**
+	 * searchInvoices function
+	 *
+	 * @param integer $company_id
+	 * @param integer $currency_id
+	 * @param integer $client_id
+	 * @param integer $payment_id
+	 * @param array $applied_ids
+	 * @param array $paid_ids
+	 * @param string $searched
+	 * @return array
+	 */
+	public function searchInvoices(int $company_id, int $currency_id, int $client_id, int $payment_id, array $applied_ids, array $paid_ids, string $searched) : array {
+		return $this->payment_repository->searchInvoices($company_id, $currency_id, $client_id, $payment_id, $applied_ids, $paid_ids, $searched);
+	}
+
+	/**
+	 * modifyPaymentForApplying function
+	 *
+	 * @param integer $company_id
+	 * @param integer $payment_id
+	 * @param array $applied
+	 * @return boolean
+	 */
+	private function modifyPaymentForApplying(int $company_id, int $payment_id, array $applied) : bool {
+
+		$applied_amount_sum = BigDecimal::of(0);
+
+		foreach($applied as $ele){
+
+			$ele['amount'] = Sanitize::input($ele['amount']);
+			$applied_amount = BigDecimal::of($ele['amount']);
+			$applied_amount_sum = $applied_amount_sum->plus($applied_amount);
+
+		}
+
+		$payment = $this->payment_repository->resetPayment($company_id, $payment_id);
+
+		$payment_total_amount = BigDecimal::of($payment->amount);
+
+		$new_left_to_apply_amount = $payment_total_amount->minus($applied_amount_sum);
+
+		$status = PaymentStatus::NOT_APPLIED->value;
+
+		if($applied_amount_sum->isLessThan($payment_total_amount) && !$applied_amount_sum->isEqualTo(BigDecimal::of(0))){
+			$status = PaymentStatus::PARTIALLY_APPLIED->value;
+		}else if($applied_amount_sum->isEqualTo($payment_total_amount)){
+			$status = PaymentStatus::APPLIED->value;
+		}
+
+		return $this->payment_repository->updatePaymentForApplying($payment, $status, $applied_amount_sum->toScale(2, RoundingMode::HalfUp)->__toString(), $new_left_to_apply_amount->toScale(2, RoundingMode::HalfUp)->__toString());
+
+	}
+
+	/**
+	 * modifyLedger function
+	 *
+	 * @param integer $company_id
+	 * @param integer $payment_id
+	 * @param array $applied
+	 * @return void
+	 */
+	private function modifyLedger(int $company_id, int $payment_id, array $applied) : void {
+
+		$this->payment_repository->forceRemoveLedgreEntriesForPayment($company_id, $payment_id);
+
+		$data = [];
+
+		foreach($applied as $ele){
+
+			$ele['id'] = Sanitize::input($ele['id']);
+			$ele['amount'] = Sanitize::input($ele['amount']);
+
+			$data[] = [
+				'invoice_id'		=>	$ele['id'],
+				'applied_amount'	=>	$ele['amount']
+			];
+		}
+
+		$this->payment_repository->insertLedgerEntries($company_id, $payment_id, $data);
+
+	}
+
+	/**
+	 * getInvoiceIds function
+	 *
+	 * @param array $applied
+	 * @return array
+	 */
+	private function getInvoiceIds(array $applied) : array {
+
+		$ids = [];
+
+		foreach($applied as $ele){
+			$ele['id'] = Sanitize::input($ele['id']);
+			if(!in_array($ele['id'], $ids)){
+				array_push($ids, $ele['id']);
+			}
+		}
+
+		return $ids;
+
+	}
+
+	private function modifyInvoices(int $company_id, array $applied, bool $removal_provided = false) : array {
+
+		if(!$removal_provided){
+			$invoice_ids = $this->getInvoiceIds($applied);
+		}else{
+			$invoice_ids = $applied;
+		}
+		
+		$invoices = $this->payment_repository->fetchInvoicesForPaymentApplying($company_id, $invoice_ids);
+		$ledger_entries = $this->payment_repository->fetchLedgerForPaymentApplying($company_id, $invoice_ids);
+
+		$update = [];
+
+		foreach($applied as $ele){
+			
+			$temp = [];
+
+			$temp['id'] = $removal_provided ? (int) Sanitize::input($ele) : (int) Sanitize::input($ele['id']);
+			
+			$applied_sum = BigDecimal::of(0);
+
+			foreach($ledger_entries as $entry){
+				if((int) $entry['invoice_id'] === (int) $temp['id']){
+					$applied_row_amount = BigDecimal::of($entry['total_applied']);
+					$applied_sum = $applied_sum->plus($applied_row_amount);
+				}
+			}
+
+			
+			foreach($invoices as $invoice){
+
+				if((int) $invoice['id'] === (int) $temp['id']){
+
+					$status = InvoiceStatus::DRAFT->value;
+
+					if($invoice['sent_at'] !== null || (int) $invoice['reminders_sent'] > 0){
+						$status = InvoiceStatus::SENT->value;
+					}
+
+					$total = BigDecimal::of($invoice['total']);
+
+					if($applied_sum->isLessThan($total) && !$applied_sum->isEqualTo(BigDecimal::of(0))){
+						$status = InvoiceStatus::PARTIALLY_PAID->value;
+					}else if($applied_sum->isEqualTo($total)){
+						$status = InvoiceStatus::PAID->value;
+					}
+
+					$balance_due = $total->minus($applied_sum);
+
+					$temp['status'] = $status;
+					$temp['balance_due'] = $balance_due->toScale(2, RoundingMode::HalfUp)->__toString();
+
+					break;
+
+				}
+
+			}
+
+			$update[] = $temp;
+
+		}
+		
+		$this->payment_repository->updateInvoicesForPaymentApplying($update);
+
+		return $invoice_ids;
+
+	}
+
+	
+	public function applyPaymentAmountToInvoices(int $company_id, int $payment_id, array $applied, array $removed_ids) : void {
+
+		DB::transaction(function() use ($company_id, $payment_id, $applied, $removed_ids) {
+
+			$this->modifyPaymentForApplying($company_id, $payment_id, $applied); //reset payment and apply.
+			$this->modifyLedger($company_id, $payment_id, $applied); //remove ledger entries and add new ones.
+			$this->modifyInvoices($company_id, $removed_ids, true);
+			$this->modifyInvoices($company_id, $applied, false);
+
+			DB::afterCommit(function() use ($company_id, $applied, $removed_ids) {
+				$ids = $this->getInvoiceIds($applied);
+				$all_ids = array_unique(array_merge($ids, $removed_ids));
+				foreach($all_ids as $applied_invoice_id){
+					$invoice_id = (int) Sanitize::input($applied_invoice_id);
+					GenerateInvoiceSnapshotJob::dispatch($company_id, $invoice_id, true, false);					
+				}
+			});
+			
+		});
 
 	}
 

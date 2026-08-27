@@ -6,10 +6,13 @@ use App\Exceptions\PaymentException;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
+use App\Http\Requests\Payments\ApplyUnapplyPaymentsFetchPaymentRequest;
+use App\Http\Requests\Payments\ApplyUnapplyPaymentsSearchRequest;
 use App\Http\Requests\Payments\PaymentCreateRequest;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
 use App\Modules\Payment\Enums\PaymentStatus;
+use App\Services\Payment\PaymentApplyValidationService;
 use App\Services\Payment\PaymentService;
 use Exception;
 use Illuminate\Http\Request;
@@ -68,7 +71,8 @@ class PaymentsController extends Controller {
 
 	public function __construct(
 		private PaymentService $payment_service,
-		private ArrangedDataTableColumns $arranged_data_table_columns
+		private ArrangedDataTableColumns $arranged_data_table_columns,
+		private PaymentApplyValidationService $payment_apply_validation_service
 	){}
 
 	public function fetchArrangedColumns(Request $request){
@@ -184,6 +188,74 @@ class PaymentsController extends Controller {
 			return General::wentWrong();
 		}
 		
+	}
+
+	public function applyUnapplyFetchPayment(ApplyUnapplyPaymentsFetchPaymentRequest $request){
+
+		$data = $request->validated();
+
+		try{
+
+			$payment_info = $this->payment_service->fetchPaymentWithCurrencyInfo((int) $data['company_id'], (int) $data['payment_id']);
+
+			return $payment_info;
+
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
+	}
+
+	public function fetchAlreadyApplied(ApplyUnapplyPaymentsFetchPaymentRequest $request){
+
+		$data = $request->validated();
+
+		$applied = $this->payment_service->fetchAlreadyAppliedInvoicesForPayment((int) $data['company_id'], (int) $data['payment_id']);
+
+		return $applied;
+
+	}
+
+	public function applyUnapplySearchInvoices(ApplyUnapplyPaymentsSearchRequest $request){
+
+		$data = $request->validated();
+		
+		try{
+
+			$payment_info = $this->payment_service->fetchPaymentWithCurrencyInfo((int) $data['company_id'], (int) $data['payment_id']);
+
+			$invoices = $this->payment_service->searchInvoices((int) $data['company_id'], (int) $payment_info['currency_id'], (int) $payment_info['client_id'], (int) $data['payment_id'], (array) $data['applied_ids'], (array) $data['paid_ids'], (string) $data['searched']);
+
+			return $invoices;
+
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+		
+
+	}
+
+	public function applyUnapplyPayment(Request $request){
+		
+		try{
+			
+			$this->payment_apply_validation_service->validateApplyUnapply($request);
+
+			$company_id = (int) Sanitize::input($request->input('company_id'));
+			$payment_id = (int) Sanitize::input($request->input('payment_id'));
+			$applied = $request->input('applied');
+			$removed_ids = $request->input('removed_ids');
+
+			$this->payment_service->applyPaymentAmountToInvoices($company_id, $payment_id, $applied, $removed_ids);
+
+			return response(['message' => 'Changes saved successfully', 'validity' => 'saved_success'], 200);
+
+		}catch(PaymentException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
 	}
 
 }

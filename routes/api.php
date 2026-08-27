@@ -253,10 +253,10 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	/**
 	 * manage payments
 	 */
-	// Route::get('manage-credits/fetch-already-applied', [CreditsController::class, 'fetchAlreadyApplied']);
-	// Route::patch('manage-credits/apply-unapply-credit', [CreditsController::class, 'applyUnapplyCredit']);
-	// Route::get('manage-credits/apply-unapply-fetch-credit', [CreditsController::class, 'applyUnapplyFetchCredit']);
-	// Route::get('manage-credits/apply-unapply-search-invoices', [CreditsController::class, 'applyUnapplySearchInvoices']);
+	Route::get('manage-payments/fetch-already-applied', [PaymentsController::class, 'fetchAlreadyApplied']);
+	Route::patch('manage-payments/apply-unapply-payment', [PaymentsController::class, 'applyUnapplyPayment']);
+	Route::get('manage-payments/apply-unapply-fetch-payment', [PaymentsController::class, 'applyUnapplyFetchPayment']);
+	Route::get('manage-payments/apply-unapply-search-invoices', [PaymentsController::class, 'applyUnapplySearchInvoices']);
 	Route::get('manage-payments/fetch-arranged-columns', [PaymentsController::class, 'fetchArrangedColumns']);
 	Route::post('manage-payments/save-arranged-columns', [PaymentsController::class, 'saveArrangedColumns']);
 	
