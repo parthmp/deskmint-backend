@@ -392,4 +392,14 @@ class InvoiceController extends Controller{
 
 	}
 
+	public function ApplyUnapplyCreditsFetchInvoice(GenericRequest $request, int $id){
+
+		$data = $request->validated();
+
+		$invoice_id = Sanitize::input($id);
+
+		return $this->invoice_service->fetchInvoiceForApplyUnapplyCredit((int) $data['company_id'], (int) $invoice_id);
+
+	}
+
 }

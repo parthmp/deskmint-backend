@@ -560,4 +560,28 @@ class InvoiceRepository{
 
 	}
 
+	/**
+	 * fetchByIdWithComapanyId function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return Invoice|null
+	 */
+	public function fetchByIdWithComapanyId(int $company_id, int $invoice_id) : ?Invoice {
+
+		$selects = [
+			'invoices.id as id',
+			'invoices.invoice_number as invoice_number',
+			'invoices.total as total',
+			'invoices.balance_due as balance_due',
+			'currencies.id as currency_id',
+			'currencies.code as currency_code',
+			'clients.first_name as first_name',
+			'clients.last_name as last_name'
+		];
+		
+		return Invoice::select($selects)->join('clients', 'clients.id', '=', 'invoices.client_id')->join('currencies', 'currencies.id', '=', 'invoices.currency_id')->where([['invoices.id', '=', $invoice_id], ['invoices.company_id', '=', $company_id]])->first();
+		
+	}
+
 }

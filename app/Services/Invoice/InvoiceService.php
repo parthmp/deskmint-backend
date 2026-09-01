@@ -431,4 +431,20 @@ class InvoiceService{
 		}
 	}
 
+	public function fetchInvoiceForApplyUnapplyCredit(int $company_id, int $invoice_id) : array {
+
+		$invoice = $this->invoice_repository->fetchByIdWithComapanyId($company_id, $invoice_id);
+		
+		return [
+			'id'				=>	$invoice->id,
+			'amount'			=>	$invoice->total,
+			'amount_left'		=>	$invoice->balance_due,
+			'due'				=>	$invoice->balance_due,
+			'invoice_number'	=>	$invoice->invoice_number,
+			'currency_code'		=>	$invoice->currency_code,
+			'full_name'			=>	$invoice->first_name.' '.$invoice->last_name,
+		];
+
+	}
+
 }
