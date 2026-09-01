@@ -73,7 +73,7 @@ class CreditsController extends Controller {
 
 		try{
 
-			$this->credit_service->ifCreditNumberExists((string) $data['credit_number'], null);
+			$this->credit_service->ifCreditNumberExists((int) $data['company_id'], (string) $data['credit_number'], null);
 
 			$this->credit_service->create((int) $data['company_id'], (int) $data['client_id'], (string) $data['amount'], (string) $data['credit_number']);
 
@@ -101,7 +101,7 @@ class CreditsController extends Controller {
 
 		try{
 
-			$this->credit_service->ifCreditNumberExists((string) $data['credit_number'], (int) $credit_id);
+			$this->credit_service->ifCreditNumberExists((int) $data['company_id'], (string) $data['credit_number'], (int) $credit_id);
 
 			$this->credit_service->update($company_id, $client_id, $amount, (string) $data['credit_number'], $credit_id);
 

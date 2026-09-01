@@ -465,13 +465,14 @@ class CreditRepository {
 	/**
 	 * ifCreditNumberExists function
 	 *
+	 * @param integer $company_id
 	 * @param string $credit_number
 	 * @param integer|null $ignore_id
 	 * @return boolean
 	 */
-	public function ifCreditNumberExists(string $credit_number, int $ignore_id = null) : bool {
+	public function ifCreditNumberExists(int $company_id, string $credit_number, ?int $ignore_id = null) : bool {
 
-		$conditions = [['credit_number', '=', $credit_number]];
+		$conditions = [['credit_number', '=', $credit_number], ['company_id', '=', $company_id]];
 
 		if($ignore_id){
 			array_push($conditions, ['id', '<>', $ignore_id]);

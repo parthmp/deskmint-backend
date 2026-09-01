@@ -499,13 +499,14 @@ class CreditService {
 	/**
 	 * ifCreditNumberExists function
 	 *
+	 * @param integer $company_id
 	 * @param string $credit_number
 	 * @param integer|null $ignore_id
 	 * @return boolean
 	 */
-	public function ifCreditNumberExists(string $credit_number, int $ignore_id = null) : bool {
+	public function ifCreditNumberExists(int $company_id, string $credit_number, ?int $ignore_id = null) : bool {
 
-		if($this->credit_repository->ifCreditNumberExists($credit_number, $ignore_id)){
+		if($this->credit_repository->ifCreditNumberExists($company_id, $credit_number, $ignore_id)){
 			throw new CreditException('Credit number already exists', 'already_exists_cn', (int) config('global.error_code'));
 		}
 
