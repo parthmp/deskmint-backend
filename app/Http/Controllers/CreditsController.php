@@ -73,10 +73,14 @@ class CreditsController extends Controller {
 
 		try{
 
-			$this->credit_service->create((int) $data['company_id'], (int) $data['client_id'], (string) $data['amount']);
+			$this->credit_service->ifCreditNumberExists((string) $data['credit_number'], null);
+
+			$this->credit_service->create((int) $data['company_id'], (int) $data['client_id'], (string) $data['amount'], (string) $data['credit_number']);
 
 			return response(['message' => 'Credit created successfully', 'validity' => 'credit_created'], 200);
 
+		}catch(CreditException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
 
 			return General::wentWrong();
@@ -97,7 +101,9 @@ class CreditsController extends Controller {
 
 		try{
 
-			$this->credit_service->update($company_id, $client_id, $amount, $credit_id);
+			$this->credit_service->ifCreditNumberExists((string) $data['credit_number'], (int) $credit_id);
+
+			$this->credit_service->update($company_id, $client_id, $amount, (string) $data['credit_number'], $credit_id);
 
 			return response(['message' => 'Credit updated successfully', 'validity' => 'credit_updated'], 200);
 

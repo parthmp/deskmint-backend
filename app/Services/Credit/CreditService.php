@@ -34,12 +34,13 @@ class CreditService {
 	 * @param integer $company_id
 	 * @param integer $client_id
 	 * @param string $amount
+	 * @param string $credit_number
 	 * @return Credit
 	 */
-	public function create(int $company_id, int $client_id, string $amount) : Credit {
+	public function create(int $company_id, int $client_id, string $amount, string $credit_number) : Credit {
 
 		$currency_id = $this->credit_repository->fetchClientCurrencyId($company_id, $client_id);
-		return $this->credit_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, '0.00', $amount, CreditStatus::NOT_APPLIED->value);
+		return $this->credit_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, '0.00', $amount, CreditStatus::NOT_APPLIED->value, $credit_number);
 
 	}
 
@@ -190,12 +191,13 @@ class CreditService {
 	 * @param integer $company_id
 	 * @param integer $client_id
 	 * @param string $amount
+	 * @param string $credit_number
 	 * @param integer $credit_id
 	 * @return Credit
 	 */
-	public function update(int $company_id, int $client_id, string $amount, int $credit_id) : Credit {
+	public function update(int $company_id, int $client_id, string $amount, string $credit_number, int $credit_id) : Credit {
 
-		return DB::transaction(function () use ($company_id, $client_id, $amount, $credit_id) {
+		return DB::transaction(function () use ($company_id, $client_id, $amount, $credit_id, $credit_number) {
 
 			//check access first.
 			$credit = $this->credit_repository->fetchById($company_id, $credit_id);
@@ -208,7 +210,7 @@ class CreditService {
 
 			if((int) $credit->status === CreditStatus::NOT_APPLIED->value){
 				//update it fully.
-				return $this->credit_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, '0.00', $amount, CreditStatus::NOT_APPLIED->value, $credit_id);
+				return $this->credit_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, '0.00', $amount, CreditStatus::NOT_APPLIED->value, $credit_number, $credit_id);
 			}
 
 			//else check for further.
@@ -241,7 +243,7 @@ class CreditService {
 			}
 
 			$left_to_apply = $left_to_apply->toScale(2, RoundingMode::HalfUp)->__toString();
-			return $this->credit_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, $credit->applied_amount, $left_to_apply, $status, $credit_id);
+			return $this->credit_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, $credit->applied_amount, $left_to_apply, $status, $credit_number, $credit_id);
 
 		});
 
@@ -492,6 +494,23 @@ class CreditService {
 	 */
 	public function fetchAlreadyAppliedInvoicesForCredit(int $company_id, int $credit_id) : array {
 		return $this->credit_repository->fetchAlreadyAppliedInvoicesForCredit($company_id, $credit_id);
+	}
+
+	/**
+	 * ifCreditNumberExists function
+	 *
+	 * @param string $credit_number
+	 * @param integer|null $ignore_id
+	 * @return boolean
+	 */
+	public function ifCreditNumberExists(string $credit_number, int $ignore_id = null) : bool {
+
+		if($this->credit_repository->ifCreditNumberExists($credit_number, $ignore_id)){
+			throw new CreditException('Credit number already exists', 'already_exists_cn', (int) config('global.error_code'));
+		}
+
+		return false;
+
 	}
 
 }

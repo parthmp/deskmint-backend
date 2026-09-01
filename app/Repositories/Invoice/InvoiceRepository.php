@@ -375,14 +375,16 @@ class InvoiceRepository{
 	 * @param integer $company_id
 	 * @param integer $invoice_id
 	 * @param string $amount
+	 * @param string $uuid
 	 * @return Credit
 	 */
-	public function addCredit(int $company_id, int $invoice_id, string $amount) : Credit {
+	public function addCredit(int $company_id, int $invoice_id, string $amount, string $uuid) : Credit {
 
 		$invoice = $this->fetchPartialInvoiceData($company_id, $invoice_id);
 
 		$credit = new Credit();
 		$credit->company_id = $company_id;
+		$credit->credit_number = $uuid;
 		$credit->client_id = $invoice->client_id;
 		$credit->currency_id = $invoice->currency_id;
 		$credit->status = CreditStatus::NOT_APPLIED->value;

@@ -24,11 +24,13 @@ class CreditCreateRequest extends FormRequest
 		$company_id = Sanitize::input($this->input('company_id'));
 		$client_id = Sanitize::input($this->input('client_id'));
 		$amount = Sanitize::input($this->input('amount'));
+		$credit_number = Sanitize::input($this->input('credit_number'));
 
 		$this->merge([
 			'company_id'	=>	$company_id,
 			'client_id'		=>	$client_id,
-			'amount'		=>	$amount
+			'amount'		=>	$amount,
+			'credit_number'	=>	$credit_number
 		]);
 
 	}
@@ -43,7 +45,8 @@ class CreditCreateRequest extends FormRequest
         return [
             'company_id'	=>	'required',
 			'client_id'		=>	['required', Rule::exists('clients', 'id')->where('company_id', $this->input('company_id'))],
-			'amount'		=>	'required|numeric|gt:0|lt:999999999'
+			'amount'		=>	'required|numeric|gt:0|lt:999999999',
+			'credit_number'	=>	'required'
         ];
     }
 

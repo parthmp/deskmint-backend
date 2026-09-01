@@ -26,13 +26,15 @@ class AddCreditOrPaymentRequest extends FormRequest
 		$amount = Sanitize::input($this->input('amount'));
 		$type = Sanitize::input($this->input('type'));
 		$payment_type = Sanitize::input($this->input('payment_type'));
+		$uuid = Sanitize::input($this->input('uuid'));
 
 		$this->merge([
 			'company_id'			=>	$company_id,
 			'invoice_id'			=>	$invoice_id,
 			'amount'				=>	$amount,
 			'type'					=>	$type,
-			'payment_type'			=>	$payment_type
+			'payment_type'			=>	$payment_type,
+			'uuid'					=>	$uuid
 		]);
 
 
@@ -47,10 +49,11 @@ class AddCreditOrPaymentRequest extends FormRequest
     {
         return [
             'company_id'	=>	'required',
-			'invoice_id'	=> ['required', Rule::exists('invoices', 'id')->where('company_id', $this->input('company_id'))],
+			'invoice_id'	=> 	['required', Rule::exists('invoices', 'id')->where('company_id', $this->input('company_id'))],
 			'amount'		=>	'required|numeric|gt:0',
 			'type'			=>	['required', Rule::in(['credit', 'payment'])],
-			'payment_type'	=>	'sometimes'
+			'payment_type'	=>	'sometimes',
+			'uuid'			=>	'required'
         ];
     }
 }

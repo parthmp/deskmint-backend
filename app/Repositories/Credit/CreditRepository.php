@@ -46,18 +46,20 @@ class CreditRepository {
 	 * @param string $applied_amount
 	 * @param string $amount_left_to_apply
 	 * @param integer $status
+	 * @param string $credit_number
 	 * @param integer|null $id
 	 * @return Credit
 	 */
-	public function createOrUpdate(int $company_id, int $client_id, int $currency_id, string $amount, string $applied_amount, string $amount_left_to_apply, int $status, ?int $id = null) : Credit {
+	public function createOrUpdate(int $company_id, int $client_id, int $currency_id, string $amount, string $applied_amount, string $amount_left_to_apply, int $status, string $credit_number, ?int $id = null) : Credit {
 
 		if(!$id){
 			$credit = new Credit();
 			$credit->company_id = $company_id;
+			
 		}else{
 			$credit = $this->fetchById((int) $company_id, (int) $id);
 		}
-		
+		$credit->credit_number = $credit_number;
 		$credit->client_id = $client_id;
 		$credit->currency_id = $currency_id;
 		$credit->status = $status;
@@ -458,6 +460,26 @@ class CreditRepository {
 		$credit->amount_left_to_be_applied = $credit->amount;
 		$credit->save();
 		return $credit;
+	}
+
+	/**
+	 * ifCreditNumberExists function
+	 *
+	 * @param string $credit_number
+	 * @param integer|null $ignore_id
+	 * @return boolean
+	 */
+	public function ifCreditNumberExists(string $credit_number, int $ignore_id = null) : bool {
+
+		$conditions = [['credit_number', '=', $credit_number]];
+
+		if($ignore_id){
+			array_push($conditions, ['id', '<>', $ignore_id]);
+		}
+
+		$found = Credit::where($conditions)->count();
+
+		return (int) $found > 0;
 	}
 
 }

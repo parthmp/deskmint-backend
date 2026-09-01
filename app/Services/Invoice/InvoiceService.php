@@ -9,6 +9,7 @@ use App\Modules\InvoiceGeneration\InvoiceEmailContent;
 use App\Modules\InvoiceGeneration\InvoiceGenerator;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Repositories\Client\ClientRepository;
+use App\Repositories\Credit\CreditRepository;
 use App\Repositories\Invoice\InvoiceRepository;
 use App\Repositories\Product\ProductRepository;
 use App\Services\Invoice\Exceptions\InvoiceException;
@@ -27,7 +28,8 @@ class InvoiceService{
 		private InvoiceValidationService $invoice_validation_service,
 		private InvoiceSaveService  $invoice_save_service,
 		private InvoiceRepository $invoice_repository,
-		private InvoiceDBOperations $invoice_db_operations
+		private InvoiceDBOperations $invoice_db_operations,
+		private CreditRepository $credit_repository
 	){}
 
 	/**
@@ -308,9 +310,9 @@ class InvoiceService{
 	 * @param string $amount
 	 * @return boolean
 	 */
-	public function addCreditForInvoice(int $company_id, int $invoice_id, string $amount) : bool {
+	public function addCreditForInvoice(int $company_id, int $invoice_id, string $amount, $uuid) : bool {
 
-		$credit = $this->invoice_repository->addCredit($company_id, $invoice_id, $amount);
+		$credit = $this->invoice_repository->addCredit($company_id, $invoice_id, $amount, $uuid);
 		$credit = $this->invoice_repository->overwriteCreditForAmount($credit, $amount);
 		return $this->invoice_repository->addLedgerEntry($company_id, $invoice_id, $credit->id, $amount, 'credit');
 
@@ -343,11 +345,11 @@ class InvoiceService{
 	 * @param string $type
 	 * @return array
 	 */
-	public function addCreditOrPaymentForInvoice(int $company_id, int $invoice_id, string $amount, int $payment_type, string $type = 'credit') : array {
+	public function addCreditOrPaymentForInvoice(int $company_id, int $invoice_id, string $amount, int $payment_type, string $uuid, string $type = 'credit') : array {
 		
-		return DB::transaction(function() use ($company_id, $invoice_id, $amount, $payment_type, $type) {
+		return DB::transaction(function() use ($company_id, $invoice_id, $amount, $payment_type, $type, $uuid) {
 			if($type === 'credit'){
-				$this->addCreditForInvoice($company_id, $invoice_id, $amount);
+				$this->addCreditForInvoice($company_id, $invoice_id, $amount, $uuid);
 			}else if($type === 'payment'){
 				$this->addPaymentForInvoice($company_id, $invoice_id, $amount, $payment_type);
 			}else{
@@ -444,6 +446,23 @@ class InvoiceService{
 			'currency_code'		=>	$invoice->currency_code,
 			'full_name'			=>	$invoice->first_name.' '.$invoice->last_name,
 		];
+
+	}
+
+	/**
+	 * ifCreditNumberExists function
+	 *
+	 * @param string $credit_number
+	 * @param integer|null $ignore_id
+	 * @return boolean
+	 */
+	public function ifCreditNumberExists(string $credit_number, int $ignore_id = null) : bool {
+
+		if($this->credit_repository->ifCreditNumberExists($credit_number, $ignore_id)){
+			throw new InvoiceException('Credit number already exists', 'already_exists_cn', (int) config('global.error_code'));
+		}
+
+		return false;
 
 	}
 

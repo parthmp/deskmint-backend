@@ -376,9 +376,11 @@ class InvoiceController extends Controller{
 			
 			if($type === 'payment'){
 				$this->invoice_service->validatePaymentType($payment_type);
+			}else{
+				$this->invoice_service->ifCreditNumberExists((string) $data['uuid'], null);
 			}
 
-			$data = $this->invoice_service->addCreditOrPaymentForInvoice((int) $data['company_id'], (int) $data['invoice_id'], (string) $data['amount'], (int) $payment_type, (string) $type);
+			$data = $this->invoice_service->addCreditOrPaymentForInvoice((int) $data['company_id'], (int) $data['invoice_id'], (string) $data['amount'], (int) $payment_type, (string) $data['uuid'], (string) $type);
 			
 			return response(['message' => 'Applied successfully', 'valdity' => 'applied_success', 'meta' => $data], 200);
 
