@@ -25,12 +25,14 @@ class PaymentCreateRequest extends FormRequest
 		$client_id = Sanitize::input($this->input('client_id'));
 		$amount = Sanitize::input($this->input('amount'));
 		$payment_type = Sanitize::input($this->input('payment_type'));
+		$payment_number = Sanitize::input($this->input('payment_number'));
 
 		$this->merge([
-			'company_id'	=>	$company_id,
-			'client_id'		=>	$client_id,
-			'amount'		=>	$amount,
-			'payment_type'	=>	$payment_type
+			'company_id'		=>	$company_id,
+			'client_id'			=>	$client_id,
+			'amount'			=>	$amount,
+			'payment_type'		=>	$payment_type,
+			'payment_number'	=>	$payment_number
 		]);
 
 	}
@@ -43,10 +45,11 @@ class PaymentCreateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_id'	=>	'required',
-			'client_id'		=>	['required', Rule::exists('clients', 'id')->where('company_id', $this->input('company_id'))],
-			'payment_type'	=>	['required', Rule::exists('payment_types', 'id')],
-			'amount'		=>	'required|numeric|gt:0|lt:999999999'
+            'company_id'		=>	'required',
+			'client_id'			=>	['required', Rule::exists('clients', 'id')->where('company_id', $this->input('company_id'))],
+			'payment_type'		=>	['required', Rule::exists('payment_types', 'id')],
+			'amount'			=>	'required|numeric|gt:0|lt:999999999',
+			'payment_number'	=>	'required'
         ];
     }
 

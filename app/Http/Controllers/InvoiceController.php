@@ -375,6 +375,7 @@ class InvoiceController extends Controller{
 		try{
 			
 			if($type === 'payment'){
+				$this->invoice_service->ifPaymentNumberExists((int) $data['company_id'], (string) $data['uuid'], null);
 				$this->invoice_service->validatePaymentType($payment_type);
 			}else{
 				$this->invoice_service->ifCreditNumberExists((int) $data['company_id'], (string) $data['uuid'], null);

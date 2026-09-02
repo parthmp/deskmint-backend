@@ -19,6 +19,7 @@ use App\Services\EmailSettingsContent\EmailSettingsContentService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 
 /**
  * PaymentRequestService class
@@ -483,6 +484,7 @@ class PaymentRequestService {
 		$pr = $this->payment_request_repository->fetchByIdWithCompanyId($company_id, $pr_id);
 
 		$data = [
+			'payment_number'	=>	Str::uuid(),
 			'company_id'		=>	(int) $company_id,
 			'client_id'			=>	(int) $pr->client_id,
 			'payment_type_id'	=>	(int) $payment_type_id,

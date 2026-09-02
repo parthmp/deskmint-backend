@@ -20,6 +20,7 @@ use App\Modules\InvoiceGeneration\InvoiceSnapshot as Snapshot;
 use App\Modules\Payment\Enums\PaymentStatus;
 use App\Modules\Payment\Enums\TransactionStatus;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Str;
 
 trait UpdateInvoiceForTransaction {
 
@@ -80,6 +81,7 @@ trait UpdateInvoiceForTransaction {
 	 */
 	private function insertPayment(array $data) : Payment {
 		$payment = new Payment();
+		$payment->payment_number = Str::uuid();
 		$payment->company_id = $data['company_id'];
 		$payment->client_id = $data['client_id'];
 		$payment->transaction_id = $data['transaction_id'];

@@ -103,10 +103,15 @@ class PaymentsController extends Controller {
 
 		try{
 
-			$this->payment_service->create((int) $data['company_id'], (int) $data['client_id'], (string) $data['amount'], (int) $data['payment_type']);
+			//validate
+			$this->payment_service->ifPaymentNumberExists((int) $data['company_id'], (string) $data['payment_number']);
+
+			$this->payment_service->create((int) $data['company_id'], (int) $data['client_id'], (string) $data['amount'], (int) $data['payment_type'], (string) $data['payment_number']);
 
 			return response(['message' => 'Payment created successfully', 'validity' => 'payment_created'], 200);
 
+		}catch(PaymentException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
 
 			return General::wentWrong();
@@ -153,7 +158,10 @@ class PaymentsController extends Controller {
 
 		try{
 
-			$this->payment_service->update($company_id, $client_id, $amount, $payment_id, $payment_type_id);
+			//validate
+			$this->payment_service->ifPaymentNumberExists((int) $data['company_id'], (string) $data['payment_number'], (int) $payment_id);
+
+			$this->payment_service->update($company_id, $client_id, $amount, $payment_id, $payment_type_id, (string) $data['payment_number']);
 
 			return response(['message' => 'Payment updated successfully', 'validity' => 'payment_updated'], 200);
 

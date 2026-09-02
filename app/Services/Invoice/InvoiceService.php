@@ -11,6 +11,7 @@ use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Repositories\Client\ClientRepository;
 use App\Repositories\Credit\CreditRepository;
 use App\Repositories\Invoice\InvoiceRepository;
+use App\Repositories\Payment\PaymentRepository;
 use App\Repositories\Product\ProductRepository;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use Brick\Math\BigDecimal;
@@ -29,7 +30,8 @@ class InvoiceService{
 		private InvoiceSaveService  $invoice_save_service,
 		private InvoiceRepository $invoice_repository,
 		private InvoiceDBOperations $invoice_db_operations,
-		private CreditRepository $credit_repository
+		private CreditRepository $credit_repository,
+		private PaymentRepository $payment_repository
 	){}
 
 	/**
@@ -325,11 +327,12 @@ class InvoiceService{
 	 * @param integer $invoice_id
 	 * @param string $amount
 	 * @param integer $payment_type
+	 * @param string $uuid
 	 * @return boolean
 	 */
-	public function addPaymentForInvoice(int $company_id, int $invoice_id, string $amount, int $payment_type) : bool {
+	public function addPaymentForInvoice(int $company_id, int $invoice_id, string $amount, int $payment_type, string $uuid) : bool {
 
-		$payment = $this->invoice_repository->addPayment($company_id, $invoice_id, $amount, $payment_type, null);
+		$payment = $this->invoice_repository->addPayment($company_id, $invoice_id, $amount, $payment_type, $uuid, null);
 		$payment = $this->invoice_repository->overwritePaymentForAmount($payment, $amount);
 		return $this->invoice_repository->addLedgerEntry($company_id, $invoice_id, $payment->id, $amount, 'payment');
 
@@ -351,7 +354,7 @@ class InvoiceService{
 			if($type === 'credit'){
 				$this->addCreditForInvoice($company_id, $invoice_id, $amount, $uuid);
 			}else if($type === 'payment'){
-				$this->addPaymentForInvoice($company_id, $invoice_id, $amount, $payment_type);
+				$this->addPaymentForInvoice($company_id, $invoice_id, $amount, $payment_type, $uuid);
 			}else{
 				throw new InvoiceException('Invalid type provided', 'invalid_type', (int) config('global.error_code'));
 			}
@@ -461,6 +464,24 @@ class InvoiceService{
 
 		if($this->credit_repository->ifCreditNumberExists($company_id, $credit_number, $ignore_id)){
 			throw new InvoiceException('Credit number already exists', 'already_exists_cn', (int) config('global.error_code'));
+		}
+
+		return false;
+
+	}
+
+	/**
+	 * ifPaymentNumberExists function
+	 *
+	 * @param integer $company_id
+	 * @param string $payment_number
+	 * @param integer|null $ignore_id
+	 * @return boolean
+	 */
+	public function ifPaymentNumberExists(int $company_id, string $payment_number, ?int $ignore_id = null) : bool {
+
+		if($this->payment_repository->ifPaymentNumberExists($company_id, $payment_number, $ignore_id)){
+			throw new InvoiceException('Payment number already exists', 'already_exists_pn', (int) config('global.error_code'));
 		}
 
 		return false;

@@ -173,11 +173,12 @@ class PaymentService {
 	 * @param integer $client_id
 	 * @param string $amount
 	 * @param integer $payment_type_id
+	 * @param string $payment_number
 	 * @return Payment
 	 */
-	public function create(int $company_id, int $client_id, string $amount, int $payment_type_id) : Payment {
+	public function create(int $company_id, int $client_id, string $amount, int $payment_type_id, string $payment_number) : Payment {
 		$currency_id = $this->credit_repository->fetchClientCurrencyId($company_id, $client_id);
-		return $this->payment_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, '0.00', $amount, PaymentStatus::NOT_APPLIED->value, $payment_type_id);
+		return $this->payment_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, '0.00', $amount, PaymentStatus::NOT_APPLIED->value, $payment_type_id, $payment_number);
 	}
 
 	/**
@@ -210,11 +211,12 @@ class PaymentService {
 	 * @param string $amount
 	 * @param integer $payment_id
 	 * @param integer $payment_type_id
+	 * @param string $payment_number
 	 * @return Payment
 	 */
-	public function update(int $company_id, int $client_id, string $amount, int $payment_id, int $payment_type_id) : Payment {
+	public function update(int $company_id, int $client_id, string $amount, int $payment_id, int $payment_type_id, string $payment_number) : Payment {
 
-		return DB::transaction(function () use ($company_id, $client_id, $amount, $payment_id, $payment_type_id) {
+		return DB::transaction(function () use ($company_id, $client_id, $amount, $payment_id, $payment_type_id, $payment_number) {
 
 			//check access first.
 			$payment = $this->payment_repository->fetchById($company_id, $payment_id);
@@ -231,7 +233,7 @@ class PaymentService {
 
 			if((int) $payment->status === PaymentStatus::NOT_APPLIED->value){
 				//update it fully.
-				return $this->payment_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, '0.00', $amount, PaymentStatus::NOT_APPLIED->value, $payment_type_id, null, $payment_id);
+				return $this->payment_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, '0.00', $amount, PaymentStatus::NOT_APPLIED->value, $payment_type_id, $payment_number, null, $payment_id);
 			}
 
 			//else check for further.
@@ -264,7 +266,7 @@ class PaymentService {
 			}
 
 			$left_to_apply = $left_to_apply->toScale(2, RoundingMode::HalfUp)->__toString();
-			return $this->payment_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, $payment->applied_amount, $left_to_apply, $status, $payment_type_id, null, $payment_id);
+			return $this->payment_repository->createOrUpdate($company_id, $client_id, $currency_id, $amount, $payment->applied_amount, $left_to_apply, $status, $payment_type_id, $payment_number, null, $payment_id);
 
 		});
 
@@ -427,6 +429,14 @@ class PaymentService {
 
 	}
 
+	/**
+	 * modifyInvoices function
+	 *
+	 * @param integer $company_id
+	 * @param array $applied
+	 * @param boolean $removal_provided
+	 * @return array
+	 */
 	private function modifyInvoices(int $company_id, array $applied, bool $removal_provided = false) : array {
 
 		if(!$removal_provided){
@@ -495,7 +505,15 @@ class PaymentService {
 
 	}
 
-	
+	/**
+	 * applyPaymentAmountToInvoices function
+	 *
+	 * @param integer $company_id
+	 * @param integer $payment_id
+	 * @param array $applied
+	 * @param array $removed_ids
+	 * @return void
+	 */
 	public function applyPaymentAmountToInvoices(int $company_id, int $payment_id, array $applied, array $removed_ids) : void {
 
 		DB::transaction(function() use ($company_id, $payment_id, $applied, $removed_ids) {
@@ -515,6 +533,24 @@ class PaymentService {
 			});
 			
 		});
+
+	}
+
+	/**
+	 * ifPaymentNumberExists function
+	 *
+	 * @param integer $company_id
+	 * @param string $payment_number
+	 * @param integer|null $ignore_id
+	 * @return boolean
+	 */
+	public function ifPaymentNumberExists(int $company_id, string $payment_number, ?int $ignore_id = null) : bool {
+
+		if($this->payment_repository->ifPaymentNumberExists($company_id, $payment_number, $ignore_id)){
+			throw new PaymentException('Payment number already exists', 'already_exists_pn', (int) config('global.error_code'));
+		}
+
+		return false;
 
 	}
 

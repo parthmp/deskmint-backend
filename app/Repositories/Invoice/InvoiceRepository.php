@@ -403,14 +403,16 @@ class InvoiceRepository{
 	 * @param integer $invoice_id
 	 * @param string $amount
 	 * @param integer $payment_type
+	 * @param string $uuid
 	 * @param integer|null $transaction_id
 	 * @return Payment
 	 */
-	public function addPayment(int $company_id, int $invoice_id, string $amount, int $payment_type, ?int $transaction_id = null) : Payment {
+	public function addPayment(int $company_id, int $invoice_id, string $amount, int $payment_type, string $uuid, ?int $transaction_id = null) : Payment {
 
 		$invoice = $this->fetchPartialInvoiceData($company_id, $invoice_id);
 
 		$payment = new Payment();
+		$payment->payment_number = $uuid;
 		$payment->company_id = $company_id;
 		$payment->client_id = $invoice->client_id;
 		$payment->transaction_id = $transaction_id;

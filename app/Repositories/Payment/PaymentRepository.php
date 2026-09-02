@@ -41,11 +41,12 @@ class PaymentRepository {
 	 * @param string $amount_left_to_apply
 	 * @param integer $status
 	 * @param integer $payment_type_id
+	 * @param string $payment_number
 	 * @param integer|null $transaction_id
 	 * @param integer|null $id
 	 * @return Payment
 	 */
-	public function createOrUpdate(int $company_id, int $client_id, int $currency_id, string $amount, string $applied_amount, string $amount_left_to_apply, int $status, int $payment_type_id, ?int $transaction_id = null, ?int $id = null) : Payment {
+	public function createOrUpdate(int $company_id, int $client_id, int $currency_id, string $amount, string $applied_amount, string $amount_left_to_apply, int $status, int $payment_type_id, string $payment_number, ?int $transaction_id = null, ?int $id = null) : Payment {
 
 		if(!$id){
 			$payment = new Payment();
@@ -55,6 +56,7 @@ class PaymentRepository {
 		}
 		
 		$payment->client_id = $client_id;
+		$payment->payment_number = $payment_number;
 		$payment->transaction_id = $transaction_id;
 		$payment->payment_type_id = $payment_type_id;
 		$payment->currency_id = $currency_id;
@@ -394,6 +396,27 @@ class PaymentRepository {
 	 */
 	public function updateInvoicesForPaymentApplying(array $upsert): void {
 		$this->credit_repository->updateInvoicesForCreditApplying($upsert);
+	}
+
+	/**
+	 * ifPaymentNumberExists function
+	 *
+	 * @param integer $company_id
+	 * @param string $payment_number
+	 * @param integer|null $ignore_id
+	 * @return boolean
+	 */
+	public function ifPaymentNumberExists(int $company_id, string $payment_number, ?int $ignore_id = null) : bool {
+
+		$conditions = [['payment_number', '=', $payment_number], ['company_id', '=', $company_id]];
+
+		if($ignore_id){
+			array_push($conditions, ['id', '<>', $ignore_id]);
+		}
+
+		$found = Payment::where($conditions)->count();
+
+		return (int) $found > 0;
 	}
 
 }

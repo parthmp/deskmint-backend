@@ -174,6 +174,7 @@ class PaymentRequestRepository {
 	public function createPaymentForRequest(array $data) : Payment {
 
 		$payment = new Payment();
+		$payment->payment_number = $data['payment_number'];
 		$payment->company_id = $data['company_id'];
 		$payment->client_id = $data['client_id'];
 		$payment->transaction_id = null;
