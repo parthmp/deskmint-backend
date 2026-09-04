@@ -8,6 +8,7 @@ use App\Http\Requests\GenericRequest;
 use App\Http\Requests\Invoice\AddCreditOrPaymentRequest;
 use App\Http\Requests\Invoice\FetchInvoiceRequest;
 use App\Http\Requests\Invoice\InvoiceGenerationRequest;
+use App\Http\Requests\Invoice\SearchCreditsRequest;
 use App\Http\Requests\Product\AutoCompleteSearchRequest;
 use App\Http\Requests\ToggleCancelRequest;
 use App\Jobs\GenerateInvoiceJob;
@@ -402,6 +403,14 @@ class InvoiceController extends Controller{
 		$invoice_id = Sanitize::input($id);
 
 		return $this->invoice_service->fetchInvoiceForApplyUnapplyCredit((int) $data['company_id'], (int) $invoice_id);
+
+	}
+
+	public function ApplyUnapplyCreditsSearchCredits(SearchCreditsRequest $request){
+		
+		$data = $request->validated();
+
+		
 
 	}
 

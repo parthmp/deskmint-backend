@@ -588,4 +588,46 @@ class InvoiceRepository{
 		
 	}
 
+	public function fetchCreditsForApplyUnapply(int $company_id, int $currency_id, int $client_id, string $searched, array $locally_applied_ids, array $fully_applied_ids = []){
+
+		$not_fulled_applied_credits = Credit::select('id as id', 'credit_number as credit', 'amount as amount', 'applied_amount as applied', 'amount_left_to_be_applied as left')->where([['currency_id', '=', $currency_id], ['company_id', '=', $company_id], ['client_id', '=', $client_id]])
+			->whereNotIn('id', $locally_applied_ids)
+			->where(function($q) {
+				$q->where('status', '=', CreditStatus::NOT_APPLIED->value)
+				->orWhere('status', '=', CreditStatus::PARTIALLY_APPLIED->value);
+			})->when($searched, function ($query, $searched) {
+				$query->where(function ($q) use ($searched) {
+
+					$q->where('credit_number', 'like', "%{$searched}%")
+					->orWhere('id', 'like', "%{$searched}%")
+					->orWhere('amount', 'like', "%{$searched}%")
+					->orWhere('applied_amount', 'like', "%{$searched}%")
+					->orWhere('amount_left_to_be_applied', 'like', "%{$searched}%");
+				});
+			})
+			->orderBy('id', 'desc')->limit(50)->get()->toArray();
+
+		// $paid_invoices = [];
+
+		// if(!empty($fully_applied_ids)){
+			
+		// 	$applied_credits = Credit::select('credits.id as id', 'credits.credit_number as credit', 'credits.amount as amount', 'credits.applied_amount as applied_amount', 'il.applied_amount_from_credits as applied_amount')
+		// 	->join('invoice_ledger as il', 'il.invoice_id', '=', 'invoices.id')
+		// 	->where([['invoices.currency_id', '=', $currency_id], ['invoices.company_id', '=', $company_id], ['invoices.client_id', '=', $client_id], ['il.credit_id', '=', $credit_id]])
+		// 	->whereIn('invoices.id', $fully_applied_ids)
+		// 	->where('invoices.status', '=', InvoiceStatus::PAID->value)->when($searched, function ($query, $searched) {
+		// 		$query->where(function ($q) use ($searched) {
+
+		// 			$q->where('invoices.invoice_number', 'like', "%{$searched}%")
+		// 			->orWhere('invoices.id', 'like', "%{$searched}%")
+		// 			->orWhere('invoices.balance_due', 'like', "%{$searched}%")
+		// 			->orWhere('invoices.total', 'like', "%{$searched}%");
+		// 		});
+		// 	})
+		// 	->orderBy('invoices.id', 'desc')->limit(50)->get()->toArray();
+
+		// }
+
+	}
+
 }

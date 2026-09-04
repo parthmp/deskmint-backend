@@ -154,6 +154,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	 */
 	
 	Route::get('manage-invoices/apply-unapply-credits/fetch-invoice/{id}', [InvoiceController::class, 'ApplyUnapplyCreditsFetchInvoice']);
+	Route::get('manage-invoices/apply-unapply-credits/search-credits', [InvoiceController::class, 'ApplyUnapplyCreditsSearchCredits']);
 	
 	Route::get('manage-invoices/snapshot/{id}', [InvoiceController::class, 'snapshot']);
 	Route::get('manage-invoices/download-pdf', [InvoiceController::class, 'downloadPdf']);
