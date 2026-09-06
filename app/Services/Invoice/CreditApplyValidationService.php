@@ -80,6 +80,14 @@ class CreditApplyValidationService {
 
 	}
 
+	/**
+	 * ifAppliedAmountLessThanCreditLeft function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param array $applied
+	 * @return boolean
+	 */
 	public function ifAppliedAmountLessThanCreditLeft(int $company_id, int $invoice_id, array $applied) : bool {
 
 		$ids = $this->getIds($applied);
@@ -95,28 +103,56 @@ class CreditApplyValidationService {
 
 				if((int) $ele['id'] === (int) $credit->id){
 
-					// $already_applied = BigDecimal::of(0);
+					$already_applied = BigDecimal::of(0);
 
-					// foreach($ledger as $entry){
-					// 	if((int) $entry->invoice_id === (int) $ele['id']){
-					// 		$already_applied = $already_applied->plus($entry->applied_credit);
-					// 		break;
-					// 	}
-					// }
+					foreach($ledger as $entry){
+						if((int) $entry->credit_id === (int) $ele['id']){
+							$already_applied = $already_applied->plus($entry->applied_credit);
+							break;
+						}
+					}
 
-					// $allowed = BigDecimal::of($invoice->balance_due);
-					// $allowed = $allowed->plus($already_applied);
-					// $applied_amount = BigDecimal::of($ele['amount']);
+					$allowed = BigDecimal::of($credit->amount_left_to_be_applied);
+					$allowed = $allowed->plus($already_applied);
+					$applied_amount = BigDecimal::of($ele['amount']);
 					
-					// if($applied_amount->isGreaterThan($allowed)){
-					// 	throw new CreditException('Amount '.$ele['amount'].' is greater than allowed amount', 'gt_allowed', (int) config('global.error_code'));
-					// }
+					if($applied_amount->isGreaterThan($allowed)){
+						throw new CreditException('Amount '.$ele['amount'].' is greater than allowed amount', 'gt_allowed', (int) config('global.error_code'));
+					}
 					
 				}
 			}
 		}
 
 		return true;
+
+	}
+
+	/**
+	 * ifSumOfAppliedLessThanBalanceDue function
+	 *
+	 * @param string $left_amount
+	 * @param array $applied
+	 * @return boolean
+	 */
+	private function ifSumOfAppliedLessThanBalanceDue(string $left_amount, array $applied) : bool {
+
+		$applied_sum = BigDecimal::of(0);
+		$amount_left = BigDecimal::of($left_amount);
+
+		foreach($applied as $ele){
+
+			$applied_amount = Sanitize::input($ele['amount']);
+			$applied_amount = BigDecimal::of($applied_amount);
+
+			$applied_sum = $applied_sum->plus($applied_amount);
+
+		}
+		if($applied_sum->isEqualTo($amount_left)){
+			return true;
+		}
+		
+		return $applied_sum->isLessThan($amount_left);
 
 	}
 
@@ -141,7 +177,7 @@ class CreditApplyValidationService {
 			throw new InvoiceException('Unexpected error : removed invoice exists in applied invoice', 'unexpected_error', (int) config('global.error_code'));
 		}
 
-		$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id, $company_id, ['client_id', 'currency_id', 'total']);
+		$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id, $company_id, ['client_id', 'currency_id', 'total', 'balance_due']);
 
 		if(!$invoice){
 			throw new InvoiceException('Invalid invoice', 'invalid_invoice', (int) config('global.error_code'));
@@ -155,9 +191,9 @@ class CreditApplyValidationService {
 			throw new InvoiceException('Applied amount(s) are greater than credit left', 'applied_amount_greater_than_credit_left', (int) config('global.error_code'));
 		}
 
-		// if(!$this->ifSumOfAppliedLessThanCreditLeft((string) $credit->amount, $applied)){
-		// 	throw new InvoiceException('Applied amount(s) are greater than credit left', 'applied_amount_greater_than_credit_left', (int) config('global.error_code'));
-		// }
+		if(!$this->ifSumOfAppliedLessThanBalanceDue((string) $invoice->balance_due, $applied)){
+			throw new InvoiceException('Applied amount(s) are greater than balance due', 'applied_amount_greater_than_balance_due', (int) config('global.error_code'));
+		}
 
 		return true;
 
