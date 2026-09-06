@@ -202,10 +202,11 @@ class InvoiceRepository{
 	 *
 	 * @param integer $invoice_id
 	 * @param integer $company_id
+	 * @param array $selects
 	 * @return Invoice|null
 	 */
-	public function fetchInvoiceObjById(int $invoice_id, int $company_id) : ?Invoice {
-		return Invoice::where([['id', '=', $invoice_id], ['company_id', '=', $company_id]])->first();
+	public function fetchInvoiceObjById(int $invoice_id, int $company_id, array $selects = ['*']) : ?Invoice {
+		return Invoice::select(...$selects)->where([['id', '=', $invoice_id], ['company_id', '=', $company_id]])->first();
 	}
 
 	/**
@@ -588,9 +589,35 @@ class InvoiceRepository{
 		
 	}
 
-	public function fetchCreditsForApplyUnapply(int $company_id, int $currency_id, int $client_id, string $searched, array $locally_applied_ids, array $fully_applied_ids = []){
+	/**
+	 * fetchLedgerEntries function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param array $not_in_ids
+	 * @return array
+	 */
+	public function fetchLedgerEntries(int $company_id, int $invoice_id, array $not_in_ids) : array {
+		$entries = InvoiceLedger::select('invoice_id as invoice_id', 'credit_id as credit_id', 'applied_amount_from_credits as applied_amount')->where([['company_id', '=', $company_id], ['invoice_id', '=', $invoice_id], ['credit_id', '<>', null]])->whereNotIn('credit_id', $not_in_ids)->get()->toArray();
+		return $entries;
+	}
+	
 
-		$not_fulled_applied_credits = Credit::select('id as id', 'credit_number as credit', 'amount as amount', 'applied_amount as applied', 'amount_left_to_be_applied as left')->where([['currency_id', '=', $currency_id], ['company_id', '=', $company_id], ['client_id', '=', $client_id]])
+	/**
+	 * fetchCreditsForApplyUnapply function
+	 *
+	 * @param integer $company_id
+	 * @param integer $currency_id
+	 * @param integer $client_id
+	 * @param integer $invoice_id
+	 * @param string $searched
+	 * @param array $locally_applied_ids
+	 * @param array $fully_applied_ids
+	 * @return array
+	 */
+	public function fetchCreditsForApplyUnapply(int $company_id, int $currency_id, int $client_id, int $invoice_id, string $searched, array $locally_applied_ids, array $fully_applied_ids = []) : array {
+
+		$not_fully_applied_credits_raw = Credit::select('id as id', 'credit_number as credit', 'amount as total', 'amount_left_to_be_applied as left')->where([['currency_id', '=', $currency_id], ['company_id', '=', $company_id], ['client_id', '=', $client_id]])
 			->whereNotIn('id', $locally_applied_ids)
 			->where(function($q) {
 				$q->where('status', '=', CreditStatus::NOT_APPLIED->value)
@@ -606,28 +633,109 @@ class InvoiceRepository{
 				});
 			})
 			->orderBy('id', 'desc')->limit(50)->get()->toArray();
-
-		// $paid_invoices = [];
-
-		// if(!empty($fully_applied_ids)){
+		
+		$applied_credits = [];
+		
+		if(!empty($fully_applied_ids)){
 			
-		// 	$applied_credits = Credit::select('credits.id as id', 'credits.credit_number as credit', 'credits.amount as amount', 'credits.applied_amount as applied_amount', 'il.applied_amount_from_credits as applied_amount')
-		// 	->join('invoice_ledger as il', 'il.invoice_id', '=', 'invoices.id')
-		// 	->where([['invoices.currency_id', '=', $currency_id], ['invoices.company_id', '=', $company_id], ['invoices.client_id', '=', $client_id], ['il.credit_id', '=', $credit_id]])
-		// 	->whereIn('invoices.id', $fully_applied_ids)
-		// 	->where('invoices.status', '=', InvoiceStatus::PAID->value)->when($searched, function ($query, $searched) {
-		// 		$query->where(function ($q) use ($searched) {
+			$applied_credits = Credit::select('credits.id as id', 'credits.credit_number as credit', 'credits.amount as total', 'il.applied_amount_from_credits as applied_amount', 'credits.amount_left_to_be_applied as left')
+			->join('invoice_ledger as il', 'il.credit_id', '=', 'credits.id')
+			->where([['credits.currency_id', '=', $currency_id], ['credits.company_id', '=', $company_id], ['credits.client_id', '=', $client_id], ['il.invoice_id', '=', $invoice_id]])
+			->whereIn('credits.id', $fully_applied_ids)
+			->where('credits.status', '=', CreditStatus::APPLIED->value)->when($searched, function ($query, $searched) {
+				$query->where(function ($q) use ($searched) {
 
-		// 			$q->where('invoices.invoice_number', 'like', "%{$searched}%")
-		// 			->orWhere('invoices.id', 'like', "%{$searched}%")
-		// 			->orWhere('invoices.balance_due', 'like', "%{$searched}%")
-		// 			->orWhere('invoices.total', 'like', "%{$searched}%");
-		// 		});
-		// 	})
-		// 	->orderBy('invoices.id', 'desc')->limit(50)->get()->toArray();
+					$q->where('credits.credit_number', 'like', "%{$searched}%")
+					->orWhere('credits.id', 'like', "%{$searched}%")
+					->orWhere('credits.amount', 'like', "%{$searched}%")
+					->orWhere('credits.applied_amount', 'like', "%{$searched}%")
+					->orWhere('il.applied_amount_from_credits', 'like', "%{$searched}%");
+				});
+			})
+			->orderBy('credits.id', 'desc')->limit(50)->get()->toArray();
 
-		// }
+		}
 
+		//add missing applied_amount_to_invoice for partially applied credits.
+		$entries = $this->fetchLedgerEntries($company_id, $invoice_id, $fully_applied_ids);
+
+		$not_fully_applied_credits = [];
+		foreach($not_fully_applied_credits_raw as $not_fully_applied_credit_raw){
+			$temp = $not_fully_applied_credit_raw;
+			$temp['applied_amount'] = '';
+			foreach($entries as $entry){
+				if((int) $entry['credit_id'] === (int) $not_fully_applied_credit_raw['id']){
+					$temp['applied_amount'] = $entry['applied_amount'];
+					break;
+				}
+			}
+			$not_fully_applied_credits[] = $temp;
+		}
+
+		return [
+			'not_fully_applied_credits'	=>	$not_fully_applied_credits,
+			'applied_credits'			=>	$applied_credits
+		];
+
+	}
+
+	/**
+	 * fetchAlreadyAppliedCredits function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param integer $currency_id
+	 * @param integer $client_id
+	 * @return array
+	 */
+	public function fetchAlreadyAppliedCredits(int $company_id, int $invoice_id, int $currency_id, int $client_id) : array {
+		
+		$applied_credits = Credit::select('credits.id as id', 'credits.credit_number as credit', 'credits.amount as total', 'il.applied_amount_from_credits as amount', 'credits.amount_left_to_be_applied as left')
+			->join('invoice_ledger as il', 'il.credit_id', '=', 'credits.id')
+			->where([['credits.currency_id', '=', $currency_id], ['credits.company_id', '=', $company_id], ['credits.client_id', '=', $client_id], ['il.invoice_id', '=', $invoice_id]])
+			->get()->toArray();
+
+		return $applied_credits;
+
+	}
+
+	/**
+	 * fetchCountForClientCreditsWithIds function
+	 *
+	 * @param integer $company_id
+	 * @param integer $client_id
+	 * @param integer $currency_id
+	 * @param array $ids
+	 * @return integer
+	 */
+	public function fetchCountForClientCreditsWithIds(int $company_id, int $client_id, int $currency_id, array $ids) : int {
+
+		return Credit::where([['company_id', '=', $company_id], ['client_id', '=', $client_id], ['currency_id', '=', $currency_id]])->whereIn('id', $ids)->count();
+
+	}
+
+	/**
+	 * fetchMultipleCreditsByIds function
+	 *
+	 * @param integer $company_id
+	 * @param array $credit_ids
+	 * @param array $selects
+	 * @return Collection
+	 */
+	public function fetchMultipleCreditsByIds(int $company_id, array $credit_ids, array $selects = ['*']) : Collection {
+		return Credit::select(...$selects)->where('company_id', '=', $company_id)->whereIn('id', $credit_ids)->get();
+	}
+
+	/**
+	 * fetchAppliedCreditsLedger function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param array $credit_ids
+	 * @return Collection
+	 */
+	public function fetchAppliedCreditsLedger(int $company_id, int $invoice_id, array $credit_ids) : Collection {
+		return InvoiceLedger::select('id as ledger_id', 'applied_amount_from_credits as applied_credit', 'invoice_id as invoice_id', 'credit_id as credit_id')->where([['company_id', '=', $company_id], ['invoice_id', '=', $invoice_id]])->whereIn('credit_id', $credit_ids)->get();
 	}
 
 }

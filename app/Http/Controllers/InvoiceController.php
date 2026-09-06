@@ -6,6 +6,7 @@ use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
 use App\Http\Requests\Invoice\AddCreditOrPaymentRequest;
+use App\Http\Requests\Invoice\AlreadyAppliedCreditsRequest;
 use App\Http\Requests\Invoice\FetchInvoiceRequest;
 use App\Http\Requests\Invoice\InvoiceGenerationRequest;
 use App\Http\Requests\Invoice\SearchCreditsRequest;
@@ -17,6 +18,7 @@ use App\Models\InvoicesCustomField;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
 use App\Modules\Payment\Enums\InvoiceStatus;
+use App\Services\Invoice\CreditApplyValidationService;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use App\Services\Invoice\InvoiceService;
 use Exception;
@@ -46,7 +48,8 @@ class InvoiceController extends Controller{
 
 	public function __construct(
 		private InvoiceService $invoice_service,
-		private ArrangedDataTableColumns $arranged_data_table_columns
+		private ArrangedDataTableColumns $arranged_data_table_columns,
+		private CreditApplyValidationService $credit_apply_validation_service
 	){}
     
 
@@ -409,9 +412,49 @@ class InvoiceController extends Controller{
 	public function ApplyUnapplyCreditsSearchCredits(SearchCreditsRequest $request){
 		
 		$data = $request->validated();
+		
+		try{
+
+			$invoice = $this->invoice_service->fetchInvoiceById((int) $data['invoice_id'], (int) $data['company_id'], ['currency_id', 'client_id']);
+
+			return $this->invoice_service->fetchCreditsForApplyUnapply(
+				(int) $data['company_id'],
+				(int) $invoice->currency_id,
+				(int) $invoice->client_id,
+				(int) $data['invoice_id'],
+				(string) $data['searched'],
+				(array) $data['applied_ids'],
+				(array) $data['fetched_and_removed_ids']
+			);
+
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 		
 
 	}
+
+	public function ApplyUnapplyCreditsFetchAlreadyApplied(AlreadyAppliedCreditsRequest $request){
+
+		$data = $request->validated();
+
+		try{
+
+			$invoice = $this->invoice_service->fetchInvoiceById((int) $data['invoice_id'], (int) $data['company_id'], ['currency_id', 'client_id']);
+			return $this->invoice_service->fetchAlreadyAppliedCredits((int) $data['company_id'], (int) $data['invoice_id'], (int) $invoice->currency_id, (int) $invoice->client_id);
+
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
+	}
+
+	public function ApplyUnapplyCredits(Request $request){
+
+		$this->credit_apply_validation_service->validateApplyUnapply($request);
+
+	}
+
 
 }

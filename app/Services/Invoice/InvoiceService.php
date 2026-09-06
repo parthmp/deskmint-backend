@@ -276,10 +276,11 @@ class InvoiceService{
 	 *
 	 * @param integer $invoice_id
 	 * @param integer $company_id
-	 * @return invoice|null
+	 * @param array $selects
+	 * @return Invoice|null
 	 */
-	public function fetchInvoiceById(int $invoice_id, int $company_id) : ?Invoice {
-		return $this->invoice_repository->fetchInvoiceObjById($invoice_id, $company_id);
+	public function fetchInvoiceById(int $invoice_id, int $company_id, array $selects = ['*']) : ?Invoice {
+		return $this->invoice_repository->fetchInvoiceObjById($invoice_id, $company_id, $selects);
 	}
 
 	/**
@@ -486,6 +487,35 @@ class InvoiceService{
 
 		return false;
 
+	}
+
+	/**
+	 * fetchCreditsForApplyUnapply function
+	 *
+	 * @param integer $company_id
+	 * @param integer $currency_id
+	 * @param integer $client_id
+	 * @param integer $invoice_id
+	 * @param string $searched
+	 * @param array $locally_applied_ids
+	 * @param array $fully_applied_ids
+	 * @return array
+	 */
+	public function fetchCreditsForApplyUnapply(int $company_id, int $currency_id, int $client_id, int $invoice_id, string $searched, array $locally_applied_ids, array $fully_applied_ids = []) : array {
+		return $this->invoice_repository->fetchCreditsForApplyUnapply($company_id, $currency_id, $client_id, $invoice_id, $searched, $locally_applied_ids, $fully_applied_ids);
+	}
+
+	/**
+	 * fetchAlreadyAppliedCredits function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param integer $currency_id
+	 * @param integer $client_id
+	 * @return array
+	 */
+	public function fetchAlreadyAppliedCredits(int $company_id, int $invoice_id, int $currency_id, int $client_id) : array {
+		return $this->invoice_repository->fetchAlreadyAppliedCredits($company_id, $invoice_id, $currency_id, $client_id);
 	}
 
 }

@@ -8,7 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Override;
 
-class SearchCreditsRequest extends FormRequest
+class AlreadyAppliedCreditsRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -19,21 +19,14 @@ class SearchCreditsRequest extends FormRequest
     }
 
 	#[Override]
-	protected function prepareForValidation()
-	{
-		
-		$company_id = Sanitize::input($this->input('company_id'));
-		$searched = Sanitize::input($this->input('searched'));
-		$invoice_id = Sanitize::input($this->input('invoice_id'));
-		$applied_ids = Sanitize::recursive($this->input('applied_ids'));
-		$fetched_and_removed_ids = Sanitize::recursive($this->input('fetched_and_removed_ids'));
+	protected function prepareForValidation(){
 
+		$company_id = Sanitize::input($this->input('company_id'));
+		$invoice_id = Sanitize::input($this->input('invoice_id'));
+		
 		$this->merge([
-			'company_id'				=>	$company_id,
-			'searched'					=>	$searched,
-			'invoice_id'				=>	$invoice_id,
-			'applied_ids'				=>	$applied_ids,
-			'fetched_and_removed_ids'	=>	$fetched_and_removed_ids,
+			'company_id'	=>	$company_id,
+			'invoice_id'	=>	$invoice_id,
 		]);
 
 	}
@@ -47,10 +40,7 @@ class SearchCreditsRequest extends FormRequest
     {
         return [
             'company_id'				=>	'required',
-            'searched'					=>	'sometimes',
             'invoice_id'				=>	['required', Rule::exists('invoices', 'id')->where('company_id', $this->input('company_id'))],
-            'applied_ids'				=>	'sometimes',
-            'fetched_and_removed_ids'	=>	'sometimes',
         ];
     }
 
