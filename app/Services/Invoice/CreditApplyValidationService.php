@@ -146,16 +146,16 @@ class CreditApplyValidationService {
 	}
 
 	/**
-	 * ifSumOfAppliedLessThanBalanceDue function
+	 * validateAppliedAgainstTotal function
 	 *
-	 * @param string $left_amount
+	 * @param string $total
 	 * @param array $applied
 	 * @return boolean
 	 */
-	private function ifSumOfAppliedLessThanBalanceDue(string $left_amount, array $applied) : bool {
+	private function validateAppliedAgainstTotal(string $total, array $applied) : bool {
 
 		$applied_sum = BigDecimal::of(0);
-		$amount_left = BigDecimal::of($left_amount);
+		$total_amount = BigDecimal::of($total);
 
 		foreach($applied as $ele){
 
@@ -165,11 +165,8 @@ class CreditApplyValidationService {
 			$applied_sum = $applied_sum->plus($applied_amount);
 
 		}
-		if($applied_sum->isEqualTo($amount_left)){
-			return true;
-		}
-		
-		return $applied_sum->isLessThan($amount_left);
+
+		return !$applied_sum->isGreaterThan($total_amount);
 
 	}
 
@@ -194,7 +191,7 @@ class CreditApplyValidationService {
 			throw new InvoiceException('Unexpected error : removed invoice exists in applied invoice', 'unexpected_error', (int) config('global.error_code'));
 		}
 
-		$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id, $company_id, ['client_id', 'currency_id', 'total', 'balance_due']);
+		$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id, $company_id, ['client_id', 'currency_id', 'total', 'total']);
 
 		if(!$invoice){
 			throw new InvoiceException('Invalid invoice', 'invalid_invoice', (int) config('global.error_code'));
@@ -212,7 +209,7 @@ class CreditApplyValidationService {
 			throw new InvoiceException('Applied amount(s) are greater than credit left', 'applied_amount_greater_than_credit_left', (int) config('global.error_code'));
 		}
 
-		if(!$this->ifSumOfAppliedLessThanBalanceDue((string) $invoice->balance_due, $applied)){
+		if(!$this->validateAppliedAgainstTotal((string) $invoice->total, $applied)){
 			throw new InvoiceException('Applied amount(s) are greater than balance due', 'applied_amount_greater_than_balance_due', (int) config('global.error_code'));
 		}
 

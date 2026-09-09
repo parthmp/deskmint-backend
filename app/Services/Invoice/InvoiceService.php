@@ -713,6 +713,15 @@ class InvoiceService{
 
 	}
 
+	/**
+	 * applyUnapplyCredits function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param array $applied
+	 * @param array $removed_ids
+	 * @return void
+	 */
 	public function applyUnapplyCredits(int $company_id, int $invoice_id, array $applied, array $removed_ids) : void {
 
 		DB::transaction(function() use ($company_id, $invoice_id, $applied, $removed_ids){
