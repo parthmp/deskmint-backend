@@ -622,7 +622,7 @@ class InvoiceService{
 			
 			$sum = BigDecimal::of(0);
 			$applied_amount_from_db = BigDecimal::of($credit['applied_amount']);
-			$status = CreditStatus::NOT_APPLIED;
+			$status = CreditStatus::NOT_APPLIED->value;
 			$total = BigDecimal::of($credit['amount']);
 
 			foreach($ledger_entries as $entry){
@@ -634,9 +634,9 @@ class InvoiceService{
 			if(!$sum->isEqualTo($applied_amount_from_db)){
 
 				if($sum->isLessThan($total) && $sum->isGreaterThan(BigDecimal::of(0))){
-					$status = CreditStatus::PARTIALLY_APPLIED;
+					$status = CreditStatus::PARTIALLY_APPLIED->value;
 				}else if($sum->isEqualTo($total)){
-					$status = CreditStatus::APPLIED;
+					$status = CreditStatus::APPLIED->value;
 				}
 
 				$left = $total->minus($sum);

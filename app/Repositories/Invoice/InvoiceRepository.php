@@ -920,7 +920,7 @@ class InvoiceRepository{
 				$applied_amount_bindings[] = $row['applied_amount'];
 
 				$amount_left_to_be_applied_bindings[] = $row['id'];
-				$total_bindamount_left_to_be_applied_bindingsings[] = $row['amount_left_to_be_applied'];
+				$amount_left_to_be_applied_bindings[] = $row['amount_left_to_be_applied'];
 			}
 
 			$status_case  .= 'END';
@@ -930,9 +930,9 @@ class InvoiceRepository{
 			$sql = "
 				UPDATE ".$table."
 				SET
-					applied_amount_from_credits = {$status_case},
-					applied_amount_from_payments = {$applied_amount_case},
-					total_applied = {$amount_left_to_be_applied_case},
+					status = {$status_case},
+					applied_amount = {$applied_amount_case},
+					amount_left_to_be_applied = {$amount_left_to_be_applied_case},
 					updated_at = ?
 				WHERE id IN (" . implode(',', array_fill(0, count($ids), '?')) . ")
 			";
