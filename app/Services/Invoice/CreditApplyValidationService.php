@@ -26,7 +26,7 @@ class CreditApplyValidationService {
 	 * @param array $applied
 	 * @return array
 	 */
-	private function getIds(array $applied) : array {
+	public function getIds(array $applied) : array {
 
 		$ids = [];
 
@@ -77,6 +77,23 @@ class CreditApplyValidationService {
 		$counted = $this->invoice_repository->fetchCountForClientCreditsWithIds($company_id, $client_id, $currency_id, $ids);
 
 		return (int) count($ids) === (int) $counted;
+
+	}
+
+	/**
+	 * ifRemovedCreditsAreFromSameClient function
+	 *
+	 * @param integer $company_id
+	 * @param integer $client_id
+	 * @param integer $currency_id
+	 * @param array $removed_ids
+	 * @return boolean
+	 */
+	private function ifRemovedCreditsAreFromSameClient(int $company_id, int $client_id, int $currency_id, array $removed_ids) : bool {
+
+		$counted = $this->invoice_repository->fetchCountForClientCreditsWithIds($company_id, $client_id, $currency_id, $removed_ids);
+
+		return (int) count($removed_ids) === (int) $counted;
 
 	}
 
@@ -181,6 +198,10 @@ class CreditApplyValidationService {
 
 		if(!$invoice){
 			throw new InvoiceException('Invalid invoice', 'invalid_invoice', (int) config('global.error_code'));
+		}
+
+		if(!$this->ifRemovedCreditsAreFromSameClient($company_id, (int) $invoice->client_id, (int) $invoice->currency_id, $removed_ids)){
+			throw new InvoiceException('Error : removal credits mismatch of client', 'client_removed_mismatch', (int) config('global.error_code'));
 		}
 
 		if(!$this->ifAppliedCreditsAreFromSameClient($company_id, (int) $invoice->client_id, (int) $invoice->currency_id, $applied)){

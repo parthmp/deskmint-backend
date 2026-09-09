@@ -452,9 +452,24 @@ class InvoiceController extends Controller{
 
 	public function ApplyUnapplyCredits(Request $request){
 
-		$this->credit_apply_validation_service->validateApplyUnapply($request);
+		try{
 
+			$this->credit_apply_validation_service->validateApplyUnapply($request);
 		
+			$company_id = Sanitize::input($request->input('company_id'));
+			$invoice_id = Sanitize::input($request->input('invoice_id'));
+			$applied = $request->input('applied');
+			$removed_ids = Sanitize::recursive($request->input('removed_ids'));
+
+			$this->invoice_service->applyUnapplyCredits((int) $company_id, (int) $invoice_id, (array) $applied, (array) $removed_ids);
+
+			return response(['message' => 'Saved successfully', 'valdity' => 'saved_success'], 200);
+
+		}catch(InvoiceException $e){
+			return response(['message' => $e->getMessage(), 'valdity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 	}
 

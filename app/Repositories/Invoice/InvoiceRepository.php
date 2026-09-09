@@ -738,4 +738,241 @@ class InvoiceRepository{
 		return InvoiceLedger::select('id as ledger_id', 'applied_amount_from_credits as applied_credit', 'invoice_id as invoice_id', 'credit_id as credit_id')->where([['company_id', '=', $company_id], ['invoice_id', '=', $invoice_id]])->whereIn('credit_id', $credit_ids)->get();
 	}
 
+	/**
+	 * removeLedgerEntries function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param array $credit_ids
+	 * @return void
+	 */
+	public function removeLedgerEntries(int $company_id, int $invoice_id, array $credit_ids) : void {
+		//InvoiceLedger::where([['company_id', '=', $company_id], ['invoice_id', '=', $invoice_id]])->whereIn('credit_id', $credit_ids)->forceDelete();
+		InvoiceLedger::where([['company_id', '=', $company_id], ['invoice_id', '=', $invoice_id]])->whereIn('credit_id', $credit_ids)->delete();
+	}
+
+	/**
+	 * fetchLedgerEntriesForApply function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param string $type
+	 * @return array
+	 */
+	public function fetchLedgerEntriesForApply(int $company_id, int $invoice_id, string $type = 'credit') : array {
+
+		$conditions = [['company_id', '=', $company_id], ['invoice_id', '=', $invoice_id]];
+
+		if($type === 'credit'){
+			$conditions[] = ['credit_id', '<>', null];
+		}else{
+			$conditions[] = ['payment_id', '<>', null];
+		}
+
+		return InvoiceLedger::where($conditions)->get()->toArray();
+
+	}
+
+	/**
+	 * insertNewLedgerEntries function
+	 *
+	 * @param array $chunks
+	 * @return void
+	 */
+	public function insertNewLedgerEntries(array $chunks) : void {
+		foreach($chunks as $chunk){
+			InvoiceLedger::insert($chunk);
+		}
+	}
+
+	/**
+	 * updateLedgerEntries function
+	 *
+	 * @param array $chunks
+	 * @return void
+	 */
+	public function updateLedgerEntries(array $chunks) : void {
+
+		foreach($chunks as $chunk){
+
+			$ids = array_column($chunk, 'id');
+
+			$credits_case  = 'CASE id ';
+			$payments_case = 'CASE id ';
+			$total_case    = 'CASE id ';
+
+			$credits_bindings  = [];
+			$payments_bindings = [];
+			$total_bindings    = [];
+
+			foreach($chunk as $row){
+
+				$credits_case  .= 'WHEN ? THEN ? ';
+				$payments_case .= 'WHEN ? THEN ? ';
+				$total_case    .= 'WHEN ? THEN ? ';
+
+				$credits_bindings[]  = $row['id'];
+				$credits_bindings[]  = $row['applied_amount_from_credits'];
+
+				$payments_bindings[] = $row['id'];
+				$payments_bindings[] = $row['applied_amount_from_payments'];
+
+				$total_bindings[]    = $row['id'];
+				$total_bindings[]    = $row['total_applied'];
+			}
+
+			$credits_case  .= 'END';
+			$payments_case .= 'END';
+			$total_case    .= 'END';
+
+			$sql = "
+				UPDATE invoice_ledger
+				SET
+					applied_amount_from_credits = {$credits_case},
+					applied_amount_from_payments = {$payments_case},
+					total_applied = {$total_case},
+					updated_at = ?
+				WHERE id IN (" . implode(',', array_fill(0, count($ids), '?')) . ")
+			";
+
+			$bindings = array_merge(
+				$credits_bindings,
+				$payments_bindings,
+				$total_bindings,
+				[now()],
+				$ids
+			);
+
+			DB::update($sql, $bindings);
+		}
+
+	}
+
+	/**
+	 * fetchMultipleLedgerOfIds function
+	 *
+	 * @param integer $company_id
+	 * @param array $ids
+	 * @param string $type
+	 * @return array
+	 */
+	public function fetchMultipleLedgerOfIds(int $company_id, array $ids, $type = 'credit') : array {
+
+		$key = 'credit_id';
+
+		if($type === 'payment'){
+			$key = 'payment_id';
+		}
+
+		return InvoiceLedger::where('company_id', '=', $company_id)->whereIn($key, $ids)->orderBy($key, 'asc')->get()->toArray();
+
+	}
+
+	/**
+	 * fetchMultipleEntriesByIdsForApply function
+	 *
+	 * @param integer $company_id
+	 * @param string $model
+	 * @param array $ids
+	 * @return array
+	 */
+	public function fetchMultipleEntriesByIdsForApply(int $company_id, string $model, array $ids) : array {
+		return $model::where('company_id', '=', $company_id)->whereIn('id', $ids)->orderBy('id', 'asc')->get()->toArray();
+	}
+
+	/**
+	 * updateMultipleEntries function
+	 *
+	 * @param array $chunks
+	 * @param string $type
+	 * @return void
+	 */
+	public function updateMultipleEntries(array $chunks, $type = 'credit') : void {
+
+		$table = 'credits';
+
+		if($type === 'payment'){
+			$table = 'payments';
+		}
+
+		foreach($chunks as $chunk){
+
+			$ids = array_column($chunk, 'id');
+
+			$status_case  = 'CASE id ';
+			$applied_amount_case = 'CASE id ';
+			$amount_left_to_be_applied_case    = 'CASE id ';
+
+			$status_bindings  = [];
+			$applied_amount_bindings = [];
+			$amount_left_to_be_applied_bindings = [];
+
+			foreach($chunk as $row){
+
+				$status_case  .= 'WHEN ? THEN ? ';
+				$applied_amount_case .= 'WHEN ? THEN ? ';
+				$amount_left_to_be_applied_case    .= 'WHEN ? THEN ? ';
+
+				$status_bindings[]  = $row['id'];
+				$status_bindings[]  = $row['status'];
+
+				$applied_amount_bindings[] = $row['id'];
+				$applied_amount_bindings[] = $row['applied_amount'];
+
+				$amount_left_to_be_applied_bindings[] = $row['id'];
+				$total_bindamount_left_to_be_applied_bindingsings[] = $row['amount_left_to_be_applied'];
+			}
+
+			$status_case  .= 'END';
+			$applied_amount_case .= 'END';
+			$amount_left_to_be_applied_case .= 'END';
+
+			$sql = "
+				UPDATE ".$table."
+				SET
+					applied_amount_from_credits = {$status_case},
+					applied_amount_from_payments = {$applied_amount_case},
+					total_applied = {$amount_left_to_be_applied_case},
+					updated_at = ?
+				WHERE id IN (" . implode(',', array_fill(0, count($ids), '?')) . ")
+			";
+
+			$bindings = array_merge(
+				$status_bindings,
+				$applied_amount_bindings,
+				$amount_left_to_be_applied_bindings,
+				[now()],
+				$ids
+			);
+
+			DB::update($sql, $bindings);
+		}
+	}
+
+	/**
+	 * fetchLedgerForApplying function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function fetchLedgerForApplying(int $company_id, int $invoice_id) : array {
+		return InvoiceLedger::select('total_applied', 'invoice_id')->where([['company_id', '=', $company_id], ['invoice_id', '=', $invoice_id]])->get()->toArray();
+	}
+
+	/**
+	 * updateInvoiceForApply function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param array $update
+	 * @return void
+	 */
+	public function updateInvoiceForApply(int $company_id, int $invoice_id, array $update) : void {
+		Invoice::where([['company_id', '=', $company_id], ['id', '=', $invoice_id]])->update([
+			'status' 		=> $update['status'],
+			'balance_due' 	=> $update['balance_due']
+		]);
+	}
+
 }
