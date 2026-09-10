@@ -191,7 +191,7 @@ class CreditApplyValidationService {
 			throw new InvoiceException('Unexpected error : removed invoice exists in applied invoice', 'unexpected_error', (int) config('global.error_code'));
 		}
 
-		$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id, $company_id, ['client_id', 'currency_id', 'total', 'total']);
+		$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id, $company_id, ['client_id', 'currency_id', 'total']);
 
 		if(!$invoice){
 			throw new InvoiceException('Invalid invoice', 'invalid_invoice', (int) config('global.error_code'));

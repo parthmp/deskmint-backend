@@ -747,8 +747,8 @@ class InvoiceRepository{
 	 * @return void
 	 */
 	public function removeLedgerEntries(int $company_id, int $invoice_id, array $credit_ids) : void {
-		//InvoiceLedger::where([['company_id', '=', $company_id], ['invoice_id', '=', $invoice_id]])->whereIn('credit_id', $credit_ids)->forceDelete();
-		InvoiceLedger::where([['company_id', '=', $company_id], ['invoice_id', '=', $invoice_id]])->whereIn('credit_id', $credit_ids)->delete();
+		InvoiceLedger::where([['company_id', '=', $company_id], ['invoice_id', '=', $invoice_id]])->whereIn('credit_id', $credit_ids)->forceDelete();
+		//InvoiceLedger::where([['company_id', '=', $company_id], ['invoice_id', '=', $invoice_id]])->whereIn('credit_id', $credit_ids)->delete();
 	}
 
 	/**
