@@ -171,6 +171,39 @@ class CreditApplyValidationService {
 	}
 
 	/**
+	 * ifNoNegativesFound function
+	 *
+	 * @param array $rows
+	 * @return boolean
+	 */
+	public function ifNoNegativesFound(array $rows) : bool {
+
+		foreach($rows as $row){
+			logger($row);
+			if(!isset($row['id']) || !isset($row['amount']) || !isset($row['credit']) || !isset($row['left']) || !isset($row['show_text_input']) || !isset($row['total']) || !isset($row['type'])){
+				throw new InvoiceException('Invalid request', 'invalid_request', (int) config('global.error_code'));
+			}
+
+			$str = (string) $row['amount'];
+			$is_number = (bool) preg_match('/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/', $str);
+
+			if(!$is_number){
+				throw new InvoiceException('Invalid request', 'invalid_request_non_numeric', (int) config('global.error_code'));
+			}
+
+			$amount = BigDecimal::of($row['amount']);
+
+			if($amount->isLessThan(BigDecimal::of(0)) || $amount->isEqualTo(BigDecimal::of(0))){
+				return false;
+			}
+
+		}
+
+		return true;
+		
+	}
+
+	/**
 	 * validateApplyUnapply function
 	 *
 	 * @param Request $request
@@ -186,6 +219,19 @@ class CreditApplyValidationService {
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 		$applied = $request->input('applied');
 		$removed_ids = $request->input('removed_ids');
+
+		if(!is_array($applied)){
+			throw new InvoiceException('Invalid request', 'invalid_request', (int) config('global.error_code'));
+		}
+
+		if(!is_array($removed_ids)){
+			throw new InvoiceException('Invalid request', 'invalid_request', (int) config('global.error_code'));
+		}
+
+		if(!$this->ifNoNegativesFound($applied)){
+			
+			throw new InvoiceException('Invalid request', 'invalid_request_nve_found', (int) config('global.error_code'));
+		}
 
 		if($this->removedIdInApplied($applied, $removed_ids)){
 			throw new InvoiceException('Unexpected error : removed invoice exists in applied invoice', 'unexpected_error', (int) config('global.error_code'));
