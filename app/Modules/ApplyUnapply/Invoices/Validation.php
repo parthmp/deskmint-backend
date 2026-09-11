@@ -1,47 +1,21 @@
 <?php
 
-namespace App\Services\Invoice;
+namespace App\Modules\ApplyUnapply\Invoices;
 
-use App\Exceptions\CreditException;
 use App\Helpers\Sanitize;
-use App\Models\Invoice;
-use App\Repositories\Invoice\InvoiceRepository;
+use App\Modules\ApplyUnapply\Common\DB\DB;
+use App\Modules\ApplyUnapply\Common\Traits\ApplyUnapplyCommon;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use Brick\Math\BigDecimal;
-use Brick\Math\RoundingMode;
 use Illuminate\Http\Request;
 
-/**
- * CreditApplyValidationService class
- */
-class CreditApplyValidationService {
+class Validation {
+
+	use ApplyUnapplyCommon;
 
 	public function __construct(
-		private InvoiceRepository $invoice_repository
+		private DB $db
 	){}
-
-	/**
-	 * getIds function
-	 *
-	 * @param array $applied
-	 * @return array
-	 */
-	public function getIds(array $applied) : array {
-
-		$ids = [];
-
-		foreach($applied as $ele){
-			$ele['id'] = Sanitize::input($ele['id']);
-			if(!in_array($ele['id'], $ids)){
-				array_push($ids, $ele['id']);
-			}else{
-				throw new InvoiceException('Duplicate entries found to apply this credit', 'duplicate_credit_ids', (int) config('global.error_code'));
-			}
-		}
-
-		return $ids;
-
-	}
 
 	/**
 	 * removedIdInApplied function
@@ -62,79 +36,90 @@ class CreditApplyValidationService {
 
 
 	/**
-	 * ifAppliedCreditsAreFromSameClient function
+	 * ifAppliedEntriesAreFromSameClient function
 	 *
 	 * @param integer $company_id
 	 * @param integer $client_id
 	 * @param integer $currency_id
 	 * @param array $applied
+	 * @param string $type
 	 * @return boolean
 	 */
-	private function ifAppliedCreditsAreFromSameClient(int $company_id, int $client_id, int $currency_id, array $applied) : bool {
+	private function ifAppliedEntriesAreFromSameClient(int $company_id, int $client_id, int $currency_id, array $applied, string $type = 'credit') : bool {
 
 		$ids = $this->getIds($applied);
 
-		$counted = $this->invoice_repository->fetchCountForClientCreditsWithIds($company_id, $client_id, $currency_id, $ids);
+		$counted = $this->db->fetchCountForClientEntriesWithIds($company_id, $client_id, $currency_id, $ids, $type);
 
 		return (int) count($ids) === (int) $counted;
 
 	}
 
 	/**
-	 * ifRemovedCreditsAreFromSameClient function
+	 * ifRemovedEntriesAreFromSameClient function
 	 *
 	 * @param integer $company_id
 	 * @param integer $client_id
 	 * @param integer $currency_id
 	 * @param array $removed_ids
+	 * @param string $type
 	 * @return boolean
 	 */
-	private function ifRemovedCreditsAreFromSameClient(int $company_id, int $client_id, int $currency_id, array $removed_ids) : bool {
+	private function ifRemovedEntriesAreFromSameClient(int $company_id, int $client_id, int $currency_id, array $removed_ids, string $type = 'credit') : bool {
 
-		$counted = $this->invoice_repository->fetchCountForClientCreditsWithIds($company_id, $client_id, $currency_id, $removed_ids);
+		$counted = $this->db->fetchCountForClientEntriesWithIds($company_id, $client_id, $currency_id, $removed_ids, $type);
 
 		return (int) count($removed_ids) === (int) $counted;
 
 	}
 
 	/**
-	 * ifAppliedAmountLessThanCreditLeft function
+	 * ifAppliedAmountLessThanEntryLeft function
 	 *
 	 * @param integer $company_id
 	 * @param integer $invoice_id
+	 * @param string $type
 	 * @param array $applied
 	 * @return boolean
 	 */
-	public function ifAppliedAmountLessThanCreditLeft(int $company_id, int $invoice_id, array $applied) : bool {
+	public function ifAppliedAmountLessThanEntryLeft(int $company_id, int $invoice_id, string $type, array $applied) : bool {
 
 		$ids = $this->getIds($applied);
 
-		$credits = $this->invoice_repository->fetchMultipleCreditsByIds($company_id, $ids);
-		$ledger = $this->invoice_repository->fetchAppliedCreditsLedger($company_id, $invoice_id, $ids);
+		$credits_or_payments = $this->db->fetchMultipleEntriesByIds($company_id, $ids, $type);
+		$ledger = $this->db->fetchAppliedEntriesLedger($company_id, $invoice_id, $ids, $type);
+		$cp_id = null;
 
-		foreach($credits as $credit){
+		foreach($credits_or_payments as $credit_or_payment){
 			foreach($applied as $ele){
 
 				$ele['id'] = Sanitize::input($ele['id']);
 				$ele['amount'] = Sanitize::input($ele['amount']);
 
-				if((int) $ele['id'] === (int) $credit->id){
+				if((int) $ele['id'] === (int) $credit_or_payment->id){
 
 					$already_applied = BigDecimal::of(0);
 
 					foreach($ledger as $entry){
-						if((int) $entry->credit_id === (int) $ele['id']){
+
+						if($type === 'credit'){
+							$cp_id = (int) $entry->credit_id;
+						}else if($type === 'payment'){
+							$cp_id = (int) $entry->payment_id;
+						}
+
+						if((int) $cp_id === (int) $ele['id']){
 							$already_applied = $already_applied->plus($entry->applied_credit);
 							break;
 						}
 					}
 
-					$allowed = BigDecimal::of($credit->amount_left_to_be_applied);
+					$allowed = BigDecimal::of($credit_or_payment->amount_left_to_be_applied);
 					$allowed = $allowed->plus($already_applied);
 					$applied_amount = BigDecimal::of($ele['amount']);
 					
 					if($applied_amount->isGreaterThan($allowed)){
-						throw new CreditException('Amount '.$ele['amount'].' is greater than allowed amount', 'gt_allowed', (int) config('global.error_code'));
+						throw new InvoiceException('Amount '.$ele['amount'].' is greater than allowed amount', 'gt_allowed', (int) config('global.error_code'));
 					}
 					
 				}
@@ -174,13 +159,14 @@ class CreditApplyValidationService {
 	 * ifNoNegativesFound function
 	 *
 	 * @param array $rows
+	 * @param string $type
 	 * @return boolean
 	 */
-	public function ifNoNegativesFound(array $rows) : bool {
+	public function ifNoNegativesFound(array $rows, string $type) : bool {
 
 		foreach($rows as $row){
-			logger($row);
-			if(!isset($row['id']) || !isset($row['amount']) || !isset($row['credit']) || !isset($row['left']) || !isset($row['show_text_input']) || !isset($row['total']) || !isset($row['type'])){
+			
+			if(!isset($row['id']) || !isset($row['amount']) || !isset($row[$type]) || !isset($row['left']) || !isset($row['show_text_input']) || !isset($row['total']) || !isset($row['type'])){
 				throw new InvoiceException('Invalid request', 'invalid_request', (int) config('global.error_code'));
 			}
 
@@ -204,12 +190,13 @@ class CreditApplyValidationService {
 	}
 
 	/**
-	 * validateApplyUnapply function
+	 * validateApplyUnapplyForInvoice function
 	 *
 	 * @param Request $request
+	 * @param string $type
 	 * @return boolean
 	 */
-	public function validateApplyUnapply(Request $request) : bool {
+	public function validateApplyUnapplyForInvoice(Request $request, string $type) : bool {
 
 		if(!$request->has('invoice_id') || !$request->has('company_id') || !$request->has('applied') || !$request->has('removed_ids')){
 			throw new InvoiceException('Invalid request', 'invalid_request', (int) config('global.error_code'));
@@ -228,7 +215,7 @@ class CreditApplyValidationService {
 			throw new InvoiceException('Invalid request', 'invalid_request', (int) config('global.error_code'));
 		}
 
-		if(!$this->ifNoNegativesFound($applied)){
+		if(!$this->ifNoNegativesFound($applied, $type)){
 			
 			throw new InvoiceException('Invalid request', 'invalid_request_nve_found', (int) config('global.error_code'));
 		}
@@ -237,21 +224,21 @@ class CreditApplyValidationService {
 			throw new InvoiceException('Unexpected error : removed invoice exists in applied invoice', 'unexpected_error', (int) config('global.error_code'));
 		}
 
-		$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id, $company_id, ['client_id', 'currency_id', 'total']);
+		$invoice = $this->db->fetchInvoiceObjById($invoice_id, $company_id, ['client_id', 'currency_id', 'total']);
 
 		if(!$invoice){
 			throw new InvoiceException('Invalid invoice', 'invalid_invoice', (int) config('global.error_code'));
 		}
 
-		if(!$this->ifRemovedCreditsAreFromSameClient($company_id, (int) $invoice->client_id, (int) $invoice->currency_id, $removed_ids)){
+		if(!$this->ifRemovedEntriesAreFromSameClient($company_id, (int) $invoice->client_id, (int) $invoice->currency_id, $removed_ids, $type)){
 			throw new InvoiceException('Error : removal credits mismatch of client', 'client_removed_mismatch', (int) config('global.error_code'));
 		}
 
-		if(!$this->ifAppliedCreditsAreFromSameClient($company_id, (int) $invoice->client_id, (int) $invoice->currency_id, $applied)){
+		if(!$this->ifAppliedEntriesAreFromSameClient($company_id, (int) $invoice->client_id, (int) $invoice->currency_id, $applied, $type)){
 			throw new InvoiceException('Client or currency mismatch to apply credit on invoice', 'client_currency_mismatch', (int) config('global.error_code'));
 		}
 
-		if(!$this->ifAppliedAmountLessThanCreditLeft($company_id, $invoice_id, $applied)){
+		if(!$this->ifAppliedAmountLessThanEntryLeft($company_id, $invoice_id, $type, $applied)){
 			throw new InvoiceException('Applied amount(s) are greater than credit left', 'applied_amount_greater_than_credit_left', (int) config('global.error_code'));
 		}
 

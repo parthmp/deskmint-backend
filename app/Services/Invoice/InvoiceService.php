@@ -7,6 +7,7 @@ use App\Helpers\Sanitize;
 use App\Jobs\GenerateInvoiceSnapshotJob;
 use App\Models\Credit;
 use App\Models\Invoice;
+use App\Modules\ApplyUnapply\Common\Traits\ApplyUnapplyCommon;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\InvoiceGeneration\InvoiceEmailContent;
 use App\Modules\InvoiceGeneration\InvoiceGenerator;
@@ -25,6 +26,8 @@ use Illuminate\Support\Facades\DB;
 
 class InvoiceService{
 
+	use ApplyUnapplyCommon;
+
 	public function __construct(
 		private InvoiceFetchService $invoice_fetch_service,
 		private ClientRepository $client_repository,
@@ -34,8 +37,7 @@ class InvoiceService{
 		private InvoiceRepository $invoice_repository,
 		private InvoiceDBOperations $invoice_db_operations,
 		private CreditRepository $credit_repository,
-		private PaymentRepository $payment_repository,
-		private CreditApplyValidationService $credit_apply_validation_service
+		private PaymentRepository $payment_repository
 	){}
 
 	/**
@@ -443,21 +445,7 @@ class InvoiceService{
 
 	//starts apply unapply credit features.
 
-	public function fetchInvoiceForApplyUnapplyCredit(int $company_id, int $invoice_id) : array {
-
-		$invoice = $this->invoice_repository->fetchByIdWithComapanyId($company_id, $invoice_id);
-		
-		return [
-			'id'				=>	$invoice->id,
-			'amount'			=>	$invoice->total,
-			'amount_left'		=>	$invoice->balance_due,
-			'due'				=>	$invoice->balance_due,
-			'invoice_number'	=>	$invoice->invoice_number,
-			'currency_code'		=>	$invoice->currency_code,
-			'full_name'			=>	$invoice->first_name.' '.$invoice->last_name,
-		];
-
-	}
+	
 
 	/**
 	 * ifCreditNumberExists function
@@ -493,254 +481,6 @@ class InvoiceService{
 
 		return false;
 
-	}
-
-	/**
-	 * fetchCreditsForApplyUnapply function
-	 *
-	 * @param integer $company_id
-	 * @param integer $currency_id
-	 * @param integer $client_id
-	 * @param integer $invoice_id
-	 * @param string $searched
-	 * @param array $locally_applied_ids
-	 * @param array $fully_applied_ids
-	 * @return array
-	 */
-	public function fetchCreditsForApplyUnapply(int $company_id, int $currency_id, int $client_id, int $invoice_id, string $searched, array $locally_applied_ids, array $fully_applied_ids = []) : array {
-		return $this->invoice_repository->fetchCreditsForApplyUnapply($company_id, $currency_id, $client_id, $invoice_id, $searched, $locally_applied_ids, $fully_applied_ids);
-	}
-
-	/**
-	 * fetchAlreadyAppliedCredits function
-	 *
-	 * @param integer $company_id
-	 * @param integer $invoice_id
-	 * @param integer $currency_id
-	 * @param integer $client_id
-	 * @return array
-	 */
-	public function fetchAlreadyAppliedCredits(int $company_id, int $invoice_id, int $currency_id, int $client_id) : array {
-		return $this->invoice_repository->fetchAlreadyAppliedCredits($company_id, $invoice_id, $currency_id, $client_id);
-	}
-
-	/**
-	 * modifyLedger function
-	 *
-	 * @param integer $company_id
-	 * @param integer $invoice_id
-	 * @param array $applied_credits
-	 * @param array $removed_credit_ids
-	 * @return void
-	 */
-	public function modifyLedger(int $company_id, int $invoice_id, array $applied_credits, array $removed_credit_ids) : void {
-
-		//delete first
-		$this->invoice_repository->removeLedgerEntries($company_id, $invoice_id, $removed_credit_ids);
-		
-		//now check which ones were modified. this is required because later on, we will use updated_at to track which credit or payment applied when.
-		$update = [];
-		$insert = [];
-
-		$entries = $this->invoice_repository->fetchLedgerEntriesForApply($company_id, $invoice_id, 'credit');
-
-		foreach($applied_credits as $credit){
-
-			$credit['id'] = Sanitize::input($credit['id']);
-			$credit['amount'] = Sanitize::input($credit['amount']);
-
-			$found = false;
-			
-			foreach($entries as $entry){
-
-				if((int) $credit['id'] === (int) $entry['credit_id']){
-
-					$found = true;
-
-					$already_applied = BigDecimal::of($entry['applied_amount_from_credits']);
-					$to_be_applied = BigDecimal::of($credit['amount']);
-
-					//update only if amount changes.
-					if(!$already_applied->isEqualTo($to_be_applied)){
-						$update[] = [
-							'id'							=>	$entry['id'],
-							'applied_amount_from_credits'	=>	$credit['amount'],
-							'applied_amount_from_payments'	=>	0,
-							'total_applied'					=>	$credit['amount']
-						];
-					}
-
-				}
-
-			}
-
-			if(!$found){
-				//this is where we add new entries.
-				$insert[] = [
-					'company_id'						=>	$company_id,
-					'invoice_id'						=>	$invoice_id,
-					'payment_id'						=>	null,
-					'credit_id'							=>	$credit['id'],
-					'applied_amount_from_payments'		=>	0,
-					'applied_amount_from_credits'		=>	$credit['amount'],
-					'total_applied'						=>	$credit['amount'],
-					'created_at'						=>	now(),
-					'updated_at'						=>	now()
-				];
-			}
-
-		}
-
-		//now need chunks.
-		if((int) count($insert) > 0){
-			$insert = array_chunk($insert, 50);
-			$this->invoice_repository->insertNewLedgerEntries($insert);
-		}
-		
-		if((int) count($update) > 0){
-			$update = array_chunk($update, 50);
-			$this->invoice_repository->updateLedgerEntries($update);
-		}
-		
-
-	}
-
-	/**
-	 * updateEntries function
-	 *
-	 * @param integer $company_id
-	 * @param array $entry_ids
-	 * @return void
-	 */
-	public function updateEntries(int $company_id, array $entry_ids) : void {
-		
-		$ledger_entries = $this->invoice_repository->fetchMultipleLedgerOfIds($company_id, $entry_ids);
-		$credits = $this->invoice_repository->fetchMultipleEntriesByIdsForApply($company_id, Credit::class, $entry_ids);
-
-		$update = [];
-		foreach($credits as $credit){
-			
-			$sum = BigDecimal::of(0);
-			$applied_amount_from_db = BigDecimal::of($credit['applied_amount']);
-			$status = CreditStatus::NOT_APPLIED->value;
-			$total = BigDecimal::of($credit['amount']);
-
-			foreach($ledger_entries as $entry){
-				if((int) $entry['credit_id'] === (int) $credit['id']){
-					$sum = $sum->plus($entry['applied_amount_from_credits']);
-				}
-			}
-
-			if(!$sum->isEqualTo($applied_amount_from_db)){
-
-				if($sum->isLessThan($total) && $sum->isGreaterThan(BigDecimal::of(0))){
-					$status = CreditStatus::PARTIALLY_APPLIED->value;
-				}else if($sum->isEqualTo($total)){
-					$status = CreditStatus::APPLIED->value;
-				}
-
-				$left = $total->minus($sum);
-
-				if($left->isLessThan(BigDecimal::of(0))){
-					throw new InvoiceException('Something went wrong in calculation', 'unexpected_error_calc', (int) config('global.error_code'));
-				}
-
-				$update[] = [
-					'id' 						=> $credit['id'],
-					'status' 					=> $status,
-					'applied_amount' 			=> $sum->toScale(2, RoundingMode::HalfUp)->__toString(),
-					'amount_left_to_be_applied' => $left->toScale(2, RoundingMode::HalfUp)->__toString(),
-				];
-			}
-
-		}
-
-		if((int) count($update) > 0){
-			$update = array_chunk($update, 50);
-			$this->invoice_repository->updateMultipleEntries($update);
-		}
-
-	}
-
-	/**
-	 * updateInvoice function
-	 *
-	 * @param integer $company_id
-	 * @param integer $invoice_id
-	 * @return void
-	 */
-	public function updateInvoice(int $company_id, int $invoice_id) : void {
-
-		$entries = $this->invoice_repository->fetchLedgerForApplying($company_id, $invoice_id);
-		$invoice = $this->invoice_repository->fetchInvoiceObjById($invoice_id, $company_id, ['sent_at', 'reminders_sent', 'total', 'balance_due']);
-
-		$status = InvoiceStatus::DRAFT->value;
-
-		if($invoice['sent_at'] !== null || (int) $invoice['reminders_sent'] > 0){
-			$status = InvoiceStatus::SENT->value;
-		}
-
-		$sum = BigDecimal::of(0);
-		foreach($entries as $entry){
-			$sum = $sum->plus($entry['total_applied']);
-		}
-
-		$total = BigDecimal::of($invoice['total']);
-
-		$new_balance_due = $total->minus($sum);
-		$old_balance_due = BigDecimal::of($invoice['balance_due']);
-
-		if($new_balance_due->isEqualTo($old_balance_due)){
-			return ;
-		}
-
-		if($sum->isLessThan($total) && !$sum->isEqualTo(BigDecimal::of(0))){
-			$status = InvoiceStatus::PARTIALLY_PAID->value;
-		}else if($sum->isEqualTo($total)){
-			$status = InvoiceStatus::PAID->value;
-		}
-
-		if($sum->isGreaterThan($total)){
-			throw new InvoiceException('Something went wrong in calculation', 'unexpected_error_calc', (int) config('global.error_code'));
-		}
-
-		$update = [
-			'status'		=>	$status,
-			'balance_due'	=>  $new_balance_due->toScale(2, RoundingMode::HalfUp)->__toString(),	
-		];
-
-		$this->invoice_repository->updateInvoiceForApply($company_id, $invoice_id, $update);
-
-	}
-
-	/**
-	 * applyUnapplyCredits function
-	 *
-	 * @param integer $company_id
-	 * @param integer $invoice_id
-	 * @param array $applied
-	 * @param array $removed_ids
-	 * @return void
-	 */
-	public function applyUnapplyCredits(int $company_id, int $invoice_id, array $applied, array $removed_ids) : void {
-
-		DB::transaction(function() use ($company_id, $invoice_id, $applied, $removed_ids){
-
-			//modify ledger first.
-			$this->modifyLedger($company_id, $invoice_id, $applied, $removed_ids);
-			//now update credits
-			$applied_ids = array_values(array_unique($this->credit_apply_validation_service->getIds($applied)));
-			$removed_ids = array_values(array_unique($removed_ids));
-			$merged_ids = array_merge($applied_ids, $removed_ids);
-			$this->updateEntries($company_id, $merged_ids);
-			$this->updateInvoice($company_id, $invoice_id);
-
-			DB::afterCommit(function() use ($company_id, $invoice_id){
-				GenerateInvoiceSnapshotJob::dispatch($company_id, $invoice_id, true, false);	
-			});
-
-		});
-		
 	}
 
 }

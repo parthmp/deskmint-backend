@@ -157,6 +157,10 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-invoices/apply-unapply-credits/fetch-already-applied', [InvoiceController::class, 'ApplyUnapplyCreditsFetchAlreadyApplied']);
 	Route::get('manage-invoices/apply-unapply-credits/fetch-invoice/{id}', [InvoiceController::class, 'ApplyUnapplyCreditsFetchInvoice']);
 	Route::get('manage-invoices/apply-unapply-credits/search-credits', [InvoiceController::class, 'ApplyUnapplyCreditsSearchCredits']);
+
+	Route::patch('manage-invoices/apply-unapply-payments/apply-unapply-payments', [InvoiceController::class, 'ApplyUnapplyPayments']);
+	Route::get('manage-invoices/apply-unapply-payments/fetch-already-applied', [InvoiceController::class, 'ApplyUnapplyPaymentsFetchAlreadyApplied']);
+	Route::get('manage-invoices/apply-unapply-payments/search-payments', [InvoiceController::class, 'ApplyUnapplyPaymentsSearchCredits']);
 	
 	Route::get('manage-invoices/snapshot/{id}', [InvoiceController::class, 'snapshot']);
 	Route::get('manage-invoices/download-pdf', [InvoiceController::class, 'downloadPdf']);

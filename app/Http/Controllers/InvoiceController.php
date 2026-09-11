@@ -15,10 +15,12 @@ use App\Http\Requests\ToggleCancelRequest;
 use App\Jobs\GenerateInvoiceJob;
 use App\Jobs\SendInvoiceEmailJob;
 use App\Models\InvoicesCustomField;
+use App\Modules\ApplyUnapply\Common\Requests\AlreadyAppliedRequest;
+use App\Modules\ApplyUnapply\Common\Requests\SearchEntriesRequest;
+use App\Modules\ApplyUnapply\Invoices\ApplyUnapplyForInvoices;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
 use App\Modules\Payment\Enums\InvoiceStatus;
-use App\Services\Invoice\CreditApplyValidationService;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use App\Services\Invoice\InvoiceService;
 use Exception;
@@ -49,7 +51,7 @@ class InvoiceController extends Controller{
 	public function __construct(
 		private InvoiceService $invoice_service,
 		private ArrangedDataTableColumns $arranged_data_table_columns,
-		private CreditApplyValidationService $credit_apply_validation_service
+		private ApplyUnapplyForInvoices $apply_unapply_for_invoices
 	){}
     
 
@@ -405,11 +407,11 @@ class InvoiceController extends Controller{
 
 		$invoice_id = Sanitize::input($id);
 
-		return $this->invoice_service->fetchInvoiceForApplyUnapplyCredit((int) $data['company_id'], (int) $invoice_id);
+		return $this->apply_unapply_for_invoices->fetchInvoiceForApplyUnapply((int) $data['company_id'], (int) $invoice_id);
 
 	}
 
-	public function ApplyUnapplyCreditsSearchCredits(SearchCreditsRequest $request){
+	public function ApplyUnapplyCreditsSearchCredits(SearchEntriesRequest $request){
 		
 		$data = $request->validated();
 		
@@ -417,14 +419,15 @@ class InvoiceController extends Controller{
 
 			$invoice = $this->invoice_service->fetchInvoiceById((int) $data['invoice_id'], (int) $data['company_id'], ['currency_id', 'client_id']);
 
-			return $this->invoice_service->fetchCreditsForApplyUnapply(
+			return $this->apply_unapply_for_invoices->fetchEntriesForApplyUnapply(
 				(int) $data['company_id'],
 				(int) $invoice->currency_id,
 				(int) $invoice->client_id,
 				(int) $data['invoice_id'],
 				(string) $data['searched'],
 				(array) $data['applied_ids'],
-				(array) $data['fetched_and_removed_ids']
+				(array) $data['fetched_and_removed_ids'],
+				'credit'
 			);
 
 		}catch(Exception $e){
@@ -435,14 +438,14 @@ class InvoiceController extends Controller{
 
 	}
 
-	public function ApplyUnapplyCreditsFetchAlreadyApplied(AlreadyAppliedCreditsRequest $request){
+	public function ApplyUnapplyCreditsFetchAlreadyApplied(AlreadyAppliedRequest $request){
 
 		$data = $request->validated();
 
 		try{
 
 			$invoice = $this->invoice_service->fetchInvoiceById((int) $data['invoice_id'], (int) $data['company_id'], ['currency_id', 'client_id']);
-			return $this->invoice_service->fetchAlreadyAppliedCredits((int) $data['company_id'], (int) $data['invoice_id'], (int) $invoice->currency_id, (int) $invoice->client_id);
+			return $this->apply_unapply_for_invoices->fetchAlreadyAppliedEntries((int) $data['company_id'], (int) $data['invoice_id'], (int) $invoice->currency_id, (int) $invoice->client_id, 'credit');
 
 		}catch(Exception $e){
 			return General::wentWrong();
@@ -454,14 +457,14 @@ class InvoiceController extends Controller{
 
 		try{
 
-			$this->credit_apply_validation_service->validateApplyUnapply($request);
+			$this->apply_unapply_for_invoices->validateForInvoice($request, 'credit');
 		
 			$company_id = Sanitize::input($request->input('company_id'));
 			$invoice_id = Sanitize::input($request->input('invoice_id'));
 			$applied = $request->input('applied');
 			$removed_ids = Sanitize::recursive($request->input('removed_ids'));
 
-			$this->invoice_service->applyUnapplyCredits((int) $company_id, (int) $invoice_id, (array) $applied, (array) $removed_ids);
+			$this->apply_unapply_for_invoices->applyUnapplyEntries((int) $company_id, (int) $invoice_id, (array) $applied, (array) $removed_ids, 'credit');
 
 			return response(['message' => 'Saved successfully', 'valdity' => 'saved_success'], 200);
 
@@ -472,6 +475,78 @@ class InvoiceController extends Controller{
 		}
 
 	}
+
+	/** 
+	 * start of apply unapply payments
+	*/
+
+	public function ApplyUnapplyPaymentsFetchAlreadyApplied(AlreadyAppliedRequest $request){
+
+		$data = $request->validated();
+
+		try{
+
+			$invoice = $this->invoice_service->fetchInvoiceById((int) $data['invoice_id'], (int) $data['company_id'], ['currency_id', 'client_id']);
+			return $this->apply_unapply_for_invoices->fetchAlreadyAppliedEntries((int) $data['company_id'], (int) $data['invoice_id'], (int) $invoice->currency_id, (int) $invoice->client_id, 'payment');
+
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
+	}
+
+	public function ApplyUnapplyPaymentsSearchCredits(SearchEntriesRequest $request){
+		
+		$data = $request->validated();
+		
+		try{
+
+			$invoice = $this->invoice_service->fetchInvoiceById((int) $data['invoice_id'], (int) $data['company_id'], ['currency_id', 'client_id']);
+
+			return $this->apply_unapply_for_invoices->fetchEntriesForApplyUnapply(
+				(int) $data['company_id'],
+				(int) $invoice->currency_id,
+				(int) $invoice->client_id,
+				(int) $data['invoice_id'],
+				(string) $data['searched'],
+				(array) $data['applied_ids'],
+				(array) $data['fetched_and_removed_ids'],
+				'payment'
+			);
+
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
+	}
+
+	public function ApplyUnapplyPayments(Request $request){
+
+		try{
+
+			$this->apply_unapply_for_invoices->validateForInvoice($request, 'payment');
+		
+			$company_id = Sanitize::input($request->input('company_id'));
+			$invoice_id = Sanitize::input($request->input('invoice_id'));
+			$applied = $request->input('applied');
+			$removed_ids = Sanitize::recursive($request->input('removed_ids'));
+
+			$this->apply_unapply_for_invoices->applyUnapplyEntries((int) $company_id, (int) $invoice_id, (array) $applied, (array) $removed_ids, 'payment');
+
+			return response(['message' => 'Saved successfully', 'valdity' => 'saved_success'], 200);
+
+		}catch(InvoiceException $e){
+			return response(['message' => $e->getMessage(), 'valdity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
+	}
+
+
+	/**
+	 * end of apply unapply payments
+	 */
 
 
 }

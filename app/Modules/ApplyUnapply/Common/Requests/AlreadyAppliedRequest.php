@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Invoice;
+namespace App\Modules\ApplyUnapply\Common\Requests;
 
 use App\Helpers\Sanitize;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -8,7 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Override;
 
-class AlreadyAppliedCreditsRequest extends FormRequest
+class AlreadyAppliedRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
