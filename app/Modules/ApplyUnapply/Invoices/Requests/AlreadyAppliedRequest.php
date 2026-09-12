@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\ApplyUnapply\Common\Requests;
+namespace App\Modules\ApplyUnapply\Invoices\Requests;
 
 use App\Helpers\Sanitize;
 use Illuminate\Contracts\Validation\ValidationRule;

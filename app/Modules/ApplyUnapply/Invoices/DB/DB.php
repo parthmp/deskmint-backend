@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\ApplyUnapply\Common\DB;
+namespace App\Modules\ApplyUnapply\Invoices\DB;
 
 use App\Enums\Credits\CreditStatus;
 use App\Models\Credit;

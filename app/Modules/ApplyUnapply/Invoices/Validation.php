@@ -3,8 +3,8 @@
 namespace App\Modules\ApplyUnapply\Invoices;
 
 use App\Helpers\Sanitize;
-use App\Modules\ApplyUnapply\Common\DB\DB;
 use App\Modules\ApplyUnapply\Common\Traits\ApplyUnapplyCommon;
+use App\Modules\ApplyUnapply\Invoices\DB\DB;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use Brick\Math\BigDecimal;
 use Illuminate\Http\Request;
