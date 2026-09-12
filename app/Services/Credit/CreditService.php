@@ -261,36 +261,6 @@ class CreditService {
 	}
 
 	/**
-	 * fetchCreditWithCurrencyInfo function
-	 *
-	 * @param integer $company_id
-	 * @param integer $credit_id
-	 * @return array
-	 */
-	public function fetchCreditWithCurrencyInfo(int $company_id, int $credit_id) : array {
-		return $this->credit_repository->fetchCreditWithCurrencyInfo($company_id, $credit_id);
-	}
-
-	/**
-	 * searchInvoices function
-	 *
-	 * @param integer $company_id
-	 * @param integer $currency_id
-	 * @param integer $client_id
-	 * @param integer $credit_id
-	 * @param array $applied_ids
-	 * @param array $paid_ids
-	 * @param string $searched
-	 * @return array
-	 */
-	public function searchInvoices(int $company_id, int $currency_id, int $client_id, int $credit_id, array $applied_ids, array $paid_ids, string $searched) : array {
-
-		// $already_applied = $this->credit_repository->fetchAppliedInvoicesForCredit($company_id, $credit_id);
-		// $applied = array_unique(array_merge($already_applied, $applied_ids));
-		return $this->credit_repository->searchInvoices($company_id, $currency_id, $client_id, $credit_id, $applied_ids, $paid_ids, $searched);
-	}
-
-	/**
 	 * modifyCreditForApplying function
 	 *
 	 * @param integer $company_id
@@ -298,35 +268,35 @@ class CreditService {
 	 * @param array $applied
 	 * @return boolean
 	 */
-	private function modifyCreditForApplying(int $company_id, int $credit_id, array $applied) : bool {
+	// private function modifyCreditForApplying(int $company_id, int $credit_id, array $applied) : bool {
 
-		$applied_amount_sum = BigDecimal::of(0);
+	// 	$applied_amount_sum = BigDecimal::of(0);
 
-		foreach($applied as $ele){
+	// 	foreach($applied as $ele){
 
-			$ele['amount'] = Sanitize::input($ele['amount']);
-			$applied_amount = BigDecimal::of($ele['amount']);
-			$applied_amount_sum = $applied_amount_sum->plus($applied_amount);
+	// 		$ele['amount'] = Sanitize::input($ele['amount']);
+	// 		$applied_amount = BigDecimal::of($ele['amount']);
+	// 		$applied_amount_sum = $applied_amount_sum->plus($applied_amount);
 
-		}
+	// 	}
 
-		$credit = $this->credit_repository->resetCredit($company_id, $credit_id);
+	// 	$credit = $this->credit_repository->resetCredit($company_id, $credit_id);
 
-		$credit_total_amount = BigDecimal::of($credit->amount);
+	// 	$credit_total_amount = BigDecimal::of($credit->amount);
 
-		$new_left_to_apply_amount = $credit_total_amount->minus($applied_amount_sum);
+	// 	$new_left_to_apply_amount = $credit_total_amount->minus($applied_amount_sum);
 
-		$status = CreditStatus::NOT_APPLIED->value;
+	// 	$status = CreditStatus::NOT_APPLIED->value;
 
-		if($applied_amount_sum->isLessThan($credit_total_amount) && !$applied_amount_sum->isEqualTo(BigDecimal::of(0))){
-			$status = CreditStatus::PARTIALLY_APPLIED->value;
-		}else if($applied_amount_sum->isEqualTo($credit_total_amount)){
-			$status = CreditStatus::APPLIED->value;
-		}
+	// 	if($applied_amount_sum->isLessThan($credit_total_amount) && !$applied_amount_sum->isEqualTo(BigDecimal::of(0))){
+	// 		$status = CreditStatus::PARTIALLY_APPLIED->value;
+	// 	}else if($applied_amount_sum->isEqualTo($credit_total_amount)){
+	// 		$status = CreditStatus::APPLIED->value;
+	// 	}
 
-		return $this->credit_repository->updateCreditForApplying($credit, $status, $applied_amount_sum->toScale(2, RoundingMode::HalfUp)->__toString(), $new_left_to_apply_amount->toScale(2, RoundingMode::HalfUp)->__toString());
+	// 	return $this->credit_repository->updateCreditForApplying($credit, $status, $applied_amount_sum->toScale(2, RoundingMode::HalfUp)->__toString(), $new_left_to_apply_amount->toScale(2, RoundingMode::HalfUp)->__toString());
 
-	}
+	// }
 
 	/**
 	 * getInvoiceIds function
@@ -334,20 +304,20 @@ class CreditService {
 	 * @param array $applied
 	 * @return array
 	 */
-	private function getInvoiceIds(array $applied) : array {
+	// private function getInvoiceIds(array $applied) : array {
 
-		$ids = [];
+	// 	$ids = [];
 
-		foreach($applied as $ele){
-			$ele['id'] = Sanitize::input($ele['id']);
-			if(!in_array($ele['id'], $ids)){
-				array_push($ids, $ele['id']);
-			}
-		}
+	// 	foreach($applied as $ele){
+	// 		$ele['id'] = Sanitize::input($ele['id']);
+	// 		if(!in_array($ele['id'], $ids)){
+	// 			array_push($ids, $ele['id']);
+	// 		}
+	// 	}
 
-		return $ids;
+	// 	return $ids;
 
-	}
+	// }
 
 	/**
 	 * modifyLedger function
@@ -357,26 +327,26 @@ class CreditService {
 	 * @param array $applied
 	 * @return void
 	 */
-	private function modifyLedger(int $company_id, int $credit_id, array $applied) : void {
+	// private function modifyLedger(int $company_id, int $credit_id, array $applied) : void {
 
-		$this->credit_repository->forceRemoveLedgreEntriesForCredit($company_id, $credit_id);
+	// 	$this->credit_repository->forceRemoveLedgreEntriesForCredit($company_id, $credit_id);
 
-		$data = [];
+	// 	$data = [];
 
-		foreach($applied as $ele){
+	// 	foreach($applied as $ele){
 
-			$ele['id'] = Sanitize::input($ele['id']);
-			$ele['amount'] = Sanitize::input($ele['amount']);
+	// 		$ele['id'] = Sanitize::input($ele['id']);
+	// 		$ele['amount'] = Sanitize::input($ele['amount']);
 
-			$data[] = [
-				'invoice_id'		=>	$ele['id'],
-				'applied_amount'	=>	$ele['amount']
-			];
-		}
+	// 		$data[] = [
+	// 			'invoice_id'		=>	$ele['id'],
+	// 			'applied_amount'	=>	$ele['amount']
+	// 		];
+	// 	}
 
-		$this->credit_repository->insertLedgerEntries($company_id, $credit_id, $data);
+	// 	$this->credit_repository->insertLedgerEntries($company_id, $credit_id, $data);
 
-	}
+	// }
 
 	/**
 	 * modifyInvoices function
@@ -386,73 +356,73 @@ class CreditService {
 	 * @param boolean $removal_provided
 	 * @return array
 	 */
-	private function modifyInvoices(int $company_id, array $applied, bool $removal_provided = false) : array {
+	// private function modifyInvoices(int $company_id, array $applied, bool $removal_provided = false) : array {
 
-		if(!$removal_provided){
-			$invoice_ids = $this->getInvoiceIds($applied);
-		}else{
-			$invoice_ids = $applied;
-		}
+	// 	if(!$removal_provided){
+	// 		$invoice_ids = $this->getInvoiceIds($applied);
+	// 	}else{
+	// 		$invoice_ids = $applied;
+	// 	}
 		
-		$invoices = $this->credit_repository->fetchInvoicesForCreditApplying($company_id, $invoice_ids);
-		$ledger_entries = $this->credit_repository->fetchLedgerForCreditApplying($company_id, $invoice_ids);
+	// 	$invoices = $this->credit_repository->fetchInvoicesForCreditApplying($company_id, $invoice_ids);
+	// 	$ledger_entries = $this->credit_repository->fetchLedgerForCreditApplying($company_id, $invoice_ids);
 
-		$update = [];
+	// 	$update = [];
 
-		foreach($applied as $ele){
+	// 	foreach($applied as $ele){
 			
-			$temp = [];
+	// 		$temp = [];
 
-			$temp['id'] = $removal_provided ? (int) Sanitize::input($ele) : (int) Sanitize::input($ele['id']);
+	// 		$temp['id'] = $removal_provided ? (int) Sanitize::input($ele) : (int) Sanitize::input($ele['id']);
 			
-			$applied_sum = BigDecimal::of(0);
+	// 		$applied_sum = BigDecimal::of(0);
 
-			foreach($ledger_entries as $entry){
-				if((int) $entry['invoice_id'] === (int) $temp['id']){
-					$applied_row_amount = BigDecimal::of($entry['total_applied']);
-					$applied_sum = $applied_sum->plus($applied_row_amount);
-				}
-			}
+	// 		foreach($ledger_entries as $entry){
+	// 			if((int) $entry['invoice_id'] === (int) $temp['id']){
+	// 				$applied_row_amount = BigDecimal::of($entry['total_applied']);
+	// 				$applied_sum = $applied_sum->plus($applied_row_amount);
+	// 			}
+	// 		}
 
 			
-			foreach($invoices as $invoice){
+	// 		foreach($invoices as $invoice){
 
-				if((int) $invoice['id'] === (int) $temp['id']){
+	// 			if((int) $invoice['id'] === (int) $temp['id']){
 
-					$status = InvoiceStatus::DRAFT->value;
+	// 				$status = InvoiceStatus::DRAFT->value;
 
-					if($invoice['sent_at'] !== null || (int) $invoice['reminders_sent'] > 0){
-						$status = InvoiceStatus::SENT->value;
-					}
+	// 				if($invoice['sent_at'] !== null || (int) $invoice['reminders_sent'] > 0){
+	// 					$status = InvoiceStatus::SENT->value;
+	// 				}
 
-					$total = BigDecimal::of($invoice['total']);
+	// 				$total = BigDecimal::of($invoice['total']);
 
-					if($applied_sum->isLessThan($total) && !$applied_sum->isEqualTo(BigDecimal::of(0))){
-						$status = InvoiceStatus::PARTIALLY_PAID->value;
-					}else if($applied_sum->isEqualTo($total)){
-						$status = InvoiceStatus::PAID->value;
-					}
+	// 				if($applied_sum->isLessThan($total) && !$applied_sum->isEqualTo(BigDecimal::of(0))){
+	// 					$status = InvoiceStatus::PARTIALLY_PAID->value;
+	// 				}else if($applied_sum->isEqualTo($total)){
+	// 					$status = InvoiceStatus::PAID->value;
+	// 				}
 
-					$balance_due = $total->minus($applied_sum);
+	// 				$balance_due = $total->minus($applied_sum);
 
-					$temp['status'] = $status;
-					$temp['balance_due'] = $balance_due->toScale(2, RoundingMode::HalfUp)->__toString();
+	// 				$temp['status'] = $status;
+	// 				$temp['balance_due'] = $balance_due->toScale(2, RoundingMode::HalfUp)->__toString();
 
-					break;
+	// 				break;
 
-				}
+	// 			}
 
-			}
+	// 		}
 
-			$update[] = $temp;
+	// 		$update[] = $temp;
 
-		}
+	// 	}
 		
-		$this->credit_repository->updateInvoicesForCreditApplying($update);
+	// 	$this->credit_repository->updateInvoicesForCreditApplying($update);
 
-		return $invoice_ids;
+	// 	return $invoice_ids;
 
-	}
+	// }
 
 
 	/**
@@ -463,38 +433,27 @@ class CreditService {
 	 * @param array $applied
 	 * @return void
 	 */
-	public function applyCreditAmountToInvoices(int $company_id, int $credit_id, array $applied, array $removed_ids) : void {
+	// public function applyCreditAmountToInvoices(int $company_id, int $credit_id, array $applied, array $removed_ids) : void {
 
-		DB::transaction(function() use ($company_id, $credit_id, $applied, $removed_ids) {
+	// 	DB::transaction(function() use ($company_id, $credit_id, $applied, $removed_ids) {
 
-			$this->modifyCreditForApplying($company_id, $credit_id, $applied); //reset credit and apply.
-			$this->modifyLedger($company_id, $credit_id, $applied); //remove ledger entries and add new ones.
-			$this->modifyInvoices($company_id, $removed_ids, true);
-			$this->modifyInvoices($company_id, $applied, false);
+	// 		$this->modifyCreditForApplying($company_id, $credit_id, $applied); //reset credit and apply.
+	// 		$this->modifyLedger($company_id, $credit_id, $applied); //remove ledger entries and add new ones.
+	// 		$this->modifyInvoices($company_id, $removed_ids, true);
+	// 		$this->modifyInvoices($company_id, $applied, false);
 
-			DB::afterCommit(function() use ($company_id, $applied, $removed_ids) {
-				$ids = $this->getInvoiceIds($applied);
-				$all_ids = array_unique(array_merge($ids, $removed_ids));
-				foreach($all_ids as $applied_invoice_id){
-					$invoice_id = (int) Sanitize::input($applied_invoice_id);
-					GenerateInvoiceSnapshotJob::dispatch($company_id, $invoice_id, true, false);					
-				}
-			});
+	// 		DB::afterCommit(function() use ($company_id, $applied, $removed_ids) {
+	// 			$ids = $this->getInvoiceIds($applied);
+	// 			$all_ids = array_unique(array_merge($ids, $removed_ids));
+	// 			foreach($all_ids as $applied_invoice_id){
+	// 				$invoice_id = (int) Sanitize::input($applied_invoice_id);
+	// 				GenerateInvoiceSnapshotJob::dispatch($company_id, $invoice_id, true, false);					
+	// 			}
+	// 		});
 			
-		});
+	// 	});
 
-	}
-
-	/**
-	 * fetchAlreadyAppliedInvoicesForCredit function
-	 *
-	 * @param integer $company_id
-	 * @param integer $credit_id
-	 * @return array
-	 */
-	public function fetchAlreadyAppliedInvoicesForCredit(int $company_id, int $credit_id) : array {
-		return $this->credit_repository->fetchAlreadyAppliedInvoicesForCredit($company_id, $credit_id);
-	}
+	// }
 
 	/**
 	 * ifCreditNumberExists function

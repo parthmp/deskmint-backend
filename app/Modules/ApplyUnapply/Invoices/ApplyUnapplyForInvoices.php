@@ -185,12 +185,12 @@ class ApplyUnapplyForInvoices {
 		//now need chunks.
 		if((int) count($insert) > 0){
 			$insert = array_chunk($insert, 50);
-			$this->db->insertNewLedgerEntries($insert);
+			$this->insertNewLedgerEntries($insert);
 		}
 		
 		if((int) count($update) > 0){
 			$update = array_chunk($update, 50);
-			$this->db->updateLedgerEntries($update);
+			$this->updateLedgerEntries($update);
 		}
 		
 

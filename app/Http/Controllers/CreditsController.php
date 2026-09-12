@@ -6,13 +6,14 @@ use App\Enums\Credits\CreditStatus;
 use App\Exceptions\CreditException;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
-use App\Http\Requests\Credits\ApplyUnapplyCreditsFetchCreditRequest;
 use App\Http\Requests\Credits\ApplyUnapplyCreditsSearchRequest;
 use App\Http\Requests\Credits\CreditCreateRequest;
 use App\Http\Requests\GenericRequest;
+use App\Modules\ApplyUnapply\CreditsAndPayments\ApplyUnapplyForCreditsAndPayments;
+use App\Modules\ApplyUnapply\CreditsAndPayments\Requests\ApplyUnapplyCreditsFetchCreditRequest;
+use App\Modules\ApplyUnapply\CreditsAndPayments\Validation\Validation;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
-use App\Services\Credit\CreditApplyValidationService;
 use App\Services\Credit\CreditService;
 use Exception;
 use Illuminate\Http\Request;
@@ -45,8 +46,9 @@ class CreditsController extends Controller {
 
 	public function __construct(
 		private CreditService $credit_service,
-		private CreditApplyValidationService $credit_apply_validation_service,
-		private ArrangedDataTableColumns $arranged_data_table_columns
+		private ArrangedDataTableColumns $arranged_data_table_columns,
+		private ApplyUnapplyForCreditsAndPayments $apply_unapply_for_credits_and_payments,
+		private Validation $validation
 	){}
 
 	public function fetchArrangedColumns(Request $request){
@@ -180,7 +182,7 @@ class CreditsController extends Controller {
 
 		try{
 
-			$credit_info = $this->credit_service->fetchCreditWithCurrencyInfo((int) $data['company_id'], (int) $data['credit_id']);
+			$credit_info = $this->apply_unapply_for_credits_and_payments->fetchEntryWithCurrencyInfo((int) $data['company_id'], (int) $data['credit_id'], 'credit');
 
 			return $credit_info;
 
@@ -198,9 +200,9 @@ class CreditsController extends Controller {
 		
 		try{
 
-			$credit_info = $this->credit_service->fetchCreditWithCurrencyInfo((int) $data['company_id'], (int) $data['credit_id']);
+			$credit_info = $this->apply_unapply_for_credits_and_payments->fetchEntryWithCurrencyInfo((int) $data['company_id'], (int) $data['credit_id'], 'credit');
 
-			$invoices = $this->credit_service->searchInvoices((int) $data['company_id'], (int) $credit_info['currency_id'], (int) $credit_info['client_id'], (int) $data['credit_id'], (array) $data['applied_ids'], (array) $data['paid_ids'], (string) $data['searched']);
+			$invoices = $this->apply_unapply_for_credits_and_payments->searchInvoices((int) $data['company_id'], (int) $credit_info['currency_id'], (int) $credit_info['client_id'], (int) $data['credit_id'], (array) $data['applied_ids'], (array) $data['paid_ids'], (string) $data['searched'], 'credit');
 
 			return $invoices;
 
@@ -213,24 +215,24 @@ class CreditsController extends Controller {
 
 	public function applyUnapplyCredit(Request $request){
 		
-		try{
+		//try{
 			
-			$this->credit_apply_validation_service->validateApplyUnapply($request);
+			$this->apply_unapply_for_credits_and_payments->validateApplyUnapply($request, 'credit');
 
 			$company_id = (int) Sanitize::input($request->input('company_id'));
 			$credit_id = (int) Sanitize::input($request->input('credit_id'));
 			$applied = $request->input('applied');
 			$removed_ids = $request->input('removed_ids');
 
-			$this->credit_service->applyCreditAmountToInvoices($company_id, $credit_id, $applied, $removed_ids);
+			$this->apply_unapply_for_credits_and_payments->applyUnapplyToInvoices($company_id, $credit_id, $applied, $removed_ids, CreditException::class, 'credit');
 
 			return response(['message' => 'Changes saved successfully', 'validity' => 'saved_success'], 200);
 
-		}catch(CreditException $e){
-			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
-		}catch(Exception $e){
-			return General::wentWrong();
-		}
+		// }catch(CreditException $e){
+		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		// }catch(Exception $e){
+		// 	return General::wentWrong();
+		// }
 
 	}
 
@@ -239,7 +241,7 @@ class CreditsController extends Controller {
 
 		$data = $request->validated();
 
-		$applied = $this->credit_service->fetchAlreadyAppliedInvoicesForCredit((int) $data['company_id'], (int) $data['credit_id']);
+		$applied = $this->apply_unapply_for_credits_and_payments->fetchAlreadyAppliedInvoicesForEntry((int) $data['company_id'], (int) $data['credit_id'], 'credit');
 
 		return $applied;
 

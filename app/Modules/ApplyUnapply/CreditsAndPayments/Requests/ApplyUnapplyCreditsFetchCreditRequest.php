@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Credits;
+namespace App\Modules\ApplyUnapply\CreditsAndPayments\Requests;
 
 use App\Helpers\Sanitize;
 use Illuminate\Contracts\Validation\ValidationRule;
