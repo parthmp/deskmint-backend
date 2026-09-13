@@ -6,13 +6,13 @@ use App\Exceptions\PaymentException;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
-use App\Http\Requests\Payments\ApplyUnapplyPaymentsFetchPaymentRequest;
-use App\Http\Requests\Payments\ApplyUnapplyPaymentsSearchRequest;
 use App\Http\Requests\Payments\PaymentCreateRequest;
+use App\Modules\ApplyUnapply\CreditsAndPayments\ApplyUnapplyForCreditsAndPayments;
+use App\Modules\ApplyUnapply\CreditsAndPayments\Requests\ApplyUnapplyPaymentsFetchPaymentRequest;
+use App\Modules\ApplyUnapply\CreditsAndPayments\Requests\ApplyUnapplyPaymentsSearchRequest;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
 use App\Modules\Payment\Enums\PaymentStatus;
-use App\Services\Payment\PaymentApplyValidationService;
 use App\Services\Payment\PaymentService;
 use Exception;
 use Illuminate\Http\Request;
@@ -72,7 +72,7 @@ class PaymentsController extends Controller {
 	public function __construct(
 		private PaymentService $payment_service,
 		private ArrangedDataTableColumns $arranged_data_table_columns,
-		private PaymentApplyValidationService $payment_apply_validation_service
+		private ApplyUnapplyForCreditsAndPayments $apply_unapply_for_credits_and_payments
 	){}
 
 	public function fetchArrangedColumns(Request $request){
@@ -204,7 +204,7 @@ class PaymentsController extends Controller {
 
 		try{
 
-			$payment_info = $this->payment_service->fetchPaymentWithCurrencyInfo((int) $data['company_id'], (int) $data['payment_id']);
+			$payment_info = $this->apply_unapply_for_credits_and_payments->fetchEntryWithCurrencyInfo((int) $data['company_id'], (int) $data['payment_id'], 'payment');
 
 			return $payment_info;
 
@@ -218,7 +218,7 @@ class PaymentsController extends Controller {
 
 		$data = $request->validated();
 
-		$applied = $this->payment_service->fetchAlreadyAppliedInvoicesForPayment((int) $data['company_id'], (int) $data['payment_id']);
+		$applied = $this->apply_unapply_for_credits_and_payments->fetchAlreadyAppliedInvoicesForEntry((int) $data['company_id'], (int) $data['payment_id'], 'payment');
 
 		return $applied;
 
@@ -230,9 +230,9 @@ class PaymentsController extends Controller {
 		
 		try{
 
-			$payment_info = $this->payment_service->fetchPaymentWithCurrencyInfo((int) $data['company_id'], (int) $data['payment_id']);
+			$payment_info = $this->apply_unapply_for_credits_and_payments->fetchEntryWithCurrencyInfo((int) $data['company_id'], (int) $data['payment_id'], 'payment');
 
-			$invoices = $this->payment_service->searchInvoices((int) $data['company_id'], (int) $payment_info['currency_id'], (int) $payment_info['client_id'], (int) $data['payment_id'], (array) $data['applied_ids'], (array) $data['paid_ids'], (string) $data['searched']);
+			$invoices = $this->apply_unapply_for_credits_and_payments->searchInvoices((int) $data['company_id'], (int) $payment_info['currency_id'], (int) $payment_info['client_id'], (int) $data['payment_id'], (array) $data['applied_ids'], (array) $data['paid_ids'], (string) $data['searched'], 'payment');
 
 			return $invoices;
 
@@ -247,14 +247,14 @@ class PaymentsController extends Controller {
 		
 		try{
 			
-			$this->payment_apply_validation_service->validateApplyUnapply($request);
+			$this->apply_unapply_for_credits_and_payments->validateApplyUnapply($request, 'payment');
 
 			$company_id = (int) Sanitize::input($request->input('company_id'));
 			$payment_id = (int) Sanitize::input($request->input('payment_id'));
 			$applied = $request->input('applied');
 			$removed_ids = $request->input('removed_ids');
 
-			$this->payment_service->applyPaymentAmountToInvoices($company_id, $payment_id, $applied, $removed_ids);
+			$this->apply_unapply_for_credits_and_payments->applyUnapplyToInvoices($company_id, $payment_id, $applied, $removed_ids, PaymentException::class, 'payment');
 
 			return response(['message' => 'Changes saved successfully', 'validity' => 'saved_success'], 200);
 

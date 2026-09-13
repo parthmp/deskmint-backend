@@ -217,25 +217,23 @@ class ApplyUnapplyForCreditsAndPayments {
 			$applied_status = PaymentStatus::APPLIED->value;
 		}
 
-		if(!$sum->isEqualTo($total)){
+		
+		$status = $not_applied_status;
 
-			$status = $not_applied_status;
-
-			if($sum->isLessThan($total) && $sum->isGreaterThan(BigDecimal::of(0))){
-				$status = $partially_applied_status;
-			}else if($sum->isEqualTo($total)){
-				$status = $applied_status;
-			}
-
-			$left = $total->minus($sum);
-
-			if($left->isLessThan(BigDecimal::of(0))){
-				throw new $exception('Something went wrong in calculation', 'unexpected_error_calc', (int) config('global.error_code'));
-			}
-
-			$this->db->updateEntry($company_id, $entry_id, $status, $sum->toScale(2, RoundingMode::HalfUp)->__toString(), $left->toScale(2, RoundingMode::HalfUp)->__toString(), $type);
-
+		if($sum->isLessThan($total) && $sum->isGreaterThan(BigDecimal::of(0))){
+			$status = $partially_applied_status;
+		}else if($sum->isEqualTo($total)){
+			$status = $applied_status;
 		}
+
+		$left = $total->minus($sum);
+
+		if($left->isLessThan(BigDecimal::of(0))){
+			throw new $exception('Something went wrong in calculation', 'unexpected_error_calc', (int) config('global.error_code'));
+		}
+
+		$this->db->updateEntry($company_id, $entry_id, $status, $sum->toScale(2, RoundingMode::HalfUp)->__toString(), $left->toScale(2, RoundingMode::HalfUp)->__toString(), $type);
+
 
 	}
 
@@ -312,10 +310,9 @@ class ApplyUnapplyForCreditsAndPayments {
 			$this->modifyLedger($company_id, $entry_id, $applied, $removed_ids, $exception, $type); //remove ledger entries and add new ones.
 			$this->modifyEntry($company_id, $entry_id, $exception, $type);
 			$invoice_ids = $this->getIds($applied, $exception);
+			$merged = array_values(array_unique(array_merge($invoice_ids, $removed_ids)));
+			$ids = $this->modifyInvoices($company_id, $merged);
 			
-			$ids = $this->modifyInvoices($company_id, $invoice_ids);
-
-
 			FacadesDB::afterCommit(function() use ($company_id, $ids) {
 				foreach($ids as $id){
 					$invoice_id = (int) Sanitize::input($id);

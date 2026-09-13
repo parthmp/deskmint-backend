@@ -11,7 +11,6 @@ use App\Http\Requests\Credits\CreditCreateRequest;
 use App\Http\Requests\GenericRequest;
 use App\Modules\ApplyUnapply\CreditsAndPayments\ApplyUnapplyForCreditsAndPayments;
 use App\Modules\ApplyUnapply\CreditsAndPayments\Requests\ApplyUnapplyCreditsFetchCreditRequest;
-use App\Modules\ApplyUnapply\CreditsAndPayments\Validation\Validation;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
 use App\Services\Credit\CreditService;
@@ -48,7 +47,6 @@ class CreditsController extends Controller {
 		private CreditService $credit_service,
 		private ArrangedDataTableColumns $arranged_data_table_columns,
 		private ApplyUnapplyForCreditsAndPayments $apply_unapply_for_credits_and_payments,
-		private Validation $validation
 	){}
 
 	public function fetchArrangedColumns(Request $request){
@@ -215,7 +213,7 @@ class CreditsController extends Controller {
 
 	public function applyUnapplyCredit(Request $request){
 		
-		//try{
+		try{
 			
 			$this->apply_unapply_for_credits_and_payments->validateApplyUnapply($request, 'credit');
 
@@ -228,11 +226,11 @@ class CreditsController extends Controller {
 
 			return response(['message' => 'Changes saved successfully', 'validity' => 'saved_success'], 200);
 
-		// }catch(CreditException $e){
-		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
-		// }catch(Exception $e){
-		// 	return General::wentWrong();
-		// }
+		}catch(CreditException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 	}
 

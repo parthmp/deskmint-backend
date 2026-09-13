@@ -234,7 +234,7 @@ class ApplyUnapplyForInvoices {
 				}
 			}
 
-			if(!$sum->isEqualTo($applied_amount_from_db)){
+			//if(!$sum->isEqualTo($applied_amount_from_db)){
 
 				if($sum->isLessThan($total) && $sum->isGreaterThan(BigDecimal::of(0))){
 					$status = $partially_applied_status;
@@ -254,7 +254,7 @@ class ApplyUnapplyForInvoices {
 					'applied_amount' 			=> $sum->toScale(2, RoundingMode::HalfUp)->__toString(),
 					'amount_left_to_be_applied' => $left->toScale(2, RoundingMode::HalfUp)->__toString(),
 				];
-			}
+			//}
 
 		}
 
