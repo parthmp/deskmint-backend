@@ -75,7 +75,8 @@ class InvoiceRepository{
 				$invoice->status = (int) InvoiceStatus::SENT->value;
 			}
 			$invoice->reminders_sent = 0;
-			$invoice->last_reminder_sent_at = now();
+			$invoice->hidden_sent_at = now();
+			//$invoice->last_reminder_sent_at = now();
 		}else{
 			$invoice = $this->fetchInvoiceObjById($invoice_id, $company_id);
 		}
@@ -339,6 +340,7 @@ class InvoiceRepository{
 		if((int) $invoice->status === InvoiceStatus::DRAFT->value){
 			$invoice->status = InvoiceStatus::SENT->value;
 			$invoice->sent_at = now();
+			$invoice->hidden_sent_at = now();
 			return $invoice->save();
 		}
 

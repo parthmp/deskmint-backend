@@ -28,6 +28,7 @@ class MarkInvoiceReminderSentJob implements ShouldQueue
 		if($invoice){
 			$invoice->reminders_sent = (int) $invoice->reminders_sent + 1;
 			$invoice->last_reminder_sent_at = now();
+			$invoice->hidden_sent_at = now();
 			$invoice->save();
 		}
 

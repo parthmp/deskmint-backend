@@ -47,7 +47,7 @@ class PaymentReminder extends Command
 							['clients.send_reminders', '=', 1],
 							['invoices.reminders_sent', '<', $settings['reminders']['send_n_times']],
 							['invoices.company_id', '=', $company->id],
-							['invoices.last_reminder_sent_at', '<', now()->subDays((int) $settings['reminders']['days_gap'])]
+							['invoices.hidden_sent_at', '<', now()->subDays((int) $settings['reminders']['days_gap'])]
 						])
 						->where(function($q){
 								$q->where('invoices.status', '=', InvoiceStatus::PARTIALLY_PAID->value)
