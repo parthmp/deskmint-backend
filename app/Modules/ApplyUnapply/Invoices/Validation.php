@@ -109,7 +109,7 @@ class Validation {
 						}
 
 						if((int) $cp_id === (int) $ele['id']){
-							$already_applied = $already_applied->plus($entry->applied_credit);
+							$already_applied = $already_applied->plus($entry->{'applied_'.$type});
 							break;
 						}
 					}

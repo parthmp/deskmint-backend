@@ -278,18 +278,26 @@ class InvoiceController extends Controller{
 			if((int) $invoice->status === (int) InvoiceStatus::CANCELLED->value){
 				return response(['message' => 'You can not send cancelled invoice', 'validity' => 'can_not_send_cancelled'], config('global.error_code'));
 			}
-
-			$this->invoice_service->markInvoiceSent((int) $data['company_id'], (int) $data['invoice_id']);
-
-			DB::transaction(function() use ($request, $data) {
+			
+			DB::transaction(function() use ($data) {
+				
+				$this->invoice_service->markInvoiceSent((int) $data['company_id'], (int) $data['invoice_id']);
 
 				DB::afterCommit(function() use ($data) {
-					GenerateInvoiceJob::dispatch((int) $data['company_id'], (int) $data['invoice_id'], true);
+					
+					if((bool) $data['send_invoice']){
+						GenerateInvoiceJob::dispatch((int) $data['company_id'], (int) $data['invoice_id'], true);
+					}
+					
 				});
 
 			});
+
+			if((bool) $data['send_invoice']){
+				return response(['message' => 'Invoice sent successfully', 'validity' => 'invoice_sent'], 200);
+			}
 			
-			return response(['message' => 'Invoice sent successfully', 'validity' => 'invoice_sent'], 200);
+			return response(['message' => 'Invoice marked sent successfully', 'validity' => 'invoice_marked_sent'], 200);
 
 		}catch(Exception $e){
 			return General::wentWrong();

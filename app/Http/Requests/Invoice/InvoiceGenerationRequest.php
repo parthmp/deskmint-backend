@@ -23,10 +23,17 @@ class InvoiceGenerationRequest extends FormRequest
 		$invoice_id = (int) Sanitize::input($this->input('invoice_id'));
 		$company_id = (int) Sanitize::input($this->input('company_id'));
 		$time_offset_minutes = (int) Sanitize::input($this->input('time_offset_minutes'));
+		$send_invoice = false;
+
+		if($this->has('send_invoice')){
+			$send_invoice = filter_var(Sanitize::input($this->input('send_invoice')), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
+			logger($send_invoice);
+		}
 
 		$this->merge([
 			'invoice_id'			=>	$invoice_id,
 			'company_id'			=>	$company_id,
+			'send_invoice'			=>	$send_invoice,
 			'time_offset_minutes'	=>	$time_offset_minutes
 		]);
 
@@ -42,6 +49,7 @@ class InvoiceGenerationRequest extends FormRequest
         return [
             'invoice_id'			=>	'required|numeric|exists:invoices,id',
             'company_id'			=>	'required|numeric',
+            'send_invoice'			=>	'sometimes',
             'time_offset_minutes'	=>	'required|numeric'
         ];
     }
