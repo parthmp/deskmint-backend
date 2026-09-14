@@ -104,10 +104,8 @@ class InvoiceRepository{
 		$invoice->total = $global_total;
 		$invoice->invoice_terms = $invoice_terms;
 		// $invoice->send_email = $send_email;
-		if($send_email){
+		if($send_email && (int) $invoice_id === 0){
 			$invoice->sent_at = now();
-		}else{
-			$invoice->sent_at = null;
 		}
 		$invoice->payment_gateway = $payment_gateway;
 		$invoice->pattern_matched = $patten_matched;
@@ -565,6 +563,32 @@ class InvoiceRepository{
 		$invoice->balance_due = $balance_due;
 		return $invoice->save();
 
+	}
+
+	/**
+	 * fetchInvoiceCountByIds function
+	 *
+	 * @param integer $company_id
+	 * @param array $ids
+	 * @return integer
+	 */
+	public function fetchInvoiceCountByIds(int $company_id, array $ids) : int {
+		$counted = Invoice::where('company_id', '=', $company_id)->whereIn('id', $ids)->count();
+		return (int) $counted;
+	}
+
+	/**
+	 * changeArchivedStatus function
+	 *
+	 * @param integer $company_id
+	 * @param array $ids
+	 * @param integer $archived
+	 * @return void
+	 */
+	public function changeArchivedStatus(int $company_id, array $ids, int $archived) : void {
+		Invoice::where('company_id', '=', $company_id)->whereIn('id', $ids)->update([
+			'is_archived' => $archived
+		]);
 	}
 
 }

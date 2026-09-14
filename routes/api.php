@@ -153,14 +153,16 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	 * invoices start
 	 */
 	
-	Route::patch('manage-invoices/apply-unapply-credits/apply-unapply-credits', [InvoiceController::class, 'ApplyUnapplyCredits']);
-	Route::get('manage-invoices/apply-unapply-credits/fetch-already-applied', [InvoiceController::class, 'ApplyUnapplyCreditsFetchAlreadyApplied']);
-	Route::get('manage-invoices/apply-unapply-credits/fetch-invoice/{id}', [InvoiceController::class, 'ApplyUnapplyCreditsFetchInvoice']);
-	Route::get('manage-invoices/apply-unapply-credits/search-credits', [InvoiceController::class, 'ApplyUnapplyCreditsSearchCredits']);
+	Route::patch('manage-invoices/change-archived-status', [InvoiceController::class, 'changeArchiveStatus']);
 
-	Route::patch('manage-invoices/apply-unapply-payments/apply-unapply-payments', [InvoiceController::class, 'ApplyUnapplyPayments']);
-	Route::get('manage-invoices/apply-unapply-payments/fetch-already-applied', [InvoiceController::class, 'ApplyUnapplyPaymentsFetchAlreadyApplied']);
-	Route::get('manage-invoices/apply-unapply-payments/search-payments', [InvoiceController::class, 'ApplyUnapplyPaymentsSearchCredits']);
+	Route::patch('manage-invoices/apply-unapply-credits/apply-unapply-credits', [InvoiceController::class, 'applyUnapplyCredits']);
+	Route::get('manage-invoices/apply-unapply-credits/fetch-already-applied', [InvoiceController::class, 'applyUnapplyCreditsFetchAlreadyApplied']);
+	Route::get('manage-invoices/apply-unapply-credits/fetch-invoice/{id}', [InvoiceController::class, 'applyUnapplyCreditsFetchInvoice']);
+	Route::get('manage-invoices/apply-unapply-credits/search-credits', [InvoiceController::class, 'applyUnapplyCreditsSearchCredits']);
+
+	Route::patch('manage-invoices/apply-unapply-payments/apply-unapply-payments', [InvoiceController::class, 'applyUnapplyPayments']);
+	Route::get('manage-invoices/apply-unapply-payments/fetch-already-applied', [InvoiceController::class, 'applyUnapplyPaymentsFetchAlreadyApplied']);
+	Route::get('manage-invoices/apply-unapply-payments/search-payments', [InvoiceController::class, 'applyUnapplyPaymentsSearchCredits']);
 	
 	Route::get('manage-invoices/snapshot/{id}', [InvoiceController::class, 'snapshot']);
 	Route::get('manage-invoices/download-pdf', [InvoiceController::class, 'downloadPdf']);
@@ -172,11 +174,20 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-invoices/fetch-initial-data', [InvoiceController::class, 'fetchInitialData']);
 	Route::get('manage-invoices/fetch-products', [InvoiceController::class, 'fetchProducts']);
 	//Route::post('manage-invoices', [InvoiceController::class, 'store']);
-	Route::get('manage-invoices/fetch-arranged-columns', [InvoiceController::class, 'fetchArrangedColumns']);
-	Route::post('manage-invoices/save-arranged-columns', [InvoiceController::class, 'saveArrangedColumns']);
+	Route::get('manage-invoices/invoices/fetch-arranged-columns', [InvoiceController::class, 'fetchArrangedColumns']);
+	Route::get('manage-invoices/archived/fetch-arranged-columns', [InvoiceController::class, 'fetchArrangedColumns']);
+	Route::post('manage-invoices/invoices/save-arranged-columns', [InvoiceController::class, 'saveArrangedColumns']);
+	Route::post('manage-invoices/archived/save-arranged-columns', [InvoiceController::class, 'saveArrangedColumns']);
+
 	Route::post('manage-invoices/add-credit-or-payment', [InvoiceController::class, 'addCreditOrPayment']);
 	Route::get('manage-invoices/send-invoice', [InvoiceController::class, 'sendInvoice']);
-	Route::resource('manage-invoices', InvoiceController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
+
+	Route::get('manage-invoices/invoices', [InvoiceController::class, 'index']);
+	Route::get('manage-invoices/archived', [InvoiceController::class, 'index']);
+	Route::post('manage-invoices', [InvoiceController::class, 'store']);
+	Route::get('manage-invoices/{id}', [InvoiceController::class, 'show']);
+	Route::patch('manage-invoices/{id}', [InvoiceController::class, 'update']);
+	//Route::resource('manage-invoices', InvoiceController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	Route::delete('manage-invoices', [InvoiceController::class, 'destroy']);
 	/**
 	 * invoiced end

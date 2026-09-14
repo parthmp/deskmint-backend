@@ -2,6 +2,7 @@
 
 namespace App\Services\Invoice;
 
+use App\Enums\Invoices\ArchivedStatus;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\Invoice;
@@ -72,9 +73,10 @@ class InvoiceFetchService{
 	 * fetchIndex function
 	 *
 	 * @param Request $request
+	 * @param string $segment
 	 * @return array
 	 */
-	public function fetchIndex(Request $request) : array {
+	public function fetchIndex(Request $request, string $segment) : array {
 		
 		$joins = [
 					[
@@ -242,7 +244,15 @@ class InvoiceFetchService{
 			];
 		}
 
-		return $this->easy_index->setType('invoice')->setCustomFieldClass(InvoicesCustomField::class)->setJoins($joins)->setExceptionClass(InvoiceException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
+		$archived_status = ArchivedStatus::NO->value;
+
+		if($segment === 'archived'){
+			$archived_status = ArchivedStatus::YES->value;
+		}
+
+		$archived_filter = ['is_archived', '=', $archived_status];
+
+		return $this->easy_index->setType('invoice')->setAndWhere([$archived_filter])->setCustomFieldClass(InvoicesCustomField::class)->setJoins($joins)->setExceptionClass(InvoiceException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
 			'c_code'				=>		'currencies.code'
 		 ])->setRewrites($rewrites)->setModel(Invoice::class)->fetchIndex();
 	}

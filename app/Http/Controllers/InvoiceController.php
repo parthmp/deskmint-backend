@@ -7,6 +7,7 @@ use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
 use App\Http\Requests\Invoice\AddCreditOrPaymentRequest;
 use App\Http\Requests\Invoice\AlreadyAppliedCreditsRequest;
+use App\Http\Requests\Invoice\ChangeArchivedStatusRequest;
 use App\Http\Requests\Invoice\FetchInvoiceRequest;
 use App\Http\Requests\Invoice\InvoiceGenerationRequest;
 use App\Http\Requests\Invoice\SearchCreditsRequest;
@@ -116,7 +117,11 @@ class InvoiceController extends Controller{
 	public function index(Request $request){
 
 		try{
-			return $this->invoice_service->fetchIndex($request);
+
+			$segment = last(request()->segments());
+
+			return $this->invoice_service->fetchIndex($request, $segment);
+
 		}catch(InvoiceException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
@@ -409,7 +414,7 @@ class InvoiceController extends Controller{
 
 	}
 
-	public function ApplyUnapplyCreditsFetchInvoice(GenericRequest $request, int $id){
+	public function applyUnapplyCreditsFetchInvoice(GenericRequest $request, int $id){
 
 		$data = $request->validated();
 
@@ -419,7 +424,7 @@ class InvoiceController extends Controller{
 
 	}
 
-	public function ApplyUnapplyCreditsSearchCredits(SearchEntriesRequest $request){
+	public function applyUnapplyCreditsSearchCredits(SearchEntriesRequest $request){
 		
 		$data = $request->validated();
 		
@@ -446,7 +451,7 @@ class InvoiceController extends Controller{
 
 	}
 
-	public function ApplyUnapplyCreditsFetchAlreadyApplied(AlreadyAppliedRequest $request){
+	public function applyUnapplyCreditsFetchAlreadyApplied(AlreadyAppliedRequest $request){
 
 		$data = $request->validated();
 
@@ -461,7 +466,7 @@ class InvoiceController extends Controller{
 
 	}
 
-	public function ApplyUnapplyCredits(Request $request){
+	public function applyUnapplyCredits(Request $request){
 
 		try{
 
@@ -488,7 +493,7 @@ class InvoiceController extends Controller{
 	 * start of apply unapply payments
 	*/
 
-	public function ApplyUnapplyPaymentsFetchAlreadyApplied(AlreadyAppliedRequest $request){
+	public function applyUnapplyPaymentsFetchAlreadyApplied(AlreadyAppliedRequest $request){
 
 		$data = $request->validated();
 
@@ -503,7 +508,7 @@ class InvoiceController extends Controller{
 
 	}
 
-	public function ApplyUnapplyPaymentsSearchCredits(SearchEntriesRequest $request){
+	public function applyUnapplyPaymentsSearchCredits(SearchEntriesRequest $request){
 		
 		$data = $request->validated();
 		
@@ -528,7 +533,7 @@ class InvoiceController extends Controller{
 
 	}
 
-	public function ApplyUnapplyPayments(Request $request){
+	public function applyUnapplyPayments(Request $request){
 
 		try{
 
@@ -555,6 +560,28 @@ class InvoiceController extends Controller{
 	/**
 	 * end of apply unapply payments
 	 */
+
+	public function changeArchiveStatus(ChangeArchivedStatusRequest $request){
+
+		$data = $request->validated();
+
+		try{
+			$this->invoice_service->changeArchiveStatus((int) $data['company_id'], (array) $data['ids'], (int) $data['archived']);
+			
+			if((int) $data['archived'] === 1){
+				return response(['message' => 'Archived successfully', 'valdity' => 'saved_success'], 200);
+			}
+
+			return response(['message' => 'Restored successfully', 'valdity' => 'saved_success'], 200);
+			
+		}catch(InvoiceException $e){
+			return response(['message' => $e->getMessage(), 'valdity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+		
+
+	}
 
 
 }

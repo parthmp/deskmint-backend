@@ -154,10 +154,11 @@ class InvoiceService{
 	 * fetchIndex function
 	 *
 	 * @param Request $request
+	 * @param string $segment
 	 * @return array
 	 */
-	public function fetchIndex(Request $request) : array {
-		return $this->invoice_fetch_service->fetchIndex($request);
+	public function fetchIndex(Request $request, string $segment) : array {
+		return $this->invoice_fetch_service->fetchIndex($request, $segment);
 	}
 
 	/**
@@ -480,6 +481,40 @@ class InvoiceService{
 		}
 
 		return false;
+
+	}
+
+	/**
+	 * validateArchiveRequest function
+	 *
+	 * @param integer $company_id
+	 * @param array $ids
+	 * @return boolean
+	 */
+	private function validateArchiveRequest(int $company_id, array $ids) : bool {
+
+		$counted = $this->invoice_repository->fetchInvoiceCountByIds($company_id, $ids);
+		return (int) $counted === (int) count($ids);
+
+	}
+
+	/**
+	 * changeArchiveStatus function
+	 *
+	 * @param integer $company_id
+	 * @param array $ids
+	 * @param integer $archived_status
+	 * @return void
+	 */
+	public function changeArchiveStatus(int $company_id, array $ids, int $archived_status) : void {
+		
+		$ids = array_values(array_unique($ids));
+
+		if(!$this->validateArchiveRequest($company_id, $ids)){
+			throw new InvoiceException('Invalid invoices provided', 'invalid_ids', (int) config('global.error_code'));
+		}
+
+		$this->invoice_repository->changeArchivedStatus($company_id, $ids, $archived_status);
 
 	}
 
