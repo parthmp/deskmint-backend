@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Invoices\ArchivedStatus;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
@@ -568,7 +569,7 @@ class InvoiceController extends Controller{
 		try{
 			$this->invoice_service->changeArchiveStatus((int) $data['company_id'], (array) $data['ids'], (int) $data['archived']);
 			
-			if((int) $data['archived'] === 1){
+			if((int) $data['archived'] === ArchivedStatus::YES->value){
 				return response(['message' => 'Archived successfully', 'valdity' => 'saved_success'], 200);
 			}
 

@@ -188,7 +188,8 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-invoices/{id}', [InvoiceController::class, 'show']);
 	Route::patch('manage-invoices/{id}', [InvoiceController::class, 'update']);
 	//Route::resource('manage-invoices', InvoiceController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
-	Route::delete('manage-invoices', [InvoiceController::class, 'destroy']);
+	Route::delete('manage-invoices/invoices', [InvoiceController::class, 'destroy']);
+	Route::delete('manage-invoices/archived', [InvoiceController::class, 'destroy']);
 	/**
 	 * invoiced end
 	 */
