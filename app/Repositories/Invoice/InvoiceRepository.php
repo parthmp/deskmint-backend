@@ -288,7 +288,7 @@ class InvoiceRepository{
 			'p_currencies.code as payment_currency',
 		];
 
-		return InvoiceLedger::select(...$selects)->where([['invoice_ledger.company_id', '=', $company_id], ['invoice_ledger.invoice_id', '=', $invoice_id]])->leftJoin('credits', 'invoice_ledger.credit_id', '=', 'credits.id')->leftJoin('payments', 'invoice_ledger.payment_id', '=', 'payments.id')->leftJoin('currencies as c_currencies', 'c_currencies.id', '=', 'credits.currency_id')->leftJoin('currencies as p_currencies', 'p_currencies.id', '=', 'payments.currency_id')->orderBy('invoice_ledger.id', 'asc')->get()->toArray();
+		return InvoiceLedger::select(...$selects)->where([['invoice_ledger.company_id', '=', $company_id], ['invoice_ledger.invoice_id', '=', $invoice_id]])->leftJoin('credits', 'invoice_ledger.credit_id', '=', 'credits.id')->leftJoin('payments', 'invoice_ledger.payment_id', '=', 'payments.id')->leftJoin('currencies as c_currencies', 'c_currencies.id', '=', 'credits.currency_id')->leftJoin('currencies as p_currencies', 'p_currencies.id', '=', 'payments.currency_id')->orderBy('invoice_ledger.updated_at', 'asc')->get()->toArray();
 
 	}
 
