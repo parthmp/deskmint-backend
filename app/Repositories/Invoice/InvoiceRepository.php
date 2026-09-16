@@ -359,12 +359,12 @@ class InvoiceRepository{
 		
 		if((int) $invoice->status === InvoiceStatus::DRAFT->value){
 			$invoice->status = InvoiceStatus::SENT->value;
-			$invoice->sent_at = now();
-			$invoice->hidden_sent_at = now();
-			return $invoice->save();
+			
 		}
 
-		return true;
+		$invoice->sent_at = now();
+		$invoice->hidden_sent_at = now();
+		return $invoice->save();
 
 	}
 
