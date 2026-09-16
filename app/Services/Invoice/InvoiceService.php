@@ -518,4 +518,15 @@ class InvoiceService{
 
 	}
 
+	/**
+	 * fetchInvoiceLedger function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function fetchInvoiceLedger(int $company_id, int $invoice_id) : array {
+		return $this->invoice_fetch_service->fetchInvoiceLedger($company_id, $invoice_id);
+	}
+
 }

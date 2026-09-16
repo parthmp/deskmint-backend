@@ -18,6 +18,9 @@ use App\Repositories\Invoice\InvoiceRepository;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use App\Services\HandleInvoiceNumbers;
 use App\Services\Invoice\Exceptions\InvoiceException;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
+use Carbon\Carbon;
 use Generator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -376,6 +379,52 @@ class InvoiceFetchService{
 	 */
 	public function fetchSnapshot(int $invoice_id) : array {
 		return $this->invoice_repository->fetchInvoiceSnapshot($invoice_id);
+	}
+
+	/**
+	 * fetchInvoiceLedger function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function fetchInvoiceLedger(int $company_id, int $invoice_id) : array {
+		
+		$ledger_rows = $this->invoice_repository->fetchInvoiceLedger($company_id, $invoice_id);
+
+		$entries['rows'] = [];
+		$entries['meta'] = [];
+		
+		$applied_sum = BigDecimal::of(0);
+		
+		foreach($ledger_rows as $row){
+
+			$applied_sum = $applied_sum->plus(BigDecimal::of($row['applied']));
+
+			$temp = [];
+
+			$temp['applied'] = $row['applied'];
+			$temp['applied_at'] = Carbon::parse($row['applied_at'])->toISOString();
+			$temp['currency'] = $row['credit_currency'];
+
+			$temp['type'] = 'Credit';
+			$temp['id_number'] = $row['credit_number'];
+
+			if($row['payment_number']){
+				$temp['type'] = 'Payment';
+				$temp['id_number'] = $row['payment_number'];
+				$temp['currency'] = $row['payment_currency'];
+			}
+			
+
+			$entries['rows'][] = $temp;
+
+		}
+
+		$entries['meta']['total_applied'] = $applied_sum->toScale(2, RoundingMode::HalfUp)->__toString();
+		
+		return $entries;
+
 	}
 
 }

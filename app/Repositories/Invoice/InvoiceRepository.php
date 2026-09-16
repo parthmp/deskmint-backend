@@ -271,6 +271,28 @@ class InvoiceRepository{
 	}
 
 	/**
+	 * fetchInvoiceLedger function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function fetchInvoiceLedger(int $company_id, int $invoice_id) : array {
+
+		$selects = [
+			'invoice_ledger.total_applied as applied',
+			'credits.credit_number as credit_number',
+			'payments.payment_number as payment_number',
+			'invoice_ledger.updated_at as applied_at',
+			'c_currencies.code as credit_currency',
+			'p_currencies.code as payment_currency',
+		];
+
+		return InvoiceLedger::select(...$selects)->where([['invoice_ledger.company_id', '=', $company_id], ['invoice_ledger.invoice_id', '=', $invoice_id]])->leftJoin('credits', 'invoice_ledger.credit_id', '=', 'credits.id')->leftJoin('payments', 'invoice_ledger.payment_id', '=', 'payments.id')->leftJoin('currencies as c_currencies', 'c_currencies.id', '=', 'credits.currency_id')->leftJoin('currencies as p_currencies', 'p_currencies.id', '=', 'payments.currency_id')->orderBy('invoice_ledger.id', 'asc')->get()->toArray();
+
+	}
+
+	/**
 	 * ifInvoiceLockedMultiple function
 	 *
 	 * @param array $invoice_ids

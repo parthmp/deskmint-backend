@@ -352,9 +352,14 @@ class InvoiceController extends Controller{
 
 	public function snapshot(GenericRequest $request, int $invoice_id){
 
+		$data = $request->validated();
+
 		$invoice_id = (int) Sanitize::input($invoice_id);
 
-		return $this->invoice_service->fetchSnapshot($invoice_id);
+		$response['snapshot'] =  $this->invoice_service->fetchSnapshot($invoice_id);
+		$response['ledger']	= $this->invoice_service->fetchInvoiceLedger((int) $data['company_id'], $invoice_id);
+
+		return $response;
 
 
 	}
