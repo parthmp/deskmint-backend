@@ -45,7 +45,7 @@ class SendPaymentReminderJob implements ShouldQueue
 				'pdf_file',
 				'xml_file',
 				'payment_gateway',
-				'timezone_offset_minutes',
+				'timezone',
 			])
 			->find($this->invoice_id);
 

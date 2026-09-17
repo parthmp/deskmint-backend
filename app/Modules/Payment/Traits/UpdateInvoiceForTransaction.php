@@ -285,7 +285,7 @@ trait UpdateInvoiceForTransaction {
 			$snapshot = app(Snapshot::class)
 						->setCompanyId($invoice->company_id)
 						->setInvoiceId($invoice->id)
-						->setTimezoneOffset($invoice->timezone_offset_minutes)
+						->setTimezone((string) $invoice->timezone)
 						->setLogoSnapsot()
 						->setGeneralSettings()
 						->setClientSnapshot()

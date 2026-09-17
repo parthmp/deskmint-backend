@@ -55,7 +55,7 @@ class InvoiceRepository{
 		$payment_gateway = $data['payment_gateway'];
 		$patten_matched = $data['patten_matched'];
 		$scan_chars = $data['scan_chars'];
-		$timezone_offset_minutes = $data['timezone_offset_minutes'];
+		$timezone = $data['timezone'];
 
 		$first_name = $data['first_name'];
 		$last_name = $data['last_name'];
@@ -110,7 +110,7 @@ class InvoiceRepository{
 		$invoice->payment_gateway = $payment_gateway;
 		$invoice->pattern_matched = $patten_matched;
 		$invoice->scan_chars = $scan_chars;
-		$invoice->timezone_offset_minutes = $timezone_offset_minutes;
+		$invoice->timezone = $timezone;
 		$invoice->settings_snapshot = json_encode($settings_snapshot);
 		$invoice->save();
 

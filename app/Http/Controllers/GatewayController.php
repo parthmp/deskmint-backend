@@ -36,7 +36,7 @@ class GatewayController extends Controller {
 		$is_paid = ((int) InvoiceStatus::PAID->value === (int) $invoice->status);
 		$is_cancelled = ((int) InvoiceStatus::CANCELLED->value === (int) $invoice->status);
 
-		$due_date = General::formatDateTime($invoice->due_date, $invoice->timezone_offset_minutes);
+		$due_date = General::formatTimezoneDatetime($invoice->due_date, (string) $invoice->timezone);
 
 		return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => PaymentGateway::getLabelByValue((int) $invoice->payment_gateway), 'checkout_url' => $checkout_url, 'is_paid' => $is_paid, 'due_date' => $due_date, 'is_cancelled' => $is_cancelled]);
 
@@ -52,7 +52,7 @@ class GatewayController extends Controller {
 
 		if((int) $invoice->status === (int) InvoiceStatus::PAID->value || (int) $invoice->status === (int) InvoiceStatus::CANCELLED->value){
 			
-			$due_date = General::formatDateTime($invoice->due_date, $invoice->timezone_offset_minutes);
+			$due_date = General::formatTimezoneDatetime($invoice->due_date, (string) $invoice->timezone);
 			$is_paid = ((int) InvoiceStatus::PAID->value === (int) $invoice->status);
 			$is_cancelled = ((int) InvoiceStatus::CANCELLED->value === (int) $invoice->status);
 			return view('payment.payment_page', ['invoice' => $invoice, 'payment_method_name' => PaymentGateway::getLabelByValue((int) $invoice->payment_gateway), 'checkout_url' => '', 'is_paid' => $is_paid, 'is_cancelled' => $is_cancelled,'due_date' => $due_date]);

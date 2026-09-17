@@ -52,7 +52,7 @@ class InvoiceFetchService{
 			throw new InvoiceException("Invalid request", "invalid_timezone", config('global.error_code'));
 		}
 
-		$timezone_offset_minutes = (int) Sanitize::input($request->input('timezone_offset_minutes'));
+		$timezone = (string) Sanitize::input($request->input('timezone'));
 
 		$invoice_settings = $this->invoice_settings_service->setCompany($company_id);
 
@@ -63,7 +63,7 @@ class InvoiceFetchService{
 		$gateways = PaymentGateway::configuredOptions((int) $company_id);
 		
 		return [
-			'invoice_number'	=>	(new HandleInvoiceNumbers((int) $company_id, $invoice_settings->getInvoiceNumbers(), (int) $timezone_offset_minutes))->getNextInvoiceNumber(),
+			'invoice_number'	=>	(new HandleInvoiceNumbers((int) $company_id, $invoice_settings->getInvoiceNumbers(), (string) $timezone))->getNextInvoiceNumber(),
 			'product_columns' 	=> 	$invoice_settings->getProductColumns(),
 			'total_fields' 		=> 	$invoice_settings->getTotalFields(),
 			'custom_fields'		=>	$this->custom_fields->printCustomFields($fields),
@@ -260,7 +260,15 @@ class InvoiceFetchService{
 		 ])->setRewrites($rewrites)->setModel(Invoice::class)->fetchIndex();
 	}
 	
-	private function assembleProductRowsForEdit(int $company_id, int $invoice_id, int $timezone_offset_minutes) : array {
+	
+	/**
+	 * assembleProductRowsForEdit function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	private function assembleProductRowsForEdit(int $company_id, int $invoice_id) : array {
 
 		$this->invoice_settings_resolver = $this->invoice_settings_resolver->setCompanyId($company_id)->setInvoiceId($invoice_id);
 
@@ -340,10 +348,9 @@ class InvoiceFetchService{
 	 *
 	 * @param integer $company_id
 	 * @param integer $invoice_id
-	 * @param integer $timezone_offset_minutes
 	 * @return array
 	 */
-	public function fetchInvoice(int $company_id, int $invoice_id, int $timezone_offset_minutes) : array {
+	public function fetchInvoice(int $company_id, int $invoice_id) : array {
 		
 		$invoice = $this->invoice_repository->fetchById($invoice_id);
 
@@ -359,7 +366,7 @@ class InvoiceFetchService{
 
 		$custom_fields = $this->custom_fields->fetchCustomFieldValues($invoice_id, 'invoice', InvoiceCustomFieldValue::class);
 		
-		$product_rows = $this->assembleProductRowsForEdit($company_id, $invoice_id, $timezone_offset_minutes);
+		$product_rows = $this->assembleProductRowsForEdit($company_id, $invoice_id);
 
 		return [
 			'invoice'			=>	$invoice,

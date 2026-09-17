@@ -28,12 +28,12 @@ class GenerateInvoiceSnapshotJob implements ShouldQueue
     public function handle(): void
     {
 
-		$invoice = Invoice::select('timezone_offset_minutes')->where([['company_id', '=', $this->company_id], ['id', '=', $this->invoice_id]])->first();
+		$invoice = Invoice::select('timezone')->where([['company_id', '=', $this->company_id], ['id', '=', $this->invoice_id]])->first();
 
         $snapshot = app(Snapshot::class)
 						->setCompanyId($this->company_id)
 						->setInvoiceId($this->invoice_id)
-						->setTimezoneOffset($invoice->timezone_offset_minutes)
+						->setTimezone((string) $invoice->timezone)
 						->setLogoSnapsot()
 						->setGeneralSettings()
 						->setClientSnapshot()

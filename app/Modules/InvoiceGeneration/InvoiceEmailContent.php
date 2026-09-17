@@ -120,8 +120,8 @@ class InvoiceEmailContent {
 		$replace = [
 			$client_first_name,
 			$client_last_name,
-			General::formatDateTime($this->invoice->invoice_date, (int) $this->invoice->timezone_offset_minutes, false, false),
-			General::formatDateTime($this->invoice->due_date, (int) $this->invoice->timezone_offset_minutes, false, false),
+			General::formatTimezoneDatetime($this->invoice->invoice_date, (string) $this->invoice->timezone, false, false),
+			General::formatTimezoneDatetime($this->invoice->due_date, (string) $this->invoice->timezone, false, false),
 			$this->invoice->invoice_number,
 			$payment_gateway_url
 		];

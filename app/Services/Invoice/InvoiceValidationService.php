@@ -265,7 +265,15 @@ class InvoiceValidationService extends ProductFieldService {
 			throw new InvoiceException('Currency '.$currency_validated['code'].' not supported with '.PaymentGateway::getLabelByValue($payment_gateway_number), 'unsupported_currency', config('global.error_code'), 2);
 		}
 
-		if(!$request->has('timezone_offset_minutes')){
+		if(!$request->has('timezone')){
+			throw new InvoiceException('Invalid request', 'invalid_timezone', config('global.error_code'), 2);
+		}
+
+		$timezone = (string) Sanitize::input($request->input('timezone'));
+		
+		try{
+			new \DateTimeZone($timezone);
+		}catch(\Exception $e){
 			throw new InvoiceException('Invalid request', 'invalid_timezone', config('global.error_code'), 2);
 		}
 
@@ -282,7 +290,17 @@ class InvoiceValidationService extends ProductFieldService {
 	public function validateTimezoneOffeset(Request $request) : bool {
 
 		$v = Validator::make($request->all(), [
-			'timezone_offset_minutes'	=>	'required'
+			'timezone'	=>	[
+							'required',
+							'string',
+							function ($attribute, $value, $fail) {
+								try {
+									new \DateTimeZone($value);
+								} catch (\Exception $e) {
+									$fail("The {$attribute} must be a valid timezone.");
+								}
+							},
+						]
 		]);
 
 		return !$v->fails();

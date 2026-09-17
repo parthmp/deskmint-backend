@@ -62,7 +62,7 @@ class TransactionsController extends Controller {
 	}
 
 	public function fetchArrangedColumns(Request $request){
-		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'transactions', 'transactions', null, 'transaction', remove_columns:['company_id', 'timezone_offset_minutes', 'currency_id', 'token_id_identifier', 'invoice_id', 'gateway_fees_amount', 'is_approved', 'is_payment_captured', 'is_echeck'], additional_fields: $this->additional_fields);
+		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'transactions', 'transactions', null, 'transaction', remove_columns:['company_id', 'currency_id', 'token_id_identifier', 'invoice_id', 'gateway_fees_amount', 'is_approved', 'is_payment_captured', 'is_echeck'], additional_fields: $this->additional_fields);
 	}
 	
 

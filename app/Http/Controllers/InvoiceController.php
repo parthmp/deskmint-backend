@@ -98,7 +98,7 @@ class InvoiceController extends Controller{
 	}
 
 	public function fetchArrangedColumns(Request $request){
-		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'invoices', 'invoices', InvoicesCustomField::class, 'invoice', remove_columns:['invoice_terms', 'send_email', 'pattern_matched', 'scan_chars', 'settings_snapshot', 'client_id', 'company_id', 'timezone_offset_minutes', 'currency_id', 'pdf_file', 'xml_file', 'uuid', 'hidden_sent_at'], additional_fields: $this->additional_fields);
+		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'invoices', 'invoices', InvoicesCustomField::class, 'invoice', remove_columns:['invoice_terms', 'send_email', 'pattern_matched', 'scan_chars', 'settings_snapshot', 'client_id', 'company_id', 'timezone', 'currency_id', 'pdf_file', 'xml_file', 'uuid', 'hidden_sent_at'], additional_fields: $this->additional_fields);
 	}
 	
 
@@ -235,7 +235,7 @@ class InvoiceController extends Controller{
 		try{
 			
 			$invoice_id = (int) Sanitize::input($invoice_id);
-			return $this->invoice_service->fetchInvoice((int) $data['company_id'], (int) $invoice_id, (int) $data['timezone_offset_minutes']);
+			return $this->invoice_service->fetchInvoice((int) $data['company_id'], (int) $invoice_id);
 
 		}catch(InvoiceException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
@@ -320,7 +320,7 @@ class InvoiceController extends Controller{
 			[
 				'invoice_id' 			=> $data['invoice_id'],
 				'company_id' 			=> $data['company_id'],
-				'time_offset_minutes' 	=> $data['time_offset_minutes']
+				'timezone' 				=> $data['timezone']
 			]
 		);
 

@@ -22,7 +22,7 @@ class InvoiceGenerationRequest extends FormRequest
 	{
 		$invoice_id = (int) Sanitize::input($this->input('invoice_id'));
 		$company_id = (int) Sanitize::input($this->input('company_id'));
-		$time_offset_minutes = (int) Sanitize::input($this->input('time_offset_minutes'));
+		$timezone = (string) Sanitize::input($this->input('timezone'));
 		$send_invoice = false;
 
 		if($this->has('send_invoice')){
@@ -34,7 +34,7 @@ class InvoiceGenerationRequest extends FormRequest
 			'invoice_id'			=>	$invoice_id,
 			'company_id'			=>	$company_id,
 			'send_invoice'			=>	$send_invoice,
-			'time_offset_minutes'	=>	$time_offset_minutes
+			'timezone'				=>	$timezone
 		]);
 
 	}
@@ -50,7 +50,17 @@ class InvoiceGenerationRequest extends FormRequest
             'invoice_id'			=>	'required|numeric|exists:invoices,id',
             'company_id'			=>	'required|numeric',
             'send_invoice'			=>	'sometimes',
-            'time_offset_minutes'	=>	'required|numeric'
+            'timezone'				=>	[
+											'required',
+											'string',
+											function ($attribute, $value, $fail) {
+												try {
+													new \DateTimeZone($value);
+												} catch (\Exception $e) {
+													$fail("The {$attribute} must be a valid timezone.");
+												}
+											},
+										]
         ];
     }
 }

@@ -21,11 +21,11 @@ class FetchInvoiceRequest extends FormRequest
 	protected function prepareForValidation()
 	{
 		$company_id = (int) Sanitize::input($this->input('company_id'));
-		$timezone_offset_minutes = (int) Sanitize::input($this->input('timezone_offset_minutes'));
+		$timezone = (string) Sanitize::input($this->input('timezone'));
 
 		$this->merge([
 			'company_id'				=>		$company_id,
-			'timezone_offset_minutes'	=>		$timezone_offset_minutes,
+			'timezone'					=>		$timezone,
 		]);
 	}
 
@@ -38,7 +38,17 @@ class FetchInvoiceRequest extends FormRequest
     {
         return [
             'company_id'				=>	'required',
-            'timezone_offset_minutes'	=>	'required|numeric',
+            'timezone' => [
+							'required',
+							'string',
+							function ($attribute, $value, $fail) {
+								try {
+									new \DateTimeZone($value);
+								} catch (\Exception $e) {
+									$fail("The {$attribute} must be a valid timezone.");
+								}
+							},
+						]
         ];
     }
 }

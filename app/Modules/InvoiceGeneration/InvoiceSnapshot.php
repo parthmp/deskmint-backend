@@ -29,7 +29,7 @@ class InvoiceSnapshot {
 	private int $company_id;
 	private int $invoice_id;
 	private Invoice $invoice;
-	private int $timezone_offset_minutes;
+	private string $timezone;
 
 	public function __construct(
 		private InvoiceRepository $invoice_repository,
@@ -64,13 +64,13 @@ class InvoiceSnapshot {
 	}
 
 	/**
-	 * setTimezoneOffset function
+	 * setTimezone function
 	 *
-	 * @param integer $timezone_offset_minutes
+	 * @param string $timezone
 	 * @return self
 	 */
-	public function setTimezoneOffset(int $timezone_offset_minutes) : self {
-		$this->timezone_offset_minutes = $timezone_offset_minutes;
+	public function setTimezone(string $timezone) : self {
+		$this->timezone = $timezone;
 		return $this;
 	}
 
@@ -128,8 +128,8 @@ class InvoiceSnapshot {
 				$input_type = $custom_field_value->{$type.'s_custom_field_wt'}->custom_field_type_wt->input_type;
 
 				$content['value'] .= match($input_type){
-					config('global.field_types')[5] => General::formatDateTime($custom_field_value->field_value, $this->timezone_offset_minutes), /* date */
-					config('global.field_types')[7] => General::formatDateTime($custom_field_value->field_value, $this->timezone_offset_minutes, true), /* datetime */
+					config('global.field_types')[5] => General::formatTimezoneDatetime($custom_field_value->field_value, $this->timezone), /* date */
+					config('global.field_types')[7] => General::formatTimezoneDatetime($custom_field_value->field_value, $this->timezone, true), /* datetime */
 					config('global.field_types')[9] => $this->formatMultiSelectValues($custom_field_value->field_value), /* multiselect */
 					default							=> $custom_field_value->field_value
 				};
@@ -315,7 +315,7 @@ class InvoiceSnapshot {
 					$temp['value'] = $this->invoice[$mapped_field];
 
 					if(Carbon::canBeCreatedFromFormat($temp['value'], 'Y-m-d') || Carbon::canBeCreatedFromFormat($temp['value'], 'Y-m-d H:i:s')){
-						$temp['value'] = General::formatDateTime($temp['value'], $this->timezone_offset_minutes, false, false);
+						$temp['value'] = General::formatTimezoneDatetime($temp['value'], $this->timezone, false, false);
 					}
 					
 					$invoice_details_with_values[] = $temp;
@@ -333,7 +333,7 @@ class InvoiceSnapshot {
 		$this->snapshot['meta']['company_id']	= $this->invoice->company_id;
 		$this->snapshot['meta']['payment_gateway'] = $this->invoice->payment_gateway;
 		$this->snapshot['meta']['created_at'] = $this->invoice->created_at;
-		$this->snapshot['meta']['timezone_offset_minutes'] = $this->timezone_offset_minutes;
+		$this->snapshot['meta']['timezone'] = $this->timezone;
 		$this->snapshot['meta']['company'] = $company;
 		$this->snapshot['meta']['product_rows_data'] = $product_rows_data;
 		$this->snapshot['meta']['invoice_items'] = $invoice_items;

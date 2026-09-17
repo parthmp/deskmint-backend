@@ -36,7 +36,7 @@ class InvoiceGenerator{
 	private int $invoice_id;
 	private string $contents = '';
 	private mixed $pdf_object;
-	protected int $time_offset_minutes;
+	protected int $timezone;
 	private Invoice $live_invoice_data;
 	private string $filename = '';
 	private string $disk = INVOICES_DISK;
@@ -178,7 +178,7 @@ class InvoiceGenerator{
 		$this->pdf_object = App::make('dompdf.wrapper');
 		$this->pdf_object->loadHTML($this->contents);
 
-		$filename = General::formatDateTime($this->data['meta']['created_at'], $this->data['meta']['timezone_offset_minutes'], true, true);
+		$filename = General::formatTimezoneDatetime($this->data['meta']['created_at'], (string) $this->data['meta']['timezone'], true, true);
 		if($add_random){
 			$filename .= '_' . uniqid();
 		}
@@ -214,7 +214,7 @@ class InvoiceGenerator{
 	 */
 	public function generateEInvoice() : mixed {
 		
-		$created_at = General::formatDateTime($this->live_invoice_data->created_at, $this->data['meta']['timezone_offset_minutes'], false, true);
+		$created_at = General::formatTimezoneDatetime($this->live_invoice_data->created_at, (string) $this->data['meta']['timezone'], false, true);
 		$due_date = Carbon::create($this->live_invoice_data->due_date);
 		$due_date = $due_date->format('Y-m-d');
 

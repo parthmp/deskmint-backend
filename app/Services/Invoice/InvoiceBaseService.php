@@ -154,11 +154,11 @@ class InvoiceBaseService{
 	 *
 	 * @param string $invoice_number
 	 * @param integer $company_id
-	 * @param integer $timezone_offset_minutes
+	 * @param string $timezone
 	 * @return string
 	 */
-	public function getInvoiceNumber(string $invoice_number, int $company_id, int $timezone_offset_minutes) : string {
-		return $this->invoice_number_service->getInvoiceNumber($invoice_number, $company_id, $timezone_offset_minutes);
+	public function getInvoiceNumber(string $invoice_number, int $company_id, string $timezone) : string {
+		return $this->invoice_number_service->getInvoiceNumber($invoice_number, $company_id, $timezone);
 	}
 
 	/**
@@ -223,8 +223,6 @@ class InvoiceBaseService{
 		$invoice_date = Sanitize::input($request->input('data.invoice_details.invoice_date.value'));
 		$due_date = Sanitize::input($request->input('data.invoice_details.due_date.value'));
 
-		$timezone_offset_minutes = (int) Sanitize::input($request->input('timezone_offset_minutes'));
-
 		$po_number = '';
 		if($request->filled('data.invoice_details.po_number')){
 			$po_number = Sanitize::input($request->input('data.invoice_details.po_number'));
@@ -245,14 +243,13 @@ class InvoiceBaseService{
 		$payment_gateway = Sanitize::input($request->input('settings.payment_gateway'));
 		$product_rows = $this->filterValidProductRows($request->input('data.product_rows'), $company_id);
 
-		$timezone_offset_minutes = Sanitize::input($request->input('timezone_offset_minutes'));
+		$timezone = (string) Sanitize::input($request->input('timezone'));
 
-		//$invoice_number = $this->getInvoiceNumber($invoice_number, $company_id, (int) $timezone_offset_minutes);
-		$invoice_number_raw = $request->input('data.invoice_details.invoice_number.value') ?? $this->getInvoiceNumber($invoice_number, $company_id, (int) $timezone_offset_minutes);
+		$invoice_number_raw = $request->input('data.invoice_details.invoice_number.value') ?? $this->getInvoiceNumber($invoice_number, $company_id, $timezone);
 		$invoice_number = Sanitize::input($invoice_number_raw);
 		
 		$settings = $this->invoice_settings_service->setCompany((int) $company_id);
-		$patten_result = (new HandleInvoiceNumbers((int) $company_id, $settings->getInvoiceNumbers(), (int) $timezone_offset_minutes))->checkPatternWithSuffix($invoice_number);
+		$patten_result = (new HandleInvoiceNumbers((int) $company_id, $settings->getInvoiceNumbers(), $timezone))->checkPatternWithSuffix($invoice_number);
 		$patten_matched = $patten_result['matched'];
 		
 		if($patten_matched){
@@ -300,7 +297,7 @@ class InvoiceBaseService{
 			'payment_gateway'					=>	$payment_gateway,
 			'patten_matched'					=>	$patten_matched,
 			'scan_chars'						=>	$scan_chars,
-			'timezone_offset_minutes'			=>	$timezone_offset_minutes,
+			'timezone'							=>	$timezone,
 			'rows'								=>	$totals['rows']
 		];
 		
@@ -348,7 +345,7 @@ class InvoiceBaseService{
 		$snapshot = app(Snapshot::class)
 						->setCompanyId($company_id)
 						->setInvoiceId($invoice->id)
-						->setTimezoneOffset($invoice->timezone_offset_minutes)
+						->setTimezone($invoice->timezone)
 						->setLogoSnapsot()
 						->setGeneralSettings()
 						->setClientSnapshot()

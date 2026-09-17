@@ -39,10 +39,10 @@ class InvoiceNumberService{
 	 *
 	 * @param string $invoice_number
 	 * @param integer $company_id
-	 * @param integer $timezone_offset_minutes
+	 * @param string $timezone
 	 * @return string
 	 */
-	public function getInvoiceNumber(string $invoice_number, int $company_id, int $timezone_offset_minutes) : string {
+	public function getInvoiceNumber(string $invoice_number, int $company_id, string $timezone) : string {
 
 		$invoice = $this->invoice_repository->fetchInvoiceByNumber($invoice_number, $company_id, true);
 
@@ -56,7 +56,7 @@ class InvoiceNumberService{
 		
 		$settings = $this->invoice_settings_service->setCompany((int) $company_id);
 		
-		return (new HandleInvoiceNumbers((int) $company_id, $settings->getInvoiceNumbers(), (int) $timezone_offset_minutes))->getNextInvoiceNumber();
+		return (new HandleInvoiceNumbers((int) $company_id, $settings->getInvoiceNumbers(), $timezone))->getNextInvoiceNumber();
 
 	}
 

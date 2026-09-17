@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helpers\General;
 use App\Models\Invoice;
 use App\Models\SettingsSection;
 use App\Traits\SettingsDefault;
@@ -14,15 +15,14 @@ class HandleInvoiceNumbers{
 
 	private int $company_id;
 	private array $settings;
-	private int $timezone_offset_minutes;
 	private Carbon $user_time;
+	private string $timezone;
 
-	public function __construct(int $company_id, array $settings, int $timezone_offset_minutes = 0){
+	public function __construct(int $company_id, array $settings, string $timezone = 'Etc/UTC'){
 		
 		$this->company_id = $company_id;
 		$this->settings = $settings;
-		$this->timezone_offset_minutes = $timezone_offset_minutes;
-
+		$this->timezone = $timezone;
 		$this->setUserTime();
 
 	}
@@ -33,15 +33,7 @@ class HandleInvoiceNumbers{
 	 * @return void
 	 */
 	private function setUserTime() : void {
-
-		if($this->timezone_offset_minutes < 0){
-			$this->user_time = Carbon::now()->subMinutes(abs($this->timezone_offset_minutes));
-		}else if($this->timezone_offset_minutes > 0){
-			$this->user_time = Carbon::now()->addMinutes(abs($this->timezone_offset_minutes));
-		}else{
-			$this->user_time = Carbon::now();
-		}
-
+		$this->user_time = Carbon::now($this->timezone);
 	}
 
 	/**
@@ -51,9 +43,9 @@ class HandleInvoiceNumbers{
 	 */
 	private function getNeverDateRange() : array {
 
-		$from_datetime = Carbon::now()->subYears(10);
+		$from_datetime = Carbon::now()->subYears(30);
 		$to_datetime = Carbon::now();
-
+		
 		return [
 			'from' 	=> 	$from_datetime,
 			'to'	=>	$to_datetime
@@ -68,14 +60,15 @@ class HandleInvoiceNumbers{
 	 */
 	private function getDailyDateRange() : array {
 
-		$from_datetime = $this->user_time->clone()->startOfDay();
-		$to_datetime = $this->user_time;
+		$from_datetime = $this->user_time->clone()->startOfDay()->setTimezone('UTC');
+		$to_datetime = $this->user_time->clone()->setTimezone('UTC');
 
 		return [
 			'from' 	=> 	$from_datetime,
 			'to'	=>	$to_datetime
 		];
 
+		
 	}
 
 	/**
@@ -85,8 +78,8 @@ class HandleInvoiceNumbers{
 	 */
 	private function getWeeklyDateRange() : array {
 
-		$from_datetime = $this->user_time->clone()->startOfWeek();
-		$to_datetime = $this->user_time;
+		$from_datetime = $this->user_time->clone()->startOfWeek()->setTimezone('UTC');
+		$to_datetime = $this->user_time->clone()->setTimezone('UTC');
 
 		return [
 			'from' 	=> 	$from_datetime,
@@ -102,8 +95,8 @@ class HandleInvoiceNumbers{
 	 */
 	private function getTwoWeeksDateRange() : array {
 
-		$from_datetime = $this->user_time->clone()->startOfWeek()->subWeek();
-		$to_datetime = $this->user_time;
+		$from_datetime = $this->user_time->clone()->startOfWeek()->subWeek()->setTimezone('UTC');
+		$to_datetime = $this->user_time->clone()->setTimezone('UTC');
 
 		return [
 			'from' 	=> 	$from_datetime,
@@ -119,8 +112,8 @@ class HandleInvoiceNumbers{
 	 */
 	private function getMonthlyDateRange() : array {
 
-		$from_datetime = $this->user_time->clone()->startOfMonth();
-		$to_datetime = $this->user_time;
+		$from_datetime = $this->user_time->clone()->startOfMonth()->setTimezone('UTC');
+		$to_datetime = $this->user_time->clone()->setTimezone('UTC');
 
 		return [
 			'from' 	=> 	$from_datetime,
@@ -136,8 +129,8 @@ class HandleInvoiceNumbers{
 	 */
 	private function getTwoMonthsDateRange() : array {
 
-		$from_datetime = $this->user_time->clone()->startOfMonth()->subMonth();
-		$to_datetime = $this->user_time;
+		$from_datetime = $this->user_time->clone()->startOfMonth()->subMonth()->setTimezone('UTC');
+		$to_datetime = $this->user_time->clone()->setTimezone('UTC');
 
 		return [
 			'from' 	=> 	$from_datetime,
@@ -153,8 +146,8 @@ class HandleInvoiceNumbers{
 	 */
 	private function getThreeMonthsDateRange() : array {
 
-		$from_datetime = $this->user_time->clone()->startOfMonth()->subMonths(2);
-		$to_datetime = $this->user_time;
+		$from_datetime = $this->user_time->clone()->startOfMonth()->subMonths(2)->setTimezone('UTC');
+		$to_datetime = $this->user_time->clone()->setTimezone('UTC');
 
 		return [
 			'from' 	=> 	$from_datetime,
@@ -170,8 +163,8 @@ class HandleInvoiceNumbers{
 	 */
 	private function getFourMonthsDateRange() : array {
 
-		$from_datetime = $this->user_time->clone()->startOfMonth()->subMonths(3);
-		$to_datetime = $this->user_time;
+		$from_datetime = $this->user_time->clone()->startOfMonth()->subMonths(3)->setTimezone('UTC');
+		$to_datetime = $this->user_time->clone()->setTimezone('UTC');
 
 		return [
 			'from' 	=> 	$from_datetime,
@@ -187,8 +180,8 @@ class HandleInvoiceNumbers{
 	 */
 	private function getSixMonthsDateRange() : array {
 
-		$from_datetime = $this->user_time->clone()->startOfMonth()->subMonths(5);
-		$to_datetime = $this->user_time;
+		$from_datetime = $this->user_time->clone()->startOfMonth()->subMonths(5)->setTimezone('UTC');
+		$to_datetime = $this->user_time->clone()->setTimezone('UTC');
 
 		return [
 			'from' 	=> 	$from_datetime,
@@ -204,8 +197,8 @@ class HandleInvoiceNumbers{
 	 */
 	private function getYearlyDateRange() : array {
 
-		$from_datetime = $this->user_time->clone()->startOfYear();
-		$to_datetime = $this->user_time;
+		$from_datetime = $this->user_time->clone()->startOfYear()->setTimezone('UTC');
+		$to_datetime = $this->user_time->clone()->setTimezone('UTC');
 
 		return [
 			'from' 	=> 	$from_datetime,

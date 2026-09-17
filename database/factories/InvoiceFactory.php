@@ -50,7 +50,7 @@ class InvoiceFactory extends Factory
             'payment_gateway'						=>	PaymentGateway::NONE->value,
             'pattern_matched'						=>	0,
             'scan_chars'							=>	1,
-            'timezone_offset_minutes'				=>	0,
+            'timezone'								=>	'Etc/UTC',
             'settings_snapshot'						=>	'',
             'reminders_sent'						=>	$this->faker->dateTime(),
             'last_reminder_sent_at'					=>	$this->faker->dateTime()
