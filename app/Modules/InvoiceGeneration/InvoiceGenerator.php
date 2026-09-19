@@ -36,7 +36,7 @@ class InvoiceGenerator{
 	private int $invoice_id;
 	private string $contents = '';
 	private mixed $pdf_object;
-	protected int $timezone;
+	protected string $timezone;
 	private Invoice $live_invoice_data;
 	private string $filename = '';
 	private string $disk = INVOICES_DISK;

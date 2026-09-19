@@ -613,4 +613,31 @@ class InvoiceRepository{
 		]);
 	}
 
+	/**
+	 * fetchInvoiceData function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param array $selects
+	 * @return Invoice|null
+	 */
+	public function fetchInvoiceData(int $company_id, int $invoice_id, array $selects = ['*']) : ?Invoice {
+		return Invoice::select(...$selects)->where([['company_id', '=', $company_id], ['id', '=', $invoice_id]])->first();
+	}
+
+	/**
+	 * updateInvoiceSnapshot function
+	 *
+	 * @param integer $invoice_id
+	 * @param array $snapshot
+	 * @return void
+	 */
+	public function updateInvoiceSnapshot(int $invoice_id, array $snapshot) : void {
+			InvoiceSnapshot::updateOrCreate(
+				['invoice_id' 	=> $invoice_id],
+				['snapshot' 	=> $snapshot]
+			);
+
+	}
+
 }

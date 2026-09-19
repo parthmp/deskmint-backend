@@ -98,7 +98,7 @@ class InvoiceController extends Controller{
 	}
 
 	public function fetchArrangedColumns(Request $request){
-		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'invoices', 'invoices', InvoicesCustomField::class, 'invoice', remove_columns:['invoice_terms', 'send_email', 'pattern_matched', 'scan_chars', 'settings_snapshot', 'client_id', 'company_id', 'timezone', 'currency_id', 'pdf_file', 'xml_file', 'uuid', 'hidden_sent_at'], additional_fields: $this->additional_fields);
+		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'invoices', 'invoices', InvoicesCustomField::class, 'invoice', remove_columns:['invoice_terms', 'send_email', 'pattern_matched', 'scan_chars', 'settings_snapshot', 'client_id', 'company_id', 'timezone', 'currency_id', 'pdf_file', 'xml_file', 'uuid', 'hidden_sent_at', 'is_archived'], additional_fields: $this->additional_fields);
 	}
 	
 
@@ -200,6 +200,10 @@ class InvoiceController extends Controller{
 				DB::transaction(function() use ($request, $company_id, $do_send, $invoice_id) {
 
 					$invoice_id = $this->invoice_service->save($request, $company_id, $invoice_id);
+
+					if($do_send){
+						$this->invoice_service->markInvoiceSent($company_id, $invoice_id);
+					}
 
 
 					DB::afterCommit(function() use ($company_id, $invoice_id, $do_send) {
@@ -342,8 +346,8 @@ class InvoiceController extends Controller{
 		$pdf_path = $invoice->id.DIRECTORY_SEPARATOR.$invoice->pdf_file;
 		
 		if(!Storage::disk(INVOICES_DISK)->exists($pdf_path)){
-			Log::alert('Could not download. invoice #:'.$invoice->id);
-			return response(['message' => 'File not found', 'validity' => 'file_not_found'], config('global.error_code'));
+			$this->invoice_service->generateSnapshot($company_id, $invoice_id);
+			$this->invoice_service->generateInvoice($company_id, $invoice_id);
 		}
 		
 		return Storage::disk(INVOICES_DISK)->download($pdf_path);

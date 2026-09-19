@@ -11,6 +11,7 @@ use App\Modules\ApplyUnapply\Common\Traits\ApplyUnapplyCommon;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\InvoiceGeneration\InvoiceEmailContent;
 use App\Modules\InvoiceGeneration\InvoiceGenerator;
+use App\Modules\InvoiceGeneration\InvoiceSnapshot;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Repositories\Client\ClientRepository;
 use App\Repositories\Credit\CreditRepository;
@@ -526,6 +527,35 @@ class InvoiceService{
 	 */
 	public function fetchInvoiceLedger(int $company_id, int $invoice_id) : array {
 		return $this->invoice_fetch_service->fetchInvoiceLedger($company_id, $invoice_id);
+	}
+
+	/**
+	 * generateSnapshot function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return void
+	 */
+	public function generateSnapshot(int $company_id, int $invoice_id) : void {
+
+		$invoice = $this->invoice_repository->fetchInvoiceData($company_id, $invoice_id, ['timezone']);
+
+		$snapshot = app(InvoiceSnapshot::class)
+							->setCompanyId($company_id)
+							->setInvoiceId($invoice_id)
+							->setTimezone((string) $invoice->timezone)
+							->setLogoSnapsot()
+							->setGeneralSettings()
+							->setClientSnapshot()
+							->setCompanySnapshot()
+							->setInvoiceSnapshot()
+							->setInvoiceRowsSnapshot()
+							->setTotalsSnapshot()
+							->setTermsSnapshot()
+							->output();
+
+		$this->invoice_repository->updateInvoiceSnapshot($invoice_id, $snapshot);
+
 	}
 
 }
