@@ -12,6 +12,8 @@
 	if(!defined('ISC_PRODUCT_COLUMNS_TYPE')) define('ISC_PRODUCT_COLUMNS_TYPE', 'invoice_product_columns');
 	
 	if(!defined('ISC_INVOICE_DETAILS_TYPE')) define('ISC_INVOICE_DETAILS_TYPE', 'invoice_invoice_details');
+
+	if(!defined('ISC_RECURRING_INVOICE_DETAILS_TYPE')) define('ISC_RECURRING_INVOICE_DETAILS_TYPE', 'recurring_invoice_invoice_details');
 	
 	if(!defined('ISC_INVOICE_CLIENT_DETAILS_TYPE')) define('ISC_INVOICE_CLIENT_DETAILS_TYPE', 'invoice_client_details');
 

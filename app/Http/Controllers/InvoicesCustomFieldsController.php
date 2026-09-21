@@ -7,6 +7,7 @@ use App\Helpers\Sanitize;
 use App\Http\Requests\GenericRequest;
 use App\Models\CustomFieldType;
 use App\Models\InvoicesCustomField;
+use App\Models\RecurringInvoicesCustomField;
 use App\Modules\CustomFieldsFeature\CustomFieldsFeature;
 use App\Modules\CustomFieldsFeature\Exceptions\InvalidFieldsException;
 use App\Modules\CustomFieldsFeature\Exceptions\LabelCharException;
@@ -32,6 +33,8 @@ class InvoicesCustomFieldsController extends Controller{
 		try{
 
 			$this->custom_fields_feature->setModel($this->model)->saveOrUpdateCustomField($request->validated(), 'invoice', true, ISC_INVOICE_DETAILS_TYPE, $this->custom_id_flag);
+
+			$this->custom_fields_feature->setModel(RecurringInvoicesCustomField::class)->saveOrUpdateCustomField($request->validated(), 'recurring_invoice', true, ISC_RECURRING_INVOICE_DETAILS_TYPE, 'reccuring_'.$this->custom_id_flag);
 
 			return response(['message' => 'Custom field created successfully', 'validity' => 'created_success'], 200);
 
@@ -71,6 +74,9 @@ class InvoicesCustomFieldsController extends Controller{
 		try{
 			
 			$this->custom_fields_feature->setModel($this->model)->updateData($request->validated(), 'invoice', $id, ISC_INVOICE_DETAILS_TYPE, $this->custom_id_flag);
+
+			$this->custom_fields_feature->setModel(RecurringInvoicesCustomField::class)->updateData($request->validated(), 'recurring_invoice', $id, ISC_RECURRING_INVOICE_DETAILS_TYPE, 'reccuring_'.$this->custom_id_flag);
+
 			return response(['message' => 'Custom field updated successfully', 'validity' => 'updated_success'], 200);
 
 		}catch(InvalidFieldsException|LabelCharException|LabelFoundException|RecordNotFoundException $e){
@@ -93,6 +99,9 @@ class InvoicesCustomFieldsController extends Controller{
 		try{
 
 			$this->custom_fields_feature->setModel($this->model)->destroyData($request->validated(), 'invoice', ISC_INVOICE_DETAILS_TYPE, $company_id, $this->custom_id_flag);
+
+			$this->custom_fields_feature->setModel(RecurringInvoicesCustomField::class)->destroyData($request->validated(), 'recurring_invoice', ISC_RECURRING_INVOICE_DETAILS_TYPE, $company_id, 'reccuring_'.$this->custom_id_flag);
+
 			return response(['message' => 'Custom field(s) deleted successfully', 'validity' => 'delete_success'], 200);
 
 		}catch(InvalidFieldsException $e){
