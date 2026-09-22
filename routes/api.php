@@ -295,5 +295,6 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	 */
 
 	Route::get('manage-recurring-invoices/fetch-initial-data', [RecurringInvoiceController::class, 'fetchInitialData']);
+	Route::post('manage-recurring-invoices', [RecurringInvoiceController::class, 'store']);
 	
 });

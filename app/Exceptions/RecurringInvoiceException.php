@@ -4,7 +4,7 @@ namespace App\Exceptions;
 
 use Exception;
 
-class RecurringInvoiceException extends BaseException
+class RecurringInvoiceException extends BaseExceptionWithTabs
 {
     //
 }

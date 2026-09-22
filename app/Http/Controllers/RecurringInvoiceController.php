@@ -29,4 +29,12 @@ class RecurringInvoiceController extends Controller {
 		}
 
 	}
+
+
+	public function store(Request $request){
+
+		$company_id = (int) Sanitize::input($request->input('company_id'));
+
+	}
+
 }

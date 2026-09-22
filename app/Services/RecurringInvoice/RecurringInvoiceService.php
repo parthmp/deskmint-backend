@@ -17,10 +17,18 @@ class RecurringInvoiceService {
 	public function __construct(
 		private InvoiceValidationService $invoice_validation_service,
 		private CustomFields $custom_fields,
-		private InvoiceSettingsService $invoice_settings_service
+		private InvoiceSettingsService $invoice_settings_service,
+		private RecurringInvoiceValidationService $recurring_invoice_validation_service
 	){}
 
-	public function fetchInitialData(Request $request, int $company_id){
+	/**
+	 * fetchInitialData function
+	 *
+	 * @param Request $request
+	 * @param integer $company_id
+	 * @return array
+	 */
+	public function fetchInitialData(Request $request, int $company_id) : array {
 
 		if(!$this->invoice_validation_service->validateTimezoneOffeset($request)){
 			throw new RecurringInvoiceException("Invalid request", "invalid_timezone", config('global.error_code'));
@@ -46,6 +54,17 @@ class RecurringInvoiceService {
 			'none_gateway_value'		=> PaymentGateway::NONE->value
 		];
 
+	}
+
+	/**
+	 * validate function
+	 *
+	 * @param Request $request
+	 * @param integer $company_id
+	 * @return boolean
+	 */
+	public function validate(Request $request, int $company_id) : bool {
+		return $this->recurring_invoice_validation_service->validate($request, $company_id);
 	}
 
 }

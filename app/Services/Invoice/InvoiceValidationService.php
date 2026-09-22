@@ -15,10 +15,13 @@ use App\Repositories\Product\ProductRepository;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use App\Services\Product\ProductFieldService;
 use App\Services\Invoice\InvoiceSettingsService;
+use App\Traits\InvoiceValidation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class InvoiceValidationService extends ProductFieldService {
+
+	use InvoiceValidation;
 
 	public function __construct(
 		private CustomFields $custom_fields, 
@@ -64,128 +67,8 @@ class InvoiceValidationService extends ProductFieldService {
 
 	}
 
-	/**
-	 * ifSubmittedFieldsAreSameAsDefined function
-	 *
-	 * @param Request $request
-	 * @param integer $company_id
-	 * @return boolean
-	 */
-	public function ifSubmittedFieldsAreSameAsDefined(Request $request, int $company_id) : bool {
+	
 
-		$invoice_settings = $this->invoice_settings_service->setCompany($company_id);
-
-		$product_columns = $invoice_settings->getProductColumns();
-
-		$product_rows = $request->input('data.product_rows');
-
-		/* now check if all fields exist */
-
-		$fields_same = true;
-
-		$product_row_fields_names = [];
-		
-		foreach($product_rows[0] as $key => $submitted_col){
-			$product_row_fields_names[] = $key;
-		}
-
-		$custom_tax_ids = $this->getCustomTaxIds($company_id);
-		
-		foreach($product_columns as $user_defined_column){
-			
-			/* this "normal is for normal fields from DB, not for taxes" */
-			if($user_defined_column['mapped'] !== null && $user_defined_column['type'] === 'normal' && !in_array($user_defined_column['mapped'][0], $product_row_fields_names)){
-				$fields_same = false;
-				break;
-			}
-
-			
-			if(($user_defined_column['mapped'] === null || $user_defined_column['mapped'] === '') && ($user_defined_column['type'] === 'custom')){
-				
-				if(!isset($user_defined_column['id_column'])){
-					$fields_same = false;
-					break;
-				}
-				
-				$custom_field_name = $this->generateFieldName($user_defined_column, $custom_tax_ids);
-				
-				if(!in_array($custom_field_name, $product_row_fields_names)){
-					$fields_same = false;
-					break;
-				}
-
-			}
-
-			
-		}
-
-		return $fields_same;
-
-	}
-
-	/**
-	 * shouldHaveAtLeastOneRow function
-	 *
-	 * @param array $product_rows
-	 * @param integer $company_id
-	 * @return boolean
-	 */
-	private function shouldHaveAtLeastOneRow(array $product_rows, int $company_id) : bool {
-
-		if(empty($product_rows)){
-			return false;
-		}
-
-		// Extract all product IDs
-		$product_ids = [];
-		foreach($product_rows as $row){
-			
-			if(!isset($row['row_uuid'])){
-				throw new InvoiceException('Please have at least one product to create invoice', 'invalid_product_uuid_tab0', config('global.error_code'), 0);
-			}
-
-			if(trim($row['row_uuid']) === ''){
-				throw new InvoiceException('Please have at least one product to create invoice', 'invalid_product_uuid_tab0', config('global.error_code'), 0);
-			}
-
-			if(!empty($row['product_id'])){
-				$product_ids[] = (int) $row['product_id'];
-			}
-		}
-
-		if(empty($product_ids)){
-			return false;
-		}
-
-		// Check if at least one exists in database for this company
-		return $this->product_repository->ifProductsExists($company_id, $product_ids);
-
-	}
-
-	/**
-	 * validatePaymentGatewayCurrency function
-	 *
-	 * @param integer $client_id
-	 * @param integer $payment_gateway
-	 * @return array
-	 */
-	private function validatePaymentGatewayCurrency(int $client_id, int $payment_gateway) : array {
-		
-		$currency = $this->client_repository->fetchClientCurrencyById($client_id);
-		
-		$currency_code = strtoupper(trim($currency->code));
-
-		$is_valid = true;
-
-		if($payment_gateway === PaymentGateway::PAYPAL->value){
-			$is_valid = in_array($currency_code, config('payment.supported_currencies.paypal'));
-		}else if($payment_gateway === PaymentGateway::STRIPE->value){
-			$is_valid = in_array($currency_code, config('payment.supported_currencies.stripe'));
-		}
-
-		return ['code' => $currency_code, 'valid' => $is_valid];
-
-	}
 	
 	/**
 	 * validateAllForInvoice function
