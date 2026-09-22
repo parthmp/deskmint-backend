@@ -42,6 +42,7 @@ use App\Http\Middleware\ValidateDeviceAndTokens;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PaymentSettingsController;
 use App\Http\Controllers\PaymentTypeController;
+use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\TransactionsController;
 use App\Models\Transaction;
 
@@ -288,5 +289,11 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::post('manage-payments', [PaymentsController::class, 'store']);
 	Route::patch('manage-payments/{id}', [PaymentsController::class, 'update']);
 	Route::delete('manage-payments', [PaymentsController::class, 'destroy']);
+
+	/**
+	 * recurring invoices
+	 */
+
+	Route::get('manage-recurring-invoices/fetch-initial-data', [RecurringInvoiceController::class, 'fetchInitialData']);
 	
 });
