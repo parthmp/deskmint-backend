@@ -52,4 +52,22 @@ enum Frequencies : int {
 		return $data;
 
     }
+
+	/**
+	 * getAllValues function
+	 *
+	 * @return array
+	 */
+	public static function getAllValues(): array {
+        return array_column(self::cases(), 'value');
+    }
+
+	/**
+	 * paymentGatewayExists function
+	 *
+	 * @return boolean
+	 */
+	public static function exists(int $frequency) : bool {
+		return in_array($frequency, self::getAllValues());
+	}
 }

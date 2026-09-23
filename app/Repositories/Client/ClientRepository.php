@@ -76,10 +76,11 @@ class ClientRepository{
 	 * fetchById function
 	 *
 	 * @param integer $id
+	 * @param array $selects
 	 * @return Client|null
 	 */
-	public function fetchById(int $id) : ?Client {
-		return Client::where('id', '=', $id)->first();
+	public function fetchById(int $id, array $selects = ['*']) : ?Client {
+		return Client::select(...$selects)->where('id', '=', $id)->first();
 	}
 
 	/**

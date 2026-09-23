@@ -22,9 +22,12 @@ use App\Modules\Payment\Gateways\Stripe\Stripe;
 use App\Modules\Payment\Jobs\UpdatePaymentUrlJob;
 use App\Modules\Payment\Payment;
 use App\Repositories\Client\ClientRepository;
+use App\Traits\InvoiceBase;
 use Exception;
 
 class InvoiceBaseService{
+
+	use InvoiceBase;
 
 	public function __construct(
 		private ProductFieldService $product_field_service,
@@ -97,48 +100,6 @@ class InvoiceBaseService{
 
 	}
 
-	private function filterValidProductRows(array $product_rows, int $company_id): array {
-
-		if(empty($product_rows)){
-			return [];
-		}
-		
-		// Extract all product IDs from request
-		$product_ids = [];
-		foreach($product_rows as $index => $row){
-			if(!empty($row['product_id'])){
-				$product_ids[$index] = (int) $row['product_id'];
-			}
-		}
-		
-		if(empty($product_ids)){
-			return [];
-		}
-		
-		// Check which product IDs exist in database
-		$valid_product_ids = $this->product_repository->fetchValidProductIdsByIds($company_id, $product_ids);
-		
-		// Filter rows - keep only those with valid product IDs
-		$filtered_rows = [];
-		foreach($product_ids as $index => $product_id){
-			if(in_array($product_id, $valid_product_ids, true)){
-				$filtered_rows[] = $product_rows[$index];
-			}
-		}
-
-		$sanitized_rows = [];
-
-		foreach($filtered_rows as $row){
-			$temp = [];
-			foreach($row as $key => $value){
-				$temp[$key] = Sanitize::input($value);
-			}
-			$sanitized_rows[] = $temp;
-		}
-		
-		return $sanitized_rows;
-	}
-
 	/**
 	 * sanitizeInvoiceNumber function
 	 *
@@ -172,7 +133,7 @@ class InvoiceBaseService{
 		$discount_number = 0;
 
 		if($request->filled('data.invoice_details.global_discount')){
-			$discount_number = (float) Sanitize::input($request->input('data.invoice_details.global_discount'));
+			$discount_number = Sanitize::input($request->input('data.invoice_details.global_discount'));
 		}
 
 		$discount_type = 'percentage';
@@ -182,7 +143,7 @@ class InvoiceBaseService{
 			if($discount_type !== 'percentage'){
 				$discount_type = 'amount';
 			}else{
-				$discount_number = max(0, min(100, (double) $discount_number));
+				$discount_number = max(0, min(100, $discount_number));
 			}
 		}
 

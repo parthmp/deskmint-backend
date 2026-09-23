@@ -2,6 +2,7 @@
 
 namespace App\Services\RecurringInvoice;
 
+use App\Enums\RecurringInvoices\Frequencies;
 use App\Exceptions\RecurringInvoiceException;
 use App\Helpers\Sanitize;
 use App\Models\RecurringInvoicesCustomField;
@@ -45,12 +46,13 @@ class RecurringInvoiceValidationService {
 
 		$v = Validator::make($request->all(), [
 			'settings.payment_gateway'				=>	'required',
-			'settings.send_invoice'					=>	'required|boolean',
+			'settings.send_email'					=>	'required|boolean',
 			'settings.start_subscription'			=>	'required|boolean',
+			'settings.mark_invoices_paid'			=>	'required|boolean',
 			'settings.frequency'					=>	'required|integer'
 		]);
 
-		if(!$request->has('custom_frequency_days') && (int) $request->input('payment_gateway') === PaymentGateway::NONE->value){
+		if((!$request->has('settings.custom_frequency_days') || trim($request->input('settings.custom_frequency_days')) === '') && ((int) $request->input('settings.frequency') === Frequencies::CUSTOM->value)){
 			return false;
 		}
 		
@@ -104,6 +106,8 @@ class RecurringInvoiceValidationService {
 		$client_id = (int) Sanitize::input($request->input('data.invoice_details.client.client_id'));
 		
 		$payment_gateway_number = Sanitize::input($request->input('settings.payment_gateway'));
+		$frequency = (int) Sanitize::input($request->input('settings.frequency'));
+		$custom_frequency_days = (int) Sanitize::input($request->input('settings.custom_frequency_days'));
 
 		$currency_validated = $this->validatePaymentGatewayCurrency($client_id, $payment_gateway_number);
 
@@ -112,10 +116,18 @@ class RecurringInvoiceValidationService {
 			throw new RecurringInvoiceException('Invalid request', 'invalid_payment_gateway', config('global.error_code'), 2);
 		}
 
+		if(!Frequencies::exists((int) $frequency)){
+			throw new RecurringInvoiceException('Invalid request', 'invalid_frequency', config('global.error_code'), 2);
+		}
+
+		if((int) $custom_frequency_days > 365){
+			throw new RecurringInvoiceException('Custom frequency days must not be greater than 365 days', 'invalid_custom_frequency_days', config('global.error_code'), 2);
+		}
+
 		if(!$currency_validated['valid']){
 			
-			
 			throw new RecurringInvoiceException('Currency '.$currency_validated['code'].' not supported with '.PaymentGateway::getLabelByValue($payment_gateway_number), 'unsupported_currency', config('global.error_code'), 2);
+			
 		}
 
 		if(!$request->has('timezone')){
