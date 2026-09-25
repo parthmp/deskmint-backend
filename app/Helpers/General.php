@@ -372,4 +372,28 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 			return $show_time ? $date_obj->format('Y-m-d H:i:s') : $date_obj->format('Y-m-d');
 		}
 
+		/**
+		 * isCustomColumn function
+		 *
+		 * @param array $column
+		 * @return boolean
+		 */
+		public static function isCustomColumn(array $column): bool {
+			return ($column['mapped'] === null || $column['mapped'] === '') && $column['type'] === 'custom';
+		}
+
+		/**
+		 * generateFieldName function
+		 *
+		 * @param array $column
+		 * @param array $custom_tax_ids
+		 * @return string
+		 */
+		public static function generateFieldName(array $column, array $custom_tax_ids): string {
+
+			$underscored = self::replaceWithUnderscores($column['text']);
+			return in_array($column['id_column'], $custom_tax_ids) ? 'custom_tax_' . $underscored : 'normal_' . $underscored;
+
+		}
+
 	}

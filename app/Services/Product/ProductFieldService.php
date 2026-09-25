@@ -21,29 +21,7 @@ class ProductFieldService{
 		return AdditionalProductColumnsField::where([['company_id', '=', $company_id], ['type', '=', 'tax']])->pluck('id')->toArray();
 	}
 
-	/**
-	 * isCustomColumn function
-	 *
-	 * @param array $column
-	 * @return boolean
-	 */
-	protected function isCustomColumn(array $column): bool {
-        return ($column['mapped'] === null || $column['mapped'] === '') && $column['type'] === 'custom';
-    }
-
-	/**
-	 * generateFieldName function
-	 *
-	 * @param array $column
-	 * @param array $custom_tax_ids
-	 * @return string
-	 */
-	protected function generateFieldName(array $column, array $custom_tax_ids): string {
-
-        $underscored = General::replaceWithUnderscores($column['text']);
-        return in_array($column['id_column'], $custom_tax_ids) ? 'custom_tax_' . $underscored : 'normal_' . $underscored;
-
-    }
+	
 
 	/**
 	 * prepareInsertData function
@@ -64,9 +42,9 @@ class ProductFieldService{
 
 		foreach($snapshot as $user_defined_column){
 			
-			if($this->isCustomColumn($user_defined_column)){
+			if(General::isCustomColumn($user_defined_column)){
 				
-				$custom_field_name = $this->generateFieldName($user_defined_column, $custom_tax_ids);
+				$custom_field_name = General::generateFieldName($user_defined_column, $custom_tax_ids);
 
 				foreach($product_rows as $row){
 					$temp = [];

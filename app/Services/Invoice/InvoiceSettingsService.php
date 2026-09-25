@@ -58,10 +58,10 @@ class InvoiceSettingsService{
 
     }
 
+
 	/**
-	 * fetchInvoiceNumbers function
+	 * getInvoiceNumbers function
 	 *
-	 * @param integer $company_id
 	 * @return array
 	 */
 	public function getInvoiceNumbers() : array {
@@ -71,9 +71,8 @@ class InvoiceSettingsService{
 	}
 
 	/**
-	 * fetchProductColumns function
+	 * getProductColumns function
 	 *
-	 * @param integer $company_id
 	 * @return array
 	 */
 	public function getProductColumns() : array {
@@ -85,7 +84,6 @@ class InvoiceSettingsService{
 	/**
 	 * getTotalFields function
 	 *
-	 * @param integer $company_id
 	 * @return array
 	 */
 	public function getTotalFields() : array {

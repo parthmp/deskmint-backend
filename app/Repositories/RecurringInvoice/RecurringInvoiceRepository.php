@@ -2,6 +2,8 @@
 
 namespace App\Repositories\RecurringInvoice;
 
+use App\Models\AdditionalProductColumnsField;
+use App\Models\AdditionalProductColumnsFieldValueRi;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceItem;
 use Illuminate\Http\Request;
@@ -55,6 +57,7 @@ class RecurringInvoiceRepository {
 		$recurring_invoice->custom_frequency_days = $data['custom_frequency_days'];
 		$recurring_invoice->mark_paid_automatically = $data['mark_paid_automatically'];
 		$recurring_invoice->timezone = $data['timezone'];
+		$recurring_invoice->settings_snapshot = $data['settings_snapshot'];
 		$recurring_invoice->hidden_sent_at = $data['hidden_sent_at'];
 		$recurring_invoice->save();
 
@@ -83,6 +86,28 @@ class RecurringInvoiceRepository {
 		
 		RecurringInvoiceItem::insert($items);
 		
+	}
+
+	/**
+	 * getCustomTaxIds function
+	 *
+	 * @param integer $company_id
+	 * @return array
+	 */
+	public function getCustomTaxIds(int $company_id) : array{
+		return AdditionalProductColumnsField::where([['company_id', '=', $company_id], ['type', '=', 'tax']])->pluck('id')->toArray();
+	}
+
+	/**
+	 * upsertAdditionalColumnFieldValues function
+	 *
+	 * @param array $rows
+	 * @param array $unique
+	 * @param array $values
+	 * @return void
+	 */
+	public function upsertAdditionalColumnFieldValues(array $rows, array $unique, array $values) : void {
+		AdditionalProductColumnsFieldValueRi::upsert($rows, $unique, $values);
 	}
 
 }

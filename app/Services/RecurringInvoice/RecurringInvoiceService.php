@@ -5,7 +5,9 @@ namespace App\Services\RecurringInvoice;
 use App\Enums\RecurringInvoices\Frequencies;
 use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
 use App\Exceptions\RecurringInvoiceException;
+use App\Helpers\General;
 use App\Helpers\Sanitize;
+use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceCustomFieldValue;
 use App\Models\RecurringInvoicesCustomField;
 use App\Modules\CustomFields\CustomFields;
@@ -18,6 +20,7 @@ use App\Services\Invoice\InvoiceSettingsService;
 use App\Services\Invoice\InvoiceValidationService;
 use App\Traits\InvoiceBase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use \Illuminate\Support\Str;
 
 class RecurringInvoiceService {
@@ -130,6 +133,8 @@ class RecurringInvoiceService {
 		if($send_email){
 			$status = RecurringInvoiceStatus::SENT->value;
 		}
+
+		$settings = $this->invoice_settings_service->setCompany((int) $company_id);
 		
 		return [
 			'uuid'						=>	Str::uuid(),
@@ -152,7 +157,8 @@ class RecurringInvoiceService {
 			'mark_paid_automatically'	=>	$mark_invoices_paid,
 			'timezone'					=>	$timezone,
 			'hidden_sent_at'			=>	now(),
-			'rows'						=>	$product_rows
+			'rows'						=>	$product_rows,
+			'settings_snapshot'			=>	json_encode($settings->getProductColumns())
 		];
 	}
 
@@ -187,6 +193,77 @@ class RecurringInvoiceService {
 	}
 
 	/**
+	 * isCustomColumn function
+	 *
+	 * @param array $column
+	 * @return boolean
+	 */
+	protected function isCustomColumn(array $column): bool {
+        return ($column['mapped'] === null || $column['mapped'] === '') && $column['type'] === 'custom';
+    }
+
+	/**
+	 * prepareInsertData function
+	 *
+	 * @param array $product_rows
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return array
+	 */
+	protected function prepareInsertData(array $product_rows, int $company_id, int $recurring_invoice_id): array {
+
+		$recurring_invoice = $this->recurring_invoice_repository->fetchById($company_id, $recurring_invoice_id, ['settings_snapshot']);
+		$snapshot = json_decode($recurring_invoice->settings_snapshot, true);
+
+		$insert = [];
+
+		$custom_tax_ids = $this->recurring_invoice_repository->getCustomTaxIds($company_id);
+
+		foreach($snapshot as $user_defined_column){
+			
+			if(General::isCustomColumn($user_defined_column)){
+				
+				$custom_field_name = General::generateFieldName($user_defined_column, $custom_tax_ids);
+
+				foreach($product_rows as $row){
+					$temp = [];
+					$temp['row_uuid'] = Sanitize::input($row['row_uuid']);
+					$temp['recurring_invoice_id'] = (int) $recurring_invoice_id;
+					$temp['apc_field_id'] = $user_defined_column['id_column'];
+					$value = $row[$custom_field_name] ?? '';
+					$temp['value'] = Sanitize::input($value);
+					$insert[] = $temp;
+				}
+
+				
+
+			}
+			
+			
+		}
+
+		return $insert;
+
+	}
+
+	/**
+	 * upsertCustomProductRows function
+	 *
+	 * @param Request $request
+	 * @param integer $recurring_invoice_id
+	 * @param integer $company_id
+	 * @return void
+	 */
+	public function upsertCustomProductRows(Request $request, int $recurring_invoice_id, int $company_id) : void {
+
+		$product_rows_path = 'data.product_rows';
+		$product_rows = $request->input($product_rows_path);
+		$rows = $this->prepareInsertData($product_rows, $company_id, $recurring_invoice_id);
+		$this->recurring_invoice_repository->upsertAdditionalColumnFieldValues($rows, ['row_uuid', 'recurring_invoice_id', 'apc_field_id'], ['value']);
+
+	}
+
+	/**
 	 * save function
 	 *
 	 * @param Request $request
@@ -195,20 +272,24 @@ class RecurringInvoiceService {
 	 * @return void
 	 */
 	public function save(Request $request, int $company_id, ?int $recurring_invoice_id = null) : void {
-
+		
 		$add = true;
 		if($recurring_invoice_id){
 			$add = false;
 		}
 
-		$data = $this->assembleData($request, $company_id);
-		$rows = $data['rows'];
-		unset($data['rows']);
+		DB::transaction(function () use ($request, $company_id, $recurring_invoice_id, $add) {
 
-		$reccuring_invoice = $this->recurring_invoice_repository->saveOrUpdate($data, $company_id, $recurring_invoice_id);
-		$this->upsertItems($reccuring_invoice->id, $rows);
-		$this->custom_fields->upsertCustomFieldValues($request, $reccuring_invoice->id, RecurringInvoicesCustomField::class, RecurringInvoiceCustomFieldValue::class, 'recurring_invoices_flat', 'recurring_invoice', $add);
-		
+			$data = $this->assembleData($request, $company_id);
+			$rows = $data['rows'];
+			unset($data['rows']);
+
+			$reccuring_invoice = $this->recurring_invoice_repository->saveOrUpdate($data, $company_id, $recurring_invoice_id);
+			$this->upsertItems($reccuring_invoice->id, $rows);
+			$this->custom_fields->upsertCustomFieldValues($request, $reccuring_invoice->id, RecurringInvoicesCustomField::class, RecurringInvoiceCustomFieldValue::class, 'recurring_invoices_flat', 'recurring_invoice', $add);
+			$this->upsertCustomProductRows($request, (int) $reccuring_invoice->id, $company_id);
+
+		});
 
 	}
 
