@@ -196,9 +196,12 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	 */
 	
 
+	// Route::get('manage-email-settings-content', [EmailSettingsContentController::class, 'show']);
+	// Route::post('manage-email-settings-content', [EmailSettingsContentController::class, 'upsert']);
+
 	Route::get('manage-email-settings-content', [EmailSettingsContentController::class, 'show']);
 	Route::post('manage-email-settings-content', [EmailSettingsContentController::class, 'upsert']);
-
+	
 	Route::get('manage-email-settings-reminders', [EmailSettingsRemindersController::class, 'show']);
 	Route::post('manage-email-settings-reminders', [EmailSettingsRemindersController::class, 'upsert']);
 

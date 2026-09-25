@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\EmailSettingsContentException;
 use App\Helpers\General;
 use App\Http\Requests\EmailSettingsContent\CreateEmailSettingsContentRequest;
+use App\Http\Requests\EmailSettingsContent\EmailSettingsContentUpsertRequest;
 use App\Http\Requests\GenericRequest;
 use App\Services\EmailSettingsContent\EmailSettingsContentService;
 use Exception;
+use Illuminate\Http\Request;
 
 class EmailSettingsContentController extends Controller{
 
@@ -15,17 +18,24 @@ class EmailSettingsContentController extends Controller{
 	 *
 	 * @param EmailSettingsContentService $email_settings_content_service
 	 */
-	public function __construct(private EmailSettingsContentService $email_settings_content_service){
-	}
+	public function __construct(
+		private EmailSettingsContentService $email_settings_content_service
+	){}
 
 
-	public function show(GenericRequest $request){
+	public function show(EmailSettingsContentUpsertRequest $request){
 
 		$data = $request->validated();
-		$company_id = $data['company_id'];
-
+		
 		try{
-			return $this->email_settings_content_service->fetch($company_id);
+			
+			$record = $this->email_settings_content_service->fetch((int) $data['company_id'], (string) $data['key']);
+			if(!$record){
+				return General::wentWrong();
+			}
+
+			return $record;
+
 		}catch(Exception $e){
 			return General::wentWrong();
 		}
@@ -33,20 +43,20 @@ class EmailSettingsContentController extends Controller{
 	}
 
 
-	public function upsert(CreateEmailSettingsContentRequest $request){
+	public function upsert(EmailSettingsContentUpsertRequest $request){
 
 		$data = $request->validated();
 
-		$email_content = $this->email_settings_content_service->fetchRecord($data['company_id']);
-
 		try{
 
-			if($this->email_settings_content_service->updateByObj($data, $email_content)){
-				return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
-			}
+			$filtered_data = $this->email_settings_content_service->filterAndValidateContentData((array) $data['data'], (string) $data['key']);
 
-			return General::wentWrong();
+			$this->email_settings_content_service->save((int) $data['company_id'], (array) $filtered_data, (string) $data['key']);
 
+			return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
+
+		}catch(EmailSettingsContentException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
 			return General::wentWrong();
 		}

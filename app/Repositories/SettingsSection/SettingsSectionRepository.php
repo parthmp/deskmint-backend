@@ -100,4 +100,34 @@ class SettingsSectionRepository{
 		return SettingsSection::where('company_id', '=', $company_id)->whereIn('type', $types)->get()->mapWithKeys(fn($s) => [$s->type => json_decode($s->settings_json, true)])->toArray();
 	}
 
+	/**
+	 * fetchByType function
+	 *
+	 * @return SettingsSection|null
+	 */
+	public function fetchByType(int $company_id, string $type) : ?SettingsSection {
+		return SettingsSection::where([['company_id', '=', $company_id], ['type', '=', $type]])->first();
+	}
+
+	/**
+	 * upsert function
+	 *
+	 * @param integer $company_id
+	 * @param string $json
+	 * @param string $key
+	 * @return void
+	 */
+	public function upsert(int $company_id, string $json, string $key) : void {
+
+		$section = $this->fetchByType($company_id, $key);
+
+		if(!$section){
+			$section = $this->createObj($company_id, $key);
+		}
+
+		$section->settings_json = $json;
+		$section->save();
+
+	}
+
 }

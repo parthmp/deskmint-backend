@@ -753,4 +753,66 @@ PAYMENT URL BELOW
 
 		}
 
+		/**
+		 * getDefaultInvoicesEmailContentSettings function
+		 *
+		 * @return array
+		 */
+		public function getDefaultInvoicesEmailContentSettings() : array {
+			return ['email_content_invoice'		=>	trim('Hello {$client_first_name} {$client_last_name},
+Here is your invoice dated {$invoice_date}, due date is {$due_date} with invoice # {$invoice_number}
+You have unpaid balance of {$unpaid_balance}
+
+[{online-payment-start}]
+PAYMENT URL BELOW
+{$payment_url}
+[{online-payment-end}]'),
+				'email_content_reminder'	=>	trim('Hello {$client_first_name} {$client_last_name},
+Here is your invoice dated {$invoice_date}, due date is {$due_date} with invoice # {$invoice_number}
+You have unpaid balance of {$unpaid_balance}
+
+[{online-payment-start}]
+PAYMENT URL BELOW
+{$payment_url}
+[{online-payment-end}]')];
+		}
+
+		/**
+		 * getDefaultPaymentRequestsEmailContentSettings function
+		 *
+		 * @return array
+		 */
+		public function getDefaultPaymentRequestsEmailContentSettings() : array {
+			return ['email_content_payment_request'	=>	trim('Hello {$client_first_name} {$client_last_name},
+Amount {$unpaid_balance} is requested, please make payment.
+
+[{online-payment-start}]
+PAYMENT URL BELOW
+{$payment_url}
+[{online-payment-end}]'),
+'email_content_reminder_payment_request'	=>	trim('Hello {$client_first_name} {$client_last_name},
+Amount {$unpaid_balance} is requested, please make payment.
+
+[{online-payment-start}]
+PAYMENT URL BELOW
+{$payment_url}
+[{online-payment-end}]')];
+		}
+
+		
+		/**
+		 * getDefaultPaymentRequestsEmailContentSettings function
+		 *
+		 * @return array
+		 */
+		public function getDefaultRecurringInvoiceEmailContentSettings() : array {
+			return ['recurring_invoice_email_content'	=>	trim('Hello {$client_first_name} {$client_last_name},
+Please click on url to start subscription, frequency is {$frequency} and the total is {$total}
+
+[{online-payment-start}]
+PAYMENT URL BELOW
+{$subscription_url}
+[{online-payment-end}]')];
+		}
+
 	}

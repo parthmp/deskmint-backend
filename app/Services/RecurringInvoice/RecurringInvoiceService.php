@@ -193,16 +193,6 @@ class RecurringInvoiceService {
 	}
 
 	/**
-	 * isCustomColumn function
-	 *
-	 * @param array $column
-	 * @return boolean
-	 */
-	protected function isCustomColumn(array $column): bool {
-        return ($column['mapped'] === null || $column['mapped'] === '') && $column['type'] === 'custom';
-    }
-
-	/**
 	 * prepareInsertData function
 	 *
 	 * @param array $product_rows
