@@ -243,23 +243,6 @@ class InvoiceDBOperations{
 	}
 
 	/**
-	 * fetchEmailContentSettings function
-	 *
-	 * @return array
-	 */
-	public function fetchEmailContentSettings() : array {
-
-		$email_content = $this->filterArray(ESC_EMAIL_CONTENT_TYPE);
-		
-		if($email_content){
-			return $email_content;
-		}
-		
-		return $this->getDefaultEmailContentSettings();
-
-	}
-
-	/**
 	 * fetchInvoiceEmailContentSettings function
 	 *
 	 * @return array

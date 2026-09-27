@@ -122,7 +122,7 @@ class Base{
 	 * @param integer $company_id
 	 * @param string $custom_id
 	 * @param string $custom_fields_table_modal
-	 * @return void
+	 * @return bool
 	 */
 	public function modifyArrangedFieldsSettings(string $type, int $company_id, string $custom_id, string $custom_fields_table_modal) : bool {
 
