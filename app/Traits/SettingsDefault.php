@@ -759,7 +759,7 @@ PAYMENT URL BELOW
 		 * @return array
 		 */
 		public function getDefaultInvoicesEmailContentSettings() : array {
-			return ['email_content_invoice'		=>	trim('Hello {$client_first_name} {$client_last_name},
+			return ['email_content_invoice'		=>	trim('def Hello {$client_first_name} {$client_last_name},
 Here is your invoice dated {$invoice_date}, due date is {$due_date} with invoice # {$invoice_number}
 You have unpaid balance of {$unpaid_balance}
 
@@ -767,7 +767,7 @@ You have unpaid balance of {$unpaid_balance}
 PAYMENT URL BELOW
 {$payment_url}
 [{online-payment-end}]'),
-				'email_content_reminder'	=>	trim('Hello {$client_first_name} {$client_last_name},
+				'email_content_reminder'	=>	trim('rerminder def Hello {$client_first_name} {$client_last_name},
 Here is your invoice dated {$invoice_date}, due date is {$due_date} with invoice # {$invoice_number}
 You have unpaid balance of {$unpaid_balance}
 
@@ -783,14 +783,14 @@ PAYMENT URL BELOW
 		 * @return array
 		 */
 		public function getDefaultPaymentRequestsEmailContentSettings() : array {
-			return ['email_content_payment_request'	=>	trim('Hello {$client_first_name} {$client_last_name},
+			return ['email_content_payment_request'	=>	trim('def Hello {$client_first_name} {$client_last_name},
 Amount {$unpaid_balance} is requested, please make payment.
 
 [{online-payment-start}]
 PAYMENT URL BELOW
 {$payment_url}
 [{online-payment-end}]'),
-'email_content_reminder_payment_request'	=>	trim('Hello {$client_first_name} {$client_last_name},
+'email_content_reminder_payment_request'	=>	trim('def Hello {$client_first_name} {$client_last_name},
 Amount {$unpaid_balance} is requested, please make payment.
 
 [{online-payment-start}]

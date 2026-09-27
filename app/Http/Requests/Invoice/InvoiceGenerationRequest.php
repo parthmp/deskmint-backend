@@ -27,7 +27,6 @@ class InvoiceGenerationRequest extends FormRequest
 
 		if($this->has('send_invoice')){
 			$send_invoice = filter_var(Sanitize::input($this->input('send_invoice')), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
-			logger($send_invoice);
 		}
 
 		$this->merge([

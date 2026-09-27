@@ -38,7 +38,7 @@ class PaymentReminderForPaymentRequests extends Command
 
 		foreach($companies as $company){
 
-			$settings = $this->fetchEmailSettings((int) $company->id, 'email_content_reminder_payment_request');
+			$settings = $this->fetchEmailSettingsForPaymentRequests((int) $company->id, 'email_content_reminder_payment_request');
 			
 			PaymentRequest::query()
 						->select($selects)

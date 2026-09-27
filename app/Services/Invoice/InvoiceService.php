@@ -246,7 +246,8 @@ class InvoiceService{
 
 		$invoice = $this->invoice_repository->fetchInvoiceWithClientAndCurrency($invoice_id);
 		$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId($invoice->company_id)->setInvoiceId($invoice->id)->execRequiredSettings();
-		$content = $this->invoice_db_operations->fetchEmailContentSettings();
+		$content = $this->invoice_db_operations->fetchInvoiceEmailContentSettings();
+		//$content = $this->invoice_db_operations->fetchEmailContentSettings();
 		
 		if(isset($content['settings_json'])){
 			$email_json = json_decode($content['settings_json'], true);

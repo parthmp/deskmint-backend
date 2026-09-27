@@ -2,6 +2,7 @@
 
 namespace App\Services\PaymentRequest;
 
+use App\Enums\EmailSettings\EmailSettingsContent;
 use App\Enums\PaymentRequests\PaymentRequestStatus;
 use App\Exceptions\PaymentRequestException;
 use App\Helpers\General;
@@ -101,13 +102,13 @@ class PaymentRequestService {
 	 */
 	public function sendRequest(int $company_id, int $payment_request_id) : void {
 
-		$email_settings = $this->email_settings_content_service->fetchRecord($company_id);
-		if(!$email_settings){
-			throw new PaymentRequestException('invalid email content', 'invalid_email_content', (int) config('global.error_code'));
-		}
+		$email_settings = $this->email_settings_content_service->fetchEmailContentRecord($company_id, EmailSettingsContent::PAYMENT_REQUESTS->value);
+		// if(!$email_settings){
+		// 	throw new PaymentRequestException('invalid email content', 'invalid_email_content', (int) config('global.error_code'));
+		// }
 
-		$content = json_decode($email_settings->settings_json, true);
-		$content = $content['email_content_payment_request'];
+		//$content = json_decode($email_settings['settings_json'], true);
+		$content = $email_settings['email_content_payment_request'];
 
 		$data = $this->payment_request_repository->fetchDataForSendingRequest($company_id, $payment_request_id);
 		$content = $this->parseEmailContent($content, $data, 'payment_request.pay');

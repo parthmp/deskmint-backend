@@ -61,7 +61,7 @@ class SettingRepository{
 		if(!$setting){
 			$setting = Setting::where('company_id', '=', $company_id)->first();
 		}
-		logger($setting);
+		
 		if(!$setting){
 			$setting = $global;
 		}

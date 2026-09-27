@@ -2,6 +2,7 @@
 
 namespace App\Modules\InvoiceGeneration;
 
+use App\Enums\EmailSettings\EmailSettingsContent;
 use App\Models\AdditionalCompanyField;
 use App\Models\AdditionalProductColumnsFieldValue;
 use App\Models\ClientCustomFieldValue;
@@ -78,9 +79,9 @@ class InvoiceDBOperations{
 			ISC_INVOICE_COMPANY_ADDRESS_TYPE,
 			ISC_INVOICE_DETAILS_TYPE,
 			ISC_INVOICE_TOTAL_FIELDS_TYPE,
-			ESC_EMAIL_CONTENT_TYPE,
 			PAYMENTS_PAYPAL_TYPE,
-			PAYMENTS_STRIPE_TYPE
+			PAYMENTS_STRIPE_TYPE,
+			EmailSettingsContent::INVOICES->value
 		])->get()->toArray();
 		
 		return array_values($settings_data);
@@ -255,6 +256,23 @@ class InvoiceDBOperations{
 		}
 		
 		return $this->getDefaultEmailContentSettings();
+
+	}
+
+	/**
+	 * fetchInvoiceEmailContentSettings function
+	 *
+	 * @return array
+	 */
+	public function fetchInvoiceEmailContentSettings() : array {
+
+		$email_content = $this->filterArray(EmailSettingsContent::INVOICES->value);
+		
+		if($email_content){
+			return $email_content;
+		}
+		
+		return $this->getDefaultInvoicesEmailContentSettings();
 
 	}
 

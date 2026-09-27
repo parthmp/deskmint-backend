@@ -38,6 +38,21 @@ class EmailSettingsContentService{
 	}
 
 	/**
+	 * fetchEmailContentRecord function
+	 *
+	 * @param integer $company_id
+	 * @param string $type
+	 * @return array
+	 */
+	public function fetchEmailContentRecord(int $company_id, string $type) : array {
+		$record = $this->settings_section_repository->fetchSettings($company_id, $type, true);
+		if(!$record){
+			return $this->getDefaultPaymentRequestsEmailContentSettings();
+		}
+		return $record;
+	}
+
+	/**
 	 * fetchRecordBytype function
 	 *
 	 * @param integer $company_id

@@ -32,6 +32,10 @@ class SettingsSectionRepository{
 		
 		$row = SettingsSection::where([['company_id', '=', $company_id], ['type', '=', $type]])->first();
 		
+		if(!$row){
+			return null;
+		}
+		
 		if(!$settings_only){
 			return $row;
 		}
