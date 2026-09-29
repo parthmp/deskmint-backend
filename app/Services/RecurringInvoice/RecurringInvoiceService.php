@@ -12,6 +12,8 @@ use App\Models\RecurringInvoiceCustomFieldValue;
 use App\Models\RecurringInvoicesCustomField;
 use App\Modules\CustomFields\CustomFields;
 use App\Modules\Payment\Enums\PaymentGateway;
+use App\Modules\RecurringInvoice\Implementation\SendEmail;
+use App\Modules\RecurringInvoice\RecurringInvoice as RecurringInvoiceModule;
 use App\Repositories\Client\ClientRepository;
 use App\Repositories\RecurringInvoice\RecurringInvoiceRepository;
 use App\Services\Invoice\InvoiceBaseService;
@@ -35,7 +37,8 @@ class RecurringInvoiceService {
 		private RecurringInvoiceRepository $recurring_invoice_repository,
 		private ClientRepository $client_repository,
 		private InvoiceBaseService $invoice_base_service,
-		private InvoiceCalculationService $invoice_calculation_service
+		private InvoiceCalculationService $invoice_calculation_service,
+		private RecurringInvoiceModule $reccuring_invoice_module
 	){}
 
 	/**
@@ -126,13 +129,14 @@ class RecurringInvoiceService {
 		$custom_frequency_days = (int) Sanitize::input($request->input('settings.custom_frequency_days'));
 		
 		$mark_invoices_paid = (bool) Sanitize::input($request->input('settings.mark_invoices_paid'));
-		$send_email = (bool) Sanitize::input($request->input('settings.send_email'));
+		//$send_email = (bool) Sanitize::input($request->input('settings.send_email'));
 		$timezone = (string) Sanitize::input($request->input('timezone'));
 
 		$status = RecurringInvoiceStatus::DRAFT->value;
-		if($send_email){
-			$status = RecurringInvoiceStatus::SENT->value;
-		}
+		// always use draft, will update status if sending successes.
+		// if($send_email){
+		// 	$status = RecurringInvoiceStatus::SENT->value;
+		// }
 
 		$settings = $this->invoice_settings_service->setCompany((int) $company_id);
 		
@@ -259,28 +263,40 @@ class RecurringInvoiceService {
 	 * @param Request $request
 	 * @param integer $company_id
 	 * @param integer|null $recurring_invoice_id
-	 * @return void
+	 * @return RecurringInvoice
 	 */
-	public function save(Request $request, int $company_id, ?int $recurring_invoice_id = null) : void {
+	public function save(Request $request, int $company_id, ?int $recurring_invoice_id = null) : RecurringInvoice {
 		
 		$add = true;
 		if($recurring_invoice_id){
 			$add = false;
 		}
 
-		DB::transaction(function () use ($request, $company_id, $recurring_invoice_id, $add) {
+		$data = $this->assembleData($request, $company_id);
+		$rows = $data['rows'];
+		unset($data['rows']);
 
-			$data = $this->assembleData($request, $company_id);
-			$rows = $data['rows'];
-			unset($data['rows']);
+		$reccuring_invoice = $this->recurring_invoice_repository->saveOrUpdate($data, $company_id, $recurring_invoice_id);
+		$this->upsertItems($reccuring_invoice->id, $rows);
+		$this->custom_fields->upsertCustomFieldValues($request, $reccuring_invoice->id, RecurringInvoicesCustomField::class, RecurringInvoiceCustomFieldValue::class, 'recurring_invoices_flat', 'recurring_invoice', $add);
+		$this->upsertCustomProductRows($request, (int) $reccuring_invoice->id, $company_id);
 
-			$reccuring_invoice = $this->recurring_invoice_repository->saveOrUpdate($data, $company_id, $recurring_invoice_id);
-			$this->upsertItems($reccuring_invoice->id, $rows);
-			$this->custom_fields->upsertCustomFieldValues($request, $reccuring_invoice->id, RecurringInvoicesCustomField::class, RecurringInvoiceCustomFieldValue::class, 'recurring_invoices_flat', 'recurring_invoice', $add);
-			$this->upsertCustomProductRows($request, (int) $reccuring_invoice->id, $company_id);
+		return $reccuring_invoice;
 
-		});
+	}
 
+	/**
+	 * executeActions function
+	 *
+	 * @param integer $company_id
+	 * @param array $ids
+	 * @param boolean $send_email
+	 * @param boolean $start_subscription
+	 * @param boolean $mark_paid
+	 * @return void
+	 */
+	public function executeActions(int $company_id, array $ids, bool $send_email, bool $start_subscription, bool $mark_paid) : void {
+		$this->reccuring_invoice_module->setCompanyId($company_id)->setRecurringInvoiceIds($ids)->executeActions($send_email, $start_subscription, $mark_paid);
 	}
 
 }

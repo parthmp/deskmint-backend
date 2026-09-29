@@ -8,6 +8,7 @@ use App\Helpers\Sanitize;
 use App\Services\RecurringInvoice\RecurringInvoiceService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RecurringInvoiceController extends Controller {
 
@@ -38,8 +39,21 @@ class RecurringInvoiceController extends Controller {
 		//try{
 
 			$this->recurring_invoice_service->validate($request, $company_id);
+			$send_email = (bool) Sanitize::input($request->input('settings.send_email'));
 
-			$this->recurring_invoice_service->save($request, $company_id);
+			DB::transaction(function () use ($request, $company_id, $send_email) {
+				
+				$recurring_invoice = $this->recurring_invoice_service->save($request, $company_id);
+				
+				DB::afterCommit(function() use ($send_email, $recurring_invoice, $company_id){
+				
+					$this->recurring_invoice_service->executeActions(company_id: $company_id, ids: [$recurring_invoice->id], send_email: $send_email, start_subscription: false, mark_paid: false);
+					
+				});
+
+			});
+
+			
 
 		// }catch(RecurringInvoiceException $e){
 		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());

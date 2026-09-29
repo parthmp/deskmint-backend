@@ -20,6 +20,8 @@ Route::get('/', function () {
 	return 'welcome';
 });
 
+Route::get('/activate-recurring-payment/{uuid}', [GatewayController::class, 'showPaymentPageForRequest'])->name('recurring_invoice.activate')->middleware('signed');
+
 Route::get('/pay-request/{uuid}', [GatewayController::class, 'showPaymentPageForRequest'])->name('payment_request.pay')->middleware('signed');
 Route::post('/pay-request/checkout/{uuid}', [GatewayController::class, 'generateUrlForRequest'])->name('payment_request.pay.checkout')->middleware('signed');
 Route::get('/pay-request/failure/{payment_method}', [GatewayController::class, 'failedToConnect']);

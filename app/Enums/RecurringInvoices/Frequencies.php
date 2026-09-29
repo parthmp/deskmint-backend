@@ -70,4 +70,15 @@ enum Frequencies : int {
 	public static function exists(int $frequency) : bool {
 		return in_array($frequency, self::getAllValues());
 	}
+
+	/**
+	 * getLabelByValue function
+	 *
+	 * @param integer $frequency
+	 * @return string
+	 */
+	public static function getLabelByValue(int $frequency) : string {
+		return self::from($frequency)->label();
+	}
+
 }

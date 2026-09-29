@@ -319,9 +319,10 @@ class InvoiceService{
 	 * @param integer $company_id
 	 * @param integer $invoice_id
 	 * @param string $amount
+	 * @param string $uuid
 	 * @return boolean
 	 */
-	public function addCreditForInvoice(int $company_id, int $invoice_id, string $amount, $uuid) : bool {
+	public function addCreditForInvoice(int $company_id, int $invoice_id, string $amount, string $uuid) : bool {
 
 		$credit = $this->invoice_repository->addCredit($company_id, $invoice_id, $amount, $uuid);
 		$credit = $this->invoice_repository->overwriteCreditForAmount($credit, $amount);
