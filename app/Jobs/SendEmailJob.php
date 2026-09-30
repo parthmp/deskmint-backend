@@ -2,13 +2,15 @@
 
 namespace App\Jobs;
 
+use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Redis;
 
 class SendEmailJob implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, Batchable;
 
     /**
      * Create a new job instance.
@@ -19,13 +21,19 @@ class SendEmailJob implements ShouldQueue
 		public string $mailable_class,
 		public array $mailable_data,
 		public array $smtp,
-		public ?array $cc = null
+		public ?array $cc = null,
+		public ?string $redis_key = null,
+        public null|array|string $payload = null,
 	){}
 
     /**
      * Execute the job.
      */
     public function handle(): void {
+
+		if($this->batch()?->cancelled()){
+            return;
+        }
 
 		$mailer = Mail::build([
 			'transport' 	=> 'smtp',
@@ -44,6 +52,10 @@ class SendEmailJob implements ShouldQueue
 		}
 
 		$mailer->send($mailable);
+
+		if($this->redis_key && $this->payload){
+            Redis::sadd($this->redis_key, $this->payload);
+        }
 
 	}
 }

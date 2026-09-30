@@ -12,6 +12,7 @@ class SendReccuringInvoiceJob implements ShouldQueue
 	
 	public function __construct(
 		private array $data,
+		private int $company_id,
 		private string $content
 	){}
 
@@ -24,7 +25,7 @@ class SendReccuringInvoiceJob implements ShouldQueue
 	public function handle() : void {
 
 		$send_email = app(SendEmail::class);
-		$send_email->sendEmail($this->data, $this->content);
+		$send_email->sendEmail($this->data, $this->company_id, $this->content);
 
 	}
 

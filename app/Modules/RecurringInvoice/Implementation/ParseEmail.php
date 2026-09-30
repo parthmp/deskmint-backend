@@ -3,6 +3,8 @@
 namespace App\Modules\RecurringInvoice\Implementation;
 
 use App\Enums\RecurringInvoices\Frequencies;
+use App\Helpers\General;
+use App\Modules\Payment\Enums\PaymentGateway;
 use Illuminate\Support\Facades\URL;
 
 class ParseEmail {
@@ -51,7 +53,11 @@ class ParseEmail {
 			$parsed = str_ireplace($key, $replace, $parsed);
 			
 		}
-		
+
+
+		if((int) $data['payment_gateway'] === PaymentGateway::NONE->value){
+			$parsed = General::removeBetween('[{online-payment-start}]', '[{online-payment-end}]', $parsed);
+		}
 
 		$parsed = str_ireplace('[{online-payment-start}]', '', $parsed);
 		$parsed = str_ireplace('[{online-payment-end}]', '', $parsed);

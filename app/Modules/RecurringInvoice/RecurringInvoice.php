@@ -58,11 +58,11 @@ class RecurringInvoice {
 		if($send_email){
 
 			//lets fetch the data.
-			$selects = ['clients.email', 'clients.first_name', 'clients.last_name', 'recurring_invoices.total', 'recurring_invoices.frequency', 'recurring_invoices.custom_frequency_days', 'recurring_invoices.uuid', 'currencies.code as currency'];
+			$selects = ['clients.email', 'clients.first_name', 'clients.last_name', 'recurring_invoices.total', 'recurring_invoices.frequency', 'recurring_invoices.custom_frequency_days', 'recurring_invoices.uuid', 'currencies.code as currency', 'recurring_invoices.id', 'recurring_invoices.status', 'recurring_invoices.payment_gateway'];
 			$client_data = $this->db->fetchClientsData($this->company_id, $this->recurring_invoice_ids, $selects);
 			$content = $this->db->fetchEmailContent($this->company_id);
 
-			$batch[] = new SendReccuringInvoiceJob($client_data, $content['recurring_invoice_email_content']);
+			$batch[] = new SendReccuringInvoiceJob($client_data, $this->company_id, $content['recurring_invoice_email_content']);
 
 		}
 

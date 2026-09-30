@@ -396,4 +396,27 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 
 		}
 
+		/**
+		 * removeBetween function
+		 *
+		 * @param string $start
+		 * @param string $end
+		 * @param string $content
+		 * @return string
+		 */
+		public static function removeBetween(string $start, string $end, string $content) : string {
+
+			$start_pos = strpos($content, $start);
+			$end_pos = strpos($content, $end);
+
+			if($start_pos === false || $end_pos === false){
+				return $content;
+    		}
+
+			$text_start = $start_pos + strlen($start);
+			
+			return substr($content, 0, $text_start).substr($content, $end_pos);
+
+		}
+
 	}

@@ -3,12 +3,13 @@
 namespace App\Jobs;
 
 use App\Traits\CustomMailSettings;
+use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
 class SendGenericEmailJob implements ShouldQueue
 {
-    use Queueable, CustomMailSettings;
+    use Queueable, CustomMailSettings, Batchable;
 
     /**
      * Create a new job instance.
