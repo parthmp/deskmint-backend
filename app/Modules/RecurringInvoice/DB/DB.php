@@ -19,7 +19,7 @@ class DB {
 	 * @param array $selects
 	 * @return array
 	 */
-	public function fetchClientsData(int $company_id, array $recurring_invoice_ids, array $selects = ['*']) : array {
+	public function fetchData(int $company_id, array $recurring_invoice_ids, array $selects = ['*']) : array {
 		return FacadesDB::table('recurring_invoices')
 							->join('clients', 'clients.id', '=', 'recurring_invoices.client_id')
 							->join('currencies', 'currencies.id', '=', 'recurring_invoices.currency_id')

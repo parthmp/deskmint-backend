@@ -37,12 +37,14 @@ class SendEmail {
 			$data[$z]['content'] = $this->parse_email->parse($data[$z], $content);
 			$data[$z]['subject'] = 'Recurring invoices scheduled';
 
+			$payload = json_encode(['id' => $data[$z]['id'], 'status' => $data[$z]['status']]);
+
 			$batch[] = new SendEmailJob(
 				to: $data[$z]['email'],
 				to_name: $data[$z]['first_name'].' '.$data[$z]['last_name'],
 				mailable_class: \App\Mail\SendGenericEmail::class,
-				redis_key:$redis_key,
-				payload:json_encode(['id' => $data[$z]['id'], 'status' => $data[$z]['status']]),
+				redis_key: $redis_key,
+				payload: $payload,
 				mailable_data: [$data[$z]],
 				smtp: $this->smtpSettings()
 			);
@@ -52,7 +54,7 @@ class SendEmail {
 		Bus::batch($batch)->allowFailures()->finally(function(Batch $batch) use ($company_id, $redis_key){
 			MarkRecurringInvoicesSentJob::dispatch($company_id, $redis_key);
 		})->dispatch();
-		
+
 	}
 
 }
