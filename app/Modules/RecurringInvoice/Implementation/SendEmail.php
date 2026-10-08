@@ -29,6 +29,7 @@ class SendEmail {
 	public function sendEmail(array $data, int $company_id, string $content) : void {
 
 		$redis_key = Str::uuid()->toString();
+		$smtp = $this->smtpSettings();
 
 		$batch = [];
 		
@@ -46,7 +47,7 @@ class SendEmail {
 				redis_key: $redis_key,
 				payload: $payload,
 				mailable_data: [$data[$z]],
-				smtp: $this->smtpSettings()
+				smtp: $smtp
 			);
 			
 		}

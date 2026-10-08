@@ -4,7 +4,8 @@ namespace App\Modules\RecurringInvoice;
 
 use App\Modules\RecurringInvoice\DB\DB;
 use App\Modules\RecurringInvoice\Exceptions\RecurringInvoiceModuleException;
-use App\Modules\RecurringInvoice\Jobs\SendReccuringInvoiceJob;
+use App\Modules\RecurringInvoice\Jobs\InsertInvoiceDataJob;
+use App\Modules\RecurringInvoice\Jobs\SendRecurringInvoiceJob;
 use Illuminate\Support\Facades\Bus;
 
 class RecurringInvoice {
@@ -56,18 +57,11 @@ class RecurringInvoice {
 		$batch = [];
 
 		if($send_email){
-
-			//lets fetch the data.
-			$selects = ['clients.email', 'clients.first_name', 'clients.last_name', 'recurring_invoices.total', 'recurring_invoices.frequency', 'recurring_invoices.custom_frequency_days', 'recurring_invoices.uuid', 'currencies.code as currency', 'recurring_invoices.id', 'recurring_invoices.status', 'recurring_invoices.payment_gateway'];
-			$client_data = $this->db->fetchData($this->company_id, $this->recurring_invoice_ids, $selects);
-			$content = $this->db->fetchEmailContent($this->company_id);
-
-			$batch[] = new SendReccuringInvoiceJob($client_data, $this->company_id, $content['recurring_invoice_email_content']);
-
+			$batch[] = new SendRecurringInvoiceJob($this->recurring_invoice_ids, $this->company_id);
 		}
 
 		if($generate_invoice){
-			
+			$batch[] = new InsertInvoiceDataJob($this->company_id, $this->recurring_invoice_ids);
 		}
 
 		if(!empty($batch)){
