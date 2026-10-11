@@ -40,10 +40,10 @@ class HandleInvoiceNumbers{
 	/**
 	 * setManualReset function
 	 *
-	 * @param SettingsSection $manual_reset
+	 * @param SettingsSection|null $manual_reset
 	 * @return self
 	 */
-	private function setManualReset(SettingsSection $manual_reset) : self {
+	public function setManualReset(?SettingsSection $manual_reset) : self {
 		$this->manual_reset = $manual_reset;
 		return $this;
 	}

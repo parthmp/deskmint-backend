@@ -2,6 +2,7 @@
 
 namespace App\Modules\RecurringInvoice\Actions;
 
+use App\Models\SettingsSection;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\RecurringInvoice\DB\DB;
 use App\Services\HandleInvoiceNumbers;
@@ -47,9 +48,10 @@ class InsertInvoice {
 	 *
 	 * @param array $grouped_data
 	 * @param array $invoice_numbers_settings
+	 * @param SettingsSection|null $manual_reset
 	 * @return array
 	 */
-	private function generateFinalData(array $grouped_data, array $invoice_numbers_settings) : array {
+	private function generateFinalData(array $grouped_data, array $invoice_numbers_settings, ?SettingsSection $manual_reset) : array {
 
 		$last_number = null;
 		$final_invoice_data = [];
@@ -60,7 +62,7 @@ class InsertInvoice {
 
 			$handle_invoice_number = new HandleInvoiceNumbers((int) $group[0]['company_id'], $invoice_numbers_settings, $timezone);
 
-			$invoice_numbers = $handle_invoice_number->getNextInvoiceNumber((int) count($group), $last_number);
+			$invoice_numbers = $handle_invoice_number->setManualReset($manual_reset)->getNextInvoiceNumber((int) count($group), $last_number);
 			if(!is_array($invoice_numbers)){
 				$invoice_numbers = [$invoice_numbers];	
 			}
@@ -96,8 +98,13 @@ class InsertInvoice {
 
 		$column_settings = json_encode($column_settings);
 
+		$manual_reset = null;
+		if(isset($invoice_data[0]['company_id'])){
+			$manual_reset = $this->db->fetchManualReset((int) $invoice_data[0]['company_id']);
+		}
+		
 		$grouped_data = $this->groupEntriesByTimezone($invoice_data);
-		$final_invoice_data = $this->generateFinalData($grouped_data, $invoice_numbers_settings);
+		$final_invoice_data = $this->generateFinalData($grouped_data, $invoice_numbers_settings, $manual_reset);
 		
 		foreach($final_invoice_data as $entry){
 

@@ -95,9 +95,34 @@ class DB {
 	public function insertMultipleInvoices(array $invoices) : array{
 		
 		Invoice::insert($invoices);
+
+		//remove manual reset
+		if(isset($invoices[0]['company_id'])){
+			$manual_reset = $this->fetchManualReset((int) $invoices[0]['company_id']);
+			if($manual_reset){
+				$json = json_decode($manual_reset->settings_json, true);
+				$json['reset'] = 0;
+				$json = json_encode($json);
+				$manual_reset->settings_json = $json;
+				$manual_reset->save();
+			}
+		}
+		
+
+
 		$uuids = array_column($invoices, 'uuid');
 		return $this->fetchInvoicesData($uuids, ['id', 'recurring_invoice_id']);
 
+	}
+
+	/**
+	 * fetchManualReset function
+	 *
+	 * @param integer $company_id
+	 * @return SettingsSection|null
+	 */
+	public function fetchManualReset(int $company_id) : ?SettingsSection {
+		return SettingsSection::where([['company_id', '=', $company_id], ['type', '=', ISC_INVOICE_NUMBER_RESET_TYPE]])->first();
 	}
 
 }
