@@ -4,6 +4,7 @@ namespace App\Modules\RecurringInvoice\Actions;
 
 use App\Exceptions\RecurringInvoiceException;
 use App\Services\Invoice\InvoiceSettingsService;
+use App\Modules\RecurringInvoice\Actions\InsertInvoice;
 
 class InvoiceGeneratorForRecurringInvoice {
 
@@ -49,8 +50,10 @@ class InvoiceGeneratorForRecurringInvoice {
 		}
 
 		$settings = $this->invoice_settings_service->setCompany((int) $this->company_id)->getProductColumns();
+		$invoice_numbers = $this->invoice_settings_service->setCompany((int) $this->company_id)->getInvoiceNumbers();
 
-		$this->insert_invoice->insertInvoice($this->invoice_data, $settings);
+		$inserted = $this->insert_invoice->insertInvoice($this->invoice_data, $settings, $invoice_numbers);
+		logger($inserted);
 
 		return $this;
 

@@ -53,3 +53,5 @@
 
 
 	if(!defined('INVOICES_DISK')) define('INVOICES_DISK', 'invoices_storage');
+
+	if(!defined('INVOICES_LOCKED')) define('INVOICES_LOCKED', 'invoice_lock');

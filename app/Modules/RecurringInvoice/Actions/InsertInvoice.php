@@ -5,6 +5,7 @@ namespace App\Modules\RecurringInvoice\Actions;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\RecurringInvoice\DB\DB;
 use App\Services\HandleInvoiceNumbers;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class InsertInvoice {
@@ -14,20 +15,91 @@ class InsertInvoice {
 	){}
 
 	/**
+	 * groupEntriesByTimezone function
+	 *
+	 * @param array $invoice_data
+	 * @return array
+	 */
+	private function groupEntriesByTimezone(array $invoice_data) : array {
+
+		$grouped_data = [];
+
+		foreach($invoice_data as $entry){
+			
+			$timezone_string = str_ireplace('/', '_', strtolower($entry['timezone']));
+			$timezone_string = str_ireplace('+', '_', $timezone_string);
+			$timezone_string = str_ireplace('-', '_', $timezone_string);
+
+			if(!isset($grouped_data[$timezone_string])){
+				$grouped_data[$timezone_string] = [];
+			}
+
+			$grouped_data[$timezone_string][] = $entry;
+
+		}
+
+		return $grouped_data;
+
+	}
+
+	/**
+	 * generateFinalData function
+	 *
+	 * @param array $grouped_data
+	 * @param array $invoice_numbers_settings
+	 * @return array
+	 */
+	private function generateFinalData(array $grouped_data, array $invoice_numbers_settings) : array {
+
+		$last_number = null;
+		$final_invoice_data = [];
+
+		foreach($grouped_data as $group){
+
+			$timezone = $group[0]['timezone'];
+
+			$handle_invoice_number = new HandleInvoiceNumbers((int) $group[0]['company_id'], $invoice_numbers_settings, $timezone);
+
+			$invoice_numbers = $handle_invoice_number->getNextInvoiceNumber((int) count($group), $last_number);
+			if(!is_array($invoice_numbers)){
+				$invoice_numbers = [$invoice_numbers];	
+			}
+
+			$last_number = end($invoice_numbers);
+			
+
+			//weave
+			for($z = 0 ; $z < count($group) ; $z++){
+				$group[$z]['invoice_number'] = $invoice_numbers[$z];
+				$patten_result = $handle_invoice_number->checkPatternWithSuffix($invoice_numbers[$z]);
+				$group[$z]['scan_chars'] = strlen((string) $patten_result['suffix']);
+				$final_invoice_data[] = $group[$z];
+			}
+
+		}
+
+		return $final_invoice_data;
+	}
+
+	/**
 	 * insertInvoice function
 	 *
 	 * @param array $invoice_data
 	 * @param array $column_settings
 	 * @return array
 	 */
-	public function insertInvoice(array $invoice_data, array $column_settings) : array {
+	public function insertInvoice(array $invoice_data, array $column_settings, array $invoice_numbers_settings) : array {
 
-		
+		Cache::put(INVOICES_LOCKED, true, 30);
+
 		$invoices = [];
 
 		$column_settings = json_encode($column_settings);
 
-		foreach($invoice_data as $entry){
+		$grouped_data = $this->groupEntriesByTimezone($invoice_data);
+		$final_invoice_data = $this->generateFinalData($grouped_data, $invoice_numbers_settings);
+		
+		foreach($final_invoice_data as $entry){
 
 			$status = InvoiceStatus::SENT->value;
 			if((bool) $entry['mark_paid_automatically']){
@@ -44,7 +116,7 @@ class InsertInvoice {
 				'client_company'					=>	$entry['client_company_name'],
 				'currency_id'						=>	$entry['currency_id'],
 				'company_id'						=>	$entry['company_id'],
-				'invoice_number'					=>	'', //TODO: this will need modifications inside HandleInvoiceNumbers to generate multiple invoice numbers at once.
+				'invoice_number'					=>	$entry['invoice_number'],
 				'invoice_date'						=>	now(),
 				'due_date'							=>	now(),
 				'po_number'							=>	$entry['po_number'],
@@ -63,8 +135,8 @@ class InsertInvoice {
 				'xml_file'							=>	'',
 				'invoice_terms'						=>	$entry['invoice_terms'],
 				'payment_gateway'					=>	$entry['payment_gateway'],
-				'pattern_matched'					=>	0, //TODO: handle this while working on invoice numbers for this,
-				'scan_chars'						=>	0, //TODO: handle this while working on invoice numbers for this,
+				'pattern_matched'					=>	1,
+				'scan_chars'						=>	$entry['scan_chars'],
 				'timezone'							=>	$entry['timezone'],
 				'settings_snapshot'					=>	$column_settings,
 				'reminders_sent'					=>	0,

@@ -17,6 +17,7 @@ class HandleInvoiceNumbers{
 	private array $settings;
 	private Carbon $user_time;
 	private string $timezone;
+	private ?SettingsSection $manual_reset = null;
 
 	public function __construct(int $company_id, array $settings, string $timezone = 'Etc/UTC'){
 		
@@ -37,6 +38,17 @@ class HandleInvoiceNumbers{
 	}
 
 	/**
+	 * setManualReset function
+	 *
+	 * @param SettingsSection $manual_reset
+	 * @return self
+	 */
+	private function setManualReset(SettingsSection $manual_reset) : self {
+		$this->manual_reset = $manual_reset;
+		return $this;
+	}
+
+	/**
 	 * getNeverDateRange function
 	 *
 	 * @return array
@@ -52,6 +64,7 @@ class HandleInvoiceNumbers{
 		];
 
 	}
+	
 
 	/**
 	 * getDailyDateRange function
@@ -227,13 +240,19 @@ class HandleInvoiceNumbers{
 	 *
 	 * @param Invoice $invoice
 	 * @param string $padding
+	 * @param string|null $invoice_number
 	 * @return string
 	 */
-	private function incrementInvoiceNumber(Invoice $invoice, string $padding) : string {
+	private function incrementInvoiceNumber(Invoice $invoice, string $padding, ?string $invoice_number = null) : string {
 		/* check if invoice number overflows from 001 to 1000 */
 		$scan = (int) $invoice->scan_chars;
 		
-		$filtered_num = (int) substr((string) $invoice->invoice_number, $scan * -1);
+		if($invoice_number){
+			$filtered_num = (int) substr((string) $invoice_number, $scan * -1);
+		}else{
+			$filtered_num = (int) substr((string) $invoice->invoice_number, $scan * -1);
+		}
+		
 
 		$filtered_num++;
 
@@ -274,12 +293,15 @@ class HandleInvoiceNumbers{
 
 	}
 
+
 	/**
 	 * getNextInvoiceNumber function
 	 *
-	 * @return string
+	 * @param integer $times
+	 * @param string|null $invoice_number
+	 * @return string|array
 	 */
-	public function getNextInvoiceNumber() : string{
+	public function getNextInvoiceNumber(int $times = 1, ?string $invoice_number = null) : string|array {
 
 		$reset_counter = trim(strtolower($this->settings['reset_counter']));
 
@@ -301,7 +323,12 @@ class HandleInvoiceNumbers{
 		$increment = $this->settings['number_padding'];
 
 		/* implement for manual reset */
-		$manual_reset = SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_INVOICE_NUMBER_RESET_TYPE]])->first();
+		if(!$this->manual_reset){
+			$manual_reset = SettingsSection::where([['company_id', '=', $this->company_id], ['type', '=', ISC_INVOICE_NUMBER_RESET_TYPE]])->first();
+		}else{
+			$manual_reset = $this->manual_reset;
+		}
+		
 		$manual_reset_settings = $this->getInvoiceResetSettings();
 		if($manual_reset){
 			$manual_reset_settings = json_decode($manual_reset->settings_json, true);
@@ -309,11 +336,29 @@ class HandleInvoiceNumbers{
 
 		$manual_reset = (int) $manual_reset_settings['reset'];
 
-		if($last_invoice && $manual_reset !== 1){
-			$increment = $this->incrementInvoiceNumber($last_invoice, $this->settings['number_padding']);
+		$pattern = $this->parsePattern();
+
+		if($times === 1){
+			if($last_invoice && $manual_reset !== 1){
+				$increment = $this->incrementInvoiceNumber($last_invoice, $this->settings['number_padding']);
+			}
+			return $pattern.$increment;
+		}else{
+
+			$numbers = [];
+
+			$increment = $this->settings['number_padding'];
+			if($last_invoice && $manual_reset !== 1){
+				for($z = 0 ; $z < $times ; $z++){
+					$numbers[] = $pattern.$this->incrementInvoiceNumber($last_invoice, $this->settings['number_padding'], $invoice_number);
+				}
+			}
+
+			return $numbers;
+
 		}
 		
-		return $this->parsePattern().$increment;
+		
 	}
 
 	/**

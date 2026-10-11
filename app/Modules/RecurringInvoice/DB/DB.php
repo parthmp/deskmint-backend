@@ -93,7 +93,7 @@ class DB {
 	 * @return array
 	 */
 	public function insertMultipleInvoices(array $invoices) : array{
-
+		
 		Invoice::insert($invoices);
 		$uuids = array_column($invoices, 'uuid');
 		return $this->fetchInvoicesData($uuids, ['id', 'recurring_invoice_id']);
