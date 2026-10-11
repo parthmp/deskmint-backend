@@ -2,11 +2,13 @@
 
 namespace App\Modules\RecurringInvoice\Jobs;
 
+use App\Modules\RecurringInvoice\Actions\InvoiceGeneratorForRecurringInvoice;
 use App\Modules\RecurringInvoice\DB\DB;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\DB as LDB;
 
 class InsertInvoiceDataJob implements ShouldQueue {
 
@@ -17,15 +19,17 @@ class InsertInvoiceDataJob implements ShouldQueue {
 		private array $recurring_invoice_ids
 	){}
 
+
 	/**
 	 * fetchData function
 	 *
 	 * @return array
 	 */
 	private function fetchData() : array {
+
 		//fetch
 		$db = app(DB::class);
-		$recurring_invoice_data = $db->fetchRecurringInvoiceData($this->company_id, $this->recurring_invoice_ids);
+		$recurring_invoice_data = $db->fetchRecurringInvoiceData($this->company_id, $this->recurring_invoice_ids, ['recurring_invoices.*', 'clients.first_name', 'clients.last_name', 'clients.client_company_name']);
 		$recurring_invoice_custom_field_values = $db->fetchRecurringInvoiceCustomFieldValues($this->recurring_invoice_ids);
 
 		return [
@@ -43,7 +47,15 @@ class InsertInvoiceDataJob implements ShouldQueue {
 	 */
 	public function handle() : void {
 
-		$data = $this->fetchData();
+		$invoice_generator = app(InvoiceGeneratorForRecurringInvoice::class);
+
+		LDB::transaction(function () use ($invoice_generator) {
+
+			$data = $this->fetchData();
+			$invoice_generator->setCompany($this->company_id)->setInvoiceData($data['data'])->insertInvoiceWithData();
+
+		});
+		
 
 	}
 

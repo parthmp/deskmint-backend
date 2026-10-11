@@ -3,6 +3,7 @@
 namespace App\Modules\RecurringInvoice\DB;
 
 use App\Enums\EmailSettings\EmailSettingsContent;
+use App\Models\Invoice;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceCustomFieldValue;
 use App\Models\SettingsSection;
@@ -42,7 +43,7 @@ class DB {
 	 * @return array
 	 */
 	public function fetchRecurringInvoiceData(int $company_id, array $recurring_invoice_ids, array $selects = ['*']) : array {
-		return RecurringInvoice::select(...$selects)->where('company_id', '=', $company_id)->whereIn('id', $recurring_invoice_ids)->orderBy('id', 'asc')->get()->toArray();
+		return RecurringInvoice::select(...$selects)->join('clients', 'clients.id', '=', 'recurring_invoices.client_id')->where('recurring_invoices.company_id', '=', $company_id)->whereIn('recurring_invoices.id', $recurring_invoice_ids)->orderBy('recurring_invoices.id', 'asc')->get()->toArray();
 	}
 
 	/**
@@ -71,6 +72,31 @@ class DB {
 		}
 
 		return $this->getDefaultRecurringInvoiceEmailContentSettings();
+
+	}
+
+	/**
+	 * fetchInvoicesData function
+	 *
+	 * @param array $uuids
+	 * @param array $selects
+	 * @return array
+	 */
+	private function fetchInvoicesData(array $uuids, array $selects = ['*']) : array {
+		return Invoice::select(...$selects)->whereIn('uuid', $uuids)->get()->toArray();
+	}
+
+	/**
+	 * insertMultipleInvoices function
+	 *
+	 * @param array $invoices
+	 * @return array
+	 */
+	public function insertMultipleInvoices(array $invoices) : array{
+
+		Invoice::insert($invoices);
+		$uuids = array_column($invoices, 'uuid');
+		return $this->fetchInvoicesData($uuids, ['id', 'recurring_invoice_id']);
 
 	}
 
