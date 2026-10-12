@@ -44,10 +44,9 @@ class RecurringInvoice {
 	 *
 	 * @param boolean $send_email
 	 * @param boolean $generate_invoice
-	 * @param boolean $mark_paid
 	 * @return void
 	 */
-	public function executeActions(bool $send_email, bool $generate_invoice, bool $mark_paid) : void {
+	public function executeActions(bool $send_email, bool $generate_invoice) : void {
 
 		//fetch everything at once and chain jobs here.
 		if(empty($this->recurring_invoice_ids) || !isset($this->company_id)){

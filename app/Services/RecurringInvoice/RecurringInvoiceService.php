@@ -292,11 +292,10 @@ class RecurringInvoiceService {
 	 * @param array $ids
 	 * @param boolean $send_email
 	 * @param boolean $start_subscription
-	 * @param boolean $mark_paid
 	 * @return void
 	 */
-	public function executeActions(int $company_id, array $ids, bool $send_email, bool $start_subscription, bool $mark_paid) : void {
-		$this->reccuring_invoice_module->setCompanyId($company_id)->setRecurringInvoiceIds($ids)->executeActions($send_email, $start_subscription, $mark_paid);
+	public function executeActions(int $company_id, array $ids, bool $send_email, bool $start_subscription) : void {
+		$this->reccuring_invoice_module->setCompanyId($company_id)->setRecurringInvoiceIds($ids)->executeActions($send_email, $start_subscription);
 	}
 
 }

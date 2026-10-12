@@ -8,7 +8,7 @@ use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Redis;
-use Illuminate\Support\Facades\DB as LDB;
+use Illuminate\Support\Facades\DB as FacadeDB;
 
 class InsertInvoiceDataJob implements ShouldQueue {
 
@@ -49,7 +49,7 @@ class InsertInvoiceDataJob implements ShouldQueue {
 
 		$invoice_generator = app(InvoiceGeneratorForRecurringInvoice::class);
 
-		LDB::transaction(function () use ($invoice_generator) {
+		FacadeDB::transaction(function () use ($invoice_generator) {
 
 			$data = $this->fetchData();
 			$invoice_generator->setCompany($this->company_id)->setInvoiceData($data['data'])->insertInvoiceWithData();

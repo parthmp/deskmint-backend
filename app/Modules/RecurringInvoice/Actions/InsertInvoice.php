@@ -28,8 +28,9 @@ class InsertInvoice {
 		foreach($invoice_data as $entry){
 			
 			$timezone_string = str_ireplace('/', '_', strtolower($entry['timezone']));
-			$timezone_string = str_ireplace('+', '_', $timezone_string);
+			$timezone_string = str_ireplace('+', '__', $timezone_string);
 			$timezone_string = str_ireplace('-', '_', $timezone_string);
+			$timezone_string = str_ireplace(' ', '_', $timezone_string);
 
 			if(!isset($grouped_data[$timezone_string])){
 				$grouped_data[$timezone_string] = [];
@@ -69,7 +70,6 @@ class InsertInvoice {
 
 			$last_number = end($invoice_numbers);
 			
-
 			//weave
 			for($z = 0 ; $z < count($group) ; $z++){
 				$group[$z]['invoice_number'] = $invoice_numbers[$z];
@@ -91,7 +91,7 @@ class InsertInvoice {
 	 * @return array
 	 */
 	public function insertInvoice(array $invoice_data, array $column_settings, array $invoice_numbers_settings) : array {
-
+		
 		Cache::put(INVOICES_LOCKED, true, 30);
 
 		$invoices = [];
@@ -156,7 +156,8 @@ class InsertInvoice {
 			];
 		}
 
-		return $this->db->insertMultipleInvoices($invoices);
+		$res = $this->db->insertMultipleInvoices($invoices);		
+		return $res;
 
 	}
 

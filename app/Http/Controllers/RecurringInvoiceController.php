@@ -47,7 +47,7 @@ class RecurringInvoiceController extends Controller {
 				
 				DB::afterCommit(function() use ($send_email, $recurring_invoice, $company_id){
 				
-					$this->recurring_invoice_service->executeActions(company_id: $company_id, ids: [$recurring_invoice->id], send_email: $send_email, start_subscription: true, mark_paid: false);
+					$this->recurring_invoice_service->executeActions(company_id: $company_id, ids: [$recurring_invoice->id], send_email: $send_email, start_subscription: true);
 					
 				});
 

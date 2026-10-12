@@ -238,14 +238,20 @@ class HandleInvoiceNumbers{
 	/**
 	 * incrementInvoiceNumber function
 	 *
-	 * @param Invoice $invoice
+	 * @param Invoice|null $invoice
 	 * @param string $padding
 	 * @param string|null $invoice_number
+	 * @param integer|null $scan_chars
 	 * @return string
 	 */
-	private function incrementInvoiceNumber(Invoice $invoice, string $padding, ?string $invoice_number = null) : string {
+	private function incrementInvoiceNumber(?Invoice $invoice, string $padding, ?string $invoice_number = null, ?int $scan_chars = null) : string {
+
 		/* check if invoice number overflows from 001 to 1000 */
-		$scan = (int) $invoice->scan_chars;
+		if($scan_chars){
+			$scan = $scan_chars;
+		}else{
+			$scan = (int) $invoice->scan_chars;
+		}
 		
 		if($invoice_number){
 			$filtered_num = (int) substr((string) $invoice_number, $scan * -1);
@@ -350,7 +356,14 @@ class HandleInvoiceNumbers{
 			$increment = $this->settings['number_padding'];
 			if($last_invoice && $manual_reset !== 1){
 				for($z = 0 ; $z < $times ; $z++){
-					$numbers[] = $pattern.$this->incrementInvoiceNumber($last_invoice, $this->settings['number_padding'], $invoice_number);
+					$invoice_number = $pattern.$this->incrementInvoiceNumber($last_invoice, $this->settings['number_padding'], $invoice_number);
+					$numbers[] = $invoice_number;
+				}
+			}else{
+				//TODO:FIX ISSUE.
+				for($z = 0 ; $z < $times ; $z++){
+					$invoice_number = $pattern.$this->incrementInvoiceNumber($last_invoice, $this->settings['number_padding'], $this->settings['number_padding'], (int) count($this->settings['number_padding']));
+					$numbers[] = $invoice_number;
 				}
 			}
 
