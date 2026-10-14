@@ -245,7 +245,7 @@ class HandleInvoiceNumbers{
 	 * @return string
 	 */
 	private function incrementInvoiceNumber(?Invoice $invoice, string $padding, ?string $invoice_number = null, ?int $scan_chars = null) : string {
-
+		
 		/* check if invoice number overflows from 001 to 1000 */
 		if($scan_chars){
 			$scan = $scan_chars;
@@ -352,21 +352,36 @@ class HandleInvoiceNumbers{
 		}else{
 
 			$numbers = [];
-
-			$increment = $this->settings['number_padding'];
-			if($last_invoice && $manual_reset !== 1){
-				for($z = 0 ; $z < $times ; $z++){
-					$invoice_number = $pattern.$this->incrementInvoiceNumber($last_invoice, $this->settings['number_padding'], $invoice_number);
-					$numbers[] = $invoice_number;
-				}
-			}else{
-				//TODO:FIX ISSUE.
-				for($z = 0 ; $z < $times ; $z++){
-					$invoice_number = $pattern.$this->incrementInvoiceNumber($last_invoice, $this->settings['number_padding'], $this->settings['number_padding'], (int) count($this->settings['number_padding']));
-					$numbers[] = $invoice_number;
-				}
+			
+			$temp_invoice_number = $invoice_number;
+			if(!$temp_invoice_number){
+				$temp_invoice_number = $pattern.$increment;
 			}
 
+			if(!$last_invoice || (int) $manual_reset === 1){
+				$numbers[] = $pattern.$increment;
+			}else if($last_invoice && $manual_reset !== 1){
+				$temp_invoice_number = $last_invoice->invoice_number;
+			}
+
+			for($z = 0 ; $z < $times ; $z++){
+				
+				if(!empty($numbers)){
+					$temp_invoice_number = end($numbers);
+				}
+
+				$matched = $this->checkPatternWithSuffix($temp_invoice_number);
+
+				$scan_chars = strlen((string) $matched['suffix']);
+	
+				$invoice_number = $pattern.$this->incrementInvoiceNumber($last_invoice, $this->settings['number_padding'], $temp_invoice_number, $scan_chars);
+				
+				$numbers[] = $invoice_number;
+
+
+			}
+
+			
 			return $numbers;
 
 		}

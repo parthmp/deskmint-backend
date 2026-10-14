@@ -67,7 +67,7 @@ class InsertInvoice {
 			if(!is_array($invoice_numbers)){
 				$invoice_numbers = [$invoice_numbers];	
 			}
-
+			
 			$last_number = end($invoice_numbers);
 			
 			//weave
@@ -104,6 +104,8 @@ class InsertInvoice {
 		}
 		
 		$grouped_data = $this->groupEntriesByTimezone($invoice_data);
+
+		
 		$final_invoice_data = $this->generateFinalData($grouped_data, $invoice_numbers_settings, $manual_reset);
 		
 		foreach($final_invoice_data as $entry){

@@ -4,8 +4,10 @@ namespace App\Modules\RecurringInvoice\DB;
 
 use App\Enums\EmailSettings\EmailSettingsContent;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceCustomFieldValue;
+use App\Models\RecurringInvoiceItem;
 use App\Models\SettingsSection;
 use App\Traits\SettingsDefault;
 use Illuminate\Support\Facades\DB as FacadesDB;
@@ -97,6 +99,7 @@ class DB {
 		Invoice::insert($invoices);
 
 		//remove manual reset
+		//TODO: remove this early to avoid a bug.
 		if(isset($invoices[0]['company_id'])){
 			$manual_reset = $this->fetchManualReset((int) $invoices[0]['company_id']);
 			if($manual_reset){
@@ -123,6 +126,27 @@ class DB {
 	 */
 	public function fetchManualReset(int $company_id) : ?SettingsSection {
 		return SettingsSection::where([['company_id', '=', $company_id], ['type', '=', ISC_INVOICE_NUMBER_RESET_TYPE]])->first();
+	}
+
+	/**
+	 * fetchRecurringInvoiceItems function
+	 *
+	 * @param array $recurring_invoice_ids
+	 * @param array $selects
+	 * @return array
+	 */
+	public function fetchRecurringInvoiceItems(array $recurring_invoice_ids, array $selects = ['*']) : array {
+		return RecurringInvoiceItem::select(...$selects)->whereIn('recurring_invoice_id', $recurring_invoice_ids)->get()->toArray();
+	}
+
+	/**
+	 * insertInvoiceItems function
+	 *
+	 * @param array $items
+	 * @return void
+	 */
+	public function insertInvoiceItems(array $items) : void {
+		InvoiceItem::insert($items);
 	}
 
 }

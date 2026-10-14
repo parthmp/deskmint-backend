@@ -6,13 +6,15 @@ use App\Exceptions\RecurringInvoiceException;
 use App\Services\Invoice\InvoiceSettingsService;
 use App\Modules\RecurringInvoice\Actions\InsertInvoice;
 
-class InvoiceGeneratorForRecurringInvoice {
+class ManageActions {
 
-	private ?array $invoice_data = null;
+	private ?array $data = null;
 	private ?int $company_id = null;
+	private array $inserted = [];
 
 	public function __construct(
 		private InsertInvoice $insert_invoice,
+		private InsertInvoiceItems $insert_invoice_items,
 		private InvoiceSettingsService $invoice_settings_service
 	){}
 
@@ -23,7 +25,7 @@ class InvoiceGeneratorForRecurringInvoice {
 	 * @return self
 	 */
 	public function setInvoiceData(array $invoice_data) : self {
-		$this->invoice_data = $invoice_data;
+		$this->data = $invoice_data;
 		return $this;
 	}
 
@@ -39,21 +41,43 @@ class InvoiceGeneratorForRecurringInvoice {
 	}
 
 	/**
+	 * getInserted function
+	 *
+	 * @return array
+	 */
+	public function getInserted() : array {
+		return $this->inserted;
+	}
+
+	/**
 	 * insertInvoiceWithData function
 	 *
 	 * @return self
 	 */
 	public function insertInvoiceWithData() : self {
 
-		if(!$this->invoice_data || !$this->company_id){
+		if(!$this->data['data'] || !$this->company_id || empty($this->data['data'])){
 			throw new RecurringInvoiceException('invoice data not provided', 'invoice_data_not_provided', (int) config('global.error_code'));
 		}
 
 		$settings = $this->invoice_settings_service->setCompany((int) $this->company_id)->getProductColumns();
 		$invoice_numbers = $this->invoice_settings_service->setCompany((int) $this->company_id)->getInvoiceNumbers();
 
-		$inserted = $this->insert_invoice->insertInvoice($this->invoice_data, $settings, $invoice_numbers);
-		logger($inserted);
+		$inserted = $this->insert_invoice->insertInvoice($this->data['data'], $settings, $invoice_numbers);
+		
+		$this->inserted = $inserted;
+
+		return $this;
+
+	}
+
+	public function insertInvoiceItems() : self {
+		
+		if(!$this->data['recurring_invoice_items'] || empty($this->data['recurring_invoice_items']) || empty($this->inserted)){
+			throw new RecurringInvoiceException('invoice items not provided', 'invoice_items_not_provided', (int) config('global.error_code'));
+		}
+
+		$this->insert_invoice_items->insertInvoiceItems($this->inserted, $this->data['recurring_invoice_items']);
 
 		return $this;
 
