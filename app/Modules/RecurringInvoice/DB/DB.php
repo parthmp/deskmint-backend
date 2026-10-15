@@ -14,6 +14,7 @@ use App\Models\RecurringInvoiceItem;
 use App\Models\SettingsSection;
 use App\Traits\SettingsDefault;
 use Illuminate\Support\Facades\DB as FacadesDB;
+use Illuminate\Support\Facades\Schema;
 
 class DB {
 
@@ -194,6 +195,41 @@ class DB {
 	 */
 	public function insertCustomFieldValues(array $rows) : void {
 		InvoiceCustomFieldValue::insert($rows);
+	}
+
+	/**
+	 * fetchFlatTableRows function
+	 *
+	 * @param array $recurring_invoice_ids
+	 * @param array $selects
+	 * @return array
+	 */
+	public function fetchFlatTableRows(array $recurring_invoice_ids, array $selects = ['*']) : array {
+
+		$table = 'recurring_invoices_flat';
+
+		if(!Schema::hasTable($table)){
+			return [];
+		}
+
+		return FacadesDB::table($table)->select(...$selects)->whereIn('recurring_invoice_id', $recurring_invoice_ids)->get()->map(fn ($row) => (array) $row)->toArray();
+
+	}
+
+	/**
+	 * insertFlatTableData function
+	 *
+	 * @param array $rows
+	 * @return void
+	 */
+	public function insertFlatTableData(array $rows) : void {
+
+		$table = 'invoices_flat';
+
+		if(Schema::hasTable($table)){
+			FacadesDB::table($table)->insert($rows);
+		}
+
 	}
 
 }

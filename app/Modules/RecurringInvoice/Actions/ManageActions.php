@@ -108,11 +108,11 @@ class ManageActions {
 
 	public function insertCustomFieldValues() : self {
 
-		if(!$this->data['recurring_invoice_custom_field_values']){
+		if(!$this->data['recurring_invoice_custom_field_values'] || !$this->data['recurring_invoice_flat_table_rows']){
 			throw new RecurringInvoiceException('invoice custom field values not provided', 'invoice_cfv_not_provided', (int) config('global.error_code'));
 		}
 
-		$this->insert_custom_fields->insertCustomFields($this->inserted, $this->data['recurring_invoice_custom_field_values']);
+		$this->insert_custom_fields->insertCustomFields($this->inserted, $this->data['recurring_invoice_custom_field_values'], $this->data['recurring_invoice_flat_table_rows']);
 
 		return $this;
 
