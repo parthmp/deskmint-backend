@@ -15,7 +15,8 @@ class ManageActions {
 	public function __construct(
 		private InsertInvoice $insert_invoice,
 		private InsertInvoiceItems $insert_invoice_items,
-		private InvoiceSettingsService $invoice_settings_service
+		private InvoiceSettingsService $invoice_settings_service,
+		private InsertCustomFields $insert_custom_fields
 	){}
 
 	/**
@@ -96,10 +97,22 @@ class ManageActions {
 	public function insertCustomProductColumns() : self {
 
 		if(!$this->data['recurring_invoice_custom_product_columns']){
-			throw new RecurringInvoiceException('invoice items not provided', 'invoice_items_not_provided', (int) config('global.error_code'));
+			throw new RecurringInvoiceException('invoice custom product field columns not provided', 'invoice_cpfc_not_provided', (int) config('global.error_code'));
 		}
 
 		$this->insert_invoice_items->insertInvoiceCustomProductColumns($this->inserted, $this->data['recurring_invoice_custom_product_columns']);
+
+		return $this;
+
+	}
+
+	public function insertCustomFieldValues() : self {
+
+		if(!$this->data['recurring_invoice_custom_field_values']){
+			throw new RecurringInvoiceException('invoice custom field values not provided', 'invoice_cfv_not_provided', (int) config('global.error_code'));
+		}
+
+		$this->insert_custom_fields->insertCustomFields($this->inserted, $this->data['recurring_invoice_custom_field_values']);
 
 		return $this;
 

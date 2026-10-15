@@ -6,6 +6,7 @@ use App\Enums\EmailSettings\EmailSettingsContent;
 use App\Models\AdditionalProductColumnsFieldValue;
 use App\Models\AdditionalProductColumnsFieldValueRi;
 use App\Models\Invoice;
+use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoiceItem;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceCustomFieldValue;
@@ -170,6 +171,29 @@ class DB {
 	 */
 	public function insertCustomProductColumns(array $entries) : void {
 		AdditionalProductColumnsFieldValue::insert($entries);
+	}
+
+	/**
+	 * fetchCustomFieldValues function
+	 *
+	 * @param array $recurring_invoice_ids
+	 * @param array $selects
+	 * @return array
+	 */
+	public function fetchCustomFieldValues(array $recurring_invoice_ids, array $selects = ['*']) : array {
+
+		return RecurringInvoiceCustomFieldValue::select(...$selects)->whereIn('recurring_invoice_id', $recurring_invoice_ids)->get()->toArray();
+
+	}
+
+	/**
+	 * insertCustomFieldValues function
+	 *
+	 * @param array $rows
+	 * @return void
+	 */
+	public function insertCustomFieldValues(array $rows) : void {
+		InvoiceCustomFieldValue::insert($rows);
 	}
 
 }

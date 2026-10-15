@@ -33,12 +33,14 @@ class InsertInvoiceDataJob implements ShouldQueue {
 		$recurring_invoice_custom_field_values = $db->fetchRecurringInvoiceCustomFieldValues($this->recurring_invoice_ids);
 		$recurring_invoice_items = $db->fetchRecurringInvoiceItems($this->recurring_invoice_ids);
 		$recurring_invoice_custom_product_columns = $db->fetchCustomProductColumns($this->recurring_invoice_ids);
+		$recurring_invoice_custom_field_values = $db->fetchCustomFieldValues($this->recurring_invoice_ids);
 		
 		return [
 			'data'												=>	$recurring_invoice_data,
 			'custom_field_values'								=>	$recurring_invoice_custom_field_values,
 			'recurring_invoice_items'							=>	$recurring_invoice_items,
-			'recurring_invoice_custom_product_columns'			=>	$recurring_invoice_custom_product_columns
+			'recurring_invoice_custom_product_columns'			=>	$recurring_invoice_custom_product_columns,
+			'recurring_invoice_custom_field_values'				=>	$recurring_invoice_custom_field_values
 		];
 
 	}
@@ -51,12 +53,17 @@ class InsertInvoiceDataJob implements ShouldQueue {
 	 */
 	public function handle() : void {
 
-		$invoice_generator = app(ManageActions::class);
+		$actions = app(ManageActions::class);
 
-		FacadeDB::transaction(function () use ($invoice_generator) {
+		FacadeDB::transaction(function () use ($actions) {
 
 			$data = $this->fetchData();
-			$invoice_generator->setCompany($this->company_id)->setInvoiceData($data)->insertInvoiceWithData()->insertInvoiceItems()->insertCustomProductColumns();
+			$actions->setCompany($this->company_id)
+					->setInvoiceData($data)
+					->insertInvoiceWithData()
+					->insertInvoiceItems()
+					->insertCustomProductColumns()
+					->insertCustomFieldValues();
 
 		});
 		
