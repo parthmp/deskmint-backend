@@ -105,9 +105,9 @@ class RecurringInvoiceService {
 		}
 		
 		$discount_array = $this->invoice_base_service->getDiscountNumberAndType($request);
-		$discount_type = DISCOUNT_TYPE_AMOUNT;
+		$discount_type = 'amount';
 		if($discount_array['discount_type'] === 'percentage'){
-			$discount_type = DISCOUNT_TYPE_PERCENTAGE;
+			$discount_type = 'percentage';
 		}
 
 		$product_rows = $this->filterValidProductRows($request->input('data.product_rows'), $company_id);
@@ -147,7 +147,7 @@ class RecurringInvoiceService {
 			'currency_id'				=>	$client->currency_id,
 			'po_number'					=>	$po_number,
 			'discount'					=>	$discount_array['discount_number'],
-			'discount_type'				=>	$discount_type,
+			'discount_type'				=>	($discount_type === 'amount') ? DISCOUNT_TYPE_AMOUNT : DISCOUNT_TYPE_PERCENTAGE,
 			'discount_amount_post_tax'	=>	$global_discount_amount_post_tax,
 			'discount_amount_pre_tax'	=>	$global_discount_amount_pre_tax,
 			'subtotal'					=>	$global_subtotal,
@@ -161,7 +161,7 @@ class RecurringInvoiceService {
 			'mark_paid_automatically'	=>	$mark_invoices_paid,
 			'timezone'					=>	$timezone,
 			'hidden_sent_at'			=>	now(),
-			'rows'						=>	$product_rows,
+			'rows'						=>	$totals['rows'],
 			'settings_snapshot'			=>	json_encode($settings->getProductColumns())
 		];
 	}
@@ -296,6 +296,7 @@ class RecurringInvoiceService {
 	 */
 	public function executeActions(int $company_id, array $ids, bool $send_email, bool $start_subscription) : void {
 		$this->reccuring_invoice_module->setCompanyId($company_id)->setRecurringInvoiceIds($ids)->executeActions($send_email, $start_subscription);
+		//$this->reccuring_invoice_module->setCompanyId($company_id)->setRecurringInvoiceIds($ids)->executeActions($send_email, false);
 	}
 
 }

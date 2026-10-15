@@ -71,6 +71,11 @@ class ManageActions {
 
 	}
 
+	/**
+	 * insertInvoiceItems function
+	 *
+	 * @return self
+	 */
 	public function insertInvoiceItems() : self {
 		
 		if(!$this->data['recurring_invoice_items'] || empty($this->data['recurring_invoice_items']) || empty($this->inserted)){
@@ -78,6 +83,23 @@ class ManageActions {
 		}
 
 		$this->insert_invoice_items->insertInvoiceItems($this->inserted, $this->data['recurring_invoice_items']);
+
+		return $this;
+
+	}
+
+	/**
+	 * insertCustomProductColumns function
+	 *
+	 * @return self
+	 */
+	public function insertCustomProductColumns() : self {
+
+		if(!$this->data['recurring_invoice_custom_product_columns']){
+			throw new RecurringInvoiceException('invoice items not provided', 'invoice_items_not_provided', (int) config('global.error_code'));
+		}
+
+		$this->insert_invoice_items->insertInvoiceCustomProductColumns($this->inserted, $this->data['recurring_invoice_custom_product_columns']);
 
 		return $this;
 

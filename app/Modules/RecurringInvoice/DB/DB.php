@@ -3,6 +3,8 @@
 namespace App\Modules\RecurringInvoice\DB;
 
 use App\Enums\EmailSettings\EmailSettingsContent;
+use App\Models\AdditionalProductColumnsFieldValue;
+use App\Models\AdditionalProductColumnsFieldValueRi;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\RecurringInvoice;
@@ -147,6 +149,27 @@ class DB {
 	 */
 	public function insertInvoiceItems(array $items) : void {
 		InvoiceItem::insert($items);
+	}
+	
+	/**
+	 * fetchCustomProductColumns function
+	 *
+	 * @param array $recurring_invoice_ids
+	 * @param array $selects
+	 * @return array
+	 */
+	public function fetchCustomProductColumns(array $recurring_invoice_ids, array $selects = ['*']) : array {
+		return AdditionalProductColumnsFieldValueRi::select(...$selects)->whereIn('recurring_invoice_id', $recurring_invoice_ids)->get()->toArray();
+	}
+
+	/**
+	 * insertCustomProductColumns function
+	 *
+	 * @param array $entries
+	 * @return void
+	 */
+	public function insertCustomProductColumns(array $entries) : void {
+		AdditionalProductColumnsFieldValue::insert($entries);
 	}
 
 }
