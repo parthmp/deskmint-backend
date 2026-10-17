@@ -11,6 +11,7 @@ use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoiceItem;
+use App\Models\InvoiceSnapshot;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceCustomFieldValue;
 use App\Models\RecurringInvoiceItem;
@@ -477,6 +478,23 @@ class DB {
         								$query->where('company_id', $company_id);
     								}])->get();
 	
+	}
+
+	/**
+	 * insertInvoiceSnapshots function
+	 *
+	 * @param array $snapshots
+	 * @param integer $chunk_size
+	 * @return void
+	 */
+	public function insertInvoiceSnapshots(array $snapshots, int $chunk_size = 50) : void {
+
+		$chunks = array_chunk($snapshots, $chunk_size);
+
+		foreach($chunks as $chunk){
+			InvoiceSnapshot::insert($chunk);
+		}
+
 	}
 
 

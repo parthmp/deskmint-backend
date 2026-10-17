@@ -96,6 +96,8 @@ class InsertSnapshots {
 	 */
 	public function insertSnapshots(int $company_id, array $invoice_ids) : void {
 
+		$insert = [];
+
 		$snapshot_data = $this->fetchRequiredData($company_id, $invoice_ids);
 		
 		foreach($snapshot_data['invoice_data'] as $invoice){
@@ -121,8 +123,16 @@ class InsertSnapshots {
 						->setTermsSnapshot()
 						->output();
 
-			logger($snapshot);
-			throw new Exception("stop");
+			$insert[] = [
+				'invoice_id'	=>	$invoice->id,
+				'snapshot'		=>	json_encode($snapshot),
+				'created_at'	=>	now(),
+				'updated_at'	=> 	now()
+			];
+		}
+
+		if(!empty($insert)){
+			$this->db->insertInvoiceSnapshots($insert);
 		}
 
 	}
