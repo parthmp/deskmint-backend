@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Collection;
 /**
  * InvoiceSettingsResolver class
  */
+//TODO: consider refactoring this class later on. 
+//app/Modules/RecurringInvoice/DB/DB.php use both files use same settings.
 class InvoiceSettingsResolver{
 
 	use SettingsDefault;

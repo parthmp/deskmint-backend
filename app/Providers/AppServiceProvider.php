@@ -20,8 +20,9 @@ class AppServiceProvider extends ServiceProvider
      * Bootstrap any application services.
      */
     public function boot(): void
-    {
-		Model::preventLazyLoading();
+    {	
+		//removed disable lazyloading for this.
+		//Model::preventLazyLoading();
 		
 		// Model::handleLazyLoadingViolationUsing(function ($model, $relation) {
 		// 	$trace = (new \Exception)->getTraceAsString();

@@ -41,11 +41,14 @@ class InvoiceSnapshot {
 	 * setCompanyId function
 	 *
 	 * @param integer $company_id
+	 * @param boolean $resolver
 	 * @return self
 	 */
-	public function setCompanyId(int $company_id) : self {
+	public function setCompanyId(int $company_id, bool $resolver = true) : self {
 		$this->company_id = $company_id;
-		$this->invoice_settings_resolver = $this->invoice_settings_resolver->setCompanyId($company_id);
+		if($resolver){
+			$this->invoice_settings_resolver = $this->invoice_settings_resolver->setCompanyId($company_id);
+		}
 		return $this;
 	}
 
@@ -53,13 +56,26 @@ class InvoiceSnapshot {
 	 * setInvoiceId function
 	 *
 	 * @param integer $invoice_id
+	 * @param Invoice|null $invoice
+	 * @param boolean $resolver
 	 * @return self
 	 */
-	public function setInvoiceId(int $invoice_id) : self {
+	public function setInvoiceId(int $invoice_id, ?Invoice $invoice = null, $resolver = true) : self {
+		
 		$this->invoice_id = $invoice_id;
-		$this->invoice_settings_resolver = $this->invoice_settings_resolver->setInvoiceId($this->invoice_id);
-		$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId($this->company_id)->setInvoiceId($this->invoice_id)->execRequiredSettings();
-		$this->invoice = $this->invoice_db_operations->fetchInvoiceRow();
+
+		if($resolver){
+			$this->invoice_settings_resolver = $this->invoice_settings_resolver->setInvoiceId($this->invoice_id);
+			$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId($this->company_id)->setInvoiceId($this->invoice_id)->execRequiredSettings();
+		}
+
+		if(!$invoice){
+			$this->invoice = $this->invoice_db_operations->fetchInvoiceRow();
+		}else{
+			$this->invoice = $invoice;
+		}
+		
+		
 		return $this;
 	}
 
@@ -74,23 +90,38 @@ class InvoiceSnapshot {
 		return $this;
 	}
 
+	
 	/**
 	 * setLogoSnapsot function
 	 *
+	 * @param string|null $logo
 	 * @return self
 	 */
-	public function setLogoSnapsot() : self {
-		$this->snapshot['logo'] = $this->invoice_repository->fetchLogoImage($this->company_id);
+	public function setLogoSnapsot(?string $logo = null) : self {
+
+		if($logo){
+			$this->snapshot['logo'] = $logo;
+		}else{
+			$this->snapshot['logo'] = $this->invoice_repository->fetchLogoImage($this->company_id);
+		}
+		
 		return $this;
 	}
 
 	/**
 	 * setGeneralSettings function
 	 *
+	 * @param array|null $settings
 	 * @return self
 	 */
-	public function setGeneralSettings() : self {
-		$this->snapshot['general'] = $this->invoice_settings_resolver->fetchGeneral();
+	public function setGeneralSettings(?array $settings = null) : self {
+
+		if($settings){
+			$this->snapshot['general'] = $settings;
+		}else{
+			$this->snapshot['general'] = $this->invoice_settings_resolver->fetchGeneral();
+		}
+		
 		return $this;
 	}
 
@@ -146,12 +177,24 @@ class InvoiceSnapshot {
 	/**
 	 * setClientSnapshot function
 	 *
+	 * @param array|null $client_settings
+	 * @param Collection|null $custom_field_values
 	 * @return self
 	 */
-	public function setClientSnapshot() : self {
+	public function setClientSnapshot(?array $client_settings = null, ?Collection $custom_field_values = null) : self {
 		
-		$client_details = $this->invoice_settings_resolver->fetchClientDetails();
-		$client_custom_fields_values = $this->invoice_db_operations->fetchCustomFieldValuesOfClient((int) $this->invoice->client_id);
+		if($client_settings){
+			$client_details = $client_settings;
+		}else{
+			$client_details = $this->invoice_settings_resolver->fetchClientDetails();
+		}
+		
+		if($custom_field_values){
+			$client_custom_fields_values = $custom_field_values;
+		}else{
+			$client_custom_fields_values = $this->invoice_db_operations->fetchCustomFieldValuesOfClient((int) $this->invoice->client_id);
+		}
+		
 
 		if(isset($client_details['rows'])){
 			$client_details = $client_details['rows'];

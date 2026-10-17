@@ -30,7 +30,7 @@ class InsertInvoiceDataJob implements ShouldQueue {
 		//fetch
 		$db = app(DB::class);
 		$recurring_invoice_data = $db->fetchRecurringInvoiceData($this->company_id, $this->recurring_invoice_ids, ['recurring_invoices.*', 'clients.first_name', 'clients.last_name', 'clients.client_company_name']);
-		$recurring_invoice_custom_field_values = $db->fetchRecurringInvoiceCustomFieldValues($this->recurring_invoice_ids);
+		
 		$recurring_invoice_items = $db->fetchRecurringInvoiceItems($this->recurring_invoice_ids);
 		$recurring_invoice_custom_product_columns = $db->fetchCustomProductColumns($this->recurring_invoice_ids);
 		$recurring_invoice_custom_field_values = $db->fetchCustomFieldValues($this->recurring_invoice_ids);
@@ -38,7 +38,6 @@ class InsertInvoiceDataJob implements ShouldQueue {
 		
 		return [
 			'data'												=>	$recurring_invoice_data,
-			'custom_field_values'								=>	$recurring_invoice_custom_field_values,
 			'recurring_invoice_items'							=>	$recurring_invoice_items,
 			'recurring_invoice_custom_product_columns'			=>	$recurring_invoice_custom_product_columns,
 			'recurring_invoice_custom_field_values'				=>	$recurring_invoice_custom_field_values,
@@ -65,7 +64,8 @@ class InsertInvoiceDataJob implements ShouldQueue {
 					->insertInvoiceWithData()
 					->insertInvoiceItems()
 					->insertCustomProductColumns()
-					->insertCustomFieldValues();
+					->insertCustomFieldValues()
+					->insertSnapshots();
 
 		});
 		

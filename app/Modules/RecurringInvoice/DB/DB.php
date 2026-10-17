@@ -5,6 +5,7 @@ namespace App\Modules\RecurringInvoice\DB;
 use App\Enums\EmailSettings\EmailSettingsContent;
 use App\Models\AdditionalProductColumnsFieldValue;
 use App\Models\AdditionalProductColumnsFieldValueRi;
+use App\Models\ClientCustomFieldValue;
 use App\Models\Invoice;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoiceItem;
@@ -13,6 +14,7 @@ use App\Models\RecurringInvoiceCustomFieldValue;
 use App\Models\RecurringInvoiceItem;
 use App\Models\SettingsSection;
 use App\Traits\SettingsDefault;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB as FacadesDB;
 use Illuminate\Support\Facades\Schema;
 
@@ -230,6 +232,117 @@ class DB {
 			FacadesDB::table($table)->insert($rows);
 		}
 
+	}
+
+	/**
+	 * fetchInvoiceDataForSnapshots function
+	 *
+	 * @param array $invoice_ids
+	 * @return Collection
+	 */
+	public function fetchInvoiceDataForSnapshots(array $invoice_ids, $selects = ['*']) : Collection {
+		return Invoice::select(...$selects)->whereIn('id', $invoice_ids)->with('client_wt', 'currency')->withTrashed()->get();
+	}
+
+	/**
+	 * fetchSettings function
+	 *
+	 * @param integer $company_id
+	 * @return array
+	 */
+	public function fetchSettings(int $company_id) : array {
+		
+		$settings_data = SettingsSection::where([['company_id', '=', $company_id]])->whereIn('type', [
+			ISC_INVOICE_GENERAL_DETAILS_TYPE,
+			ISC_INVOICE_CLIENT_DETAILS_TYPE,
+			ISC_INVOICE_COMPANY_DETAILS_TYPE,
+			ISC_PRODUCT_COLUMNS_TYPE,
+			ISC_INVOICE_COMPANY_ADDRESS_TYPE,
+			ISC_INVOICE_DETAILS_TYPE,
+			ISC_INVOICE_TOTAL_FIELDS_TYPE,
+			PAYMENTS_PAYPAL_TYPE,
+			PAYMENTS_STRIPE_TYPE,
+			EmailSettingsContent::INVOICES->value
+		])->get()->toArray();
+		
+		return array_values($settings_data);
+	}
+
+	/**
+	 * filterArray function
+	 *
+	 * @param string $key
+	 * @param array $data
+	 * @return array|null
+	 */
+	private function filterArray(string $key, array $data) : ?array {
+		
+		$filtered = array_values(array_filter($data, function($item) use($key) {
+			return $item['type'] === $key;
+		}));
+		
+		if(!isset($filtered[0])){
+			return null;
+		}
+
+		return !empty($filtered[0]) ? $filtered[0] : null;
+	}
+
+	
+	/**
+	 * fetchGeneralSettings function
+	 *
+	 * @param array $data
+	 * @return array|null
+	 */
+	public function fetchGeneralSettings(array $data) : array|null {
+
+		$settings = $this->filterArray(ISC_INVOICE_GENERAL_DETAILS_TYPE, $data);
+		if(!$settings){
+			return $this->getDefaultInvoiceGeneralSettings();
+		}
+
+		return json_decode($settings['settings_json'], true);
+
+	}
+
+	/**
+	 * fetchClientDetails function
+	 *
+	 * @param array $data
+	 * @return array
+	 */
+	public function fetchClientDetails(array $data) : array {
+
+		$settings = $this->filterArray(ISC_INVOICE_CLIENT_DETAILS_TYPE, $data);
+
+		if(!$settings){
+			return $this->getDefaultInvoiceClientDetailsSettings();
+		}
+
+		return json_decode($settings['settings_json'], true);
+
+	}
+
+	/**
+	 * fetchClientCustomFieldValuesForSnapshot function
+	 *
+	 * @param array $client_ids
+	 * @return Collection
+	 */
+	public function fetchClientCustomFieldValuesForSnapshot(array $client_ids) : Collection {
+		return ClientCustomFieldValue::whereIn('client_id', $client_ids)->withTrashed()->with(['clients_custom_field_wt.custom_field_type_wt'])->get();
+	}
+	
+	/**
+	 * fetchClientAndInvoiceIds function
+	 *
+	 * @param integer $company_id
+	 * @param array $invoice_ids
+	 * @return array
+	 */
+	public function fetchClientAndInvoiceIds(int $company_id, array $invoice_ids) : array {
+		return Invoice::select('id', 'client_id')->where('company_id', '=', $company_id)->whereIn('id', $invoice_ids)->get()->pluck('id', 'client_id')->toArray();
 	}
 
 }

@@ -5,6 +5,7 @@ namespace App\Modules\RecurringInvoice\Actions;
 use App\Exceptions\RecurringInvoiceException;
 use App\Services\Invoice\InvoiceSettingsService;
 use App\Modules\RecurringInvoice\Actions\InsertInvoice;
+use App\Repositories\Invoice\InvoiceRepository;
 
 class ManageActions {
 
@@ -16,7 +17,9 @@ class ManageActions {
 		private InsertInvoice $insert_invoice,
 		private InsertInvoiceItems $insert_invoice_items,
 		private InvoiceSettingsService $invoice_settings_service,
-		private InsertCustomFields $insert_custom_fields
+		private InsertCustomFields $insert_custom_fields,
+		private InvoiceRepository $invoice_repository,
+		private InsertSnapshots $insert_snapshots
 	){}
 
 	/**
@@ -106,6 +109,11 @@ class ManageActions {
 
 	}
 
+	/**
+	 * insertCustomFieldValues function
+	 *
+	 * @return self
+	 */
 	public function insertCustomFieldValues() : self {
 
 		if(!$this->data['recurring_invoice_custom_field_values'] || !$this->data['recurring_invoice_flat_table_rows']){
@@ -113,6 +121,28 @@ class ManageActions {
 		}
 
 		$this->insert_custom_fields->insertCustomFields($this->inserted, $this->data['recurring_invoice_custom_field_values'], $this->data['recurring_invoice_flat_table_rows']);
+
+		return $this;
+
+	}
+
+	
+	/**
+	 * insertSnapshots function
+	 *
+	 * @return self
+	 */
+	public function insertSnapshots() : self {
+
+		$invoice_ids = array_column($this->inserted, 'id');
+
+		if(empty($invoice_ids)){
+			logger('empty invoice ids');
+			return $this;
+		}
+
+		
+		$this->insert_snapshots->insertSnapshots($this->company_id, $invoice_ids);
 
 		return $this;
 
