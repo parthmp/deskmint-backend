@@ -7,6 +7,7 @@ use App\Models\AdditionalCompanyField;
 use App\Models\AdditionalProductColumnsFieldValue;
 use App\Models\AdditionalProductColumnsFieldValueRi;
 use App\Models\ClientCustomFieldValue;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoiceItem;
@@ -243,7 +244,7 @@ class DB {
 	 * @return Collection
 	 */
 	public function fetchInvoiceDataForSnapshots(array $invoice_ids, $selects = ['*']) : Collection {
-		return Invoice::select(...$selects)->whereIn('id', $invoice_ids)->with('client_wt', 'currency', 'client_wt.billing_country', 'company_wt')->withTrashed()->get();
+		return Invoice::select(...$selects)->whereIn('id', $invoice_ids)->with('client_wt', 'currency', 'client_wt.billing_country', 'company_wt', 'client_wt.currency')->withTrashed()->get();
 	}
 
 	/**
@@ -346,6 +347,51 @@ class DB {
 	}
 
 	/**
+	 * fetchInvoiceDetails function
+	 *
+	 * @param integer $company_id
+	 * @param array $data
+	 * @return array
+	 */
+	public function fetchInvoiceDetails(int $company_id, array $data) : array {
+
+		$settings = $this->filterArray(ISC_INVOICE_DETAILS_TYPE, $data);
+		
+		if(!$settings){
+			$default = $this->getDefaultInvoiceDetailsSettings($company_id);
+			return $default['rows'];
+		}
+
+		return json_decode($settings['settings_json'], true);
+
+	}
+
+	/**
+	 * fetchProductRowsSettings function
+	 *
+	 * @param Invoice $invoice
+	 * @param array $data
+	 * @return array
+	 */
+	public function fetchProductRowsSettings(Invoice $invoice, array $data) : array {
+
+		$settings_snapshot = trim($invoice->settings_snapshot);
+
+		if($settings_snapshot !== ''){
+			return json_decode($settings_snapshot, true);
+		}
+
+		$settings = $this->filterArray(ISC_PRODUCT_COLUMNS_TYPE, $data);
+
+		if($settings){
+			return json_decode($settings['settings_json'], true);
+		}
+
+		return $this->getDefaultProductColumnsSettings((int) $invoice->company_id);
+
+	}
+
+	/**
 	 * fetchClientCustomFieldValuesForSnapshot function
 	 *
 	 * @param array $client_ids
@@ -378,6 +424,39 @@ class DB {
 	 */
 	public function fetchAdditionalCompanyFields(int $company_id) : ?Collection {
 		return AdditionalCompanyField::where('company_id', '=', $company_id)->withTrashed()->get();
+	}
+
+	/**
+	 * fetchCustomFieldValuesOfInvoices function
+	 *
+	 * @param array $invoice_ids
+	 * @return Collection|null
+	 */
+	public function fetchCustomFieldValuesOfInvoices(array $invoice_ids) : ?Collection {
+		return InvoiceCustomFieldValue::whereIn('invoice_id', $invoice_ids)->withTrashed()->with(['invoices_custom_field_wt.custom_field_type_wt'])->get();
+	}
+
+	/**
+	 * fetchDefaultCompanyById function
+	 *
+	 * @param integer $company_id
+	 * @return Company|null
+	 */
+	public function fetchDefaultCompanyById(int $company_id) : ?Company {
+		return Company::where([['id', '=', $company_id], ['default', '=', 1]])->with('country')->first();
+	}
+
+	/**
+	 * fetchInvoiceItemsWithCustomCols function
+	 *
+	 * @param integer $company_id
+	 * @param array $invoice_ids
+	 * @return Collection
+	 */
+	public function fetchInvoiceItemsWithCustomCols(int $company_id, array $invoice_ids) : Collection {
+		return InvoiceItem::whereIn('invoice_id', $invoice_ids)->withTrashed()->with(['product', 'custom_field_values.custom_product_field' => function($query) use ($company_id){
+        								$query->where('company_id', $company_id);
+    								}])->get();
 	}
 
 

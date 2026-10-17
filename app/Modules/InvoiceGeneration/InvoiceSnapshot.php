@@ -3,6 +3,7 @@
 namespace App\Modules\InvoiceGeneration;
 
 use App\Helpers\General;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Modules\InvoiceGeneration\InvoiceSettingsResolver;
 use App\Modules\Payment\Enums\PaymentGateway;
@@ -332,17 +333,44 @@ class InvoiceSnapshot {
 	/**
 	 * setInvoiceSnapshot function
 	 *
+	 * @param array|null $invoice_settings
+	 * @param Collection|null $invoice_custom_fields_data
+	 * @param Company|null $default_company
+	 * @param array|null $product_rows_settings
+	 * @param Collection|null $invoice_items_data
 	 * @return self
 	 */
-	public function setInvoiceSnapshot() : self {
+	public function setInvoiceSnapshot(?array $invoice_settings = null, ?Collection $invoice_custom_fields_data = null, ?Company $default_company = null, ?array $product_rows_settings = null, ?Collection $invoice_items_data = null) : self {
 
-		$invoice_details = $this->invoice_settings_resolver->fetchInvoiceDetails();
-		$invoice_custom_fields = $this->invoice_db_operations->fetchCustomFieldValuesOfInvoice() ?? [];
-		$company = $this->invoice_db_operations->fetchDefaultCompanyById($this->invoice->company_id);
+		if($invoice_settings){
+			$invoice_details = $invoice_settings;
+		}else{
+			$invoice_details = $this->invoice_settings_resolver->fetchInvoiceDetails();
+		}
+
+		if($invoice_custom_fields_data){
+			$invoice_custom_fields = $invoice_custom_fields_data;
+		}else{
+			$invoice_custom_fields = $this->invoice_db_operations->fetchCustomFieldValuesOfInvoice() ?? [];
+		}
 		
-		$product_rows_data = $this->invoice_settings_resolver->fetchProductRowsSettings($this->invoice);
-		$invoice_items = $this->invoice_db_operations->fetchInvoiceItemsWithCustomCols();
-
+		if($default_company){
+			$company = $default_company;
+		}else{
+			$company = $this->invoice_db_operations->fetchDefaultCompanyById($this->invoice->company_id);
+		}
+		
+		if($product_rows_settings){
+			$product_rows_data = $product_rows_settings;
+		}else{
+			$product_rows_data = $this->invoice_settings_resolver->fetchProductRowsSettings($this->invoice);
+		}
+		
+		if($invoice_items_data){
+			$invoice_items = $invoice_items_data;
+		}else{
+			$invoice_items = $this->invoice_db_operations->fetchInvoiceItemsWithCustomCols();
+		}
 
 		//$client = $this->invoice_db_operations->fetchInvoiceRow();
 	
