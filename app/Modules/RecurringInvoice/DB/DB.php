@@ -390,6 +390,25 @@ class DB {
 		return $this->getDefaultProductColumnsSettings((int) $invoice->company_id);
 
 	}
+	
+	/**
+	 * fetchTotalFieldsDetails function
+	 *
+	 * @param array $data
+	 * @return array
+	 */
+	public function fetchTotalFieldsDetails(array $data) : array {
+
+		$settings = $this->filterArray(ISC_INVOICE_TOTAL_FIELDS_TYPE, $data);
+
+		if(!$settings){
+			$default = $this->getDefaultTotalFieldsSettings();
+			return $default['rows'];
+		}
+
+		return json_decode($settings['settings_json'], true);
+
+	}
 
 	/**
 	 * fetchClientCustomFieldValuesForSnapshot function
@@ -457,6 +476,7 @@ class DB {
 		return InvoiceItem::whereIn('invoice_id', $invoice_ids)->withTrashed()->with(['product', 'custom_field_values.custom_product_field' => function($query) use ($company_id){
         								$query->where('company_id', $company_id);
     								}])->get();
+	
 	}
 
 

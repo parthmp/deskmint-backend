@@ -50,6 +50,8 @@ class InsertSnapshots {
 
 		$snapshot_data['invoice_items'] = $this->db->fetchInvoiceItemsWithCustomCols($company_id, $invoice_ids);
 
+		$snapshot_data['total_field_settings'] = $this->db->fetchTotalFieldsDetails($all_settings);
+
 		$snapshot_data['all_settings'] = $all_settings;
 
 		
@@ -98,12 +100,12 @@ class InsertSnapshots {
 		
 		foreach($snapshot_data['invoice_data'] as $invoice){
 
+			//none of these create n+1 in loop :)
 			$client_custom_field_values = $this->filterClientCustomFieldValues((int) $invoice->client_id, $snapshot_data['clients_custom_field_values']);
 			$invoice_custom_field_values = $this->filterInvoiceData((int) $invoice->id, $snapshot_data['invoice_custom_field_values']);
 			$product_rows_settings = $this->db->fetchProductRowsSettings($invoice, $snapshot_data['all_settings']);
-
 			$invoice_items = $this->filterInvoiceData((int) $invoice->id, $snapshot_data['invoice_items']);
-		
+
 
 			$snapshot = app(InvoiceSnapshot::class)
 						->setCompanyId($company_id, false)
@@ -114,9 +116,9 @@ class InsertSnapshots {
 						->setClientSnapshot($snapshot_data['client_settings'], $client_custom_field_values)
 						->setCompanySnapshot($snapshot_data['company_settings'], $snapshot_data['company_additional_fields'])
 						->setInvoiceSnapshot($snapshot_data['invoice_settings'], $invoice_custom_field_values, $snapshot_data['default_company'], $product_rows_settings, $invoice_items)
-						// ->setInvoiceRowsSnapshot()
-						// ->setTotalsSnapshot()
-						// ->setTermsSnapshot()
+						->setInvoiceRowsSnapshot($product_rows_settings, $invoice_items)
+						->setTotalsSnapshot($snapshot_data['total_field_settings'])
+						->setTermsSnapshot()
 						->output();
 
 			logger($snapshot);

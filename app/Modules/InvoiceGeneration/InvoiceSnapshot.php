@@ -436,12 +436,24 @@ class InvoiceSnapshot {
 	/**
 	 * setInvoiceRowsSnapshot function
 	 *
+	 * @param array|null $product_rows_settings
+	 * @param Collection|null $invoice_items_with_custom_columns
 	 * @return self
 	 */
-	public function setInvoiceRowsSnapshot() : self {
+	public function setInvoiceRowsSnapshot(?array $product_rows_settings = null, ?Collection $invoice_items_with_custom_columns = null) : self {
 
-		$product_rows_data = $this->invoice_settings_resolver->fetchProductRowsSettings($this->invoice);
-		$invoice_items = $this->invoice_db_operations->fetchInvoiceItemsWithCustomCols();
+		if($product_rows_settings){
+			$product_rows_data = $product_rows_settings;
+		}else{
+			$product_rows_data = $this->invoice_settings_resolver->fetchProductRowsSettings($this->invoice);
+		}
+
+		if($invoice_items_with_custom_columns){
+			$invoice_items = $invoice_items_with_custom_columns;
+		}else{
+			$invoice_items = $this->invoice_db_operations->fetchInvoiceItemsWithCustomCols();
+		}
+		
 		
 		if(isset($product_rows_data['dropdown'])){
 			$product_rows_data = $product_rows_data['rows'];
@@ -509,11 +521,16 @@ class InvoiceSnapshot {
 	/**
 	 * setTotalsSnapshot function
 	 *
+	 * @param array|null $settings
 	 * @return self
 	 */
-	public function setTotalsSnapshot() : self {
+	public function setTotalsSnapshot(?array $settings = null) : self {
 
-		$total_fields_settings = $this->invoice_settings_resolver->fetchTotalFieldsDetails();
+		if($settings){
+			$total_fields_settings = $settings;
+		}else{
+			$total_fields_settings = $this->invoice_settings_resolver->fetchTotalFieldsDetails();
+		}
 		
 		$totals_with_values = [];
 
@@ -549,9 +566,9 @@ class InvoiceSnapshot {
 	 */
 	public function setTermsSnapshot() : self {
 		
-		$this->snapshot['terms']['company_terms'] = $this->invoice->company->invoice_terms;
+		$this->snapshot['terms']['company_terms'] = $this->invoice->company_wt->invoice_terms;
 		$this->snapshot['terms']['invoice_terms'] = $this->invoice->invoice_terms;
-		$this->snapshot['terms']['footer'] = $this->invoice->company->invoice_footer;
+		$this->snapshot['terms']['footer'] = $this->invoice->company_wt->invoice_footer;
 
 		return $this;
 	}
