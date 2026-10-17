@@ -40,6 +40,8 @@ class InsertSnapshots {
 		$client_ids = array_column($invoice_and_clients, 'client_id');
 
 		$snapshot_data['clients_custom_field_values'] = $this->db->fetchClientCustomFieldValuesForSnapshot($client_ids);
+		$snapshot_data['company_settings'] = $this->db->fetchCompanyDetails($company_id, $all_settings);
+		$snapshot_data['company_additional_fields'] = $this->db->fetchAdditionalCompanyFields($company_id);
 
 		return $snapshot_data;
 
@@ -82,7 +84,7 @@ class InsertSnapshots {
 						->setLogoSnapsot($snapshot_data['company_logo'])
 						->setGeneralSettings($snapshot_data['general_settings'])
 						->setClientSnapshot($snapshot_data['client_settings'], $client_custom_field_values)
-						// ->setCompanySnapshot()
+						->setCompanySnapshot($snapshot_data['company_settings'], $snapshot_data['company_additional_fields'])
 						// ->setInvoiceSnapshot()
 						// ->setInvoiceRowsSnapshot()
 						// ->setTotalsSnapshot()

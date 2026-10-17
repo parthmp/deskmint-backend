@@ -255,12 +255,25 @@ class InvoiceSnapshot {
 	/**
 	 * setCompanySnapshot function
 	 *
+	 * @param array|null $company_settings
+	 * @param Collection|null $additional_company_fields
 	 * @return self
 	 */
-	public function setCompanySnapshot() : self {
+	public function setCompanySnapshot(?array $company_settings = null, ?Collection $additional_company_fields = null) : self {
 		
-		$company_details = $this->invoice_settings_resolver->fetchCompanyDetails();
-		$additional_fields = $this->invoice_db_operations->fetchAdditionalCompanyFields();
+		if($company_settings){
+			$company_details = $company_settings;
+		}else{
+			$company_details = $this->invoice_settings_resolver->fetchCompanyDetails();
+		}
+
+		if($additional_company_fields){
+			$additional_fields = $additional_company_fields;
+		}else{
+			$additional_fields = $this->invoice_db_operations->fetchAdditionalCompanyFields();
+		}
+		
+		
 		
 		//weave
 		$company_details_with_values = [];

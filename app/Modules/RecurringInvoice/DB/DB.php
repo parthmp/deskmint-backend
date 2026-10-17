@@ -3,6 +3,7 @@
 namespace App\Modules\RecurringInvoice\DB;
 
 use App\Enums\EmailSettings\EmailSettingsContent;
+use App\Models\AdditionalCompanyField;
 use App\Models\AdditionalProductColumnsFieldValue;
 use App\Models\AdditionalProductColumnsFieldValueRi;
 use App\Models\ClientCustomFieldValue;
@@ -15,6 +16,7 @@ use App\Models\RecurringInvoiceItem;
 use App\Models\SettingsSection;
 use App\Traits\SettingsDefault;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB as FacadesDB;
 use Illuminate\Support\Facades\Schema;
 
@@ -241,7 +243,7 @@ class DB {
 	 * @return Collection
 	 */
 	public function fetchInvoiceDataForSnapshots(array $invoice_ids, $selects = ['*']) : Collection {
-		return Invoice::select(...$selects)->whereIn('id', $invoice_ids)->with('client_wt', 'currency')->withTrashed()->get();
+		return Invoice::select(...$selects)->whereIn('id', $invoice_ids)->with('client_wt', 'currency', 'client_wt.billing_country', 'company_wt')->withTrashed()->get();
 	}
 
 	/**
@@ -325,13 +327,36 @@ class DB {
 	}
 
 	/**
+	 * fetchCompanyDetails function
+	 *
+	 * @param integer $company_id
+	 * @param array $data
+	 * @return array
+	 */
+	public function fetchCompanyDetails(int $company_id, array $data) : array {
+		$settings = $this->filterArray(ISC_INVOICE_COMPANY_DETAILS_TYPE, $data);
+		
+		if(!$settings){
+			$default = $this->getDefaultInvoiceCompanyDetailsSettings($company_id);
+			return $default['rows'];
+		}
+
+		return json_decode($settings['settings_json'], true);
+
+	}
+
+	/**
 	 * fetchClientCustomFieldValuesForSnapshot function
 	 *
 	 * @param array $client_ids
 	 * @return Collection
 	 */
 	public function fetchClientCustomFieldValuesForSnapshot(array $client_ids) : Collection {
-		return ClientCustomFieldValue::whereIn('client_id', $client_ids)->withTrashed()->with(['clients_custom_field_wt.custom_field_type_wt'])->get();
+		
+		$data = ClientCustomFieldValue::whereIn('client_id', $client_ids)->withTrashed()->with(['clients_custom_field_wt.custom_field_type_wt'])->get();
+		
+		return $data;
+
 	}
 	
 	/**
@@ -344,5 +369,16 @@ class DB {
 	public function fetchClientAndInvoiceIds(int $company_id, array $invoice_ids) : array {
 		return Invoice::select('id', 'client_id')->where('company_id', '=', $company_id)->whereIn('id', $invoice_ids)->get()->pluck('id', 'client_id')->toArray();
 	}
+
+	/**
+	 * fetchAdditionalCompanyFields function
+	 *
+	 * @param integer $company_id
+	 * @return Collection|null
+	 */
+	public function fetchAdditionalCompanyFields(int $company_id) : ?Collection {
+		return AdditionalCompanyField::where('company_id', '=', $company_id)->withTrashed()->get();
+	}
+
 
 }

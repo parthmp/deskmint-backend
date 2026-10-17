@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
- use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,8 +21,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {	
-		//removed disable lazyloading for this.
-		//Model::preventLazyLoading();
+		
+		Model::preventLazyLoading();
 		
 		// Model::handleLazyLoadingViolationUsing(function ($model, $relation) {
 		// 	$trace = (new \Exception)->getTraceAsString();
