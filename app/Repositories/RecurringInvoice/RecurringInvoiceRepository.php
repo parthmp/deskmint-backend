@@ -4,6 +4,7 @@ namespace App\Repositories\RecurringInvoice;
 
 use App\Models\AdditionalProductColumnsField;
 use App\Models\AdditionalProductColumnsFieldValueRi;
+use App\Models\PaymentType;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceItem;
 use Illuminate\Http\Request;
@@ -53,6 +54,7 @@ class RecurringInvoiceRepository {
 		$recurring_invoice->status = $data['status'];
 		$recurring_invoice->invoice_terms = $data['invoice_terms'];
 		$recurring_invoice->payment_gateway = $data['payment_gateway'];
+		$recurring_invoice->payment_type_id = $data['payment_type_id'];
 		$recurring_invoice->frequency = $data['frequency'];
 		$recurring_invoice->custom_frequency_days = $data['custom_frequency_days'];
 		$recurring_invoice->mark_paid_automatically = $data['mark_paid_automatically'];
@@ -108,6 +110,23 @@ class RecurringInvoiceRepository {
 	 */
 	public function upsertAdditionalColumnFieldValues(array $rows, array $unique, array $values) : void {
 		AdditionalProductColumnsFieldValueRi::upsert($rows, $unique, $values);
+	}
+
+	/**
+	 * paymentTypeExists function
+	 *
+	 * @param integer $payment_type_id
+	 * @return boolean
+	 */
+	public function paymentTypeExists(int $payment_type_id) : bool {
+
+		$record = PaymentType::where('id', '=', $payment_type_id)->first();
+		if(!$record){
+			return false;
+		}
+
+		return true;
+
 	}
 
 }

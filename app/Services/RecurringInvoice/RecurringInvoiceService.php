@@ -15,6 +15,7 @@ use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\RecurringInvoice\Implementation\SendEmail;
 use App\Modules\RecurringInvoice\RecurringInvoice as RecurringInvoiceModule;
 use App\Repositories\Client\ClientRepository;
+use App\Repositories\PaymentType\PaymentTypeRepository;
 use App\Repositories\RecurringInvoice\RecurringInvoiceRepository;
 use App\Services\Invoice\InvoiceBaseService;
 use App\Services\Invoice\InvoiceCalculationService;
@@ -38,7 +39,8 @@ class RecurringInvoiceService {
 		private ClientRepository $client_repository,
 		private InvoiceBaseService $invoice_base_service,
 		private InvoiceCalculationService $invoice_calculation_service,
-		private RecurringInvoiceModule $reccuring_invoice_module
+		private RecurringInvoiceModule $reccuring_invoice_module,
+		private PaymentTypeRepository $payment_type_repository
 	){}
 
 	/**
@@ -63,6 +65,8 @@ class RecurringInvoiceService {
 		$gateways = PaymentGateway::configuredOptions((int) $company_id);
 
 		$freqs = Frequencies::dropdownData();
+
+		$payment_types = General::generateDropdownData($this->payment_type_repository->fetchAllPaymentTypes()->toArray(), 'payment_type', 'id');
 		
 		return [
 			'product_columns' 			=> 	$invoice_settings->getProductColumns(),
@@ -70,8 +74,9 @@ class RecurringInvoiceService {
 			'custom_fields'				=>	$this->custom_fields->printCustomFields($fields),
 			'gateways'					=>	$gateways,
 			'frequencies'				=>	$freqs,
-			'custom_frequency_value'	=> Frequencies::CUSTOM->value,
-			'none_gateway_value'		=> PaymentGateway::NONE->value
+			'payment_types'				=>	$payment_types,
+			'custom_frequency_value'	=> 	Frequencies::CUSTOM->value,
+			'none_gateway_value'		=> 	PaymentGateway::NONE->value
 		];
 
 	}
@@ -125,6 +130,13 @@ class RecurringInvoiceService {
 		}
 
 		$payment_gateway = (int) Sanitize::input($request->input('settings.payment_gateway'));
+
+		$payment_type = null;
+		if($payment_gateway === PaymentGateway::NONE->value){
+			$payment_type = (int) Sanitize::input($request->input('settings.payment_type'));
+		}
+
+		
 		$frequency = (int) Sanitize::input($request->input('settings.frequency'));
 		$custom_frequency_days = (int) Sanitize::input($request->input('settings.custom_frequency_days'));
 		
@@ -156,6 +168,7 @@ class RecurringInvoiceService {
 			'status'					=>	$status,
 			'invoice_terms'				=>	$invoice_terms,
 			'payment_gateway'			=>	$payment_gateway,
+			'payment_type_id'			=>	$payment_type,
 			'frequency'					=>	$frequency,
 			'custom_frequency_days'		=>	$custom_frequency_days,
 			'mark_paid_automatically'	=>	$mark_invoices_paid,

@@ -148,4 +148,27 @@ class ManageActions {
 
 	}
 
+	/**
+	 * insertPayments function
+	 *
+	 * @param array|null $transaction_ids
+	 * @return self
+	 */
+	public function insertPayments(?array $transaction_ids = null) : self {
+
+		if($transaction_ids){
+
+			//this is for online payments
+
+		}else{
+
+			//offline payments.
+
+		}
+
+
+		return $this;
+
+	}
+
 }

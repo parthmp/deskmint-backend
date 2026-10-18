@@ -419,4 +419,27 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 
 		}
 
+		/**
+		 * generateDropdownData function
+		 *
+		 * @param array $data
+		 * @param string $text_key
+		 * @param string $value_key
+		 * @return array
+		 */
+		public static function generateDropdownData(array $data, string $text_key, string $value_key) : array {
+
+			$dropdown = [];
+
+			foreach($data as $entry){
+				$dropdown[] = [
+					'text'	=>	$entry[$text_key],
+					'value'	=>	$entry[$value_key]
+				];
+			}
+
+			return $dropdown;
+
+		}
+
 	}

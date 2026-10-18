@@ -91,8 +91,6 @@ class InsertInvoice {
 	 * @return array
 	 */
 	public function insertInvoice(array $invoice_data, array $column_settings, array $invoice_numbers_settings) : array {
-		
-		Cache::put(INVOICES_LOCKED, true, 30);
 
 		$invoices = [];
 

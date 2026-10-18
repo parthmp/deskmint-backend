@@ -54,6 +54,8 @@ class InsertInvoiceDataJob implements ShouldQueue {
 	 */
 	public function handle() : void {
 
+		//Cache::put(INVOICES_LOCKED, true, 30);
+
 		$actions = app(ManageActions::class);
 
 		FacadeDB::transaction(function () use ($actions) {
@@ -65,6 +67,7 @@ class InsertInvoiceDataJob implements ShouldQueue {
 					->insertInvoiceItems()
 					->insertCustomProductColumns()
 					->insertCustomFieldValues()
+					->insertPayments()
 					->insertSnapshots();
 
 		});

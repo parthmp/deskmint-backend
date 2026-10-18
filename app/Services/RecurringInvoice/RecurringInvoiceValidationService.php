@@ -12,13 +12,15 @@ use Illuminate\Support\Facades\Validator;
 use App\Modules\CustomFields\CustomFields;
 use App\Modules\CustomFields\Exceptions\InvalidCustomFieldsException;
 use App\Modules\Payment\Enums\PaymentGateway;
+use App\Repositories\RecurringInvoice\RecurringInvoiceRepository;
 
 class RecurringInvoiceValidationService {
 
 	use InvoiceValidation;
 
 	public function __construct(
-		private CustomFields $custom_fields
+		private CustomFields $custom_fields,
+		private RecurringInvoiceRepository $recurring_invoice_repository
 	){}
 
 	/**
@@ -54,6 +56,25 @@ class RecurringInvoiceValidationService {
 
 		if((!$request->has('settings.custom_frequency_days') || trim($request->input('settings.custom_frequency_days')) === '') && ((int) $request->input('settings.frequency') === Frequencies::CUSTOM->value)){
 			return false;
+		}
+
+		if(!$request->has('settings.payment_type')){
+			return false;
+		}
+
+		$payment_type = Sanitize::input($request->input('settings.payment_type'));
+		$payment_gateway = Sanitize::input($request->input('settings.payment_gateway'));
+
+		if((int) $payment_gateway === PaymentGateway::NONE->value){
+			
+			if($payment_type === '' || $payment_type === null){
+				return false;
+			}
+
+			if(!$this->recurring_invoice_repository->paymentTypeExists((int) $payment_type)){
+				return false;
+			}
+
 		}
 		
 		return (bool) !$v->fails();
