@@ -16,7 +16,8 @@ class InsertInvoiceDataJob implements ShouldQueue {
 
 	public function __construct(
 		private int $company_id,
-		private array $recurring_invoice_ids
+		private array $recurring_invoice_ids,
+		private ?array $online_transaction_data = null
 	){}
 
 
@@ -63,11 +64,11 @@ class InsertInvoiceDataJob implements ShouldQueue {
 			$data = $this->fetchData();
 			$actions->setCompany($this->company_id)
 					->setInvoiceData($data)
-					->insertInvoiceWithData()
+					->insertInvoiceWithData($this->online_transaction_data)
 					->insertInvoiceItems()
 					->insertCustomProductColumns()
 					->insertCustomFieldValues()
-					->insertPayments()
+					->insertPayments($this->online_transaction_data)
 					->insertSnapshots();
 
 		});

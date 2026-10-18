@@ -11,7 +11,9 @@ use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoiceItem;
+use App\Models\InvoiceLedger;
 use App\Models\InvoiceSnapshot;
+use App\Models\Payment;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceCustomFieldValue;
 use App\Models\RecurringInvoiceItem;
@@ -495,6 +497,42 @@ class DB {
 			InvoiceSnapshot::insert($chunk);
 		}
 
+	}
+
+	/**
+	 * Undocumented function
+	 *
+	 * @param array $rows
+	 * @param array $selects
+	 * @return array
+	 */
+	public function insertPayments(array $rows, array $selects = ['*']) : array {
+
+		$payment_numbers = array_column($rows, 'payment_number');
+		Payment::insert($rows);
+		return $this->fetchPaymentsByPaymentNumbers($payment_numbers, $selects);
+
+	}
+
+	/**
+	 * fetchPaymentsByPaymentNumbers function
+	 *
+	 * @param array $uuids
+	 * @param array $selects
+	 * @return array
+	 */
+	public function fetchPaymentsByPaymentNumbers(array $uuids, array $selects = ['*']) : array {
+		return Payment::select(...$selects)->whereIn('payment_number', $uuids)->get()->toArray();
+	}
+
+	/**
+	 * insertInvoiceLedgerEntries function
+	 *
+	 * @param array $rows
+	 * @return void
+	 */
+	public function insertInvoiceLedgerEntries(array $rows) : void {
+		InvoiceLedger::insert($rows);
 	}
 
 

@@ -21,9 +21,15 @@ class CreateInvoicesFromRecurringInvoices extends Command
     public function handle()
     {
 
-		$ids = ModelsRecurringInvoice::orderBy('id', 'desc')->limit(20)->get()->pluck('id')->toArray();
+		//$ids = ModelsRecurringInvoice::orderBy('id', 'desc')->limit(20)->get()->pluck('id')->toArray();
 		
 		$recurring_invoice = app(RecurringInvoice::class);
-        $recurring_invoice->setCompanyId(1)->setRecurringInvoiceIds($ids)->executeActions(false, true);
+        //$recurring_invoice->setCompanyId(1)->setRecurringInvoiceIds($ids)->executeActions(false, true);
+        $recurring_invoice->setCompanyId(1)->setRecurringInvoiceIds([109])->setOnlineTransactionData([
+			[
+				'recurring_invoice_id'  => 109,
+		 		'transaction_id'        => 101
+			]
+		])->executeActions(false, true);
     }
 }

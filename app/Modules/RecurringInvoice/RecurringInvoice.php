@@ -12,6 +12,7 @@ class RecurringInvoice {
 
 	private int $company_id;
 	private array $recurring_invoice_ids = [];
+	private ?array $online_transaction_data = null;
 
 	public function __construct(
 		private DB $db
@@ -40,6 +41,17 @@ class RecurringInvoice {
 	}
 
 	/**
+	 * setOnlineTransactionData function
+	 *
+	 * @param array $online_transaction_data
+	 * @return self
+	 */
+	public function setOnlineTransactionData(array $online_transaction_data) : self {
+		$this->online_transaction_data = $online_transaction_data;
+		return $this;
+	}
+
+	/**
 	 * executeActions function
 	 *
 	 * @param boolean $send_email
@@ -60,7 +72,7 @@ class RecurringInvoice {
 		}
 
 		if($generate_invoice){
-			$batch[] = new InsertInvoiceDataJob($this->company_id, $this->recurring_invoice_ids);
+			$batch[] = new InsertInvoiceDataJob($this->company_id, $this->recurring_invoice_ids, $this->online_transaction_data);
 		}
 
 		if(!empty($batch)){

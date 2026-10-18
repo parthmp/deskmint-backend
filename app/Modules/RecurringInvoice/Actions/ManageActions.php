@@ -18,8 +18,8 @@ class ManageActions {
 		private InsertInvoiceItems $insert_invoice_items,
 		private InvoiceSettingsService $invoice_settings_service,
 		private InsertCustomFields $insert_custom_fields,
-		private InvoiceRepository $invoice_repository,
-		private InsertSnapshots $insert_snapshots
+		private InsertSnapshots $insert_snapshots,
+		private InsertPayments $insert_payments
 	){}
 
 	/**
@@ -56,9 +56,10 @@ class ManageActions {
 	/**
 	 * insertInvoiceWithData function
 	 *
+	 * @param array|null $online_transaction_data
 	 * @return self
 	 */
-	public function insertInvoiceWithData() : self {
+	public function insertInvoiceWithData(?array $online_transaction_data = null) : self {
 
 		if(!$this->data['data'] || !$this->company_id || empty($this->data['data'])){
 			throw new RecurringInvoiceException('invoice data not provided', 'invoice_data_not_provided', (int) config('global.error_code'));
@@ -67,7 +68,7 @@ class ManageActions {
 		$settings = $this->invoice_settings_service->setCompany((int) $this->company_id)->getProductColumns();
 		$invoice_numbers = $this->invoice_settings_service->setCompany((int) $this->company_id)->getInvoiceNumbers();
 
-		$inserted = $this->insert_invoice->insertInvoice($this->data['data'], $settings, $invoice_numbers);
+		$inserted = $this->insert_invoice->insertInvoice($this->data['data'], $settings, $invoice_numbers, $online_transaction_data);
 		
 		$this->inserted = $inserted;
 
@@ -151,20 +152,33 @@ class ManageActions {
 	/**
 	 * insertPayments function
 	 *
-	 * @param array|null $transaction_ids
+	 * @param array|null $online_transaction_data
 	 * @return self
 	 */
-	public function insertPayments(?array $transaction_ids = null) : self {
+	public function insertPayments(?array $online_transaction_data = null) : self {
 
-		if($transaction_ids){
+		/**
+		 * $online_transaction_data should have
+		 * array = [
+		 *     [
+		 *         'recurring_invoice_id'  => 1,
+		 *         'transaction_id'        => 2
+		 *     ],
+		 *     [
+		 *         'recurring_invoice_id'  => 3,
+		 *         'transaction_id'        => 4
+		 *     ],
+		 * ];
+		 */
 
-			//this is for online payments
+		
 
-		}else{
-
-			//offline payments.
-
+		if(!$this->data['data'] || !$this->company_id || empty($this->data['data']) || empty($this->inserted)){
+			return $this;
 		}
+
+		$this->insert_payments->insertPayments($this->data['data'], $this->inserted, $online_transaction_data);
+
 
 
 		return $this;

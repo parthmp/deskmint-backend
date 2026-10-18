@@ -4,6 +4,7 @@ namespace App\Modules\RecurringInvoice\Actions;
 
 use App\Models\SettingsSection;
 use App\Modules\Payment\Enums\InvoiceStatus;
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\RecurringInvoice\DB\DB;
 use App\Services\HandleInvoiceNumbers;
 use Illuminate\Support\Facades\Cache;
@@ -88,9 +89,11 @@ class InsertInvoice {
 	 *
 	 * @param array $invoice_data
 	 * @param array $column_settings
+	 * @param array $invoice_numbers_settings
+	 * @param array|null $online_transaction_data
 	 * @return array
 	 */
-	public function insertInvoice(array $invoice_data, array $column_settings, array $invoice_numbers_settings) : array {
+	public function insertInvoice(array $invoice_data, array $column_settings, array $invoice_numbers_settings, ?array $online_transaction_data = null) : array {
 
 		$invoices = [];
 
@@ -109,8 +112,16 @@ class InsertInvoice {
 		foreach($final_invoice_data as $entry){
 
 			$status = InvoiceStatus::SENT->value;
-			if((bool) $entry['mark_paid_automatically']){
+			$balance_due = $entry['total'];
+			if((bool) $entry['mark_paid_automatically'] && (int) $entry['payment_gateway'] === PaymentGateway::NONE->value){
 				$status = InvoiceStatus::PAID->value;
+				$balance_due = 0;
+			}else if((int) $entry['payment_gateway'] !== PaymentGateway::NONE->value){
+				$online_data_recurring_ids = array_column($online_transaction_data, 'recurring_invoice_id');
+				if(in_array($entry['id'], $online_data_recurring_ids)){
+					$status = InvoiceStatus::PAID->value;
+					$balance_due = 0;
+				}
 			}
 
 			$invoices[] = [
@@ -133,7 +144,7 @@ class InsertInvoice {
 				'discount_amount_pre_tax'			=>	$entry['discount_amount_pre_tax'],
 				'subtotal'							=>	$entry['subtotal'],
 				'tax_amount'						=>	$entry['tax_amount'],
-				'balance_due'						=>	(bool) $entry['mark_paid_automatically'] ? 0 : $entry['total'],
+				'balance_due'						=>	$balance_due,
 				'total'								=>	$entry['total'],
 				'refunded_amount'					=>	0,
 				'status'							=>	$status,
