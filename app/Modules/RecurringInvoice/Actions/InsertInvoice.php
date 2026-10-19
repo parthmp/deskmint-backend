@@ -117,10 +117,12 @@ class InsertInvoice {
 				$status = InvoiceStatus::PAID->value;
 				$balance_due = 0;
 			}else if((int) $entry['payment_gateway'] !== PaymentGateway::NONE->value){
-				$online_data_recurring_ids = array_column($online_transaction_data, 'recurring_invoice_id');
-				if(in_array($entry['id'], $online_data_recurring_ids)){
-					$status = InvoiceStatus::PAID->value;
-					$balance_due = 0;
+				if($online_transaction_data){
+					$online_data_recurring_ids = array_column($online_transaction_data, 'recurring_invoice_id');
+					if(in_array($entry['id'], $online_data_recurring_ids)){
+						$status = InvoiceStatus::PAID->value;
+						$balance_due = 0;
+					}
 				}
 			}
 
