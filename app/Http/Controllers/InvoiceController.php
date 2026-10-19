@@ -29,6 +29,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 
@@ -139,6 +140,10 @@ class InvoiceController extends Controller{
 	 * @return void
 	 */
 	public function store(Request $request){
+
+		if(Redis::exists(config('global.invoice_lock_key'))){
+			return response(['message' => "Server is busy, try again later", 'validity' => "server_busy", 'tab_switch' => 0], (int) config('global.error_code'));
+		}
 		
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 
@@ -176,17 +181,23 @@ class InvoiceController extends Controller{
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
 		}catch(Exception $e){
 			return General::wentWrong();
+		}finally{
+			Redis::del(config('global.invoice_lock_key'));
 		}
 
 	}
 
 	public function update(Request $request, int $invoice_id){
 
+		if(Redis::exists(config('global.invoice_lock_key'))){
+			return response(['message' => "Server is busy, try again later", 'validity' => "server_busy", 'tab_switch' => 0], (int) config('global.error_code'));
+		}
+
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 		$invoice_id = (int) Sanitize::input((string) $invoice_id);
 		
 		if(!$this->invoice_service->ifInvoiceExists($invoice_id, $company_id)){
-			return response(['message' => 'invalid data', 'validity' => 'invalid_data', 'tab_switch' => 0], config('global.error_code'));
+			return response(['message' => 'invalid data', 'validity' => 'invalid_data', 'tab_switch' => 0], (int) config('global.error_code'));
 		}
 
 		try{
@@ -228,6 +239,8 @@ class InvoiceController extends Controller{
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
 		}catch(Exception $e){
 			return General::wentWrong();
+		}finally{
+			Redis::del(config('global.invoice_lock_key'));
 		}
 
 	}

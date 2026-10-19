@@ -20,5 +20,8 @@
 										'datetime',
 										'telephone',
 										'multiselect'
-									]
+									],
+
+		'invoice_lock_key'			=>	env('INVOICES_LOCK_KEY', 'invoice_lock'),
+		'invoice_lock_seconds'		=>	env('INVOICES_LOCK_SECONDS', 10),
 	];

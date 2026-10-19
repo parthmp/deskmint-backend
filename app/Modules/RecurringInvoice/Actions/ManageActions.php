@@ -6,6 +6,7 @@ use App\Exceptions\RecurringInvoiceException;
 use App\Services\Invoice\InvoiceSettingsService;
 use App\Modules\RecurringInvoice\Actions\InsertInvoice;
 use App\Repositories\Invoice\InvoiceRepository;
+use Illuminate\Support\Facades\Redis;
 
 class ManageActions {
 
@@ -65,12 +66,18 @@ class ManageActions {
 			throw new RecurringInvoiceException('invoice data not provided', 'invoice_data_not_provided', (int) config('global.error_code'));
 		}
 
+		//lock
+		Redis::setex(config('global.invoice_lock_key'), (int) config('global.invoice_lock_seconds'), true);
+		
 		$settings = $this->invoice_settings_service->setCompany((int) $this->company_id)->getProductColumns();
 		$invoice_numbers = $this->invoice_settings_service->setCompany((int) $this->company_id)->getInvoiceNumbers();
 
 		$inserted = $this->insert_invoice->insertInvoice($this->data['data'], $settings, $invoice_numbers, $online_transaction_data);
-		
+
 		$this->inserted = $inserted;
+
+		//release the lock.
+		Redis::del(config('global.invoice_lock_key'));
 
 		return $this;
 

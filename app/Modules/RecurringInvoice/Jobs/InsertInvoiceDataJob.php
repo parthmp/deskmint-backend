@@ -4,6 +4,7 @@ namespace App\Modules\RecurringInvoice\Jobs;
 
 use App\Modules\RecurringInvoice\Actions\ManageActions;
 use App\Modules\RecurringInvoice\DB\DB;
+use Exception;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -13,6 +14,9 @@ use Illuminate\Support\Facades\DB as FacadeDB;
 class InsertInvoiceDataJob implements ShouldQueue {
 
 	use Queueable, Batchable;
+
+	public $tries = 10;
+	public array $backoff = [10, 30, 60, 90, 120, 130, 140, 150, 160, 170];
 
 	public function __construct(
 		private int $company_id,
@@ -54,24 +58,38 @@ class InsertInvoiceDataJob implements ShouldQueue {
 	 * @return void
 	 */
 	public function handle() : void {
-
-		//Cache::put(INVOICES_LOCKED, true, 30);
+		
+		if(Redis::exists(config('global.invoice_lock_key'))){
+			throw new Exception("invoice insertion locked, retry might happen.");
+		}
 
 		$actions = app(ManageActions::class);
 
-		FacadeDB::transaction(function () use ($actions) {
+		try{
 
-			$data = $this->fetchData();
-			$actions->setCompany($this->company_id)
-					->setInvoiceData($data)
-					->insertInvoiceWithData($this->online_transaction_data)
-					->insertInvoiceItems()
-					->insertCustomProductColumns()
-					->insertCustomFieldValues()
-					->insertPayments($this->online_transaction_data)
-					->insertSnapshots();
+			FacadeDB::transaction(function () use ($actions) {
+				
+				$data = $this->fetchData();
+				$actions->setCompany($this->company_id)
+						->setInvoiceData($data)
+						->insertInvoiceWithData($this->online_transaction_data)
+						->insertInvoiceItems()
+						->insertCustomProductColumns()
+						->insertCustomFieldValues()
+						->insertPayments($this->online_transaction_data)
+						->insertSnapshots();
 
-		});
+				// FacadeDB::afterCommit(function(){
+					
+				// });
+
+			});
+
+		}finally{
+			Redis::del(config('global.invoice_lock_key'));
+		}
+
+		
 		
 
 	}

@@ -20,6 +20,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
@@ -35,6 +36,9 @@ class InvoiceRepository{
 	 * @return array
 	 */
 	public function upsertInvoiceData(Request $request, array $data, int $invoice_id = 0) : array {
+
+		//lock
+		Redis::setex(config('global.invoice_lock_key'), (int) config('global.invoice_lock_seconds'), true);
 
 		$settings = $data['settings'];
 		$client_id = $data['client_id'];
@@ -113,6 +117,9 @@ class InvoiceRepository{
 		$invoice->timezone = $timezone;
 		$invoice->settings_snapshot = json_encode($settings_snapshot);
 		$invoice->save();
+
+		//release the lock.
+		Redis::del(config('global.invoice_lock_key'));
 
 		return [
 			'invoice'	=>	$invoice,
