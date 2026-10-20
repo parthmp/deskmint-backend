@@ -6,6 +6,7 @@ use App\Enums\EmailSettings\EmailSettingsContent;
 use App\Models\AdditionalCompanyField;
 use App\Models\AdditionalProductColumnsFieldValue;
 use App\Models\AdditionalProductColumnsFieldValueRi;
+use App\Models\Client;
 use App\Models\ClientCustomFieldValue;
 use App\Models\Company;
 use App\Models\Invoice;
@@ -22,6 +23,7 @@ use App\Traits\SettingsDefault;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB as FacadesDB;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Schema;
 
 class DB {
@@ -111,7 +113,6 @@ class DB {
 		Invoice::insert($invoices);
 
 		//remove manual reset
-		//TODO: remove this early to avoid a bug.
 		if(isset($invoices[0]['company_id'])){
 			$manual_reset = $this->fetchManualReset((int) $invoices[0]['company_id']);
 			if($manual_reset){
@@ -535,5 +536,97 @@ class DB {
 		InvoiceLedger::insert($rows);
 	}
 
+	/**
+	 * fetchInvoiceDataForPDFs function
+	 *
+	 * @param array $invoice_ids
+	 * @param array $selects
+	 * @return Collection
+	 */
+	public function fetchInvoiceDataForPDFs(array $invoice_ids, array $selects = ['*']) : Collection {
+		return Invoice::select(...$selects)->whereIn('id', $invoice_ids)->withTrashed()->get();
+	}
+
+	/**
+	 * fetchInvoiceSnapshots function
+	 *
+	 * @param array $invoice_ids
+	 * @return Collection
+	 */
+	public function fetchInvoiceSnapshots(array $invoice_ids) : Collection {
+		return InvoiceSnapshot::whereIn('invoice_id', $invoice_ids)->get();
+	}
+
+	/**
+	 * xmlInvoiceOptionData function
+	 *
+	 * @param array $invoice_ids
+	 * @return array
+	 */
+	public function xmlInvoiceOptionData(array $invoice_ids) : array {
+		return Client::select('invoices.id as invoice_id', 'clients.e_invoice_enabled as e_invoice_enabled')->join('invoices', 'invoices.client_id', '=', 'clients.id')->whereIn('invoices.id', $invoice_ids)->get()->toArray();
+	}
+
+	/**
+	 * updateInvoiceFilenames function
+	 *
+	 * @param string $redis_key
+	 * @return void
+	 */
+	public function updateInvoiceFilenames(string $redis_key): void {
+		
+		$items = Redis::lRange($redis_key, 0, -1);
+
+		foreach(array_chunk($items, 50) as $chunk){
+
+			$ids = [];
+			$pdf_cases = [];
+			$xml_cases = [];
+			$pdf_bindings = [];
+			$xml_bindings = [];
+
+			foreach($chunk as $item_json){
+
+				$data = json_decode($item_json, true);
+
+				if (!isset($data['invoice_id'])) {
+					continue;
+				}
+
+				$invoice_id = (int) $data['invoice_id'];
+				$ids[] = $invoice_id;
+
+				$pdf_cases[] = "WHEN id = ? THEN ?";
+				$pdf_bindings[] = $invoice_id;
+				$pdf_bindings[] = $data['pdf'] ?? '';
+
+				$xml_cases[] = "WHEN id = ? THEN ?";
+				$xml_bindings[] = $invoice_id;
+				$xml_bindings[] = $data['xml'] ?? '';
+			}
+
+			if(empty($ids)){
+				continue;
+			}
+
+			$pdf_cases_sql = implode(' ', $pdf_cases);
+			$xml_cases_sql = implode(' ', $xml_cases);
+			$ids_csv = implode(',', array_fill(0, count($ids), '?'));
+
+			$query = "
+				UPDATE invoices
+				SET
+					pdf_file = CASE {$pdf_cases_sql} ELSE pdf_file END,
+					xml_file = CASE {$xml_cases_sql} ELSE xml_file END
+				WHERE id IN ({$ids_csv})
+			";
+
+			$final_bindings = array_merge($pdf_bindings, $xml_bindings, $ids);
+
+			FacadesDB::update($query, $final_bindings);
+			
+		}
+
+	}
 
 }

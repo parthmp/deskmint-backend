@@ -4,9 +4,11 @@ namespace App\Modules\RecurringInvoice;
 
 use App\Modules\RecurringInvoice\DB\DB;
 use App\Modules\RecurringInvoice\Exceptions\RecurringInvoiceModuleException;
+use App\Modules\RecurringInvoice\Jobs\GenerateInvoicePDFsJob;
 use App\Modules\RecurringInvoice\Jobs\InsertInvoiceDataJob;
 use App\Modules\RecurringInvoice\Jobs\SendRecurringInvoiceJob;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Str;
 
 class RecurringInvoice {
 
@@ -65,6 +67,8 @@ class RecurringInvoice {
 			throw new RecurringInvoiceModuleException('Invalid data provided', 'invalid_data_recurring_invoice_module', (int) config('global.error_code'));
 		}
 
+		$batch_id = Str::uuid()->toString();
+
 		$batch = [];
 
 		if($send_email){
@@ -72,7 +76,8 @@ class RecurringInvoice {
 		}
 
 		if($generate_invoice){
-			$batch[] = new InsertInvoiceDataJob($this->company_id, $this->recurring_invoice_ids, $this->online_transaction_data);
+			$batch[] = new InsertInvoiceDataJob($this->company_id, $this->recurring_invoice_ids, $batch_id, $this->online_transaction_data);
+			$batch[] = new GenerateInvoicePDFsJob($batch_id);
 		}
 
 		if(!empty($batch)){

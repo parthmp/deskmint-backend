@@ -28,7 +28,7 @@ use Einvoicing\Writers\UblWriter;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\URL;
 
-class InvoiceGenerator{
+class InvoiceGenerator {
 
 	use CustomMailSettings;
 
@@ -75,11 +75,18 @@ class InvoiceGenerator{
 	/**
 	 * exec function
 	 *
+	 * @param Invoice|null $invoice
+	 * @param array|null $snapshot
 	 * @return self
 	 */
-	public function exec() : self {
-		$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId($this->company_id)->setInvoiceId($this->invoice_id)->execRequiredSettings();
-		$this->generateContextArrayForRenderer();
+	public function exec(?Invoice $invoice = null, ?array $snapshot = null) : self {
+
+		if(!$invoice || !$snapshot){
+			$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId($this->company_id)->setInvoiceId($this->invoice_id)->execRequiredSettings();
+		}
+		
+		$this->generateContextArrayForRenderer($invoice, $snapshot);
+
 		return $this;
 	}
 
@@ -105,16 +112,23 @@ class InvoiceGenerator{
 	/**
 	 * generateContextArrayForRenderer function
 	 *
+	 * @param Invoice|null $invoice
+	 * @param array|null $snapshot
 	 * @return void
 	 */
-	public function generateContextArrayForRenderer() : void {
+	public function generateContextArrayForRenderer(?Invoice $invoice = null, ?array $snapshot = null) : void {
 		
-		// $this->invoice_content = $this->invoice_db_operations->fetchEmailContentSettings();
-		// if(!isset($this->invoice_content['settings_json'])){
-		// 	$this->invoice_content['settings_json'] = $this->invoice_content;
-		// }
-		$this->live_invoice_data = $this->invoice_db_operations->fetchInvoiceRowObj();
-		$this->data = $this->invoice_db_operations->fetchInvoiceSnapshot($this->invoice_id);
+		if($invoice){
+			$this->live_invoice_data = $invoice;
+		}else{
+			$this->live_invoice_data = $this->invoice_db_operations->fetchInvoiceRowObj();
+		}
+
+		if($snapshot){
+			$this->data = $snapshot;
+		}else{
+			$this->data = $this->invoice_db_operations->fetchInvoiceSnapshot($this->invoice_id);
+		}
 		
 	}
 

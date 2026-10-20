@@ -21,9 +21,9 @@ class CreateInvoicesFromRecurringInvoices extends Command
     public function handle()
     {
 		//Redis::del(config('global.invoice_lock_key'));
-		Redis::setex(config('global.invoice_lock_key'), 10, true);
-		echo "c";
-		die();
+		// Redis::setex(config('global.invoice_lock_key'), 10, true);
+		// echo "c";
+		// die();
 		$ids = ModelsRecurringInvoice::orderBy('id', 'desc')->limit(20)->get()->pluck('id')->toArray();
 		
 		$recurring_invoice = app(RecurringInvoice::class);

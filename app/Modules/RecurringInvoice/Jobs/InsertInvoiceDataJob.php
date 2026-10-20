@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\DB as FacadeDB;
+use Illuminate\Support\Str;
 
 class InsertInvoiceDataJob implements ShouldQueue {
 
@@ -21,6 +22,7 @@ class InsertInvoiceDataJob implements ShouldQueue {
 	public function __construct(
 		private int $company_id,
 		private array $recurring_invoice_ids,
+		private string $batch_id,
 		private ?array $online_transaction_data = null
 	){}
 
@@ -70,18 +72,20 @@ class InsertInvoiceDataJob implements ShouldQueue {
 			FacadeDB::transaction(function () use ($actions) {
 				
 				$data = $this->fetchData();
-				$actions->setCompany($this->company_id)
+				$inserted  = $actions->setCompany($this->company_id)
 						->setInvoiceData($data)
 						->insertInvoiceWithData($this->online_transaction_data)
 						->insertInvoiceItems()
 						->insertCustomProductColumns()
 						->insertCustomFieldValues()
 						->insertPayments($this->online_transaction_data)
-						->insertSnapshots();
+						->insertSnapshots()
+						->getInserted();
 
-				// FacadeDB::afterCommit(function(){
-					
-				// });
+				FacadeDB::afterCommit(function() use ($inserted){
+					$invoice_ids = array_column($inserted, 'id');
+					Redis::setex($this->batch_id, 10800, json_encode($invoice_ids));
+				});
 
 			});
 
