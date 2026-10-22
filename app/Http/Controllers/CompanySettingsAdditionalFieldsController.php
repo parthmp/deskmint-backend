@@ -23,7 +23,7 @@ class CompanySettingsAdditionalFieldsController extends Controller{
 			return $this->company_settings_additional_fields_service->fetch($company_id);
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -34,7 +34,7 @@ class CompanySettingsAdditionalFieldsController extends Controller{
 			$this->company_settings_additional_fields_service->update($request->validated());
 			return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 		
 	}
@@ -45,7 +45,7 @@ class CompanySettingsAdditionalFieldsController extends Controller{
 			$this->company_settings_additional_fields_service->destroy($request->validated());
 			return response(['message' => 'Deleted successfully', 'validity' => 'deleted_success'], 200);
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}

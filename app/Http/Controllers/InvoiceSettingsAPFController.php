@@ -21,7 +21,7 @@ class InvoiceSettingsAPFController extends Controller{
 		try{
 			return $this->invoice_settings_apf_service->fetch($company_id);
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -51,7 +51,7 @@ class InvoiceSettingsAPFController extends Controller{
 			return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -71,7 +71,7 @@ class InvoiceSettingsAPFController extends Controller{
 			return response(['message' => 'Removed successfully', 'validity' => 'delete_success'], 200);
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}

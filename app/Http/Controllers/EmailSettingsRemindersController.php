@@ -21,7 +21,7 @@ class EmailSettingsRemindersController extends Controller{
 		try{
 			return $this->email_settings_reminders_service->fetch($company_id);
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -41,7 +41,7 @@ class EmailSettingsRemindersController extends Controller{
 			return General::wentWrong();
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}

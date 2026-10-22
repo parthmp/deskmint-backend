@@ -38,7 +38,7 @@ class CompanyController extends Controller{
 			return response(['message' => 'Company added successfully', 'company_id' => $company_id, 'validity' => 'success'], 200);
 
 		}catch(Exception $e){
-			General::wentWrong();
+			General::wentWrong($e);
 		}
 
 	}

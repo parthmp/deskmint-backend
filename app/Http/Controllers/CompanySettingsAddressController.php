@@ -29,7 +29,7 @@ class CompanySettingsAddressController extends Controller{
 			];
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -40,7 +40,7 @@ class CompanySettingsAddressController extends Controller{
 			$this->company_settings_address_service->update($request->validated());
 			return response(['message' => "Saved successfully", 'validity' => 'saved_success'], 200);
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}

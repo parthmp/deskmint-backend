@@ -66,7 +66,7 @@ class InvoiceController extends Controller{
 		try{
 			return $this->invoice_service->searchClientByName($company_id, $searched);
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 	}
 
@@ -80,7 +80,7 @@ class InvoiceController extends Controller{
 		}catch(InvoiceException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -92,7 +92,7 @@ class InvoiceController extends Controller{
 		try{
 			return $this->invoice_service->searchProductsByName($data['company_id'], $data['searched']);
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 		
@@ -111,7 +111,7 @@ class InvoiceController extends Controller{
 		}catch(InvalidDataProvidedException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -127,7 +127,7 @@ class InvoiceController extends Controller{
 		}catch(InvoiceException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 		
 
@@ -174,13 +174,13 @@ class InvoiceController extends Controller{
 				return response(['message' => $message, 'validity' => 'invoice_created'], 200);
 
 			}catch(Exception $e){
-				return General::wentWrong();
+				return General::wentWrong($e);
 			}
 			
 		}catch(InvoiceException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}finally{
 			Redis::del(config('global.invoice_lock_key'));
 		}
@@ -201,7 +201,7 @@ class InvoiceController extends Controller{
 		}
 
 		try{
-
+			
 			$this->invoice_service->validateAllForInvoice($request, $company_id, $invoice_id);
 
 			try{
@@ -232,13 +232,13 @@ class InvoiceController extends Controller{
 				return response(['message' => $message, 'validity' => 'invoice_updated'], 200);
 
 			}catch(Exception $e){
-				return General::wentWrong();
+				return General::wentWrong($e);
 			}
 
 		}catch(InvoiceException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}finally{
 			Redis::del(config('global.invoice_lock_key'));
 		}
@@ -257,7 +257,7 @@ class InvoiceController extends Controller{
 		}catch(InvoiceException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 		
@@ -282,7 +282,7 @@ class InvoiceController extends Controller{
 		}catch(InvoiceException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 	}
 
@@ -291,7 +291,7 @@ class InvoiceController extends Controller{
 		$data = $request->validated();
 		
 		try{
-
+			
 			$invoice = $this->invoice_service->fetchInvoiceById((int) $data['invoice_id'], (int) $data['company_id']);
 			
 			if(!$invoice){
@@ -323,7 +323,7 @@ class InvoiceController extends Controller{
 			return response(['message' => 'Invoice marked sent successfully', 'validity' => 'invoice_marked_sent'], 200);
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -402,7 +402,7 @@ class InvoiceController extends Controller{
 			return response(['message' => 'Updated successfully', 'validity' => 'status_change_success'], 200);
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 		
 	}
@@ -430,7 +430,7 @@ class InvoiceController extends Controller{
 		}catch(InvoiceException $e){
 			return response(['message' => $e->getMessage(), 'valdity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 		
@@ -467,7 +467,7 @@ class InvoiceController extends Controller{
 			);
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 		
@@ -484,7 +484,7 @@ class InvoiceController extends Controller{
 			return $this->apply_unapply_for_invoices->fetchAlreadyAppliedEntries((int) $data['company_id'], (int) $data['invoice_id'], (int) $invoice->currency_id, (int) $invoice->client_id, 'credit');
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -507,7 +507,7 @@ class InvoiceController extends Controller{
 		}catch(InvoiceException $e){
 			return response(['message' => $e->getMessage(), 'valdity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -526,7 +526,7 @@ class InvoiceController extends Controller{
 			return $this->apply_unapply_for_invoices->fetchAlreadyAppliedEntries((int) $data['company_id'], (int) $data['invoice_id'], (int) $invoice->currency_id, (int) $invoice->client_id, 'payment');
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -551,7 +551,7 @@ class InvoiceController extends Controller{
 			);
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -574,7 +574,7 @@ class InvoiceController extends Controller{
 		}catch(InvoiceException $e){
 			return response(['message' => $e->getMessage(), 'valdity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -600,7 +600,7 @@ class InvoiceController extends Controller{
 		}catch(InvoiceException $e){
 			return response(['message' => $e->getMessage(), 'valdity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 		
 

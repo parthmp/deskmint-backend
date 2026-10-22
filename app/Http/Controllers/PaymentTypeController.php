@@ -36,7 +36,7 @@ class PaymentTypeController extends Controller {
 
 		}catch(Exception $e){
 
-			return General::wentWrong();
+			return General::wentWrong($e);
 			
 		}
 
@@ -58,7 +58,7 @@ class PaymentTypeController extends Controller {
 
 		}catch(Exception $e){
 
-			return General::wentWrong();
+			return General::wentWrong($e);
 
 		}
 
@@ -93,7 +93,7 @@ class PaymentTypeController extends Controller {
 
 		}catch(Exception $e){
 
-			return General::wentWrong();
+			return General::wentWrong($e);
 			
 		}
 

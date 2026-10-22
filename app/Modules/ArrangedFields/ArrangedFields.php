@@ -108,7 +108,7 @@ class ArrangedFields{
 			return $default_data;
 					
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -248,7 +248,7 @@ class ArrangedFields{
 
 		}catch(Exception $e){
 			
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 	}
 	

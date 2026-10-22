@@ -51,11 +51,11 @@ class AdminController extends Controller{
 				return response(['message' => 'Email already exists', 'validity' => 'email_exists'], config('global.error_code'));
 			}
 
-			return General::wentWrong();
+			return General::wentWrong($e);
 
 		}catch(Exception $e){
 
-			return General::wentWrong();
+			return General::wentWrong($e);
 			
 		}
 
@@ -71,7 +71,7 @@ class AdminController extends Controller{
 		}catch(ModelNotFoundException $e){
 			return response(['message' => 'Invalid request', 'validity' => 'invalid_request'], config('global.error_code'));
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 	}
 
@@ -94,7 +94,7 @@ class AdminController extends Controller{
 			return response($response[0], $response[1]);
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}

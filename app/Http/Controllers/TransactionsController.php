@@ -74,7 +74,7 @@ class TransactionsController extends Controller {
 		}catch(InvalidDataProvidedException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -95,7 +95,7 @@ class TransactionsController extends Controller {
 			return $transaction;
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 		
 

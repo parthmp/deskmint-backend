@@ -33,7 +33,7 @@ class PaymentSettingsPaypalController extends Controller{
 			return General::wentWrong();
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -49,7 +49,7 @@ class PaymentSettingsPaypalController extends Controller{
 			return response(['message' => 'Removed successfully', 'validity' => 'removed_success'], 200);
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 		

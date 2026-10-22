@@ -121,7 +121,7 @@ class LoginController extends Controller{
 
 			Log::info('Resend otp failed', ['user_id' => $user->id, 'device' => $data['device']]);
 
-			return General::wentWrong();
+			return General::wentWrong($e);
 
 		}
 			
@@ -160,7 +160,7 @@ class LoginController extends Controller{
 
 		}catch(Exception $e){
 			
-			return General::wentWrong();
+			return General::wentWrong($e);
 
 		}
 

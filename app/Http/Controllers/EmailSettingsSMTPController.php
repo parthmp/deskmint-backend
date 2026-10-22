@@ -22,7 +22,7 @@ class EmailSettingsSMTPController extends Controller{
 		try{
 			return $this->email_settings_smtp_service->fetch($company_id);
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -46,7 +46,7 @@ class EmailSettingsSMTPController extends Controller{
 				return General::wentWrong();
 
 			}catch(Exception $e){
-				return General::wentWrong();
+				return General::wentWrong($e);
 			}
 
 		}catch(Exception $e){

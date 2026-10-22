@@ -62,7 +62,7 @@ class PaymentRequestsController extends Controller {
 		}catch(InvalidDataProvidedException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -90,7 +90,7 @@ class PaymentRequestsController extends Controller {
 		}catch(PaymentRequestException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 		
 	}
@@ -129,7 +129,7 @@ class PaymentRequestsController extends Controller {
 		}catch(PaymentRequestException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -152,7 +152,7 @@ class PaymentRequestsController extends Controller {
 		}catch(PaymentRequestException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -166,7 +166,7 @@ class PaymentRequestsController extends Controller {
 
 		}catch(Exception $e){
 
-			return General::wentWrong();
+			return General::wentWrong($e);
 
 		}
 
@@ -185,7 +185,7 @@ class PaymentRequestsController extends Controller {
 		}catch(PaymentRequestException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -209,7 +209,7 @@ class PaymentRequestsController extends Controller {
 		}catch(PaymentRequestException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 		
 	}
@@ -247,7 +247,7 @@ class PaymentRequestsController extends Controller {
 		}catch(PaymentRequestException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 

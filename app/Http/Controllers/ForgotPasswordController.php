@@ -37,7 +37,7 @@ class ForgotPasswordController extends Controller{
 				
 				Log::info('Send reset code failed', ['user_id' => $user->id, 'device' => $data['device']]);
 				
-				return General::wentWrong();
+				return General::wentWrong($e);
 
 			}
 		}
@@ -78,7 +78,7 @@ class ForgotPasswordController extends Controller{
 
 			Log::error('Password reset process failed', ['user_id' => $reset_code_row->user_id, 'error' => $e->getMessage()]);
 			
-			return General::wentWrong();
+			return General::wentWrong($e);
 
 		}
 

@@ -44,7 +44,7 @@ class CompanySettingsLogoController extends Controller{
 			return General::wentWrong();
 			
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -64,7 +64,7 @@ class CompanySettingsLogoController extends Controller{
 			return General::wentWrong();
 			
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}

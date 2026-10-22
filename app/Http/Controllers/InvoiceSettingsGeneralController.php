@@ -45,7 +45,7 @@ class InvoiceSettingsGeneralController extends Controller{
 					];
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -69,7 +69,7 @@ class InvoiceSettingsGeneralController extends Controller{
 			return General::wentWrong();
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}

@@ -10,6 +10,7 @@ use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection as SupportCollection;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 
 	class General{
@@ -28,7 +29,22 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 
 		}
 
-		public static function wentWrong() : Response{
+		/**
+		 * wentWrong function
+		 *
+		 * @param Exception|null $e
+		 * @return Response
+		 */
+		public static function wentWrong(?Exception $e = null) : Response {
+
+			if($e){
+				Log::build([
+					'driver' => 'single',
+					'path' => storage_path('logs/exceptions-caught.log'),
+				])->error($e->getMessage(), ['exception' => $e]);
+			}
+			
+
 			return response(['message' 	=> 	'Something went wrong', 'validity'	=>	'something_went_wrong'], config('global.error_code'));
 		}
 

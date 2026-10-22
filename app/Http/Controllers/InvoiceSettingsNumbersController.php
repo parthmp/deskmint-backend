@@ -20,7 +20,7 @@ class InvoiceSettingsNumbersController extends Controller{
 		try{
 			return $this->invoice_settings_numbers_service->fetch($company_id);
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -46,7 +46,7 @@ class InvoiceSettingsNumbersController extends Controller{
 			return General::wentWrong();
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -63,7 +63,7 @@ class InvoiceSettingsNumbersController extends Controller{
 			}
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 		

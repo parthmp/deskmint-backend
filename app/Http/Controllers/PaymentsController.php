@@ -88,7 +88,7 @@ class PaymentsController extends Controller {
 		}catch(InvalidDataProvidedException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -114,7 +114,7 @@ class PaymentsController extends Controller {
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
 
-			return General::wentWrong();
+			return General::wentWrong($e);
 
 		}
 		
@@ -168,7 +168,7 @@ class PaymentsController extends Controller {
 		}catch(PaymentException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 		
 
@@ -193,7 +193,7 @@ class PaymentsController extends Controller {
 		}catch(PaymentException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 		
 	}
@@ -209,7 +209,7 @@ class PaymentsController extends Controller {
 			return $payment_info;
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -237,7 +237,7 @@ class PaymentsController extends Controller {
 			return $invoices;
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 		
 
@@ -261,7 +261,7 @@ class PaymentsController extends Controller {
 		}catch(PaymentException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}

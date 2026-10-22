@@ -71,6 +71,7 @@ class InsertInvoiceDataJob implements ShouldQueue {
 
 			FacadeDB::transaction(function () use ($actions) {
 				
+				
 				$data = $this->fetchData();
 				$inserted  = $actions->setCompany($this->company_id)
 						->setInvoiceData($data)

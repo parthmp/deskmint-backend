@@ -44,7 +44,7 @@ class InvoicesCustomFieldsController extends Controller{
 
 		}catch(Exception $e){
 
-			return General::wentWrong();
+			return General::wentWrong($e);
 
 		}
 	}
@@ -64,7 +64,7 @@ class InvoicesCustomFieldsController extends Controller{
 		}catch(RecordNotFoundException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], config('global.error_code'));
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -85,7 +85,7 @@ class InvoicesCustomFieldsController extends Controller{
 
 		}catch(Exception $e){
 
-			return General::wentWrong();
+			return General::wentWrong($e);
 
 		}
 
@@ -110,7 +110,7 @@ class InvoicesCustomFieldsController extends Controller{
 
 		}catch(Exception $e){
 
-			return General::wentWrong();
+			return General::wentWrong($e);
 
 		}
 	}

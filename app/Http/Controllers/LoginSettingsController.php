@@ -31,7 +31,7 @@ class LoginSettingsController extends Controller {
 			return $this->login_settings_service->fetchUserLoginSettingsForAdminArea($data['type'], $data['company_id'], $user_id);
 			
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 		
 	}
@@ -61,7 +61,7 @@ class LoginSettingsController extends Controller {
 			return response(['message' => 'Saved successfully', 'validity' => 'saved_success'], 200);
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 	}
 

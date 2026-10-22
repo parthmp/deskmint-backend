@@ -98,7 +98,7 @@ class FieldTypesController extends Controller{
 
 		}catch(Exception $e){
 
-			return General::wentWrong();
+			return General::wentWrong($e);
 
 		}
 

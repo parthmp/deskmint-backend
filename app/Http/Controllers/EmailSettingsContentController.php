@@ -37,7 +37,7 @@ class EmailSettingsContentController extends Controller{
 			return $record;
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 		
 	}
@@ -58,7 +58,7 @@ class EmailSettingsContentController extends Controller{
 		}catch(EmailSettingsContentException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}

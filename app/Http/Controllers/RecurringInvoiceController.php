@@ -26,7 +26,7 @@ class RecurringInvoiceController extends Controller {
 		}catch(RecurringInvoiceException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}

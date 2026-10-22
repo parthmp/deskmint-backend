@@ -33,7 +33,7 @@ class PaymentSettingsStripeController extends Controller{
 			return General::wentWrong();
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
@@ -48,7 +48,7 @@ class PaymentSettingsStripeController extends Controller{
 			return response(['message' => 'Removed successfully', 'validity' => 'removed_success'], 200);
 
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 	}
