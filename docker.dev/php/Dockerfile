@@ -1,5 +1,5 @@
 # docker/php/Dockerfile
-FROM php:8.4-fpm-bookworm
+FROM php:8.5-fpm-bookworm
 
 # Handle user permissions for local development added for WSL start
 ARG UID=1000
@@ -15,7 +15,9 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # php extensions required by Laravel
-RUN docker-php-ext-install pdo_mysql mbstring zip bcmath exif pcntl opcache
+#RUN docker-php-ext-install pdo_mysql mbstring zip bcmath exif pcntl opcache
+# php extensions required by Laravel (opcache is built into PHP 8.5, so it's not listed)
+RUN docker-php-ext-install pdo_mysql mbstring zip bcmath exif pcntl
 
 # Redis extension
 RUN pecl install redis && docker-php-ext-enable redis
