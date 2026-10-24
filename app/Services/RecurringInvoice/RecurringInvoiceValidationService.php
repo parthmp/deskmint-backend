@@ -5,6 +5,7 @@ namespace App\Services\RecurringInvoice;
 use App\Enums\RecurringInvoices\Frequencies;
 use App\Exceptions\RecurringInvoiceException;
 use App\Helpers\Sanitize;
+use App\Models\Payment;
 use App\Models\RecurringInvoicesCustomField;
 use App\Traits\InvoiceValidation;
 use Illuminate\Http\Request;
@@ -13,6 +14,7 @@ use App\Modules\CustomFields\CustomFields;
 use App\Modules\CustomFields\Exceptions\InvalidCustomFieldsException;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Repositories\RecurringInvoice\RecurringInvoiceRepository;
+use Carbon\Carbon;
 
 class RecurringInvoiceValidationService {
 
@@ -50,7 +52,6 @@ class RecurringInvoiceValidationService {
 			'settings.payment_gateway'				=>	'required',
 			'settings.send_email'					=>	'required|boolean',
 			'settings.send_email_for_invoice'		=>	'required|boolean',
-			'settings.start_subscription'			=>	'required|boolean',
 			'settings.mark_invoices_paid'			=>	'required|boolean',
 			'settings.frequency'					=>	'required|integer'
 		]);
@@ -79,6 +80,32 @@ class RecurringInvoiceValidationService {
 		}
 		
 		return (bool) !$v->fails();
+
+	}
+
+	/**
+	 * validateStartDateTime function
+	 *
+	 * @param string $datetime
+	 * @return boolean
+	 */
+	private function validateStartDateTime(string $datetime): bool {
+
+		if(trim($datetime) === ''){
+			return false;
+		}
+
+		if(Validator::make(['d' => $datetime], ['d' => 'required|date'])->fails()){
+			return false;
+		}
+
+		try{
+			$start_at = Carbon::parse($datetime)->utc();
+		}catch(\Throwable $e){
+			return false;
+		}
+
+		return $start_at->gte(now()->subMinutes(20));
 
 	}
 
@@ -121,13 +148,21 @@ class RecurringInvoiceValidationService {
 			throw new RecurringInvoiceException('Please fill in required fields', 'invalid_request_tab2', config('global.error_code'), 2);
 		}
 
+		$start_datetime = (string) Sanitize::input($request->input('settings.subscription_start_datetime'));
+
+		$payment_gateway_number = Sanitize::input($request->input('settings.payment_gateway'));
+
+		if(!$this->validateStartDateTime($start_datetime) && (int) $payment_gateway_number === PaymentGateway::NONE->value){
+			throw new RecurringInvoiceException('Please select future start datetime', 'invalid_request_tab2', config('global.error_code'), 2);
+		}
+
 		if(!$this->ifSubmittedFieldsAreSameAsDefined($request, $company_id)){
 			throw new RecurringInvoiceException('Invalid request', 'mismatch_fields', config('global.error_code'), 2);
 		}
 
 		$client_id = (int) Sanitize::input($request->input('data.invoice_details.client.client_id'));
 		
-		$payment_gateway_number = Sanitize::input($request->input('settings.payment_gateway'));
+		
 		$frequency = (int) Sanitize::input($request->input('settings.frequency'));
 		$custom_frequency_days = (int) Sanitize::input($request->input('settings.custom_frequency_days'));
 

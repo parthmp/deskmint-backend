@@ -132,9 +132,13 @@ class RecurringInvoiceService {
 
 		$payment_gateway = (int) Sanitize::input($request->input('settings.payment_gateway'));
 
+		$subscription_start_datetime = (string) Sanitize::input($request->input('settings.subscription_start_datetime'));
+
 		$payment_type = null;
+		$next_invoice_on = null;
 		if($payment_gateway === PaymentGateway::NONE->value){
 			$payment_type = (int) Sanitize::input($request->input('settings.payment_type'));
+			$next_invoice_on = General::formatTimezoneDatetime($subscription_start_datetime, 'UTC', true, true);
 		}
 
 		
@@ -146,6 +150,7 @@ class RecurringInvoiceService {
 		$timezone = (string) Sanitize::input($request->input('timezone'));
 
 		$send_email_for_invoice = (bool) $request->input('settings.send_email_for_invoice');
+		
 		
 		if($send_email_for_invoice){
 			$send_email_for_invoice = 1;
@@ -170,6 +175,8 @@ class RecurringInvoiceService {
 		$snapshot_data['company_logo'] = $company['logo'] ?? '';
 		$snapshot_data['terms'] = $company['invoice_terms'] ?? '';
 		$snapshot_data['footer'] = $company['invoice_footer'] ?? '';
+
+		
 		
 		return [
 			'uuid'						=>	Str::uuid(),
@@ -193,6 +200,7 @@ class RecurringInvoiceService {
 			'mark_paid_automatically'	=>	$mark_invoices_paid,
 			'timezone'					=>	$timezone,
 			'send_invoice_email'		=>	$send_email_for_invoice,
+			'next_invoice_on'			=>	$next_invoice_on,
 			'hidden_sent_at'			=>	now(),
 			'rows'						=>	$totals['rows'],
 			'settings_snapshot'			=>	json_encode($snapshot_data)
