@@ -203,7 +203,7 @@ class DB {
 	 */
 	public function fetchCustomFieldValues(array $recurring_invoice_ids, array $selects = ['*']) : array {
 
-		return RecurringInvoiceCustomFieldValue::select(...$selects)->whereIn('recurring_invoice_id', $recurring_invoice_ids)->get()->toArray();
+		return RecurringInvoiceCustomFieldValue::select(...$selects)->whereIn('recurring_invoice_id', $recurring_invoice_ids)->withTrashed()->get()->toArray();
 
 	}
 

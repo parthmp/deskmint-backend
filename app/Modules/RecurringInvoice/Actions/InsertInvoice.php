@@ -88,16 +88,15 @@ class InsertInvoice {
 	 * insertInvoice function
 	 *
 	 * @param array $invoice_data
-	 * @param array $column_settings
 	 * @param array $invoice_numbers_settings
 	 * @param array|null $online_transaction_data
 	 * @return array
 	 */
-	public function insertInvoice(array $invoice_data, array $column_settings, array $invoice_numbers_settings, ?array $online_transaction_data = null) : array {
+	public function insertInvoice(array $invoice_data, array $invoice_numbers_settings, ?array $online_transaction_data = null) : array {
 
 		$invoices = [];
 
-		$column_settings = json_encode($column_settings);
+		// $column_settings = json_encode($column_settings);
 
 		$manual_reset = null;
 		if(isset($invoice_data[0]['company_id'])){
@@ -125,6 +124,9 @@ class InsertInvoice {
 					}
 				}
 			}
+
+			$settings_snapshot = json_decode($entry['settings_snapshot'], true);
+			$settings_snapshot = json_encode($settings_snapshot['product_column_settings']);
 
 			$invoices[] = [
 				'uuid'								=>	Str::uuid()->toString(),
@@ -158,7 +160,7 @@ class InsertInvoice {
 				'pattern_matched'					=>	1,
 				'scan_chars'						=>	$entry['scan_chars'],
 				'timezone'							=>	$entry['timezone'],
-				'settings_snapshot'					=>	$column_settings,
+				'settings_snapshot'					=>	$settings_snapshot,
 				'reminders_sent'					=>	0,
 				'last_reminder_sent_at'				=>	null,
 				'sent_at'							=>	null,
