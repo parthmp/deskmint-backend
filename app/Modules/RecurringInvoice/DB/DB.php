@@ -170,7 +170,7 @@ class DB {
 	 * @return array
 	 */
 	public function fetchCustomProductColumns(array $recurring_invoice_ids, array $selects = ['*']) : array {
-		return AdditionalProductColumnsFieldValueRi::select(...$selects)->whereIn('recurring_invoice_id', $recurring_invoice_ids)->get()->toArray();
+		return AdditionalProductColumnsFieldValueRi::select(...$selects)->whereIn('recurring_invoice_id', $recurring_invoice_ids)->withTrashed()->get()->toArray();
 	}
 
 	/**
@@ -477,9 +477,27 @@ class DB {
 	 * @return Collection
 	 */
 	public function fetchInvoiceItemsWithCustomCols(int $company_id, array $invoice_ids) : Collection {
-		return InvoiceItem::whereIn('invoice_id', $invoice_ids)->withTrashed()->with(['product', 'custom_field_values.custom_product_field' => function($query) use ($company_id){
-        								$query->where('company_id', $company_id);
-    								}])->get();
+		// return InvoiceItem::whereIn('invoice_id', $invoice_ids)->withTrashed()->with(['product', 'custom_field_values.custom_product_field' => function($query) use ($company_id){
+        // 								$query->where('company_id', $company_id);
+    	// 							}])->get();
+
+		return InvoiceItem::whereIn('invoice_id', $invoice_ids)
+					->withTrashed()
+					->with([
+						'product',
+						'custom_field_values' => function ($query) use ($invoice_ids, $company_id) {
+							$query->withTrashed()->whereIn('invoice_id', $invoice_ids)
+								->whereHas('custom_product_field', function ($q) use ($company_id) {
+									$q->withTrashed()
+										->where('company_id', $company_id);
+								})
+								->with(['custom_product_field' => function ($q) use ($company_id) {
+									$q->withTrashed()
+										->where('company_id', $company_id);
+								}]);
+						},
+					])
+					->get();
 	
 	}
 

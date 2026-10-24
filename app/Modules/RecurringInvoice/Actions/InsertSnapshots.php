@@ -43,13 +43,15 @@ class InsertSnapshots {
 		$snapshot_data['company_settings'] = $this->db->fetchCompanyDetails($company_id, $all_settings);
 		$snapshot_data['company_additional_fields'] = $this->db->fetchAdditionalCompanyFields($company_id);
 		
+		//this one is for custom fields that shows up in custom fields tab in the frontend.
 		$snapshot_data['invoice_custom_field_values'] = $this->db->fetchCustomFieldValuesOfInvoices($invoice_ids) ?? [];
 		$snapshot_data['invoice_settings'] = $this->db->fetchInvoiceDetails($company_id, $all_settings);
 
 		$snapshot_data['default_company'] = $this->db->fetchDefaultCompanyById($company_id);
 
+		//this one is for product columns
 		$snapshot_data['invoice_items'] = $this->db->fetchInvoiceItemsWithCustomCols($company_id, $invoice_ids);
-
+		
 		$snapshot_data['total_field_settings'] = $this->db->fetchTotalFieldsDetails($all_settings);
 
 		$snapshot_data['all_settings'] = $all_settings;
@@ -104,8 +106,14 @@ class InsertSnapshots {
 
 			//none of these create n+1 in loop :)
 			$client_custom_field_values = $this->filterClientCustomFieldValues((int) $invoice->client_id, $snapshot_data['clients_custom_field_values']);
+
+			//this one is for custom fields that shows up in custom fields tab in the frontend.
 			$invoice_custom_field_values = $this->filterInvoiceData((int) $invoice->id, $snapshot_data['invoice_custom_field_values']);
+
+
 			$product_rows_settings = $this->db->fetchProductRowsSettings($invoice, $snapshot_data['all_settings']);
+
+			//this one is for product columns
 			$invoice_items = $this->filterInvoiceData((int) $invoice->id, $snapshot_data['invoice_items']);
 
 
