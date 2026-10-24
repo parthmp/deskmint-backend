@@ -142,15 +142,15 @@ class ManageActions {
 	 */
 	public function insertSnapshots() : self {
 
-		$invoice_ids = array_column($this->inserted, 'id');
+		// $invoice_ids = array_column($this->inserted, 'id');
 		
-		if(empty($invoice_ids)){
-			logger('empty invoice ids');
-			return $this;
-		}
+		// if(empty($invoice_ids)){
+		// 	logger('empty invoice ids');
+		// 	return $this;
+		// }
 
 		
-		$this->insert_snapshots->insertSnapshots($this->company_id, $invoice_ids);
+		$this->insert_snapshots->insertSnapshots($this->company_id, $this->inserted);
 
 		return $this;
 

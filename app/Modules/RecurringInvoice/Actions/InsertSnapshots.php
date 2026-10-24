@@ -2,19 +2,14 @@
 
 namespace App\Modules\RecurringInvoice\Actions;
 
-use App\Models\ClientCustomFieldValue;
 use App\Modules\InvoiceGeneration\InvoiceSnapshot;
 use App\Modules\RecurringInvoice\DB\DB;
-use App\Repositories\Invoice\InvoiceRepository;
-use Exception;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Schema;
 
 class InsertSnapshots {
 
 	public function __construct(
-		private DB $db,
-		private InvoiceRepository $invoice_repository
+		private DB $db
 	){}
 
 	/**
@@ -27,37 +22,25 @@ class InsertSnapshots {
 	private function fetchRequiredData(int $company_id, array $invoice_ids) : array {
 
 		//fetch data here because there are no recurring invoice snapshots to copy from nor the InsertInvoiceDataJob class can know which invoices were inserted.
-		$snapshot_data['company_logo'] = $this->invoice_repository->fetchLogoImage($company_id);
-		$snapshot_data['invoice_data'] = $this->db->fetchInvoiceDataForSnapshots($invoice_ids);
-
-		$all_settings = $this->db->fetchSettings($company_id);
-
-		$snapshot_data['general_settings'] = $this->db->fetchGeneralSettings($all_settings);
-		$snapshot_data['client_settings'] = $this->db->fetchClientDetails($all_settings);
+		$data_from_db['invoice_data'] = $this->db->fetchInvoiceDataForSnapshots($invoice_ids);
 
 		$invoice_and_clients = $this->db->fetchClientAndInvoiceIds($company_id, $invoice_ids);
 
 		$client_ids = array_column($invoice_and_clients, 'client_id');
 
-		$snapshot_data['clients_custom_field_values'] = $this->db->fetchClientCustomFieldValuesForSnapshot($client_ids);
-		$snapshot_data['company_settings'] = $this->db->fetchCompanyDetails($company_id, $all_settings);
-		$snapshot_data['company_additional_fields'] = $this->db->fetchAdditionalCompanyFields($company_id);
+		$data_from_db['clients_custom_field_values'] = $this->db->fetchClientCustomFieldValuesForSnapshot($client_ids);
+		
+		$data_from_db['company_additional_fields'] = $this->db->fetchAdditionalCompanyFields($company_id);
 		
 		//this one is for custom fields that shows up in custom fields tab in the frontend.
-		$snapshot_data['invoice_custom_field_values'] = $this->db->fetchCustomFieldValuesOfInvoices($invoice_ids) ?? [];
-		$snapshot_data['invoice_settings'] = $this->db->fetchInvoiceDetails($company_id, $all_settings);
-
-		$snapshot_data['default_company'] = $this->db->fetchDefaultCompanyById($company_id);
+		$data_from_db['invoice_custom_field_values'] = $this->db->fetchCustomFieldValuesOfInvoices($invoice_ids) ?? [];
+		
+		$data_from_db['default_company'] = $this->db->fetchDefaultCompanyById($company_id);
 
 		//this one is for product columns
-		$snapshot_data['invoice_items'] = $this->db->fetchInvoiceItemsWithCustomCols($company_id, $invoice_ids);
+		$data_from_db['invoice_items'] = $this->db->fetchInvoiceItemsWithCustomCols($company_id, $invoice_ids);
 		
-		$snapshot_data['total_field_settings'] = $this->db->fetchTotalFieldsDetails($all_settings);
-
-		$snapshot_data['all_settings'] = $all_settings;
-
-		
-		return $snapshot_data;
+		return $data_from_db;
 
 	}
 
@@ -88,35 +71,58 @@ class InsertSnapshots {
 		)->values();
 	}
 
+	/**
+	 * filterSnapshotData function
+	 *
+	 * @param integer $recurring_invoice_id
+	 * @param array $recurring_invoice_data
+	 * @return array
+	 */
+	public function filterSnapshotData(int $recurring_invoice_id, array $recurring_invoice_data) : array {
+
+		foreach($recurring_invoice_data as $row){
+			if((int) $recurring_invoice_id === (int) $row['id']){
+				return json_decode($row['settings_snapshot'], true);
+			}
+		}
+
+		return [];
+
+	}
+
 
 	/**
 	 * insertSnapshots function
 	 *
 	 * @param integer $company_id
-	 * @param array $invoice_ids
+	 * @param array $inserted_ids
 	 * @return void
 	 */
-	public function insertSnapshots(int $company_id, array $invoice_ids) : void {
+	public function insertSnapshots(int $company_id, array $inserted_ids) : void {
 
 		$insert = [];
 
-		$snapshot_data = $this->fetchRequiredData($company_id, $invoice_ids);
+		$recurring_invoice_ids = array_column($inserted_ids, 'recurring_invoice_id');
+		$recurring_invoice_data = $this->db->fetchRecurringInvoiceData((int) $company_id, $recurring_invoice_ids, ['recurring_invoices.id', 'recurring_invoices.settings_snapshot'], false);
 		
-		foreach($snapshot_data['invoice_data'] as $invoice){
+		$invoice_ids = array_column($inserted_ids, 'id');
+		$data_from_db = $this->fetchRequiredData($company_id, $invoice_ids);
+
+		
+		foreach($data_from_db['invoice_data'] as $invoice){
 
 			//none of these create n+1 in loop :)
-			$client_custom_field_values = $this->filterClientCustomFieldValues((int) $invoice->client_id, $snapshot_data['clients_custom_field_values']);
+			$client_custom_field_values = $this->filterClientCustomFieldValues((int) $invoice->client_id, $data_from_db['clients_custom_field_values']);
 
 			//this one is for custom fields that shows up in custom fields tab in the frontend.
-			$invoice_custom_field_values = $this->filterInvoiceData((int) $invoice->id, $snapshot_data['invoice_custom_field_values']);
-
-
-			$product_rows_settings = $this->db->fetchProductRowsSettings($invoice, $snapshot_data['all_settings']);
+			$invoice_custom_field_values = $this->filterInvoiceData((int) $invoice->id, $data_from_db['invoice_custom_field_values']);
 
 			//this one is for product columns
-			$invoice_items = $this->filterInvoiceData((int) $invoice->id, $snapshot_data['invoice_items']);
+			$invoice_items = $this->filterInvoiceData((int) $invoice->id, $data_from_db['invoice_items']);
 
+			$snapshot_data = $this->filterSnapshotData((int) $invoice->recurring_invoice_id, $recurring_invoice_data);
 
+			
 			$snapshot = app(InvoiceSnapshot::class)
 						->setCompanyId($company_id, false)
 						->setInvoiceId($invoice->id, $invoice, false)
@@ -124,9 +130,9 @@ class InsertSnapshots {
 						->setLogoSnapsot($snapshot_data['company_logo'])
 						->setGeneralSettings($snapshot_data['general_settings'])
 						->setClientSnapshot($snapshot_data['client_settings'], $client_custom_field_values)
-						->setCompanySnapshot($snapshot_data['company_settings'], $snapshot_data['company_additional_fields'])
-						->setInvoiceSnapshot($snapshot_data['invoice_settings'], $invoice_custom_field_values, $snapshot_data['default_company'], $product_rows_settings, $invoice_items)
-						->setInvoiceRowsSnapshot($product_rows_settings, $invoice_items)
+						->setCompanySnapshot($snapshot_data['company_settings'], $data_from_db['company_additional_fields'])
+						->setInvoiceSnapshot($snapshot_data['invoice_settings'], $invoice_custom_field_values, $data_from_db['default_company'], $snapshot_data['product_column_settings'], $invoice_items)
+						->setInvoiceRowsSnapshot($snapshot_data['product_column_settings'], $invoice_items)
 						->setTotalsSnapshot($snapshot_data['total_field_settings'])
 						->setTermsSnapshot()
 						->output();

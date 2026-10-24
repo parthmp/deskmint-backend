@@ -50,16 +50,27 @@ class DB {
                     		->toArray();
 	}
 
+	
 	/**
 	 * fetchRecurringInvoiceData function
 	 *
 	 * @param integer $company_id
 	 * @param array $recurring_invoice_ids
 	 * @param array $selects
+	 * @param boolean $client_join
 	 * @return array
 	 */
-	public function fetchRecurringInvoiceData(int $company_id, array $recurring_invoice_ids, array $selects = ['*']) : array {
-		return RecurringInvoice::select(...$selects)->join('clients', 'clients.id', '=', 'recurring_invoices.client_id')->where('recurring_invoices.company_id', '=', $company_id)->whereIn('recurring_invoices.id', $recurring_invoice_ids)->orderBy('recurring_invoices.id', 'asc')->get()->toArray();
+	public function fetchRecurringInvoiceData(int $company_id, array $recurring_invoice_ids, array $selects = ['*'], bool $client_join = true) : array {
+
+		$query = RecurringInvoice::select(...$selects);
+
+		if($client_join){
+			$query = $query->join('clients', 'clients.id', '=', 'recurring_invoices.client_id');
+		}
+		
+		$query = $query->where('recurring_invoices.company_id', '=', $company_id)->whereIn('recurring_invoices.id', $recurring_invoice_ids)->orderBy('recurring_invoices.id', 'asc')->get()->toArray();
+
+		return $query;
 	}
 
 	/**
@@ -373,17 +384,21 @@ class DB {
 	/**
 	 * fetchProductRowsSettings function
 	 *
-	 * @param Invoice $invoice
+	 * @param Invoice|null $invoice
 	 * @param array $data
+	 * @param integer|null $company_id
 	 * @return array
 	 */
-	public function fetchProductRowsSettings(Invoice $invoice, array $data) : array {
+	public function fetchProductRowsSettings(?Invoice $invoice, array $data, ?int $company_id = null) : array {
 
-		$settings_snapshot = trim($invoice->settings_snapshot);
+		if($invoice){
+			$settings_snapshot = trim($invoice->settings_snapshot);
 
-		if($settings_snapshot !== ''){
-			return json_decode($settings_snapshot, true);
+			if($settings_snapshot !== ''){
+				return json_decode($settings_snapshot, true);
+			}
 		}
+		
 
 		$settings = $this->filterArray(ISC_PRODUCT_COLUMNS_TYPE, $data);
 
@@ -391,7 +406,12 @@ class DB {
 			return json_decode($settings['settings_json'], true);
 		}
 
-		return $this->getDefaultProductColumnsSettings((int) $invoice->company_id);
+		$company_id_local = $company_id;
+		if($invoice){
+			$company_id_local = $invoice->company_id;
+		}
+
+		return $this->getDefaultProductColumnsSettings((int) $company_id_local);
 
 	}
 	
@@ -456,7 +476,18 @@ class DB {
 	 * @return Collection|null
 	 */
 	public function fetchCustomFieldValuesOfInvoices(array $invoice_ids) : ?Collection {
-		return InvoiceCustomFieldValue::whereIn('invoice_id', $invoice_ids)->withTrashed()->with(['invoices_custom_field_wt.custom_field_type_wt'])->get();
+		//return InvoiceCustomFieldValue::whereIn('invoice_id', $invoice_ids)->withTrashed()->with(['invoices_custom_field_wt.custom_field_type_wt'])->get();
+		return InvoiceCustomFieldValue::whereIn('invoice_id', $invoice_ids)
+										->withTrashed()
+										->with([
+											'invoices_custom_field_wt' => function ($query) {
+												$query->withTrashed()
+													->with(['custom_field_type_wt' => function ($q) {
+														$q->withTrashed();
+													}]);
+											},
+										])
+										->get();
 	}
 
 	/**
@@ -645,6 +676,17 @@ class DB {
 			
 		}
 
+	}
+
+	/**
+	 * fetchCompany function
+	 *
+	 * @param integer $company_id
+	 * @param array $selects
+	 * @return Company|null
+	 */
+	public function fetchCompany(int $company_id, array $selects = ['*']) : ?Company {
+		return Company::select(...$selects)->where('id', '=', $company_id)->first();
 	}
 
 }

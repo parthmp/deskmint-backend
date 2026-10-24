@@ -12,18 +12,17 @@ use App\Models\RecurringInvoiceCustomFieldValue;
 use App\Models\RecurringInvoicesCustomField;
 use App\Modules\CustomFields\CustomFields;
 use App\Modules\Payment\Enums\PaymentGateway;
-use App\Modules\RecurringInvoice\Implementation\SendEmail;
+use App\Modules\RecurringInvoice\DB\DB;
 use App\Modules\RecurringInvoice\RecurringInvoice as RecurringInvoiceModule;
 use App\Repositories\Client\ClientRepository;
+use App\Repositories\Invoice\InvoiceRepository;
 use App\Repositories\PaymentType\PaymentTypeRepository;
 use App\Repositories\RecurringInvoice\RecurringInvoiceRepository;
 use App\Services\Invoice\InvoiceBaseService;
 use App\Services\Invoice\InvoiceCalculationService;
-use App\Services\Invoice\InvoiceSettingsService;
 use App\Services\Invoice\InvoiceValidationService;
 use App\Traits\InvoiceBase;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use \Illuminate\Support\Str;
 
 class RecurringInvoiceService {
@@ -33,14 +32,15 @@ class RecurringInvoiceService {
 	public function __construct(
 		private InvoiceValidationService $invoice_validation_service,
 		private CustomFields $custom_fields,
-		private InvoiceSettingsService $invoice_settings_service,
 		private RecurringInvoiceValidationService $recurring_invoice_validation_service,
 		private RecurringInvoiceRepository $recurring_invoice_repository,
 		private ClientRepository $client_repository,
 		private InvoiceBaseService $invoice_base_service,
 		private InvoiceCalculationService $invoice_calculation_service,
 		private RecurringInvoiceModule $reccuring_invoice_module,
-		private PaymentTypeRepository $payment_type_repository
+		private PaymentTypeRepository $payment_type_repository,
+		private InvoiceRepository $invoice_repository,
+		private DB $db
 	){}
 
 	/**
@@ -58,8 +58,10 @@ class RecurringInvoiceService {
 
 		$timezone = (string) Sanitize::input($request->input('timezone'));
 
-		$invoice_settings = $this->invoice_settings_service->setCompany($company_id);
-
+		
+		$all_settings = $this->db->fetchSettings((int) $company_id);
+		$product_column_settings = $this->db->fetchProductRowsSettings(null, $all_settings, (int) $company_id);
+		
 		$fields = $this->custom_fields->fetchCustomFields(RecurringInvoicesCustomField::class, $company_id);
 
 		$gateways = PaymentGateway::configuredOptions((int) $company_id);
@@ -69,8 +71,7 @@ class RecurringInvoiceService {
 		$payment_types = General::generateDropdownData($this->payment_type_repository->fetchAllPaymentTypes()->toArray(), 'payment_type', 'id');
 		
 		return [
-			'product_columns' 			=> 	$invoice_settings->getProductColumns(),
-			'total_fields' 				=> 	$invoice_settings->getTotalFields(),
+			'product_columns' 			=> 	$product_column_settings,
 			'custom_fields'				=>	$this->custom_fields->printCustomFields($fields),
 			'gateways'					=>	$gateways,
 			'frequencies'				=>	$freqs,
@@ -150,7 +151,18 @@ class RecurringInvoiceService {
 		// 	$status = RecurringInvoiceStatus::SENT->value;
 		// }
 
-		$settings = $this->invoice_settings_service->setCompany((int) $company_id);
+		$all_settings = $this->db->fetchSettings($company_id);
+
+		$snapshot_data['general_settings'] = $this->db->fetchGeneralSettings($all_settings);
+		$snapshot_data['client_settings'] = $this->db->fetchClientDetails($all_settings);
+		$snapshot_data['company_settings'] = $this->db->fetchCompanyDetails($company_id, $all_settings);
+		$snapshot_data['invoice_settings'] = $this->db->fetchInvoiceDetails($company_id, $all_settings);
+		$snapshot_data['product_column_settings'] = $this->db->fetchProductRowsSettings(null, $all_settings, (int) $company_id);
+		$snapshot_data['total_field_settings'] = $this->db->fetchTotalFieldsDetails($all_settings);
+		$company = $this->db->fetchCompany((int) $company_id, ['logo', 'invoice_terms', 'invoice_footer'])->toArray();
+		$snapshot_data['company_logo'] = $company['logo'] ?? '';
+		$snapshot_data['terms'] = $company['invoice_terms'] ?? '';
+		$snapshot_data['footer'] = $company['invoice_footer'] ?? '';
 		
 		return [
 			'uuid'						=>	Str::uuid(),
@@ -175,7 +187,7 @@ class RecurringInvoiceService {
 			'timezone'					=>	$timezone,
 			'hidden_sent_at'			=>	now(),
 			'rows'						=>	$totals['rows'],
-			'settings_snapshot'			=>	json_encode($settings->getProductColumns())
+			'settings_snapshot'			=>	json_encode($snapshot_data)
 		];
 	}
 
@@ -221,6 +233,7 @@ class RecurringInvoiceService {
 
 		$recurring_invoice = $this->recurring_invoice_repository->fetchById($company_id, $recurring_invoice_id, ['settings_snapshot']);
 		$snapshot = json_decode($recurring_invoice->settings_snapshot, true);
+		$snapshot = $snapshot['product_column_settings'];
 
 		$insert = [];
 
