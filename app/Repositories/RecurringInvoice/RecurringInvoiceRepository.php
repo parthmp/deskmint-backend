@@ -59,6 +59,7 @@ class RecurringInvoiceRepository {
 		$recurring_invoice->custom_frequency_days = $data['custom_frequency_days'];
 		$recurring_invoice->mark_paid_automatically = $data['mark_paid_automatically'];
 		$recurring_invoice->timezone = $data['timezone'];
+		$recurring_invoice->send_invoice_email = $data['send_invoice_email'];
 		$recurring_invoice->settings_snapshot = $data['settings_snapshot'];
 		$recurring_invoice->hidden_sent_at = $data['hidden_sent_at'];
 		$recurring_invoice->save();

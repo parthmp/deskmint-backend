@@ -145,6 +145,13 @@ class RecurringInvoiceService {
 		//$send_email = (bool) Sanitize::input($request->input('settings.send_email'));
 		$timezone = (string) Sanitize::input($request->input('timezone'));
 
+		$send_email_for_invoice = (bool) $request->input('settings.send_email_for_invoice');
+		
+		if($send_email_for_invoice){
+			$send_email_for_invoice = 1;
+		}else{
+			$send_email_for_invoice = 0;
+		}
 		$status = RecurringInvoiceStatus::DRAFT->value;
 		// always use draft, will update status if sending successes.
 		// if($send_email){
@@ -185,6 +192,7 @@ class RecurringInvoiceService {
 			'custom_frequency_days'		=>	$custom_frequency_days,
 			'mark_paid_automatically'	=>	$mark_invoices_paid,
 			'timezone'					=>	$timezone,
+			'send_invoice_email'		=>	$send_email_for_invoice,
 			'hidden_sent_at'			=>	now(),
 			'rows'						=>	$totals['rows'],
 			'settings_snapshot'			=>	json_encode($snapshot_data)

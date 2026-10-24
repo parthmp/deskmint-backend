@@ -49,6 +49,7 @@ class RecurringInvoiceValidationService {
 		$v = Validator::make($request->all(), [
 			'settings.payment_gateway'				=>	'required',
 			'settings.send_email'					=>	'required|boolean',
+			'settings.send_email_for_invoice'		=>	'required|boolean',
 			'settings.start_subscription'			=>	'required|boolean',
 			'settings.mark_invoices_paid'			=>	'required|boolean',
 			'settings.frequency'					=>	'required|integer'
