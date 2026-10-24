@@ -99,22 +99,24 @@ class GenerateInvoicePDFsJob implements ShouldQueue {
 			$snapshots = $db->fetchInvoiceSnapshots($invoice_ids);
 			$xml_options = $db->xmlInvoiceOptionData($invoice_ids);
 
-			$batch = [];
+			$batched_jobs = [];
 
 			foreach($invoice_ids as $id){
 				$filtered = $this->filterData((int) $id, $invoices, $snapshots);
 				$invoice_row = $filtered['invoice'];
 				$snapshot_data = $filtered['snapshot'];
 				$xml_option = $this->filterXmlOption((int) $id, $xml_options);
-				$batch[] = new GenerateSingleInvoicePDFJob($redis_key, $invoice_row, $snapshot_data, $xml_option);
+				$batched_jobs[] = new GenerateSingleInvoicePDFJob($redis_key, $invoice_row, $snapshot_data, $xml_option);
 			}
-			
-			Bus::batch($batch)->allowFailures()->finally(function(Batch $batch) use ($redis_key, $db){
+
+			Bus::batch($batched_jobs)->allowFailures()->finally(static function(Batch $batch) use ($redis_key){
+
+				$db = app(DB::class);
 
 				FacadeDB::transaction(function() use ($redis_key, $db){
-					
+
 					$db->updateInvoiceFilenames($redis_key);
-					
+
 					FacadeDB::afterCommit(function() use ($redis_key){
 						Redis::del($redis_key);
 					});
@@ -124,7 +126,7 @@ class GenerateInvoicePDFsJob implements ShouldQueue {
 			})->dispatch();
 
 
-			Redis::del($this->batch_id);
+			//Redis::del($this->batch_id);
 			Redis::del($redis_key);
 
 		}

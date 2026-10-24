@@ -6,9 +6,12 @@ use App\Modules\RecurringInvoice\DB\DB;
 use App\Modules\RecurringInvoice\Exceptions\RecurringInvoiceModuleException;
 use App\Modules\RecurringInvoice\Jobs\GenerateInvoicePDFsJob;
 use App\Modules\RecurringInvoice\Jobs\InsertInvoiceDataJob;
+use App\Modules\RecurringInvoice\Jobs\SendInvoiceGeneratedEmailsJob;
 use App\Modules\RecurringInvoice\Jobs\SendRecurringInvoiceJob;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
+use Throwable;
 
 class RecurringInvoice {
 
@@ -78,10 +81,13 @@ class RecurringInvoice {
 		if($generate_invoice){
 			$batch[] = new InsertInvoiceDataJob($this->company_id, $this->recurring_invoice_ids, $batch_id, $this->online_transaction_data);
 			$batch[] = new GenerateInvoicePDFsJob($batch_id);
+			$batch[] = new SendInvoiceGeneratedEmailsJob($this->company_id, $batch_id);
 		}
 
 		if(!empty($batch)){
-			Bus::chain($batch)->dispatch();
+			Bus::chain($batch)->catch(function (Throwable $e) use($batch_id) {
+				Redis::del($batch_id);
+			})->dispatch();
 		}
 
 	}

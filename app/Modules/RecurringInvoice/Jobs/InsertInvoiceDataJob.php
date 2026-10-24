@@ -73,7 +73,7 @@ class InsertInvoiceDataJob implements ShouldQueue {
 				
 				
 				$data = $this->fetchData();
-				$inserted  = $actions->setCompany($this->company_id)
+				$inserted = $actions->setCompany($this->company_id)
 						->setInvoiceData($data)
 						->insertInvoiceWithData($this->online_transaction_data)
 						->insertInvoiceItems()

@@ -40,4 +40,8 @@ class Invoice extends Model{
 		return $this->belongsTo(Currency::class, 'currency_id');
 	}
 
+	public function recurring_invoice_wt(){
+		return $this->belongsTo(RecurringInvoice::class, 'recurring_invoice_id')->withTrashed();
+	}
+
 }

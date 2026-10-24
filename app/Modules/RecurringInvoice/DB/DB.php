@@ -702,4 +702,55 @@ class DB {
 		]);
 	}
 
+	/**
+	 * fetchInvoiceWithClientAndCurrency function
+	 *
+	 * @param array $invoice_ids
+	 * @param array $selects
+	 * @return Collection|null
+	 */
+	public function fetchDataForSendingInvoices(array $invoice_ids, array $selects = ['*']) : ?Collection {
+		return Invoice::select(...$selects)->whereIn('id', $invoice_ids)->whereHas('recurring_invoice_wt', function ($query) {
+			$query->where('send_invoice_email', '=', 1);
+		})->with('client_wt', 'currency', 'recurring_invoice_wt')->withTrashed()->get();
+	}
+
+	/**
+	 * fetchInvoiceEmailContentSettings function
+	 *
+	 * @param array $data
+	 * @return array
+	 */
+	public function fetchInvoiceEmailContentSettings(array $data) : array {
+
+		$settings = $this->filterArray(EmailSettingsContent::INVOICES->value, $data);
+		if(!$settings){
+			return $this->getDefaultInvoicesEmailContentSettings();
+		}
+
+		return json_decode($settings['settings_json'], true);
+
+	}
+
+	/**
+	 * updateSentAtForInvoices function
+	 *
+	 * @param string $redis_key
+	 * @return void
+	 */
+	public function updateSentAtForInvoices(string $redis_key) : void {
+
+		$ids = Redis::sMembers($redis_key);
+
+		if(empty($ids)){
+			return;
+		}
+
+		Invoice::whereIn('id', $ids)->update([
+			'sent_at'        => now(),
+			'hidden_sent_at' => now()
+		]);
+		
+	}
+
 }
