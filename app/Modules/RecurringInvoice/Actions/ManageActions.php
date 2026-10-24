@@ -5,7 +5,6 @@ namespace App\Modules\RecurringInvoice\Actions;
 use App\Exceptions\RecurringInvoiceException;
 use App\Services\Invoice\InvoiceSettingsService;
 use App\Modules\RecurringInvoice\Actions\InsertInvoice;
-use App\Repositories\Invoice\InvoiceRepository;
 use Illuminate\Support\Facades\Redis;
 
 class ManageActions {
@@ -20,7 +19,8 @@ class ManageActions {
 		private InvoiceSettingsService $invoice_settings_service,
 		private InsertCustomFields $insert_custom_fields,
 		private InsertSnapshots $insert_snapshots,
-		private InsertPayments $insert_payments
+		private InsertPayments $insert_payments,
+		private UpdateLastInvoiceGenerated $update_last_invoice_generated
 	){}
 
 	/**
@@ -234,6 +234,23 @@ class ManageActions {
 		$this->insert_payments->insertPayments($this->data['data'], $this->inserted, $online_transaction_data);
 
 
+
+		return $this;
+
+	}
+
+	/**
+	 * updateLastInvoiceCreatedAt function
+	 *
+	 * @return self
+	 */
+	public function updateLastInvoiceCreatedAt() : self {
+
+		if($this->hasNoInsertedInvoices('insertPayments')){
+			return $this;
+		}
+
+		$this->update_last_invoice_generated->updateLastInvoiceCreatedAt($this->company_id, $this->inserted);
 
 		return $this;
 

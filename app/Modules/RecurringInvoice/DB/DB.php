@@ -689,4 +689,17 @@ class DB {
 		return Company::select(...$selects)->where('id', '=', $company_id)->first();
 	}
 
+	/**
+	 * updateLastInvoiceCreatedAt function
+	 *
+	 * @param integer $company_id
+	 * @param array $recurring_invoice_ids
+	 * @return void
+	 */
+	public function updateLastInvoiceCreatedAt(int $company_id, array $recurring_invoice_ids) : void {
+		RecurringInvoice::whereIn('id', $recurring_invoice_ids)->where('company_id', '=', $company_id)->update([
+			'last_invoice_created_at'	=>	now()
+		]);
+	}
+
 }

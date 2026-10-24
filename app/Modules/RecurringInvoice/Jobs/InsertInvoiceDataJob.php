@@ -81,6 +81,7 @@ class InsertInvoiceDataJob implements ShouldQueue {
 						->insertCustomFieldValues()
 						->insertPayments($this->online_transaction_data)
 						->insertSnapshots()
+						->updateLastInvoiceCreatedAt()
 						->getInserted();
 
 				FacadeDB::afterCommit(function() use ($inserted){
