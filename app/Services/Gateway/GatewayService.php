@@ -5,6 +5,7 @@ namespace App\Services\Gateway;
 use App\Jobs\SendEmailJob;
 use App\Models\Invoice;
 use App\Models\PaymentRequest;
+use App\Models\RecurringInvoice;
 use App\Models\Transaction;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\Payment\Enums\PaymentGateway;
@@ -40,9 +41,10 @@ class GatewayService{
 	 *
 	 * @param integer $payment_gateway
 	 * @param array $data
+	 * @param boolean $subscription
 	 * @return string|null
 	 */
-	private function generateGatewayUrl(int $payment_gateway, array $data) : ?string {
+	private function generateGatewayUrl(int $payment_gateway, array $data, bool $subscription = false) : ?string {
 
 		$payment = match($payment_gateway){
 
@@ -223,6 +225,51 @@ class GatewayService{
 		}
 
 		return $transaction->payment_url;
+
+	}
+
+	/**
+	 * fetchRecurringInvoiceByUuid function
+	 *
+	 * @param string $uuid
+	 * @param array $selects
+	 * @return RecurringInvoice|null
+	 */
+	public function fetchRecurringInvoiceByUuid(string $uuid, array $selects = ['*']) : ?RecurringInvoice {
+		return $this->gateway_repository->fetchRecurringInvoiceByUuid($uuid, $selects);
+	}
+
+	/**
+	 * fetchCachedUrlForRecurringInvoice function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @param integer $payment_gateway
+	 * @param string $total
+	 * @return string|null
+	 */
+	public function fetchCachedUrlForRecurringInvoice(int $company_id, int $recurring_invoice_id, int $payment_gateway, string $total) : ?string {
+		return $this->gateway_repository->fetchCachedUrlForRecurringInvoice($company_id, $recurring_invoice_id, $payment_gateway, $total);
+	}
+
+	/**
+	 * generateRecurringInvoiceUrl function
+	 *
+	 * @param array $recurring_invoice
+	 * @return string
+	 */
+	public function generateRecurringInvoiceUrl(array $recurring_invoice) : string {
+		//CONTINUE
+		$payment_settings = [];
+		$payment_gateway_url = $this->generateGatewayUrl((int) $recurring_invoice['payment_gateway'], $payment_settings);
+
+		if(!$payment_gateway_url){
+			//send an email to admins to notify the failure.
+			$this->sendUrlGenerationFailedEmail((int) $recurring_invoice['payment_gateway']);
+			return '';
+		}
+
+		return $payment_gateway_url;
 
 	}
 

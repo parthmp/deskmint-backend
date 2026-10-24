@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pay Invoice</title>
+<title>@yield('title')</title>
 <style>
   :root {
     --ink: #16241f;

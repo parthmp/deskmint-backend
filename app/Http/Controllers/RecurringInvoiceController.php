@@ -36,7 +36,7 @@ class RecurringInvoiceController extends Controller {
 
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 
-		//try{
+		try{
 
 			$this->recurring_invoice_service->validate($request, $company_id);
 			$send_email = (bool) Sanitize::input($request->input('settings.send_email'));
@@ -55,11 +55,11 @@ class RecurringInvoiceController extends Controller {
 
 			
 
-		// }catch(RecurringInvoiceException $e){
-		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
-		// }catch(Exception $e){
-		// 	return General::wentWrong();
-		// }
+		}catch(RecurringInvoiceException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
 
 	}
 

@@ -4,6 +4,8 @@ namespace App\Repositories\Gateway;
 
 use App\Models\Invoice;
 use App\Models\PaymentRequest;
+use App\Models\RecurringInvoice;
+use App\Models\RecurringInvoiceUrl;
 use App\Models\Transaction;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Enums\TransactionStatus;
@@ -86,6 +88,37 @@ class GatewayRepository{
 	 */
 	public function fetchTransactionOfPastForRequests(int $pr_id) : ?Transaction {
 		return Transaction::select('payment_urls.url as payment_url', 'transactions.amount as amount', 'transactions.payment_gateway as payment_gateway')->join('transaction_references', 'transaction_references.transaction_id', '=', 'transactions.id')->join('payment_urls', 'payment_urls.transaction_id', '=', 'transactions.id')->where([['transactions.created_at', '>', now()->subHours(2)], ['transaction_references.payment_request_id', '=',$pr_id]])->orderBy('transactions.id', 'desc')->first();
+	}
+	
+	/**
+	 * fetchRecurringInvoiceByUuid function
+	 *
+	 * @param string $uuid
+	 * @return RecurringInvoice|null
+	 */
+	public function fetchRecurringInvoiceByUuid(string $uuid, array $selects = ['*']) : ?RecurringInvoice {
+		return RecurringInvoice::select(...$selects)->join('currencies', 'currencies.id', 'recurring_invoices.currency_id')->where('recurring_invoices.uuid', '=', $uuid)->first();
+	}
+
+	/**
+	 * fetchCachedUrlForRecurringInvoice function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @param integer $payment_gateway
+	 * @param string $total
+	 * @return string|null
+	 */
+	public function fetchCachedUrlForRecurringInvoice(int $company_id, int $recurring_invoice_id, int $payment_gateway, string $total) : ?string {
+
+		$record = RecurringInvoiceUrl::where([['company_id', '=', $company_id], ['recurring_invoice_id', '=', $recurring_invoice_id], ['payment_gateway', '=', $payment_gateway], ['total', '=', $total], ['created_at', '>', now()->subHours(2)]])->orderBy('id', 'desc')->first();
+
+		if(!$record){
+			return null;
+		}
+
+		return $record->url;
+
 	}
 
 }

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PaymentRequests\PaymentRequestStatus;
+use App\Enums\RecurringInvoices\Frequencies;
+use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\PaymentRequest;
@@ -162,4 +164,97 @@ class GatewayController extends Controller {
 		return redirect($existing_url);
 
 	}
+
+	private function showPaymentPageForRecurringInvoice(array $data){
+
+		$data['uuid'] = $data['recurring_invoice']['uuid'];
+		$data['is_active'] = (int) $data['recurring_invoice']['status'] === RecurringInvoiceStatus::ACTIVE->value;
+		$data['payment_gateway'] = PaymentGateway::getLabelByValue((int) $data['recurring_invoice']['payment_gateway']);
+		$data['total'] = $data['recurring_invoice']['total'];
+		$data['currency'] = $data['recurring_invoice']['code'];
+		$data['frequency'] = Frequencies::getLabelByValue((int) $data['recurring_invoice']['frequency']);
+		$data['checkout_url'] = URL::signedRoute('recurring_invoice.activate.checkout', ['uuid' => $data['recurring_invoice']['uuid']]);
+
+		return view('recurring_invoices.activate_recurring_invoice', $data);
+
+	}
+
+	//show page to activate the recurring invoice.
+	public function activateRecurringPayment(Request $request, string $uuid){
+
+		$uuid = (string) Sanitize::input($uuid);
+
+		$selects = [
+			'currencies.code',
+			'recurring_invoices.id',
+			'recurring_invoices.uuid',
+			'recurring_invoices.payment_gateway',
+			'recurring_invoices.status',
+			'recurring_invoices.total',
+			'recurring_invoices.frequency'
+		];
+
+		$recurring_invoice = $this->gateway_service->fetchRecurringInvoiceByUuid($uuid, $selects);
+
+		if(!$recurring_invoice){
+			die('Invalid request');
+		}
+
+		if((int) $recurring_invoice->payment_gateway === PaymentGateway::NONE->value){
+			die('Invalid request');
+		}
+
+		$data['recurring_invoice'] = $recurring_invoice->toArray();
+		
+		return $this->showPaymentPageForRecurringInvoice($data);
+
+	}
+
+
+	//generate url for payment gateways to activate subscriptions/recurring invoices.
+	public function generateUrlForRecurringInvoice(Request $request, string $uuid){
+
+		$uuid = (string) Sanitize::input($uuid);
+
+		$selects = [
+			'currencies.code',
+			'recurring_invoices.id',
+			'recurring_invoices.company_id',
+			'recurring_invoices.uuid',
+			'recurring_invoices.payment_gateway',
+			'recurring_invoices.status',
+			'recurring_invoices.total',
+			'recurring_invoices.frequency'
+		];
+
+		$recurring_invoice = $this->gateway_service->fetchRecurringInvoiceByUuid($uuid, $selects);
+
+		if(!$recurring_invoice){
+			die('Invalid request');
+		}
+
+		if((int) $recurring_invoice->status === RecurringInvoiceStatus::ACTIVE->value){
+			$data['recurring_invoice'] = $recurring_invoice->toArray();
+			return $this->showPaymentPageForRecurringInvoice($data);
+		}
+
+		//find cached url from db
+		$url = $this->gateway_service->fetchCachedUrlForRecurringInvoice((int) $recurring_invoice->company_id, (int) $recurring_invoice->id, (int) $recurring_invoice->payment_gateway, (string) $recurring_invoice->total);
+
+		if(!$url){
+			
+			//generate url
+			$url = $this->gateway_service->generateRecurringInvoiceUrl($recurring_invoice->toArray());
+			if(trim($url) === ''){
+				return redirect('/activate-recurring-payment/failure/'.$recurring_invoice->payment_gateway);
+			}
+
+			return redirect($url);
+
+		}
+
+		return redirect($url);
+
+	}
+
 }
