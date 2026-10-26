@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Payment\Gateways\PayPal;
+namespace App\Modules\Payment\Gateways\PayPal\Implementation;
 
 use Srmklive\PayPal\Services\PayPal as Provider;
 
