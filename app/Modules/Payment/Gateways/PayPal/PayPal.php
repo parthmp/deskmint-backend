@@ -13,6 +13,7 @@ use App\Modules\Payment\Exceptions\PaymentException;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 
@@ -247,6 +248,56 @@ class PayPal implements PaymentGatewayInterface{
 	}
 
 	/**
+	 * fetchPendingApproveUrl function
+	 *
+	 * @param string $plan_id
+	 * @param string $gateway_subscription_id
+	 * @return string|null
+	 */
+	private function fetchPendingApproveUrl(string $plan_id, string $gateway_subscription_id): ?string {
+
+		try{
+
+			$plan = $this->provider->showPlanDetails($plan_id);
+
+			if(($plan['status'] ?? null) !== 'ACTIVE'){
+				return null;
+			}
+
+			$sub = $this->provider->showSubscriptionDetails($gateway_subscription_id);
+
+			if(($sub['status'] ?? null) !== 'APPROVAL_PENDING'){
+				return null;
+			}
+
+			$approve = collect($sub['links'] ?? [])->firstWhere('rel', 'approve');
+
+			return $approve['href'] ?? null;
+
+		}catch(\Throwable $e){
+			return null;
+		}
+
+	}
+
+	/**
+	 * insertRecurringInvoiceUrl function
+	 *
+	 * @param string $url
+	 * @return boolean
+	 */
+	private function insertRecurringInvoiceUrl(string $url) : bool {
+		return $this->database_operations->insertRecurringInvoiceUrl([
+			'company_id'				=>	$this->recurring_invoice['company_id'],
+			'recurring_invoice_id'		=>	$this->recurring_invoice['id'],
+			'payment_gateway'			=>	$this->recurring_invoice['payment_gateway'],
+			'total'						=>	$this->recurring_invoice['total'],
+			'currency_id'				=>	$this->recurring_invoice['currency_id'],
+			'url'						=>	$url
+		]);
+	}
+
+	/**
 	 * generateURL function
 	 *
 	 * @return string|null
@@ -259,12 +310,31 @@ class PayPal implements PaymentGatewayInterface{
 				throw new Exception("unable to create url for recurring invoice");
 			}
 
+			$plan = $this->database_operations->fetchSubscriptionPlanByRI((int) $this->recurring_invoice['company_id'], (int) $this->recurring_invoice['id'], (int) $this->recurring_invoice['payment_gateway']);
+			
+
+			if($plan){
+
+				$url_exists = $this->fetchPendingApproveUrl($plan->plan_id, $plan->gateway_subscription_id);
+				
+				if($url_exists){
+
+					$this->insertRecurringInvoiceUrl($url_exists);
+					return $url_exists;
+
+				}
+			}
+			
+
 			$product_id = $this->ensurePaypalProduct();
 
+			//makes api call to paypal
 			$plan_id = $this->createPlan($product_id, $this->recurring_invoice);
+			//makes api call to paypal
 			$sub_data = $this->createSubscription($plan_id);
 
 			$data = [
+				'company_id'				=>	$this->recurring_invoice['company_id'],
 				'recurring_invoice_id'		=>	$this->recurring_invoice['id'],
 				'payment_gateway'			=>	$this->recurring_invoice['payment_gateway'],
 				'gateway_subscription_id'	=>	$sub_data['id'],
@@ -273,18 +343,16 @@ class PayPal implements PaymentGatewayInterface{
 				'customer_id'				=>	'',
 			];
 
-			$this->database_operations->insertSubScriptionPlan($data);
-			$this->database_operations->insertRecurringInvoiceUrl([
-				'company_id'				=>	$this->recurring_invoice['company_id'],
-				'recurring_invoice_id'		=>	$this->recurring_invoice['id'],
-				'payment_gateway'			=>	$this->recurring_invoice['payment_gateway'],
-				'total'						=>	$this->recurring_invoice['total'],
-				'currency_id'				=>	$this->recurring_invoice['currency_id'],
-				'url'						=>	$sub_data['url']
-			]);
-			
-			return $sub_data['url'];
+			return DB::transaction(function () use ($data, $sub_data) {
 
+				$this->database_operations->insertSubScriptionPlan($data);
+
+				$this->insertRecurringInvoiceUrl($sub_data['url']);
+
+				return $sub_data['url'];
+
+			});
+			
 		}else{
 			
 			$transaction_reference = $this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, $this->invoice_id, $this->pr_id);

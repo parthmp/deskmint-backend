@@ -464,6 +464,7 @@ class DatabaseOperations{
 
 		$plan = new SubscriptionPlan();
 		$plan->uuid = Str::uuid()->toString();
+		$plan->company_id = $data['company_id'];
 		$plan->recurring_invoice_id = $data['recurring_invoice_id'];
 		$plan->payment_gateway = $data['payment_gateway'];
 		$plan->gateway_subscription_id = $data['gateway_subscription_id'];
@@ -487,6 +488,18 @@ class DatabaseOperations{
 		
 		return $url->save();
 
+	}
+
+	/**
+	 * fetchSubscriptionPlanByRI function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @param integer $payment_gateway
+	 * @return SubscriptionPlan|null
+	 */
+	public function fetchSubscriptionPlanByRI(int $company_id, int $recurring_invoice_id, int $payment_gateway) : ?SubscriptionPlan {
+		return SubscriptionPlan::where([['company_id', '=', $company_id], ['recurring_invoice_id', '=', $recurring_invoice_id], ['payment_gateway', '=', $payment_gateway]])->orderBy('id', 'desc')->first();
 	}
 
 }

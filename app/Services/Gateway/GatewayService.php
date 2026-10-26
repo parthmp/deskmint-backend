@@ -291,8 +291,7 @@ class GatewayService{
 		$payment_settings['user_id'] = $recurring_invoice['client_id'];
 
 		$payment_gateway_url = $this->generateGatewayUrl((int) $recurring_invoice['payment_gateway'], $payment_settings, true, $recurring_invoice);
-		logger($payment_gateway_url);
-		throw new Exception("stopped");
+		
 		if(!$payment_gateway_url){
 			//send an email to admins to notify the failure.
 			$this->sendUrlGenerationFailedEmail((int) $recurring_invoice['payment_gateway']);
