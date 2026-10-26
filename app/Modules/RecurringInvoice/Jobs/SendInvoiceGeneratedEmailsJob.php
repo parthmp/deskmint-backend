@@ -48,10 +48,10 @@ class SendInvoiceGeneratedEmailsJob implements ShouldQueue {
 			$smtp = $this->smtpSettings();
 
 			$all_settings = $db->fetchSettings((int) $this->company_id);
-			$email_template = $db->fetchInvoiceEmailContentSettings($all_settings);
+			$email_template = $db->fetchRecurringInvoiceEmailContentSettings($all_settings);
 
 			$content_class = new InvoiceEmailContent();
-			$content_class = $content_class->setDisk(INVOICES_DISK)->setInvoiceContent($email_template['email_content_invoice']);
+			$content_class = $content_class->setDisk(INVOICES_DISK)->setSubscription(true)->setInvoiceContent((string) $email_template['recurring_invoice_email_content_invoice']);
 
 			$batched_jobs = [];
 

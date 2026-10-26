@@ -19,7 +19,6 @@ Route::get('/', function () {
 	//return $snapshot->output();
 	//app(NotificationService::class)->notify(1, 'test', 'title here', 'message here', ['whatever']);
 	return 'welcome';
-	//Redis::set('test_one', 'my data');
 });
 
 Route::get('/activate-recurring-payment/{uuid}', [GatewayController::class, 'activateRecurringPayment'])->name('recurring_invoice.activate')->middleware('signed');

@@ -280,7 +280,8 @@ class DB {
 			ISC_INVOICE_TOTAL_FIELDS_TYPE,
 			PAYMENTS_PAYPAL_TYPE,
 			PAYMENTS_STRIPE_TYPE,
-			EmailSettingsContent::INVOICES->value
+			EmailSettingsContent::INVOICES->value,
+			EmailSettingsContent::RECURRING_INVOICES->value
 		])->get()->toArray();
 		
 		return array_values($settings_data);
@@ -726,6 +727,23 @@ class DB {
 		$settings = $this->filterArray(EmailSettingsContent::INVOICES->value, $data);
 		if(!$settings){
 			return $this->getDefaultInvoicesEmailContentSettings();
+		}
+
+		return json_decode($settings['settings_json'], true);
+
+	}
+
+	/**
+	 * fetchRecurringInvoiceEmailContentSettings function
+	 *
+	 * @param array $data
+	 * @return array
+	 */
+	public function fetchRecurringInvoiceEmailContentSettings(array $data) : array {
+
+		$settings = $this->filterArray(EmailSettingsContent::RECURRING_INVOICES->value, $data);
+		if(!$settings){
+			return $this->getDefaultRecurringInvoiceEmailContentSettings();
 		}
 
 		return json_decode($settings['settings_json'], true);

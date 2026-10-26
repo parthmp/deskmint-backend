@@ -168,7 +168,7 @@ class EmailSettingsContentService{
 		}
 
 		if((string) $key === (string) EmailSettingsContent::RECURRING_INVOICES->value){
-			$keys = ['recurring_invoice_email_content'];
+			$keys = ['recurring_invoice_email_content', 'recurring_invoice_email_content_invoice'];
 		}
 
 		if(!$this->validateContent($data, $keys)){

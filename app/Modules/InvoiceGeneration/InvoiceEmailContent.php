@@ -22,6 +22,7 @@ class InvoiceEmailContent {
 	private ?string $alt_client_first_name = null;
 	private ?string $alt_client_last_name = null;
 	private ?string $alt_currency_code = null;
+	private bool $is_subscription = false;
 
 	/**
 	 * setDisk function
@@ -42,6 +43,17 @@ class InvoiceEmailContent {
 	 */
 	public function setInvoice(Invoice $invoice) : self {
 		$this->invoice = $invoice;
+		return $this;
+	}
+
+	/**
+	 * setSubscription function
+	 *
+	 * @param boolean $is_subscription
+	 * @return self
+	 */
+	public function setSubscription(bool $is_subscription) : self {
+		$this->is_subscription = $is_subscription;
 		return $this;
 	}
 
@@ -103,28 +115,34 @@ class InvoiceEmailContent {
 		
 		$payment_gateway_url = '';
 		
-		if((int) $this->invoice->payment_gateway !== PaymentGateway::NONE->value){
+		if((int) $this->invoice->payment_gateway !== PaymentGateway::NONE->value && !$this->is_subscription){
 			$payment_gateway_url = URL::signedRoute('invoice.pay', ['uuid' => $this->invoice->uuid]);
 		}
 		
-
 		$search = [
 			'{$client_first_name}',
 			'{$client_last_name}',
 			'{$invoice_date}',
-			'{$due_date}',
-			'{$invoice_number}',
-			'{$payment_url}'
+			'{$invoice_number}'
 		];
 
+		if(!$this->is_subscription){
+			$search[] = '{$due_date}';
+			$search[] = '{$payment_url}';
+		}
+
+		
 		$replace = [
 			$client_first_name,
 			$client_last_name,
 			General::formatTimezoneDatetime($this->invoice->invoice_date, (string) $this->invoice->timezone, false, false),
-			General::formatTimezoneDatetime($this->invoice->due_date, (string) $this->invoice->timezone, false, false),
-			$this->invoice->invoice_number,
-			$payment_gateway_url
+			$this->invoice->invoice_number
 		];
+
+		if(!$this->is_subscription){
+			$replace[] = General::formatTimezoneDatetime($this->invoice->due_date, (string) $this->invoice->timezone, false, false);
+			$replace[] = $payment_gateway_url;
+		}
 
 		if((int) $this->invoice->payment_gateway === PaymentGateway::NONE->value){
 			$content = $this->replaceBetweenTags($content,  '[{online-payment-start}]', '[{online-payment-end}]', '');
@@ -132,6 +150,7 @@ class InvoiceEmailContent {
 
 		$content = str_ireplace($search, $replace, $content);
 		$content = str_ireplace('{$invoice_total}', $this->invoice->total.' '.$currency, $content);
+		$content = str_ireplace('{$total}', $this->invoice->total.' '.$currency, $content);
 		$content = str_ireplace('{$unpaid_balance}', $this->invoice->balance_due.' '.$currency, $content);
 		$content = str_ireplace('[{online-payment-start}]', '', $content);
 		$content = str_ireplace('[{online-payment-end}]', '', $content);

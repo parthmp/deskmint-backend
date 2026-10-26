@@ -812,6 +812,12 @@ Please click on url to start subscription, frequency is {$frequency} and the tot
 [{online-payment-start}]
 PAYMENT URL BELOW
 {$subscription_url}
+[{online-payment-end}]'),
+'recurring_invoice_email_content_invoice'	=>	trim('Hello {$client_first_name} {$client_last_name},
+your invoice generated #{$invoice_number} , date is :{$invoice_date} total is {$total}
+DEF
+[{online-payment-start}]
+online payment content here
 [{online-payment-end}]')];
 		}
 

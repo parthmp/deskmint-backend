@@ -9,7 +9,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Redis;
 
-#[Signature('deskmint:create-invoices-from-recurring-invoices')]
+#[Signature('deskmint:generate-recurring-invoices')]
 #[Description('Creates invoices from recurring invoices')]
 class CreateInvoicesFromRecurringInvoices extends Command
 {

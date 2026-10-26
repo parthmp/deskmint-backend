@@ -13,8 +13,7 @@ class ParseEmail {
 		'{$client_first_name}'	=>	'first_name',
 		'{$client_last_name}'	=>	'last_name',
 		'{$frequency}'			=>	'frequency',
-		'{$total}'				=>	'total',
-		'{$currency}'			=>	'currency',
+		'{$total}'				=>	'',
 		'{$subscription_url}'	=>	''
 	];
 
@@ -46,6 +45,8 @@ class ParseEmail {
 					$replace = $data['custom_frequency_days'].' days';
 				}
 
+			}else if($key === '{$total}'){
+				$replace = $data['total'].' '.$data['currency'];
 			}else{
 				$replace = $data[$value];
 			}
