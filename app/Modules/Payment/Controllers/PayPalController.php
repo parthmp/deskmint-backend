@@ -13,14 +13,17 @@ use Illuminate\Http\Request;
 
 class PayPalController extends Controller{
 
-	public function __construct(private DatabaseOperations $database_operations){}
-	/*
-		check tomorrow for to make sure it marks invoice as PAID.
-	*/
+	public function __construct(
+		private DatabaseOperations $database_operations
+	){}
+	
+
+
 	public function handlePaymentWebhook(Request $request){
 
 		$data = $request->all();
 
+		
 
 		//try{
 		
@@ -30,7 +33,7 @@ class PayPalController extends Controller{
 			
 			$webhook_data = $settings['webhook_data'];
 			
-			$payment = new Payment(new PayPal(
+			$payment = new PayPal(
 												$webhook_data['company_id'], 
 												$webhook_data['currency_id'],
 												$webhook_data['invoice_id'],
@@ -42,7 +45,7 @@ class PayPalController extends Controller{
 												$settings['settings']['mode'], 
 												$webhook_data['currency_code'],
 												$webhook_data['balance_due'],
-											)
+											
 									);
 			$data['webhook_id'] = $settings['settings']['webhook_id'];
 			$data['order_id'] = $settings['order_id'];
