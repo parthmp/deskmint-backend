@@ -6,6 +6,8 @@ use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\InvoiceGeneration\InvoiceGenerator;
 use App\Modules\InvoiceGeneration\InvoiceSettingsResolver;
 use App\Modules\InvoiceGeneration\InvoiceSnapshot;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -17,6 +19,7 @@ Route::get('/', function () {
 	//return $snapshot->output();
 	//app(NotificationService::class)->notify(1, 'test', 'title here', 'message here', ['whatever']);
 	return 'welcome';
+	//Redis::set('test_one', 'my data');
 });
 
 Route::get('/activate-recurring-payment/{uuid}', [GatewayController::class, 'activateRecurringPayment'])->name('recurring_invoice.activate')->middleware('signed');

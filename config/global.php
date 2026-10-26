@@ -24,4 +24,7 @@
 
 		'invoice_lock_key'			=>	env('INVOICES_LOCK_KEY', 'invoice_lock'),
 		'invoice_lock_seconds'		=>	env('INVOICES_LOCK_SECONDS', 10),
+		'paypal_product_id'			=>	env('PAYPAL_PRODUCT_ID', 'PROD-DESKMINTRECURRING'),
+		'stripe_product_id'			=>	env('STRIPE_PRODUCT_ID', 'deskmint_subscription'),
+
 	];

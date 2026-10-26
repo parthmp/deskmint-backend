@@ -2,6 +2,7 @@
 
 namespace App\Modules\Payment\Gateways\PayPal;
 
+use App\Enums\RecurringInvoices\Frequencies;
 use App\Models\Transaction;
 use App\Modules\InvoiceGeneration\InvoiceSnapshot;
 use App\Modules\Payment\Contracts\PaymentGatewayInterface;
@@ -12,13 +13,15 @@ use App\Modules\Payment\Exceptions\PaymentException;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 
 class PayPal implements PaymentGatewayInterface{
 
 	private DatabaseOperations $database_operations;
 	private PayPalClient $provider;
+	private bool $subscription = false;
+	private ?array $recurring_invoice = null;
 
 	public function __construct(
 		private int $company_id,
@@ -33,11 +36,24 @@ class PayPal implements PaymentGatewayInterface{
 		private ?string $currency,
 		private string $amount,
 		?DatabaseOperations $database_operations = null,
-		?PayPalClient $provider = null
+		?PayPalClient $provider = null,
+		bool $subscription = false
 	){
 		$this->database_operations = $database_operations ?? new DatabaseOperations(new SettingsSectionRepository());
 		$this->provider = $provider ?? new PayPalClient($this->wireUpCreds());
 		$token = $this->provider->getAccessToken();
+		$this->subscription = $subscription;
+	}
+
+	/**
+	 * setRecurringInvoiceData function
+	 *
+	 * @param array|null $recurring_invoice
+	 * @return self
+	 */
+	public function setRecurringInvoiceData(?array $recurring_invoice) : self {
+		$this->recurring_invoice = $recurring_invoice;
+		return $this;
 	}
 
 	/**
@@ -111,28 +127,186 @@ class PayPal implements PaymentGatewayInterface{
 	}
 
 	/**
+	 * ensurePaypalProduct function
+	 *
+	 * @return string
+	 */
+	private function ensurePaypalProduct() : string {
+
+		$id = config('global.paypal_product_id');
+
+		$existing = $this->provider->showProductDetails($id);
+
+		if(isset($existing['id'])){
+			return $existing['id']; // exists, reuse it
+		}
+
+		if(($existing['error']['name'] ?? null) === 'RESOURCE_NOT_FOUND'){
+			$product = $this->provider->createProduct([
+				'id'       => $id,
+				'name'     => 'Recurring Subscription',
+				'type'     => 'SERVICE',
+				'category' => 'SOFTWARE',
+			], 'product-main');
+
+			if(!isset($product['id'])){
+				throw new \RuntimeException('PayPal product create failed: ' . json_encode($product));
+			}
+
+			return $product['id'];
+		}
+
+		throw new \RuntimeException('Unexpected PayPal response: ' . json_encode($existing));
+
+	}
+
+	private function createPlan(string $product_id, array $recurring_invoice) : string {
+
+		$freqency_array = Frequencies::getForPaypalFromValue((int) $recurring_invoice['frequency'], (int) $recurring_invoice['custom_frequency_days']);
+
+		if(empty($freqency_array)){
+			throw new \RuntimeException('Unexpected freqency_array value');
+		}
+
+
+		$plan = $this->provider->createPlan([
+			'product_id' => $product_id,
+			'name'       => 'Subscription Plan',
+			'status'     => 'ACTIVE',
+			'billing_cycles' => [
+				[
+					'frequency'      => $freqency_array,
+					'tenure_type'    => 'REGULAR',
+					'sequence'       => 1,
+					'total_cycles'   => 0,
+					'pricing_scheme' => [
+						'fixed_price' => ['value' => $recurring_invoice['total'], 'currency_code' => $recurring_invoice['code']],
+					],
+				],
+			],
+			'payment_preferences' => [
+				'auto_bill_outstanding'     => true,
+				'setup_fee'                 => ['value' => '0', 'currency_code' => $recurring_invoice['code']],
+				'setup_fee_failure_action'  => 'CONTINUE',
+				'payment_failure_threshold' => 3,
+			],
+		]);
+		
+		$plan_id = $plan['id'];
+		return $plan_id;
+
+	}
+
+	/**
+	 * createSubscription function
+	 *
+	 * @param string $plan_id
+	 * @return array
+	 */
+	private function createSubscription(string $plan_id) : array {
+
+		$response = $this->provider->createSubscription([
+			'plan_id'    => $plan_id,
+			'custom_id'  => (string) $this->recurring_invoice['id'],
+			'subscriber' => [
+				'name' => [
+					'given_name' => $this->recurring_invoice['first_name'],
+					'surname'    => $this->recurring_invoice['last_name'],
+				],
+				'email_address' => $this->recurring_invoice['email'],
+			],
+			'application_context' => [
+				'brand_name'          => config('app.name'),
+				'locale'              => 'en-US',
+				'shipping_preference' => 'NO_SHIPPING',
+				'user_action'         => 'SUBSCRIBE_NOW',
+				'payment_method'      => [
+					'payer_selected'  => 'PAYPAL',
+					'payee_preferred' => 'IMMEDIATE_PAYMENT_REQUIRED',
+				],
+				"cancel_url" => env('APP_URL').PAYMENT_CANCEL_URL,
+				"return_url" => env('APP_URL').PAYMENT_SUCCESS_URL
+			],
+		]);
+
+		if(!isset($response['id'])){
+			throw new \RuntimeException('PayPal subscription create failed: ' . json_encode($response));
+		}
+		
+		$approve_url = collect($response['links'])->firstWhere('rel', 'approve')['href'] ?? null;
+
+		if(!$approve_url){
+			throw new \RuntimeException('No approve link: ' . json_encode($response));
+		}
+
+		return [
+			'url'	=>	$approve_url,
+			'id'	=>	$response['id'],
+		];
+
+	}
+
+	/**
 	 * generateURL function
 	 *
 	 * @return string|null
 	 */
 	public function generateURL() : ?string {
 
-		$transaction_reference = $this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, $this->invoice_id, $this->pr_id);
-		
-		$response = $this->provider->createOrder($this->orderData());
+		if($this->subscription){
 
-		if(isset($response['id']) && $response['id'] != null){
-			foreach($response['links'] as $link) {
-				if($link['rel'] === 'approve'){
-					$transaction = $this->createTransaction($response['id']);
-					$this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, $this->invoice_id, $this->pr_id, (int) $transaction->id, (int) $transaction_reference->id);
-					$this->database_operations->insertEmptyTransactionGatewayDetails($transaction->id);
-					$url = $link['href'];
-					$this->database_operations->insertPaymentUrl($transaction->id, $this->invoice_id, $response['id'], $url);
-					return $url;
+			if(!$this->recurring_invoice){
+				throw new Exception("unable to create url for recurring invoice");
+			}
+
+			$product_id = $this->ensurePaypalProduct();
+
+			$plan_id = $this->createPlan($product_id, $this->recurring_invoice);
+			$sub_data = $this->createSubscription($plan_id);
+
+			$data = [
+				'recurring_invoice_id'		=>	$this->recurring_invoice['id'],
+				'payment_gateway'			=>	$this->recurring_invoice['payment_gateway'],
+				'gateway_subscription_id'	=>	$sub_data['id'],
+				'plan_id'					=>	$plan_id,
+				'payer_id'					=>	'',
+				'customer_id'				=>	'',
+			];
+
+			$this->database_operations->insertSubScriptionPlan($data);
+			$this->database_operations->insertRecurringInvoiceUrl([
+				'company_id'				=>	$this->recurring_invoice['company_id'],
+				'recurring_invoice_id'		=>	$this->recurring_invoice['id'],
+				'payment_gateway'			=>	$this->recurring_invoice['payment_gateway'],
+				'total'						=>	$this->recurring_invoice['total'],
+				'currency_id'				=>	$this->recurring_invoice['currency_id'],
+				'url'						=>	$sub_data['url']
+			]);
+			
+			return $sub_data['url'];
+
+		}else{
+			
+			$transaction_reference = $this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, $this->invoice_id, $this->pr_id);
+		
+			$response = $this->provider->createOrder($this->orderData());
+
+			if(isset($response['id']) && $response['id'] != null){
+				foreach($response['links'] as $link) {
+					if($link['rel'] === 'approve'){
+						$transaction = $this->createTransaction($response['id']);
+						$this->database_operations->upsertTransactionReference((int) $this->company_id, (int) $this->user_id, $this->invoice_id, $this->pr_id, (int) $transaction->id, (int) $transaction_reference->id);
+						$this->database_operations->insertEmptyTransactionGatewayDetails($transaction->id);
+						$url = $link['href'];
+						$this->database_operations->insertPaymentUrl($transaction->id, $this->invoice_id, $response['id'], $url);
+						return $url;
+					}
 				}
 			}
+
 		}
+
+		
 
 		return null;
 		

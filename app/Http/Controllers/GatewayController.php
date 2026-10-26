@@ -220,10 +220,16 @@ class GatewayController extends Controller {
 			'currencies.code',
 			'recurring_invoices.id',
 			'recurring_invoices.company_id',
+			'recurring_invoices.currency_id',
 			'recurring_invoices.uuid',
 			'recurring_invoices.payment_gateway',
 			'recurring_invoices.status',
+			'recurring_invoices.client_id',
 			'recurring_invoices.total',
+			'recurring_invoices.custom_frequency_days',
+			'clients.first_name',
+			'clients.last_name',
+			'clients.email',
 			'recurring_invoices.frequency'
 		];
 
@@ -239,7 +245,7 @@ class GatewayController extends Controller {
 		}
 
 		//find cached url from db
-		$url = $this->gateway_service->fetchCachedUrlForRecurringInvoice((int) $recurring_invoice->company_id, (int) $recurring_invoice->id, (int) $recurring_invoice->payment_gateway, (string) $recurring_invoice->total);
+		$url = $this->gateway_service->fetchCachedUrlForRecurringInvoice((int) $recurring_invoice->company_id, (int) $recurring_invoice->id, (int) $recurring_invoice->payment_gateway, (string) $recurring_invoice->total, (int) $recurring_invoice->currency_id);
 
 		if(!$url){
 			

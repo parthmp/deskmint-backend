@@ -81,4 +81,36 @@ enum Frequencies : int {
 		return self::from($frequency)->label();
 	}
 
+	/**
+	 * getForPaypalFromValue function
+	 *
+	 * @param integer $frequency
+	 * @param integer|null $custom_days
+	 * @return array
+	 */
+	public static function getForPaypalFromValue(int $frequency, ?int $custom_days = null) : array {
+		
+		$freq_array = match(self::from($frequency)) {
+            self::DAILY 		=> ['DAY', 1],
+            self::WEEKLY 		=> ['WEEK', 1],
+            self::BI_WEEKLY 	=> ['WEEK', 2],
+            self::MONTHLY 		=> ['MONTH', 1],
+            self::THREE_MONTHS 	=> ['MONTH', 3],
+            self::SIX_MONTHS 	=> ['MONTH', 6],
+            self::YEARLY 		=> ['YEAR', 1],
+            self::CUSTOM 		=> ['DAY', $custom_days],
+			default				=> []
+        };
+		
+		if(empty($freq_array)){
+			return $freq_array;
+		}
+
+		return [
+			'interval_unit'		=>	$freq_array[0],
+			'interval_count'	=>	$freq_array[1],
+		];
+
+	}
+
 }

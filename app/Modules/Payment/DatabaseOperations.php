@@ -4,6 +4,8 @@ namespace App\Modules\Payment;
 
 use App\Models\Invoice;
 use App\Models\PaymentUrl;
+use App\Models\RecurringInvoiceUrl;
+use App\Models\SubscriptionPlan;
 use App\Models\Transaction;
 use App\Models\TransactionGatewayDetail;
 use App\Models\TransactionReference;
@@ -14,6 +16,7 @@ use App\Repositories\SettingsSection\SettingsSectionRepository;
 use Illuminate\Support\Facades\Log;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
+use Illuminate\Support\Str;
 
 class DatabaseOperations{
 
@@ -449,6 +452,41 @@ class DatabaseOperations{
 	 */
 	public function getTransactionRefById(int $id) : ?TransactionReference {
 		return TransactionReference::where('id', '=', $id)->first();
+	}
+
+	/**
+	 * insertSubScriptionPlan function
+	 *
+	 * @param array $data
+	 * @return boolean
+	 */
+	public function insertSubScriptionPlan(array $data) : bool {
+
+		$plan = new SubscriptionPlan();
+		$plan->uuid = Str::uuid()->toString();
+		$plan->recurring_invoice_id = $data['recurring_invoice_id'];
+		$plan->payment_gateway = $data['payment_gateway'];
+		$plan->gateway_subscription_id = $data['gateway_subscription_id'];
+		$plan->plan_id = $data['plan_id'];
+		$plan->payer_id = $data['payer_id'];
+		$plan->customer_id = $data['customer_id'];
+		return $plan->save();
+
+	}
+
+	public function insertRecurringInvoiceUrl(array $data) : bool {
+
+		$url = new RecurringInvoiceUrl();
+		
+		$url->company_id = $data['company_id'];
+		$url->recurring_invoice_id = $data['recurring_invoice_id'];
+		$url->payment_gateway = $data['payment_gateway'];
+		$url->total = $data['total'];
+		$url->currency_id = $data['currency_id'];
+		$url->url = $data['url'];
+		
+		return $url->save();
+
 	}
 
 }
