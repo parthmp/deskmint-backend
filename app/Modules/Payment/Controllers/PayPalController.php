@@ -6,8 +6,8 @@ use App\Helpers\General;
 use App\Http\Controllers\Controller;
 use App\Modules\Payment\DatabaseOperations;
 use App\Modules\Payment\Exceptions\PaymentException;
+use App\Modules\Payment\Gateways\Payment;
 use App\Modules\Payment\Gateways\PayPal\PayPal;
-use App\Modules\Payment\Payment;
 use Exception;
 use Illuminate\Http\Request;
 
@@ -23,43 +23,10 @@ class PayPalController extends Controller{
 
 		$data = $request->all();
 
-		
+		$data = $this->database_operations->fetchPayPalSettings($data);
 
-		//try{
-		
-			$settings = $this->database_operations->fetchPayPalSettings($data);
-
-			
-			
-			$webhook_data = $settings['webhook_data'];
-			
-			$payment = new PayPal(
-												$webhook_data['company_id'], 
-												$webhook_data['currency_id'],
-												$webhook_data['invoice_id'],
-												$webhook_data['payment_request_id'],
-												$webhook_data['user_id'], //this is user_id
-												$settings['settings']['client_id'], //this is for paypal access data, not user_id or client_id from db.
-												$settings['settings']['app_id'], 
-												decrypt($settings['settings']['secret']), 
-												$settings['settings']['mode'], 
-												$webhook_data['currency_code'],
-												$webhook_data['balance_due'],
-											
-									);
-			$data['webhook_id'] = $settings['settings']['webhook_id'];
-			$data['order_id'] = $settings['order_id'];
-
-			$payment->handlePayment($data, $request);
-
-		// }catch(PaymentException $e){
-		// 	return response($e->getMessage(), $e->getCode());
-
-		// }catch(Exception $e){
-		// 	return General::wentWrong();
-		// }
-
-		
+		$payment = new Payment((int) $data['webhook_data']['company_id']);
+		$payment->paypal((string) $data['webhook_data']['currency_code'])->handleWebhook($request);
 		
 	}
 

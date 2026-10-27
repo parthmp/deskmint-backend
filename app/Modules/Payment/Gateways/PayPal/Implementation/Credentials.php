@@ -10,8 +10,9 @@ class Credentials {
 		private string $paypal_client_id,
 		private string $paypal_app_id,
 		private string $secret,
-		private string $paypal_mode,
-		private string $currency
+		private string $mode,
+		private string $currency,
+		private string $webhook_id
 	){}
 
 
@@ -26,7 +27,7 @@ class Credentials {
 			'currency'			=>	$this->currency,
 			'notify_url'		=>	'',
 			'validate_ssl'		=>	true,
-			'mode'				=>	$this->paypal_mode,
+			'mode'				=>	$this->mode,
 			'locale'			=>	'en_US',
 			'sandbox' => [
 				'client_id'         => $this->paypal_client_id,
@@ -49,6 +50,15 @@ class Credentials {
 	 */
 	public function getProvider() : Provider {
 		return new Provider($this->credsArray());
+	}
+
+	/**
+	 * getWebhookId function
+	 *
+	 * @return string
+	 */
+	public function getWebhookId() : string {
+		return $this->webhook_id;
 	}
 
 }

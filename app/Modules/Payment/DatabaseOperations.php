@@ -9,6 +9,7 @@ use App\Models\SubscriptionPlan;
 use App\Models\Transaction;
 use App\Models\TransactionGatewayDetail;
 use App\Models\TransactionReference;
+use App\Modules\Payment\Enums\PayPalEvents;
 use App\Modules\Payment\Enums\TransactionStatus;
 use App\Modules\Payment\Exceptions\PaymentException;
 use App\Modules\Payment\Traits\UpdateInvoiceForTransaction;
@@ -16,6 +17,7 @@ use App\Repositories\SettingsSection\SettingsSectionRepository;
 use Illuminate\Support\Facades\Log;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class DatabaseOperations{
@@ -73,10 +75,10 @@ class DatabaseOperations{
 		}
 		
 		return match($event_type) {
-			'CHECKOUT.ORDER.APPROVED'   => $data['resource']['id'],
-			'PAYMENT.CAPTURE.COMPLETED' => $data['resource']['supplementary_data']['related_ids']['order_id'],
-			'PAYMENT.CAPTURE.PENDING' 	=> $data['resource']['supplementary_data']['related_ids']['order_id'],
-			default                     => null
+			PayPalEvents::CHECKOUT_APPROVED->value  => $data['resource']['id'],
+			PayPalEvents::PAYMENT_CAPTURED->value   => $data['resource']['supplementary_data']['related_ids']['order_id'],
+			PayPalEvents::PAYMENT_PENDING->value   	=> $data['resource']['supplementary_data']['related_ids']['order_id'],
+			default                     			=> null
 		};
 
 	}
@@ -160,13 +162,13 @@ class DatabaseOperations{
 		}
 		
 
-		$settings = $this->settings_section_repository->fetchSettings((int) $webhook_data['company_id'], PAYMENTS_PAYPAL_TYPE, true);
+		//$settings = $this->settings_section_repository->fetchSettings((int) $webhook_data['company_id'], PAYMENTS_PAYPAL_TYPE, true);
 		
 		return [
 			'order_id'				=>	$order_id,
 			'event_type'			=>	$event_type,
 			'webhook_data'			=>	$webhook_data,
-			'settings'				=>	$settings,
+			//'settings'				=>	$settings,
 			'is_invoice'			=>	($transaction->reference->invoice_id) ? true : false
 		];
 
@@ -227,92 +229,96 @@ class DatabaseOperations{
 	}
 
 	/**
-	 * updatePaymentTransaction function
+	 * fetchTransactionByToken function
+	 *
+	 * @param string $order_id
+	 * @return Transaction
+	 */
+	public function fetchTransactionByToken(string $order_id) : Transaction {
+		return Transaction::where('token_id_identifier', '=', $order_id)->with('reference')->first();
+	}
+
+	/**
+	 * updatePayPalOrderApproved function
+	 *
+	 * @param Transaction $transaction
+	 * @param array $data
+	 * @return boolean
+	 */
+	public function updatePayPalOrderApproved(Transaction $transaction, array $data) : bool {
+
+		$transaction->is_approved = 1;
+		$saved = $transaction->save();
+
+		TransactionGatewayDetail::updateOrCreate(
+			['transaction_id' => $transaction->id],
+			['payment_approved_details' => json_encode($data)]
+		);
+
+		return $saved;
+	}
+
+	/**
+	 * updatePayPalPaymentCaputred function
 	 *
 	 * @param array $data
 	 * @return boolean
 	 */
-	public function updatePaymentTransaction(array $data) : bool {
+	public function updatePayPalPaymentCaputred(Transaction $transaction, array $data) : bool {
 		
-		try {
-			
-			$event_type = $data['event_type'] ?? null;
+		$breakdown = $data['resource']['seller_receivable_breakdown'];
 
-			$order_id = $this->findOrderId($data, $event_type);
+		$gateway_fee = $breakdown['paypal_fee']['value'];         		// 0.94  - PayPal's cut
+		$net_amount = $breakdown['net_amount']['value'];         		// 14.92 - what you actually received
+		
+		$transaction->gateway_fees_amount = $gateway_fee;
+		$transaction->received_amount = $net_amount;
 
-			$transaction = Transaction::where('token_id_identifier', '=', $order_id)->with('reference')->first();
+		$transaction->is_payment_captured = 1;
+		$transaction->status = (int) TransactionStatus::COMPLETED->value;
+		$transaction->paid_at = now();
+		
+		$saved = $transaction->save();
+
+		DB::transaction(function () use ($transaction, $data) {
 			
-			if(!$transaction){
-				Log::error('Payment update failed $transaction was null');
-				throw new PaymentException('failed to update database', 'db_failed', config('global.error_code'));
+			TransactionGatewayDetail::updateOrCreate(
+				['transaction_id' => $transaction->id],
+				['payment_captured_details' => json_encode($data)]
+			);
+			
+			$this->updateAndApplyPayment($transaction);
+			
+			if($transaction->reference->invoice_id){
+				$this->updateInvoiceSnapshot((int) $transaction->reference->invoice_id);
 			}
-			
-			$saved = false;
+		});
 
-			if($event_type === 'CHECKOUT.ORDER.APPROVED'){
+		return $saved;
+
+	}
+
+	/**
+	 * updatePayPalPending function
+	 *
+	 * @param Transaction $transaction
+	 * @param array $data
+	 * @return boolean
+	 */
+	public function updatePayPalPending(Transaction $transaction, array $data) : bool {
+
+		$transaction->is_echeck = ($data['resource']['status_details']['reason'] === 'ECHECK') ? 1 : 0;
 				
-				$transaction->is_approved = 1;
-				$saved = $transaction->save();
+		$transaction->status = (int) TransactionStatus::PENDING->value;
 
-				TransactionGatewayDetail::updateOrCreate(
-					['transaction_id' => $transaction->id],
-					['payment_approved_details' => json_encode($data)]
-				);
+		$saved = $transaction->save();
 
+		TransactionGatewayDetail::updateOrCreate(
+			['transaction_id' => $transaction->id],
+			['echeck_pending_details' => ($data['resource']['status_details']['reason'] === 'ECHECK') ? json_encode($data) : null]
+		);
 
-			}else if($event_type === 'PAYMENT.CAPTURE.COMPLETED'){
-
-				
-				$breakdown = $data['resource']['seller_receivable_breakdown'];
-
-				$gateway_fee  = $breakdown['paypal_fee']['value'];         		// 0.94  - PayPal's cut
-				$net_amount   = $breakdown['net_amount']['value'];         		// 14.92 - what you actually received
-				
-				$transaction->gateway_fees_amount = $gateway_fee;
-				$transaction->received_amount = $net_amount;
-
-				$transaction->is_payment_captured = 1;
-				$transaction->status = (int) TransactionStatus::COMPLETED->value;
-				$transaction->paid_at = now();
-				
-				$saved = $transaction->save();
-				
-				TransactionGatewayDetail::updateOrCreate(
-					['transaction_id' => $transaction->id],
-					['payment_captured_details' => json_encode($data)]
-				);
-				
-				$this->updateAndApplyPayment($transaction);
-				
-				if($transaction->reference->invoice_id){
-					$this->updateInvoiceSnapshot((int) $transaction->reference->invoice_id);
-				}
-				
-
-			}else if($event_type === 'PAYMENT.CAPTURE.PENDING'){
-
-				$transaction->is_echeck = ($data['resource']['status_details']['reason'] === 'ECHECK') ? 1 : 0;
-				
-				$transaction->status = (int) TransactionStatus::PENDING->value;
-
-				$saved = $transaction->save();
-
-				TransactionGatewayDetail::updateOrCreate(
-					['transaction_id' => $transaction->id],
-					['echeck_pending_details' => ($data['resource']['status_details']['reason'] === 'ECHECK') ? json_encode($data) : null]
-				);
-
-			}
-
-			return $saved;
-
-		}catch(\Exception $e){
-
-			Log::error('Payment update failed', ['error' => $e->getMessage()]);
-
-			return false;
-
-		}
+		return $saved;
 
 	}
 
@@ -475,6 +481,12 @@ class DatabaseOperations{
 
 	}
 
+	/**
+	 * insertRecurringInvoiceUrl function
+	 *
+	 * @param array $data
+	 * @return boolean
+	 */
 	public function insertRecurringInvoiceUrl(array $data) : bool {
 
 		$url = new RecurringInvoiceUrl();

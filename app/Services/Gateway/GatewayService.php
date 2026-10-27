@@ -8,7 +8,10 @@ use App\Models\PaymentRequest;
 use App\Models\RecurringInvoice;
 use App\Models\Transaction;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
+use App\Modules\Payment\DTO\InvoiceRequestData;
 use App\Modules\Payment\Enums\PaymentGateway;
+use App\Modules\Payment\Gateways\Payment as GatewaysPayment;
+use App\Modules\Payment\Gateways\PayPal\Implementation\Order;
 use App\Modules\Payment\Gateways\PayPal\PayPal;
 use App\Modules\Payment\Gateways\Stripe\Stripe;
 use App\Modules\Payment\Payment;
@@ -41,16 +44,22 @@ class GatewayService{
 	 *
 	 * @param integer $payment_gateway
 	 * @param array $data
-	 * @param boolean $subscription
+	 * @param boolean $payment_request
 	 * @return string|null
 	 */
-	private function generateGatewayUrl(int $payment_gateway, array $data, bool $subscription = false, ?array $recurring_invoice = null) : ?string {
+	private function generateGatewayUrl(int $payment_gateway, array $data, bool $payment_request = false, ?array $recurring_invoice = null) : ?string {
+
+		$payment = new GatewaysPayment((int) $data['company_id']);
 
 		if((int) $payment_gateway === PaymentGateway::PAYPAL->value){
 
-			$gateway = new PayPal($data['company_id'], $data['currency_id'], $data['invoice_id'], $data['pr_id'], $data['user_id'], $data['client_id'], $data['app_id'], $data['secret'], $data['mode'], $data['currency'], (string) $data['amount'], null, null, $subscription);
-
-			$gateway = $gateway->setRecurringInvoiceData($recurring_invoice);
+			$mode = $payment->getPayPalMode();
+			
+			$order = new Order((string) $data['currency'], (string) $data['amount']);
+			$context = new InvoiceRequestData((int) $data['currency_id'], (int) $data['company_id'], (string) $data['amount'], $mode, $data['payment_request_id'], $data['invoice_id'], (int) $data['client_id']); /** client_id is from db not paypal client id */
+			$gateway_data = $payment->paypal((string) $data['currency'])->setContext($context)->createOrder($order)->getInvoiceOrRequestData($payment_request);
+			
+			return $gateway_data['invoice_or_request_payment_url'];
 
 		}else if((int) $payment_gateway === PaymentGateway::STRIPE->value){
 			$gateway = new Stripe($data['company_id'], $data['currency_id'], $data['invoice_id'], $data['pr_id'], $data['user_id'], $data['secret'], $data['currency'], (string) $data['amount']);
@@ -58,21 +67,8 @@ class GatewayService{
 			return null;
 		}
 
-		$payment = new Payment($gateway);
-		return $payment->paymentURL();
-
-		// $payment = match($payment_gateway){
-
-		// 	PaymentGateway::PAYPAL->value 	=> new Payment(),
-		// 	PaymentGateway::STRIPE->value 	=> new Payment(new Stripe($data['company_id'], $data['currency_id'], $data['invoice_id'], $data['pr_id'], $data['user_id'], $data['secret'], $data['currency'], (string) $data['amount'])),
-		// 	default			=>	null
-		// };
-		
-		// if(!$payment){
-		// 	return null;
-		// }
-
-		// return $payment->paymentURL();
+		//temp
+		return '';
 
 	}
 
@@ -120,33 +116,25 @@ class GatewayService{
 	public function generatePaymentUrl(Invoice|PaymentRequest $object) : ?string {
 
 		if((int) $object->payment_gateway !== PaymentGateway::NONE->value){
+
 			$is_invoice = true;
+			$is_payment_request = false;
 			$payment_gateway_url = '';
-			if($object instanceof Invoice){
-				$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId($object->company_id)->setInvoiceId($object->id)->execRequiredSettings();
-			}else{
+
+			if(!($object instanceof Invoice)){
 				$is_invoice = false;
-				$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId($object->company_id)->execRequiredSettings();
-			}
-			
-			$payment_settings = $this->invoice_db_operations->fetchPaymentSettings((int) $object->payment_gateway);
-			
-			if(!$payment_settings){
-				logger('something went wrong with payment settings data -> '.json_encode($payment_settings));
-				throw new Exception("something went wrong");
+				$is_payment_request = true;
 			}
 
-			$payment_settings = json_decode($payment_settings['settings_json'], true);
-			$payment_settings['currency'] = $object->currency->code;
-			$payment_settings['amount'] = ($is_invoice) ? $object->balance_due : $object->amount;
-			$payment_settings['secret'] = decrypt($payment_settings['secret']);
-			$payment_settings['invoice_id'] = ($is_invoice) ? $object->id : null;
-			$payment_settings['pr_id'] = (!$is_invoice) ? $object->id : null;
-			$payment_settings['company_id'] = $object->company_id;
-			$payment_settings['currency_id'] = $object->currency_id;
-			$payment_settings['user_id'] = $object->client_id;
+			$data['currency'] = $object->currency->code;
+			$data['amount'] = ($is_invoice) ? $object->balance_due : $object->amount;
+			$data['invoice_id'] = ($is_invoice) ? $object->id : null;
+			$data['payment_request_id'] = (!$is_invoice) ? $object->id : null;
+			$data['company_id'] = $object->company_id;
+			$data['currency_id'] = $object->currency_id;
+			$data['client_id'] = $object->client_id;
 
-			$payment_gateway_url = $this->generateGatewayUrl((int) $object->payment_gateway, $payment_settings);
+			$payment_gateway_url = $this->generateGatewayUrl((int) $object->payment_gateway, $data, $is_payment_request);
 
 			if(!$payment_gateway_url){
 				//send an email to admins to notify the failure.
