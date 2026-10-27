@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Modules\Payment\DTO;
+namespace App\Modules\Payment\Gateways\PayPal\DTO;
 
 use App\Models\RecurringInvoice;
 use App\Modules\Payment\Contracts\GenericDTO;
 use Override;
 
-class PayPalSubscriptionData implements GenericDTO {
+class SubscriptionData implements GenericDTO {
 
 	public function __construct(
 		public RecurringInvoice $recurring_invoice 

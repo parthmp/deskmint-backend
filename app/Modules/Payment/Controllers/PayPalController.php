@@ -23,10 +23,10 @@ class PayPalController extends Controller{
 
 		$data = $request->all();
 
-		$data = $this->database_operations->fetchPayPalSettings($data);
+		$settings_data = $this->database_operations->fetchPayPalSettings($data);
 
-		$payment = new Payment((int) $data['webhook_data']['company_id']);
-		$payment->paypal((string) $data['webhook_data']['currency_code'])->handleWebhook($request);
+		$payment = new Payment((int) $settings_data['webhook_data']['company_id']);
+		$payment->paypal((string) $settings_data['webhook_data']['currency_code'])->handleWebhook($request, $settings_data);
 		
 	}
 

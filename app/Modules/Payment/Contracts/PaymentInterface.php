@@ -12,6 +12,6 @@ interface PaymentInterface {
 	
 	public function getSubscriptionUrl() : string;
 
-	public function handleWebhook(Request $request) : bool;
+	public function handleWebhook(Request $request, array $settings_data) : bool;
 
 }

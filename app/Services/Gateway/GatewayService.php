@@ -6,20 +6,17 @@ use App\Jobs\SendEmailJob;
 use App\Models\Invoice;
 use App\Models\PaymentRequest;
 use App\Models\RecurringInvoice;
-use App\Models\Transaction;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
-use App\Modules\Payment\DTO\InvoiceRequestData;
-use App\Modules\Payment\DTO\PayPalSubscriptionData;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Gateways\Payment as GatewaysPayment;
+use App\Modules\Payment\Gateways\PayPal\DTO\InvoiceRequestData;
+use App\Modules\Payment\Gateways\PayPal\DTO\SubscriptionData;
 use App\Modules\Payment\Gateways\PayPal\Implementation\Order;
-use App\Modules\Payment\Gateways\PayPal\PayPal;
+use App\Modules\Payment\Gateways\Stripe\DTO\InvoiceRequestData as StripeInvoiceRequestData;
 use App\Modules\Payment\Gateways\Stripe\Stripe;
-use App\Modules\Payment\Payment;
 use App\Repositories\Gateway\GatewayRepository;
 use App\Traits\CustomMailSettings;
 use Brick\Math\BigDecimal;
-use Exception;
 
 class GatewayService{
 
@@ -63,13 +60,15 @@ class GatewayService{
 			return $gateway_data['invoice_or_request_payment_url'];
 
 		}else if((int) $payment_gateway === PaymentGateway::STRIPE->value){
-			$gateway = new Stripe($data['company_id'], $data['currency_id'], $data['invoice_id'], $data['pr_id'], $data['user_id'], $data['secret'], $data['currency'], (string) $data['amount']);
-		}else{
-			return null;
+
+			$context = new StripeInvoiceRequestData((string) $data['currency'], (int) $data['company_id'], (int) $data['currency_id'], (string) $data['amount'], $data['payment_request_id'], $data['invoice_id'], $data['invoice_number'], (int) $data['client_id']);
+			$gateway_data = $payment->stripe()->setContext($context)->getInvoiceOrRequestData($payment_request);
+
+			return $gateway_data['invoice_or_request_payment_url'];
+
 		}
 
-		//temp
-		return '';
+		return null;
 
 	}
 
@@ -85,7 +84,7 @@ class GatewayService{
 
 		if((int) $recurring_invoice->payment_gateway === PaymentGateway::PAYPAL->value){
 
-			$context = new PayPalSubscriptionData($recurring_invoice);
+			$context = new SubscriptionData($recurring_invoice);
 
 			return $payment->paypal((string) $recurring_invoice->code)->setContext($context)->getSubscriptionUrl();
 
@@ -154,6 +153,7 @@ class GatewayService{
 			$data['currency'] = $object->currency->code;
 			$data['amount'] = ($is_invoice) ? $object->balance_due : $object->amount;
 			$data['invoice_id'] = ($is_invoice) ? $object->id : null;
+			$data['invoice_number'] = ($is_invoice) ? $object->invoice_number : null;
 			$data['payment_request_id'] = (!$is_invoice) ? $object->id : null;
 			$data['company_id'] = $object->company_id;
 			$data['currency_id'] = $object->currency_id;

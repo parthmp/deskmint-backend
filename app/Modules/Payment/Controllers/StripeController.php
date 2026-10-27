@@ -5,8 +5,7 @@ namespace App\Modules\Payment\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Payment\DatabaseOperations;
 use App\Modules\Payment\Exceptions\PaymentException;
-use App\Modules\Payment\Gateways\Stripe\Stripe;
-use App\Modules\Payment\Payment;
+use App\Modules\Payment\Gateways\Payment;
 use Exception;
 use Illuminate\Http\Request;
 
@@ -16,27 +15,18 @@ class StripeController extends Controller{
 
 	public function handlePaymentWebhook(Request $request){
 		
-		$data = $request->all();
-		
 		try{
-			
-			$settings = $this->database_operations->fetchStripeSettings($data);
-			
-			$webhook_data = $settings['webhook_data'];
-			
-			$stripe_object = new Stripe($webhook_data['company_id'], $webhook_data['currency_id'], $webhook_data['invoice_id'], $webhook_data['payment_request_id'],$webhook_data['user_id'], decrypt($settings['settings']['secret']), $webhook_data['currency_code'], $webhook_data['balance_due']);
-			$stripe_object->setWebhookSecret(decrypt($settings['settings']['webhook_secret']));
-			
-			$payment = new Payment($stripe_object);
 
-			$data['order_id'] = $settings['order_id'];
+			$data = $request->all();
+				
+			$settings_data = $this->database_operations->fetchStripeSettings($data);
 			
-			$payment->handlePayment($data, $request);
-
-			return response('ok', 200);
-
+			$payment = new Payment((int) $settings_data['webhook_data']['company_id']);
+			
+			$payment->stripe()->handleWebhook($request, $settings_data);
+			
 		}catch(PaymentException $e){
-
+			
 			if($e->getValidity() === 'unsupported_event'){
 				return response('ok', 200);
 			}

@@ -432,13 +432,14 @@ class PayPal implements PaymentInterface {
 	 * handleWebhook function
 	 *
 	 * @param Request $request
-	 * @return bool
+	 * @param array $settings_data
+	 * @return boolean
 	 */
-	public function handleWebhook(Request $request) : bool {
+	public function handleWebhook(Request $request, array $settings_data) : bool {
 
 		$request_data = $request->all();
 
-		$data = $this->db->fetchPayPalSettings($request_data);
+		$data = $settings_data;
 
 		if(!$this->verifyAuthenticity($request, $this->webhook_id)){
 			logger("unauthorized request made -> \n".json_encode($request_data));

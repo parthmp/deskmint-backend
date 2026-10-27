@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Payment\DTO;
+namespace App\Modules\Payment\Gateways\PayPal\DTO;
 
 use App\Modules\Payment\Contracts\GenericDTO;
 use Override;
