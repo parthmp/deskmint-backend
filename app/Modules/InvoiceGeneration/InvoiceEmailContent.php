@@ -115,7 +115,7 @@ class InvoiceEmailContent {
 		
 		$payment_gateway_url = '';
 		
-		if((int) $this->invoice->payment_gateway !== PaymentGateway::NONE->value && !$this->is_subscription){
+		if((int) $this->invoice->payment_gateway !== PaymentGateway::NONE->value && !$this->is_subscription && (int) $this->invoice->status !== InvoiceStatus::PAID->value && (int) $this->invoice->status !== InvoiceStatus::CANCELLED->value){
 			$payment_gateway_url = URL::signedRoute('invoice.pay', ['uuid' => $this->invoice->uuid]);
 		}
 		
@@ -139,10 +139,17 @@ class InvoiceEmailContent {
 			$this->invoice->invoice_number
 		];
 
+		if((int) $this->invoice->status === InvoiceStatus::PAID->value){
+			$payment_gateway_url = 'This invoice already been paid.';
+		}
+
+
 		if(!$this->is_subscription){
 			$replace[] = General::formatTimezoneDatetime($this->invoice->due_date, (string) $this->invoice->timezone, false, false);
 			$replace[] = $payment_gateway_url;
 		}
+
+		
 
 		if((int) $this->invoice->payment_gateway === PaymentGateway::NONE->value){
 			$content = $this->replaceBetweenTags($content,  '[{online-payment-start}]', '[{online-payment-end}]', '');
