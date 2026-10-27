@@ -9,7 +9,6 @@ use Override;
 class PayPalSubscriptionData implements GenericDTO {
 
 	public function __construct(
-		public string $product_id,
 		public RecurringInvoice $recurring_invoice 
 	){}
 
@@ -17,7 +16,6 @@ class PayPalSubscriptionData implements GenericDTO {
 	public function getData(): array
 	{
 		return [
-			'product_id'		=>	$this->product_id,
 			'recurring_invoice'	=>	$this->recurring_invoice
 		];
 	}

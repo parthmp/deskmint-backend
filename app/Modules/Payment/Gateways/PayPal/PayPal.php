@@ -384,9 +384,7 @@ class PayPal implements PaymentInterface {
 
 		$data = $this->dto->getData();
 		$recurring_invoice = $data['recurring_invoice']->toArray();
-
-		$product_id = $data['product_id'];
-
+		
 		$plan = $this->db->fetchSubscriptionPlanByRI((int) $recurring_invoice['company_id'], (int) $recurring_invoice['id'], (int) $recurring_invoice['payment_gateway']);
 
 		if($plan){

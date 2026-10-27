@@ -9,6 +9,7 @@ use App\Models\RecurringInvoice;
 use App\Models\Transaction;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\Payment\DTO\InvoiceRequestData;
+use App\Modules\Payment\DTO\PayPalSubscriptionData;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Gateways\Payment as GatewaysPayment;
 use App\Modules\Payment\Gateways\PayPal\Implementation\Order;
@@ -47,7 +48,7 @@ class GatewayService{
 	 * @param boolean $payment_request
 	 * @return string|null
 	 */
-	private function generateGatewayUrl(int $payment_gateway, array $data, bool $payment_request = false, ?array $recurring_invoice = null) : ?string {
+	private function generateGatewayUrl(int $payment_gateway, array $data, bool $payment_request = false) : ?string {
 
 		$payment = new GatewaysPayment((int) $data['company_id']);
 
@@ -69,6 +70,30 @@ class GatewayService{
 
 		//temp
 		return '';
+
+	}
+
+	/**
+	 * generateSubscriptionUrl function
+	 *
+	 * @param RecurringInvoice $recurring_invoice
+	 * @return string|null
+	 */
+	private function generateSubscriptionUrl(RecurringInvoice $recurring_invoice) : ?string {
+
+		$payment = new GatewaysPayment((int) $recurring_invoice->company_id);
+
+		if((int) $recurring_invoice->payment_gateway === PaymentGateway::PAYPAL->value){
+
+			$context = new PayPalSubscriptionData($recurring_invoice);
+
+			return $payment->paypal((string) $recurring_invoice->code)->setContext($context)->getSubscriptionUrl();
+
+		}else if((int) $recurring_invoice->payment_gateway === PaymentGateway::STRIPE->value){
+			//add for stripe here.
+		}
+
+		return null;
 
 	}
 
@@ -259,26 +284,12 @@ class GatewayService{
 	/**
 	 * generateRecurringInvoiceUrl function
 	 *
-	 * @param array $recurring_invoice
+	 * @param RecurringInvoice $recurring_invoice
 	 * @return string
 	 */
-	public function generateRecurringInvoiceUrl(array $recurring_invoice) : string {
+	public function generateRecurringInvoiceUrl(RecurringInvoice $recurring_invoice) : string {
 		
-
-		$this->invoice_db_operations = $this->invoice_db_operations->setCompanyId((int) $recurring_invoice['company_id'])->execRequiredSettings();
-		$payment_settings = $this->invoice_db_operations->fetchPaymentSettings((int) $recurring_invoice['payment_gateway']);
-
-		$payment_settings = json_decode($payment_settings['settings_json'], true);
-		$payment_settings['currency'] = $recurring_invoice['code'];
-		$payment_settings['amount'] = $recurring_invoice['total'];
-		$payment_settings['secret'] = decrypt($payment_settings['secret']);
-		$payment_settings['invoice_id'] = null;
-		$payment_settings['pr_id'] = null;
-		$payment_settings['company_id'] = $recurring_invoice['company_id'];
-		$payment_settings['currency_id'] = $recurring_invoice['currency_id'];
-		$payment_settings['user_id'] = $recurring_invoice['client_id'];
-
-		$payment_gateway_url = $this->generateGatewayUrl((int) $recurring_invoice['payment_gateway'], $payment_settings, true, $recurring_invoice);
+		$payment_gateway_url = $this->generateSubscriptionUrl($recurring_invoice);
 		
 		if(!$payment_gateway_url){
 			//send an email to admins to notify the failure.

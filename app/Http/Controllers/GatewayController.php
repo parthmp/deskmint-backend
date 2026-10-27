@@ -250,7 +250,7 @@ class GatewayController extends Controller {
 		if(!$url){
 			
 			//generate url
-			$url = $this->gateway_service->generateRecurringInvoiceUrl($recurring_invoice->toArray());
+			$url = $this->gateway_service->generateRecurringInvoiceUrl($recurring_invoice);
 			if(trim($url) === ''){
 				return redirect('/activate-recurring-payment/failure/'.$recurring_invoice->payment_gateway);
 			}
