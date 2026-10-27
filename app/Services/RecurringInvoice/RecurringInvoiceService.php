@@ -163,6 +163,11 @@ class RecurringInvoiceService {
 		// 	$status = RecurringInvoiceStatus::SENT->value;
 		// }
 
+		if((int) $payment_gateway !== PaymentGateway::NONE->value){
+			$mark_invoices_paid = 1;
+		}
+		
+
 		$all_settings = $this->db->fetchSettings($company_id);
 
 		$snapshot_data['general_settings'] = $this->db->fetchGeneralSettings($all_settings);

@@ -13,6 +13,7 @@ use App\Modules\Payment\Contracts\PaymentInterface;
 use App\Modules\Payment\Enums\PayPalEvents;
 use App\Modules\Payment\Gateways\PayPal\Implementation\Credentials;
 use App\Modules\Payment\Gateways\PayPal\Implementation\Order;
+use App\Modules\RecurringInvoice\RecurringInvoice;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -429,6 +430,27 @@ class PayPal implements PaymentInterface {
 	}
 	
 	/**
+	 * subscriptionSaleMade function
+	 *
+	 * @param array $request_data
+	 * @return boolean
+	 */
+	private function subscriptionSaleMade(array $request_data) : bool {
+
+		$recurring_invoice_id = $this->db->getRecurringInvoiceId($request_data);
+
+		if(!$recurring_invoice_id){
+			return false;
+		}
+		$recurring_invoice = $this->db->fetchRecurringInvoice((int) $recurring_invoice_id);
+		$recurring_invoice_module = app(RecurringInvoice::class);
+		$recurring_invoice_module->setCompanyId((int) $recurring_invoice->company_id)->setRecurringInvoiceIds([$recurring_invoice->id])->executeActions(false, true);
+
+		return true;
+		
+	}
+
+	/**
 	 * handleWebhook function
 	 *
 	 * @param Request $request
@@ -451,6 +473,11 @@ class PayPal implements PaymentInterface {
 		if(!in_array((string) $event_type, PayPalEvents::getAll())){
 			logger("event type ".$event_type." is not added in the application");
 			return false;
+		}
+
+		if((string) $event_type === PayPalEvents::SALE_COMPLETED->value){
+			//TODO: make sure you don't have duplicates. (idempotency)
+			return $this->subscriptionSaleMade($request_data);
 		}
 
 		try{

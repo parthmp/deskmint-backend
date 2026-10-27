@@ -4,6 +4,7 @@ namespace App\Modules\Payment;
 
 use App\Models\Invoice;
 use App\Models\PaymentUrl;
+use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceUrl;
 use App\Models\SubscriptionPlan;
 use App\Models\Transaction;
@@ -512,6 +513,48 @@ class DatabaseOperations{
 	 */
 	public function fetchSubscriptionPlanByRI(int $company_id, int $recurring_invoice_id, int $payment_gateway) : ?SubscriptionPlan {
 		return SubscriptionPlan::where([['company_id', '=', $company_id], ['recurring_invoice_id', '=', $recurring_invoice_id], ['payment_gateway', '=', $payment_gateway]])->orderBy('id', 'desc')->first();
+	}
+
+	/**
+	 * fetchRecurringInvoice function
+	 *
+	 * @param integer $id
+	 * @param array $selects
+	 * @return RecurringInvoice|null
+	 */
+	public function fetchRecurringInvoice(int $id, array $selects = ['*']) : ?RecurringInvoice {
+		return RecurringInvoice::select(...$selects)->join('currencies', 'currencies.id', '=', 'recurring_invoices.currency_id')->where('recurring_invoices.id', '=', $id)->first();
+	}
+
+	/**
+	 * getRecurringInvoiceId function
+	 *
+	 * @param array $request_data
+	 * @return integer|null
+	 */
+	public function getRecurringInvoiceId(array $request_data) : ?int {
+		
+		$event_type = $request_data['event_type'] ?? null;
+		if((string) $event_type === PayPalEvents::SALE_COMPLETED->value){
+			if(isset($request_data['resource']['custom'])){
+				return (int) $request_data['resource']['custom'];
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * fetchPayPalSettingsForSubscriptions function
+	 *
+	 * @param array $request_data
+	 * @return array
+	 */
+	public function fetchPayPalSettingsForSubscriptions(array $request_data) : array {
+		logger('show custom');
+		logger($request_data['resource']['custom']);
+		$id = $this->getRecurringInvoiceId($request_data);
+		return $this->fetchRecurringInvoice((int) $id)->toArray();
 	}
 
 }
