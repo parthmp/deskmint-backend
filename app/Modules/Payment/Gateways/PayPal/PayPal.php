@@ -5,6 +5,7 @@ namespace App\Modules\Payment\Gateways\PayPal;
 use App\Enums\RecurringInvoices\Frequencies;
 use App\Exceptions\PaymentException;
 use App\Models\Transaction;
+use App\Models\TransactionGatewayDetail;
 use App\Modules\Payment\DatabaseOperations;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Enums\TransactionStatus;
@@ -14,6 +15,8 @@ use App\Modules\Payment\Enums\PayPalEvents;
 use App\Modules\Payment\Gateways\PayPal\Implementation\Credentials;
 use App\Modules\Payment\Gateways\PayPal\Implementation\Order;
 use App\Modules\RecurringInvoice\RecurringInvoice;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -91,9 +94,10 @@ class PayPal implements PaymentInterface {
 	 *
 	 * @param string $order_id
 	 * @param array $data
+	 * @param int $status
 	 * @return Transaction
 	 */
-	private function createTransaction(string $order_id, array $data) : Transaction {
+	private function createTransaction(string $order_id, array $data, int $status = TransactionStatus::PENDING->value) : Transaction {
 		return $this->db->insertTransaction([
 			'currency_id'					=>	(int) $data['currency_id'],
 			'company_id'					=>	(int) $data['company_id'],
@@ -103,7 +107,7 @@ class PayPal implements PaymentInterface {
 			'token_id_identifier'			=>	(string) $order_id,
 			'is_approved'					=>	0,
 			'is_payment_captured'			=>	0,
-			'status'						=>	(int) TransactionStatus::PENDING->value
+			'status'						=>	$status
 		]);
 	}
 
@@ -335,6 +339,8 @@ class PayPal implements PaymentInterface {
 	 */
 	private function createSubscription(string $plan_id, array $recurring_invoice) : array {
 
+
+
 		$response = $this->provider->createSubscription([
 			'plan_id'    => $plan_id,
 			'custom_id'  => (string) $recurring_invoice['id'],
@@ -404,6 +410,7 @@ class PayPal implements PaymentInterface {
 
 		//makes api call to paypal
 		$plan_id = $this->createPlan($product_id, $recurring_invoice);
+
 		//makes api call to paypal
 		$sub_data = $this->createSubscription($plan_id, $recurring_invoice);
 
@@ -433,18 +440,59 @@ class PayPal implements PaymentInterface {
 	 * subscriptionSaleMade function
 	 *
 	 * @param array $request_data
+	 * @param array $settings_data
 	 * @return boolean
 	 */
-	private function subscriptionSaleMade(array $request_data) : bool {
+	private function subscriptionSaleMade(array $request_data, array $settings_data) : bool {
 
-		$recurring_invoice_id = $this->db->getRecurringInvoiceId($request_data);
-
-		if(!$recurring_invoice_id){
+		if(strtolower($request_data['resource']['state']) !== 'completed'){
 			return false;
 		}
-		$recurring_invoice = $this->db->fetchRecurringInvoice((int) $recurring_invoice_id);
+
+		$recurring_invoice_data = $settings_data['webhook_data'];	
+		$settings = $settings_data['settings'];	
+
+		$order_id = $request_data['resource']['id'] ?? null;
+		if(!$order_id){
+			throw new PaymentException("invalid order id");
+		}
+
+		$completed_transaction = $this->db->fetchCompletedTransaction((int) $recurring_invoice_data['company_id'], (string) $order_id);
+		if($completed_transaction){
+			return true;
+		}
+
+		$gateway_fees = $request_data['resource']['transaction_fee']['value'];
+		$received = BigDecimal::of($recurring_invoice_data['total'])->minus(BigDecimal::of($gateway_fees))->toScale(2, RoundingMode::HalfUp)->__toString();
+		
+		$transaction = $this->db->createTransactionForRecurringSale([
+			'currency_id'				=>	(int) $recurring_invoice_data['currency_id'],
+			'company_id'				=>	(int) $recurring_invoice_data['company_id'],
+			'amount'					=>	(string) $recurring_invoice_data['total'],
+			'refunded_amount'			=>	0,
+			'gateway_fees_amount'		=>	$gateway_fees,
+			'received_amount'			=>	$received,
+			'payment_gateway'			=>	PaymentGateway::PAYPAL->value,
+			'mode'						=>	$settings['mode'],
+			'token_id_identifier'		=>	$order_id,
+			'is_approved'				=>	1,
+			'is_payment_captured'		=>	1,
+			'status'					=>	TransactionStatus::COMPLETED->value,
+			'is_echeck'					=>	0,
+			'paid_at'					=>	now(),
+			'created_at'				=>	now(),
+			'updated_at'				=>	now()
+		]);
+
+		$this->db->upsertTransactionGatewayDetails((int) $transaction->id, 'subscription_sale_deails', $request_data);
+
 		$recurring_invoice_module = app(RecurringInvoice::class);
-		$recurring_invoice_module->setCompanyId((int) $recurring_invoice->company_id)->setRecurringInvoiceIds([$recurring_invoice->id])->executeActions(false, true);
+		$recurring_invoice_module->setCompanyId((int) $recurring_invoice_data['company_id'])->setRecurringInvoiceIds([$recurring_invoice_data['id']])->setOnlineTransactionData([
+			[
+				'recurring_invoice_id'	=>	$recurring_invoice_data['id'],
+				'transaction_id'		=>	$transaction->id,
+			]
+		])->executeActions(false, true);
 
 		return true;
 		
@@ -474,50 +522,59 @@ class PayPal implements PaymentInterface {
 		}
 
 		//sub start
-		// if((string) $event_type === PayPalEvents::SALE_COMPLETED->value){
-		// 	//TODO: make sure you don't have duplicates. (idempotency)
-		// 	return $this->subscriptionSaleMade($request_data);
-		// }
-		//sub end
+		if((string) $event_type === PayPalEvents::SALE_COMPLETED->value){
 
-		try{
+			//TODO: make sure you don't have duplicates. (idempotency)
+			return $this->subscriptionSaleMade($request_data, $settings_data);
 
-			if((string) $event_type === PayPalEvents::CHECKOUT_APPROVED->value){
-				$this->provider->capturePaymentOrder($settings_data['order_id']);
+		}else if((string) $event_type === PayPalEvents::SUBSCRIPTION_ACTIVATED->value){
+			return true;
+		}else{
+
+			try{
+
+				if((string) $event_type === PayPalEvents::CHECKOUT_APPROVED->value){
+					$this->provider->capturePaymentOrder($settings_data['order_id']);
+				}
+
+			}catch(Exception $e){
+				logger("failed to create payment order");
+			}
+			logger('EVENT');
+			logger($event_type);
+			$transaction = $this->db->fetchTransactionByToken($settings_data['order_id']);
+			if(!$transaction){
+				return false;
+			}
+			
+			if((string) $event_type === PayPalEvents::PAYMENT_CAPTURED->value){
+
+				$status = $request_data['resource']['status'];
+
+				if($status !== 'COMPLETED'){
+					return true;
+				}
+
+				if($transaction->is_payment_captured){
+					return true;
+				}
+
 			}
 
-		}catch(Exception $e){
-			logger("failed to create payment order");
-		}
+			//update db
+			if((string) $event_type === PayPalEvents::CHECKOUT_APPROVED->value){
+				return $this->db->updatePayPalOrderApproved($transaction, $request_data);
+			}else if((string) $event_type === PayPalEvents::PAYMENT_CAPTURED->value){
+				return $this->db->updatePayPalPaymentCaputred($transaction, $request_data);
+			}else if((string) $event_type === PayPalEvents::PAYMENT_PENDING->value){
+				return $this->db->updatePayPalPending($transaction, $request_data);
+			}
 
-		$transaction = $this->db->fetchTransactionByToken($settings_data['order_id']);
-		if(!$transaction){
-			return false;
+
 		}
 		
-		if((string) $event_type === PayPalEvents::PAYMENT_CAPTURED->value){
 
-			$status = $request_data['resource']['status'];
-
-			if($status !== 'COMPLETED'){
-				return true;
-			}
-
-			if($transaction->is_payment_captured){
-				return true;
-			}
-
-		}
-
-		//update db
-		if((string) $event_type === PayPalEvents::CHECKOUT_APPROVED->value){
-			return $this->db->updatePayPalOrderApproved($transaction, $request_data);
-		}else if((string) $event_type === PayPalEvents::PAYMENT_CAPTURED->value){
-			return $this->db->updatePayPalPaymentCaputred($transaction, $request_data);
-		}else if((string) $event_type === PayPalEvents::PAYMENT_PENDING->value){
-			return $this->db->updatePayPalPending($transaction, $request_data);
-		}
-
+		
 		return false;
 
 	}

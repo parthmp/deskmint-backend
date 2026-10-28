@@ -74,7 +74,7 @@ class InsertPayments {
 
 		$uuid = Str::uuid()->toString();
 
-		//generating invoice_lodger entries same time to avoid additional loops later on.
+		//generating invoice_ledger entries same time to avoid additional loops later on.
 		$this->invoice_ledger_rows[] = [
 			'payment_number'					=>	$uuid,
 			'company_id'						=>  $recurring_entry['company_id'],

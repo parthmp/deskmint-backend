@@ -23,14 +23,31 @@ class PayPalController extends Controller{
 	public function handlePaymentWebhook(Request $request){
 
 		$data = $request->all();
-		logger($data);
+		// logger('request data');
+		// logger($data);
 
 		$event_type = $data['event_type'] ?? null;
 
-		if((string) $event_type === PayPalEvents::SALE_COMPLETED->value || (string) $event_type === PayPalEvents::SUBSCRIPTION_ACTIVATED->value){
-			$sub_data = $this->database_operations->fetchPayPalSettingsForSubscriptions($data);
-			$settings_data['webhook_data']['company_id'] = $sub_data['company_id'];
-			$settings_data['webhook_data']['currency_code'] = $sub_data['code'];
+		if(!in_array((string) $event_type, PayPalEvents::getAll())){
+			logger("event type ".$event_type." is not added in the application");
+			return response('ok', 200);
+		}
+
+		$sub_events = [
+			PayPalEvents::SALE_COMPLETED->value,
+			PayPalEvents::SUBSCRIPTION_ACTIVATED->value,
+		];
+
+		if(in_array((string) $event_type, $sub_events)){
+
+			$data = $this->database_operations->fetchPayPalSettingsForSubscriptions($data);
+			$settings_data['webhook_data'] = $data['recurring_invoice_data'];
+			$settings_data['settings'] = $data['settings'];
+
+			// logger('sub_data');
+			// logger($sub_data);
+			// logger('settings data');
+			// logger($settings_data);
 			
 		}else{
 			$settings_data = $this->database_operations->fetchPayPalSettings($data);
@@ -38,6 +55,9 @@ class PayPalController extends Controller{
 
 		$payment = new Payment((int) $settings_data['webhook_data']['company_id']);
 		$payment->paypal((string) $settings_data['webhook_data']['currency_code'])->handleWebhook($request, $settings_data);
+
+		return response('ok', 200);
+
 		
 	}
 

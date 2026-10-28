@@ -527,34 +527,98 @@ class DatabaseOperations{
 	}
 
 	/**
-	 * getRecurringInvoiceId function
+	 * getPayPalCustomId function
 	 *
 	 * @param array $request_data
 	 * @return integer|null
 	 */
-	public function getRecurringInvoiceId(array $request_data) : ?int {
-		
+	public function getPayPalCustomId(array $request_data) : ?int {
+
 		$event_type = $request_data['event_type'] ?? null;
+
 		if((string) $event_type === PayPalEvents::SALE_COMPLETED->value){
 			if(isset($request_data['resource']['custom'])){
 				return (int) $request_data['resource']['custom'];
 			}
 		}
 
+		if((string) $event_type === PayPalEvents::SUBSCRIPTION_ACTIVATED->value){
+			if(isset($request_data['resource']['custom_id'])){
+				return (int) $request_data['resource']['custom_id'];
+			}
+		}
+
 		return null;
+
 	}
 
 	/**
 	 * fetchPayPalSettingsForSubscriptions function
 	 *
 	 * @param array $request_data
-	 * @return array
+	 * @return array|null
 	 */
-	public function fetchPayPalSettingsForSubscriptions(array $request_data) : array {
-		logger('show custom');
-		logger($request_data['resource']['custom']);
-		$id = $this->getRecurringInvoiceId($request_data);
-		return $this->fetchRecurringInvoice((int) $id)->toArray();
+	public function fetchPayPalSettingsForSubscriptions(array $request_data) : ?array {
+		
+		$recurring_invoice_id = $this->getPayPalCustomId($request_data);
+
+		if(!$recurring_invoice_id){
+			return null;
+		}
+
+		$recurring_invoice_data = $this->fetchRecurringInvoice((int) $recurring_invoice_id, ['recurring_invoices.*', 'currencies.code as currency_code'])->toArray();
+
+		$settings = $this->settings_section_repository->fetchSettings((int) $recurring_invoice_data['company_id'], PAYMENTS_PAYPAL_TYPE, true);
+
+		return [
+			'recurring_invoice_data'	=>	$recurring_invoice_data,
+			'settings'					=>	$settings,
+		];
+
+	}
+
+	/**
+	 * createTransactionForRecurringSale function
+	 *
+	 * @param array $data
+	 * @return Transaction
+	 */
+	public function createTransactionForRecurringSale(array $data) : Transaction {
+
+		$transaction = new Transaction();
+
+		$transaction->forceFill($data)->save();
+
+		return $transaction;
+
+	}
+
+	/**
+	 * upsertTransactionGatewayDetails function
+	 *
+	 * @param integer $transaction_id
+	 * @param string $key
+	 * @param array $data
+	 * @return void
+	 */
+	public function upsertTransactionGatewayDetails(int $transaction_id, string $key, array $data) : void {
+
+		TransactionGatewayDetail::updateOrCreate(
+			['transaction_id' => $transaction_id],
+			[$key => json_encode($data)]
+
+		);
+	}
+
+	/**
+	 * fetchCompletedTransaction function
+	 *
+	 * @param integer $company_id
+	 * @param string $order_id
+	 * @return Transaction|null
+	 */
+	public function fetchCompletedTransaction(int $company_id, string $order_id) : ?Transaction {
+		return Transaction::where([['company_id', '=', $company_id], ['token_id_identifier', '=', $order_id], ['status', '=', TransactionStatus::COMPLETED->value]])->first();
 	}
 
 }

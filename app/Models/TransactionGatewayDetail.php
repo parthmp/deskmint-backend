@@ -15,6 +15,8 @@ class TransactionGatewayDetail extends Model
 		'transaction_id',
 		'payment_approved_details',
 		'payment_captured_details',
-		'echeck_pending_details'
+		'echeck_pending_details',
+		'subscription_sale_deails',
+		'subscription_activated_deails'
 	];
 }
