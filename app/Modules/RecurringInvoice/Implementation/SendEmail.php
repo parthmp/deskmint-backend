@@ -3,7 +3,7 @@
 namespace App\Modules\RecurringInvoice\Implementation;
 
 use App\Jobs\SendEmailJob;
-use App\Modules\RecurringInvoice\Jobs\MarkRecurringInvoicesSentJob;
+use App\Modules\RecurringInvoice\Jobs\ChangeRecurringInvoicesStatusJob;
 use App\Traits\CustomMailSettings;
 use Illuminate\Bus\Batch;
 use Illuminate\Support\Facades\Bus;
@@ -38,7 +38,7 @@ class SendEmail {
 			$data[$z]['content'] = $this->parse_email->parse($data[$z], $content);
 			$data[$z]['subject'] = 'Recurring invoices scheduled';
 
-			$payload = json_encode(['id' => $data[$z]['id'], 'status' => $data[$z]['status']]);
+			$payload = json_encode(['id' => $data[$z]['id'], 'status' => $data[$z]['status'], 'payment_gateway' => $data[$z]['payment_gateway']]);
 
 			$batch[] = new SendEmailJob(
 				to: $data[$z]['email'],
@@ -53,7 +53,8 @@ class SendEmail {
 		}
 
 		Bus::batch($batch)->allowFailures()->finally(function(Batch $batch) use ($company_id, $redis_key){
-			MarkRecurringInvoicesSentJob::dispatch($company_id, $redis_key);
+			//not marking SENT anymore, for online payments it has pending approval state and for offline it has active state for more clarity.
+			ChangeRecurringInvoicesStatusJob::dispatch($company_id, $redis_key);
 		})->dispatch();
 
 	}

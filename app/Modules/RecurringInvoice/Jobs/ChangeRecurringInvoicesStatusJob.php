@@ -4,12 +4,13 @@ namespace App\Modules\RecurringInvoice\Jobs;
 
 use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
 use App\Models\RecurringInvoice;
+use App\Modules\Payment\Enums\PaymentGateway;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Redis;
 
-class MarkRecurringInvoicesSentJob implements ShouldQueue {
+class ChangeRecurringInvoicesStatusJob implements ShouldQueue {
 
 	use Queueable, Batchable;
 
@@ -29,16 +30,23 @@ class MarkRecurringInvoicesSentJob implements ShouldQueue {
 		
 		$data['update_status_ids'] = [];
 		$data['do_not_update_status_ids'] = [];
+		$data['pending_approval_ids'] = [];
 
 		foreach($payload as $entry){
 
 			$decoded = json_decode($entry, true);
 
-			if((int) $decoded['status'] === (int) RecurringInvoiceStatus::DRAFT->value){
-				$data['update_status_ids'][] = (int) $decoded['id'];
+			if((int) $decoded['payment_gateway'] !== PaymentGateway::NONE->value){
+				$data['pending_approval_ids'][] = (int) $decoded['id'];
 			}else{
-				$data['do_not_update_status_ids'][] = (int) $decoded['id'];
+				if((int) $decoded['status'] === (int) RecurringInvoiceStatus::DRAFT->value){
+					$data['update_status_ids'][] = (int) $decoded['id'];
+				}else{
+					$data['do_not_update_status_ids'][] = (int) $decoded['id'];
+				}
 			}
+
+			
 		}
 
 		$update = [
@@ -48,12 +56,17 @@ class MarkRecurringInvoicesSentJob implements ShouldQueue {
 				];
 
 		foreach($data as $key => $element){
+			
+			$update['status'] = RecurringInvoiceStatus::ACTIVE->value;
 
-			$update['status'] = RecurringInvoiceStatus::SENT->value;
+			if($key === 'pending_approval_ids'){
+				$update['status'] = RecurringInvoiceStatus::PENDING_APPROVAL->value;
+			}
 
 			if($key === 'do_not_update_status_ids'){
 				unset($update['status']);
 			}
+			
 
 			$chunks = array_chunk($element, 5000);
 

@@ -524,7 +524,6 @@ class PayPal implements PaymentInterface {
 		//sub start
 		if((string) $event_type === PayPalEvents::SALE_COMPLETED->value){
 
-			//TODO: make sure you don't have duplicates. (idempotency)
 			return $this->subscriptionSaleMade($request_data, $settings_data);
 
 		}else if((string) $event_type === PayPalEvents::SUBSCRIPTION_ACTIVATED->value){
