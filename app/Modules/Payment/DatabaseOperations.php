@@ -233,9 +233,9 @@ class DatabaseOperations{
 	 * fetchTransactionByToken function
 	 *
 	 * @param string $order_id
-	 * @return Transaction
+	 * @return Transaction|null
 	 */
-	public function fetchTransactionByToken(string $order_id) : Transaction {
+	public function fetchTransactionByToken(string $order_id) : ?Transaction {
 		return Transaction::where('token_id_identifier', '=', $order_id)->with('reference')->first();
 	}
 

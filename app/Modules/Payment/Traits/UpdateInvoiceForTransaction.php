@@ -146,31 +146,60 @@ trait UpdateInvoiceForTransaction {
 	 */
 	public function updatePaymentRequest(Transaction $transaction, TransactionReference $ref, bool $notify = true) : bool {
 
-		$payment = $this->insertPayment([
-			'company_id' 				=> $transaction->company_id,
-			'client_id' 				=> $ref->client_id,
-			'transaction_id' 			=> $ref->transaction_id,
-			'currency_id' 				=> $transaction->currency_id,
-			'status' 					=> PaymentStatus::NOT_APPLIED->value,
-			'amount' 					=> $transaction->amount,
-			'applied_amount' 			=> 0,
-			'amount_left_to_be_applied' => $transaction->amount,
-		]);
+		$payment = $this->ifPaymentExistsForTransaction((int) $transaction->company_id ,(int) $transaction->id);
 
-		//update payment request
-		$pr = PaymentRequest::where('id', '=', $ref->payment_request_id)->withTrashed()->first();
-		$pr->amount = $transaction->amount;
-		$pr->status = PaymentRequestStatus::COMPLETED->value;
-		$pr->transaction_id = $transaction->id;
-		$pr->paid_at = now();
-		$pr->save();
+		if(!$payment){
 
-		if($payment){
-			return true;
+			$payment = $this->insertPayment([
+				'company_id' 				=> $transaction->company_id,
+				'client_id' 				=> $ref->client_id,
+				'transaction_id' 			=> $ref->transaction_id,
+				'currency_id' 				=> $transaction->currency_id,
+				'status' 					=> PaymentStatus::NOT_APPLIED->value,
+				'amount' 					=> $transaction->amount,
+				'applied_amount' 			=> 0,
+				'amount_left_to_be_applied' => $transaction->amount,
+			]);
+
+			//update payment request
+			$pr = PaymentRequest::where('id', '=', $ref->payment_request_id)->withTrashed()->first();
+			$pr->amount = $transaction->amount;
+			$pr->status = PaymentRequestStatus::COMPLETED->value;
+			$pr->transaction_id = $transaction->id;
+			$pr->paid_at = now();
+			$pr->save();
+
+			if($payment){
+				return true;
+			}
+
 		}
 
 		return false;
 
+	}
+
+	/**
+	 * ifPaymentExistsForTransaction function
+	 *
+	 * @param integer $company_id
+	 * @param integer $transaction_id
+	 * @return Payment|null
+	 */
+	private function ifPaymentExistsForTransaction(int $company_id, int $transaction_id) : ?Payment {
+		return Payment::where([['company_id', '=', $company_id], ['transaction_id', '=', $transaction_id]])->first();
+	}
+
+	/**
+	 * ifInvoiceLedgerEntryExists function
+	 *
+	 * @param integer $company_id
+	 * @param integer $payment_id
+	 * @param integer $invoice_id
+	 * @return InvoiceLedger|null
+	 */
+	private function  ifInvoiceLedgerEntryExists(int $company_id, int $payment_id, int $invoice_id) : ?InvoiceLedger {
+		return InvoiceLedger::where([['company_id', '=', $company_id], ['payment_id', '=', $payment_id], ['invoice_id', '=', $invoice_id]])->first();
 	}
 
 	/**
@@ -204,70 +233,83 @@ trait UpdateInvoiceForTransaction {
 
 		$applied_amount = $transaction_amount->minus($left_to_be_applied);
 		$applied_amount_str = $applied_amount->toScale(2, RoundingMode::HalfUp)->__toString();
+
+		$payment = $this->ifPaymentExistsForTransaction((int) $transaction->company_id ,(int) $transaction->id);
+
+		if(!$payment){
+
+			//insert whole received payment.
+			$payment = $this->insertPayment([
+				'company_id' 				=> $transaction->company_id,
+				'client_id' 				=> $ref->client_id,
+				'transaction_id' 			=> $ref->transaction_id,
+				'currency_id' 				=> $transaction->currency_id,
+				'status' 					=> $payment_status,
+				'amount' 					=> $transaction->amount,
+				'applied_amount' 			=> $applied_amount_str,
+				'amount_left_to_be_applied' => $left_to_be_applied->toScale(2, RoundingMode::HalfUp)->__toString(),
+			]);
+
+		}
 		
-		//insert whole received payment.
-		$payment = $this->insertPayment([
-			'company_id' 				=> $transaction->company_id,
-			'client_id' 				=> $ref->client_id,
-			'transaction_id' 			=> $ref->transaction_id,
-			'currency_id' 				=> $transaction->currency_id,
-			'status' 					=> $payment_status,
-			'amount' 					=> $transaction->amount,
-			'applied_amount' 			=> $applied_amount_str,
-			'amount_left_to_be_applied' => $left_to_be_applied->toScale(2, RoundingMode::HalfUp)->__toString(),
-		]);
+		$ledger = $this->ifInvoiceLedgerEntryExists((int) $transaction->company_id, (int) $payment->id, (int) $ref->invoice_id);
 
-		//apply it to the invoice.
-		$ledger = $this->insertInvoiceLedgerEntry([
-			'company_id' 					=> $transaction->company_id,
-			'invoice_id' 					=> $ref->invoice_id,
-			'payment_id' 					=> $payment->id,
-			'credit_id' 					=> null,
-			'applied_amount_from_payments' 	=> $applied_amount_str,
-			'applied_amount_from_credits' 	=> 0,
-			'total_applied' 				=> $applied_amount_str,
-		]);
+		if(!$ledger){
 
+			//apply it to the invoice.
+			$ledger = $this->insertInvoiceLedgerEntry([
+				'company_id' 					=> $transaction->company_id,
+				'invoice_id' 					=> $ref->invoice_id,
+				'payment_id' 					=> $payment->id,
+				'credit_id' 					=> null,
+				'applied_amount_from_payments' 	=> $applied_amount_str,
+				'applied_amount_from_credits' 	=> 0,
+				'total_applied' 				=> $applied_amount_str,
+			]);
 
-		
-		$total = BigDecimal::of($invoice->total);
+			
+			$total = BigDecimal::of($invoice->total);
 
-		$all_applied_amounts_of_invoice = $this->fetchAppliedInvoiceAmounts($transaction->company_id, $ref->invoice_id);
+			$all_applied_amounts_of_invoice = $this->fetchAppliedInvoiceAmounts($transaction->company_id, $ref->invoice_id);
 
-		//$paid_amount = $this->sumOfAmounts($this->fetchAmountsOfTransactionsByInvoiceId($transaction->company_id, $transaction->invoice_id));
-		$paid_amount = $this->sumOfAmounts($all_applied_amounts_of_invoice);
+			//$paid_amount = $this->sumOfAmounts($this->fetchAmountsOfTransactionsByInvoiceId($transaction->company_id, $transaction->invoice_id));
+			$paid_amount = $this->sumOfAmounts($all_applied_amounts_of_invoice);
 
-		$paid_amount = BigDecimal::of($paid_amount);
+			$paid_amount = BigDecimal::of($paid_amount);
 
-		$balance_due = $total->minus($paid_amount);
-		if($balance_due->isLessThan(BigDecimal::of(0))){
-			$balance_due = BigDecimal::of(0);
+			$balance_due = $total->minus($paid_amount);
+			if($balance_due->isLessThan(BigDecimal::of(0))){
+				$balance_due = BigDecimal::of(0);
+			}
+
+			$paid_in_full = $paid_amount->isEqualTo($total);
+			$overpaid = $paid_amount->isGreaterThan($total);
+			$partially_paid = $paid_amount->isLessThan($total) && $paid_amount->isGreaterThan(BigDecimal::of(0));
+
+			if((int) $invoice->status === (int) InvoiceStatus::CANCELLED->value && $notify){
+				app(Notification::class)->notify($invoice->company_id, NotificationType::INVOICE_CANCELLED_PAID, 'Your customer paid cancelled invoice', 'Invoice: '. $invoice->invoice_number.' was cancelled and customer made a payment towards it. Transaction id: '.$transaction->id.', Identifer: '.$transaction->token_id_identifier, []);
+			}
+
+			if($overpaid && $notify){
+				app(Notification::class)->notify($invoice->company_id, NotificationType::INVOICE_OVERPAID, 'Your customer overpaid invoice', 'Invoice: '. $invoice->invoice_number.' was overpaid by your customer. Transaction id: '.$transaction->id.', Identifer: '.$transaction->token_id_identifier, []);
+			}
+
+			$status_indicator = InvoiceStatus::SENT->value;
+
+			if($paid_in_full || $overpaid){
+				$status_indicator = InvoiceStatus::PAID->value;
+			}else if($partially_paid){
+				$status_indicator = InvoiceStatus::PARTIALLY_PAID->value;
+			}
+
+			$invoice->status = $status_indicator;
+			$invoice->balance_due = $balance_due->toScale(2, RoundingMode::HalfUp)->__toString();
+
+			return $invoice->save();
+
 		}
 
-		$paid_in_full = $paid_amount->isEqualTo($total);
-		$overpaid = $paid_amount->isGreaterThan($total);
-		$partially_paid = $paid_amount->isLessThan($total) && $paid_amount->isGreaterThan(BigDecimal::of(0));
-
-		if((int) $invoice->status === (int) InvoiceStatus::CANCELLED->value && $notify){
-			app(Notification::class)->notify($invoice->company_id, NotificationType::INVOICE_CANCELLED_PAID, 'Your customer paid cancelled invoice', 'Invoice: '. $invoice->invoice_number.' was cancelled and customer made a payment towards it. Transaction id: '.$transaction->id.', Identifer: '.$transaction->token_id_identifier, []);
-		}
-
-		if($overpaid && $notify){
-			app(Notification::class)->notify($invoice->company_id, NotificationType::INVOICE_OVERPAID, 'Your customer overpaid invoice', 'Invoice: '. $invoice->invoice_number.' was overpaid by your customer. Transaction id: '.$transaction->id.', Identifer: '.$transaction->token_id_identifier, []);
-		}
-
-		$status_indicator = InvoiceStatus::SENT->value;
-
-		if($paid_in_full || $overpaid){
-			$status_indicator = InvoiceStatus::PAID->value;
-		}else if($partially_paid){
-			$status_indicator = InvoiceStatus::PARTIALLY_PAID->value;
-		}
-
-		$invoice->status = $status_indicator;
-		$invoice->balance_due = $balance_due->toScale(2, RoundingMode::HalfUp)->__toString();
-
-		return $invoice->save();
+		return false;
 
 	}
 

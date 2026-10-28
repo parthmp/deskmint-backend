@@ -204,7 +204,11 @@ class Stripe implements PaymentInterface {
 			$data = $settings_data;
 
 			$order_id = $data['order_id'];
-			$transaction = $this->db->fetchTransactionByTokenId($order_id);
+			$transaction = $this->db->fetchTransactionByToken($order_id);
+
+			if(!$transaction){
+				return false;
+			}
 
 			if($transaction->is_payment_captured){
 				return true;
@@ -243,10 +247,8 @@ class Stripe implements PaymentInterface {
 
 			}else{
 				
-				FetchStripeBalanceTransactionJob::dispatch($payment_intent_id, $transaction->id, $this->api_secret, $data['webhook_data']['currency_code'])->delay(10);
+				FetchStripeBalanceTransactionJob::dispatch($payment_intent_id, $transaction->id, $this->api_secret, $data['webhook_data']['currency_code'])->delay(15);
 			}
-
-			
 
 			$request_data['gateway_fees_amount'] = $gateway_fee;
 			$request_data['received_amount'] = $net_amount;

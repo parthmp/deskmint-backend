@@ -461,8 +461,6 @@ class PayPal implements PaymentInterface {
 
 		$request_data = $request->all();
 
-		$data = $settings_data;
-
 		if(!$this->verifyAuthenticity($request, $this->webhook_id)){
 			logger("unauthorized request made -> \n".json_encode($request_data));
 			return false;
@@ -475,19 +473,26 @@ class PayPal implements PaymentInterface {
 			return false;
 		}
 
-		if((string) $event_type === PayPalEvents::SALE_COMPLETED->value){
-			//TODO: make sure you don't have duplicates. (idempotency)
-			return $this->subscriptionSaleMade($request_data);
-		}
+		//sub start
+		// if((string) $event_type === PayPalEvents::SALE_COMPLETED->value){
+		// 	//TODO: make sure you don't have duplicates. (idempotency)
+		// 	return $this->subscriptionSaleMade($request_data);
+		// }
+		//sub end
 
 		try{
 
 			if((string) $event_type === PayPalEvents::CHECKOUT_APPROVED->value){
-				$this->provider->capturePaymentOrder($data['order_id']);
+				$this->provider->capturePaymentOrder($settings_data['order_id']);
 			}
 
 		}catch(Exception $e){
 			logger("failed to create payment order");
+		}
+
+		$transaction = $this->db->fetchTransactionByToken($settings_data['order_id']);
+		if(!$transaction){
+			return false;
 		}
 		
 		if((string) $event_type === PayPalEvents::PAYMENT_CAPTURED->value){
@@ -498,17 +503,10 @@ class PayPal implements PaymentInterface {
 				return true;
 			}
 
-			$transaction = $this->db->fetchTransactionByTokenId($data['order_id']);
-			
 			if($transaction->is_payment_captured){
 				return true;
 			}
 
-		}
-
-		$transaction = $this->db->fetchTransactionByToken($data['order_id']);
-		if(!$transaction){
-			return false;
 		}
 
 		//update db
