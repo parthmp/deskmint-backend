@@ -82,13 +82,13 @@ enum Frequencies : int {
 	}
 
 	/**
-	 * getForPaypalFromValue function
+	 * getForGatewayFromValue function
 	 *
 	 * @param integer $frequency
 	 * @param integer|null $custom_days
 	 * @return array
 	 */
-	public static function getForPaypalFromValue(int $frequency, ?int $custom_days = null) : array {
+	public static function getForGatewayFromValue(int $frequency, ?int $custom_days = null) : array {
 		
 		$freq_array = match(self::from($frequency)) {
             self::DAILY 		=> ['DAY', 1],

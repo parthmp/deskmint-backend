@@ -2,7 +2,9 @@
 
 namespace App\Modules\Payment\Gateways\Stripe;
 
+use App\Enums\RecurringInvoices\Frequencies;
 use App\Exceptions\PaymentException;
+use App\Helpers\General;
 use App\Models\Transaction;
 use App\Modules\Payment\Contracts\GenericDTO;
 use App\Modules\Payment\Contracts\PaymentInterface;
@@ -17,6 +19,7 @@ use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Stripe\StripeClient as Provider;
 use Illuminate\Support\Str;
 
@@ -264,9 +267,131 @@ class Stripe implements PaymentInterface {
 
 	}
 
+	/**
+	 * getExiststingSubscriptionUrl function
+	 *
+	 * @param integer $recurring_invoice_id
+	 * @return string|null
+	 */
+	private function getExiststingSubscriptionUrl(int $recurring_invoice_id) : ?string {
 
+		$query = "metadata['recurring_invoice_id']:'" . $recurring_invoice_id . "' AND status:'active'";
+
+		$existing = $this->provider->subscriptions->search([
+			'query' => $query,
+			'limit' => 1,
+		]);
+
+		if(!empty($existing->data)){
+			
+			$subscription = $existing->data[0];
+			
+			$portalSession = $this->provider->billingPortal->sessions->create([
+				'customer' 		=> 	$subscription->customer,
+				'return_url' 	=> env('APP_URL').PAYMENT_CANCEL_URL,
+			]);
+
+			$url = $portalSession->url;
+			
+			return $url;
+		}
+
+		return null;
+
+	}
+
+	/**
+	 * insertRecurringInvoiceUrl function
+	 *
+	 * @param string $url
+	 * @return boolean
+	 */
+	private function insertRecurringInvoiceUrl(string $url, array $recurring_invoice) : bool {
+		return $this->db->insertRecurringInvoiceUrl([
+			'company_id'				=>	$recurring_invoice['company_id'],
+			'recurring_invoice_id'		=>	$recurring_invoice['id'],
+			'payment_gateway'			=>	$recurring_invoice['payment_gateway'],
+			'total'						=>	$recurring_invoice['total'],
+			'currency_id'				=>	$recurring_invoice['currency_id'],
+			'url'						=>	$url
+		]);
+	}
+
+	/**
+	 * getSubscriptionUrl function
+	 *
+	 * @return string
+	 */
 	public function getSubscriptionUrl() : string {
-		return '';
+
+		$data = $this->dto->getData();
+		$recurring_invoice = $data['recurring_invoice']->toArray();
+
+		$plan = $this->db->fetchSubscriptionPlanByRI((int) $recurring_invoice['company_id'], (int) $recurring_invoice['id'], (int) $recurring_invoice['payment_gateway']);
+		
+		if($plan){
+
+			$existing_url = $this->getExiststingSubscriptionUrl((int) $recurring_invoice['id']);
+			if($existing_url){
+				$this->insertRecurringInvoiceUrl((string) $existing_url, $recurring_invoice);
+				return $existing_url;
+			}
+
+		}
+		
+
+		$cents = General::toCents($recurring_invoice['total']);
+
+		$freqency_array = Frequencies::getForGatewayFromValue((int) $recurring_invoice['frequency'], (int) $recurring_invoice['custom_frequency_days']);
+
+		$session = $this->provider->checkout->sessions->create([
+			'success_url' =>  env('APP_URL').PAYMENT_SUCCESS_URL,
+			'cancel_url'  =>  env('APP_URL').PAYMENT_CANCEL_URL,
+			'mode'        => 'subscription',
+			'subscription_data' => [
+				'metadata' => [
+					'recurring_invoice_id' => $recurring_invoice['id']
+				],
+			],
+			'line_items'  => [
+				[
+					'price_data' => [
+						'currency' => (string) $recurring_invoice['code'],
+						'unit_amount' => $cents,
+						'recurring' => [
+							'interval' => strtolower($freqency_array['interval_unit']), // 'day', 'week', 'month', or 'year'
+							'interval_count' => (int) $freqency_array['interval_count'],  // e.g., every 1 month
+						],
+						'product_data' => [
+							'name' => 'Subscription Plan',
+						],
+					],
+					'quantity' => 1,
+				],
+			],
+		]);
+
+		$data = [
+			'company_id'				=>	$recurring_invoice['company_id'],
+			'recurring_invoice_id'		=>	$recurring_invoice['id'],
+			'payment_gateway'			=>	$recurring_invoice['payment_gateway'],
+			'gateway_subscription_id'	=>	'', //update this after customer approves.
+			'plan_id'					=>	'',
+			'payer_id'					=>	''
+		];
+
+		$url = $session->url;
+
+		return DB::transaction(function () use ($data, $url, $recurring_invoice) {
+
+			$this->db->upsertSubScriptionPlan($data);
+
+			$this->insertRecurringInvoiceUrl((string) $url, $recurring_invoice);
+
+			return $url;
+
+		});
+
 	}
 
 

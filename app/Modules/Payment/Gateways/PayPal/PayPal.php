@@ -248,7 +248,7 @@ class PayPal implements PaymentInterface {
 	 */
 	private function createPlan(string $product_id, array $recurring_invoice) : string {
 
-		$freqency_array = Frequencies::getForPaypalFromValue((int) $recurring_invoice['frequency'], (int) $recurring_invoice['custom_frequency_days']);
+		$freqency_array = Frequencies::getForGatewayFromValue((int) $recurring_invoice['frequency'], (int) $recurring_invoice['custom_frequency_days']);
 
 		if(empty($freqency_array)){
 			throw new \RuntimeException('Unexpected freqency_array value');
@@ -341,8 +341,6 @@ class PayPal implements PaymentInterface {
 	 */
 	private function createSubscription(string $plan_id, array $recurring_invoice) : array {
 
-
-
 		$response = $this->provider->createSubscription([
 			'plan_id'    => $plan_id,
 			'custom_id'  => (string) $recurring_invoice['id'],
@@ -427,7 +425,7 @@ class PayPal implements PaymentInterface {
 
 		return DB::transaction(function () use ($data, $sub_data, $recurring_invoice) {
 
-			$this->db->insertSubScriptionPlan($data);
+			$this->db->upsertSubScriptionPlan($data);
 
 			$this->insertRecurringInvoiceUrl($sub_data['url'], $recurring_invoice);
 
@@ -463,7 +461,7 @@ class PayPal implements PaymentInterface {
 			}
 
 		}
-		
+
 	}
 	
 	/**
@@ -594,7 +592,6 @@ class PayPal implements PaymentInterface {
 			return false;
 		}
 
-		//sub start
 		if((string) $event_type === PayPalEvents::SALE_COMPLETED->value){
 
 			return $this->subscriptionSaleMade($request_data, $settings_data);
@@ -614,8 +611,7 @@ class PayPal implements PaymentInterface {
 			}catch(Exception $e){
 				logger("failed to create payment order");
 			}
-			logger('EVENT');
-			logger($event_type);
+			
 			$transaction = $this->db->fetchTransactionByToken($settings_data['order_id']);
 			if(!$transaction){
 				return false;

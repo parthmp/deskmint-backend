@@ -2,6 +2,7 @@
 
 namespace App\Modules\Payment\Gateways\Stripe\DTO;
 
+use App\Helpers\General;
 use App\Modules\Payment\Contracts\GenericDTO;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
@@ -26,7 +27,7 @@ class InvoiceRequestData implements GenericDTO {
 	 * @return integer
 	 */
 	private function toCents() : int {
-		return BigDecimal::of($this->amount)->multipliedBy(100)->toScale(2, RoundingMode::HalfUp)->toInt();
+		return General::toCents($this->amount);
 	}
 
 	#[Override]

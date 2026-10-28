@@ -4,6 +4,8 @@ namespace App\Helpers;
 
 use App\Models\Company;
 use App\Models\Country;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Carbon\Carbon;
 use DateTime;
 use Exception;
@@ -456,6 +458,16 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 
 			return $dropdown;
 
+		}
+
+		/**
+		 * toCents function
+		 *
+		 * @param string $amount
+		 * @return integer
+		 */
+		public static function toCents(string $amount) : int {
+			return BigDecimal::of($amount)->multipliedBy(100)->toScale(2, RoundingMode::HalfUp)->toInt();
 		}
 
 	}

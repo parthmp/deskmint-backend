@@ -469,16 +469,21 @@ class DatabaseOperations{
 	 * @param array $data
 	 * @return boolean
 	 */
-	public function insertSubScriptionPlan(array $data) : bool {
+	public function upsertSubScriptionPlan(array $data) : bool {
 
-		$plan = new SubscriptionPlan();
-		$plan->uuid = Str::uuid()->toString();
-		$plan->company_id = $data['company_id'];
-		$plan->recurring_invoice_id = $data['recurring_invoice_id'];
+		$plan = $this->fetchSubscriptionPlanByRI((int) $data['company_id'], (int) $data['recurring_invoice_id'], (int) $data['payment_gateway']);
+		if(!$plan){
+			$plan = new SubscriptionPlan();
+			$plan->uuid = Str::uuid()->toString();
+			$plan->company_id = $data['company_id'];
+			$plan->recurring_invoice_id = $data['recurring_invoice_id'];
+			$plan->payer_id = $data['payer_id'];
+		}
+
 		$plan->payment_gateway = $data['payment_gateway'];
 		$plan->gateway_subscription_id = $data['gateway_subscription_id'];
 		$plan->plan_id = $data['plan_id'];
-		$plan->payer_id = $data['payer_id'];
+		
 		return $plan->save();
 
 	}

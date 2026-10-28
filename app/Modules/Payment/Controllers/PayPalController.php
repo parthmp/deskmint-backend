@@ -23,9 +23,7 @@ class PayPalController extends Controller{
 	public function handlePaymentWebhook(Request $request){
 
 		$data = $request->all();
-		// logger('request data');
-		// logger($data);
-
+		
 		$event_type = $data['event_type'] ?? null;
 
 		if(!in_array((string) $event_type, PayPalEvents::getAll())){
@@ -43,11 +41,6 @@ class PayPalController extends Controller{
 			$data = $this->database_operations->fetchPayPalSettingsForSubscriptions($data);
 			$settings_data['webhook_data'] = $data['recurring_invoice_data'];
 			$settings_data['settings'] = $data['settings'];
-
-			// logger('sub_data');
-			// logger($sub_data);
-			// logger('settings data');
-			// logger($settings_data);
 			
 		}else{
 			$settings_data = $this->database_operations->fetchPayPalSettings($data);
