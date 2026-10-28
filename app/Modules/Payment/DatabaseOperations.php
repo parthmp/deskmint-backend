@@ -19,6 +19,7 @@ use App\Repositories\SettingsSection\SettingsSectionRepository;
 use Illuminate\Support\Facades\Log;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -656,6 +657,22 @@ class DatabaseOperations{
 	public function changeRecurringInvoiceStatus(RecurringInvoice $recurring_invoice, int $status) : void {
 		$recurring_invoice->status = $status;
 		$recurring_invoice->save();
+	}
+
+	/**
+	 * updateNextInvoiceDate function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @param string $next_invoice_on
+	 * @return void
+	 */
+	public function updateNextInvoiceDate(int $company_id, int $recurring_invoice_id, string $next_invoice_on) : void {
+
+		RecurringInvoice::where([['company_id', '=', $company_id], ['id', '=', $recurring_invoice_id]])->update([
+			'next_invoice_on'	=>	$next_invoice_on
+		]);
+
 	}
 
 }

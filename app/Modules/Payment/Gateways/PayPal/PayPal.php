@@ -18,6 +18,7 @@ use App\Modules\Payment\Gateways\PayPal\Implementation\Order;
 use App\Modules\RecurringInvoice\RecurringInvoice;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -435,6 +436,35 @@ class PayPal implements PaymentInterface {
 		});
 
 	}
+
+	/**
+	 * updateNextInvoiceOn function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return void
+	 */
+	private function updateNextInvoiceOn(int $company_id, int $recurring_invoice_id) : void {
+
+		$sub_plan = $this->db->fetchSubscriptionPlanByRI($company_id, $recurring_invoice_id, PaymentGateway::PAYPAL->value);
+
+		if($sub_plan){
+
+			$details = $this->provider->showSubscriptionDetails($sub_plan->gateway_subscription_id);
+			
+			$next_invoice_on = null;
+			
+			if(strtolower($details['status']) === 'active'){
+				$next_invoice_on = $details['billing_info']['next_billing_time'] ?? null;
+				if($next_invoice_on){
+					$next_billing_time = Carbon::parse($next_invoice_on)->format('Y-m-d H:i:s');
+					$this->db->updateNextInvoiceDate($company_id, $recurring_invoice_id, $next_billing_time);
+				}
+			}
+
+		}
+		
+	}
 	
 	/**
 	 * subscriptionSaleMade function
@@ -486,8 +516,6 @@ class PayPal implements PaymentInterface {
 
 		$this->db->upsertTransactionGatewayDetails((int) $transaction->id, 'subscription_sale_deails', $request_data);
 
-		//TODO: update next billing datetime here, fetch from paypal.
-
 		$recurring_invoice_module = app(RecurringInvoice::class);
 		$recurring_invoice_module->setCompanyId((int) $recurring_invoice_data['company_id'])->setRecurringInvoiceIds([$recurring_invoice_data['id']])->setOnlineTransactionData([
 			[
@@ -496,9 +524,13 @@ class PayPal implements PaymentInterface {
 			]
 		])->executeActions(false, true);
 
+		//update next invoice date
+		$this->updateNextInvoiceOn((int) $recurring_invoice_data['company_id'], (int) $recurring_invoice_data['id']);
+
 		return true;
 		
 	}
+	
 
 	/**
 	 * handleSubscriptionActivations function
