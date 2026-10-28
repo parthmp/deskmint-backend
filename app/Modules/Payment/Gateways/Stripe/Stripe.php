@@ -268,35 +268,29 @@ class Stripe implements PaymentInterface {
 	}
 
 	/**
-	 * getExiststingSubscriptionUrl function
+	 * getExistingSubscriptionUrl function
 	 *
-	 * @param integer $recurring_invoice_id
+	 * @param string $subscription_id
 	 * @return string|null
 	 */
-	private function getExiststingSubscriptionUrl(int $recurring_invoice_id) : ?string {
+	private function getExistingSubscriptionUrl(string $subscription_id) : ?string {
 
-		$query = "metadata['recurring_invoice_id']:'" . $recurring_invoice_id . "' AND status:'active'";
-
-		$existing = $this->provider->subscriptions->search([
-			'query' => $query,
-			'limit' => 1,
-		]);
-
-		if(!empty($existing->data)){
-			
-			$subscription = $existing->data[0];
-			
-			$portalSession = $this->provider->billingPortal->sessions->create([
-				'customer' 		=> 	$subscription->customer,
-				'return_url' 	=> env('APP_URL').PAYMENT_CANCEL_URL,
-			]);
-
-			$url = $portalSession->url;
-			
-			return $url;
+		try{
+			$subscription = $this->provider->subscriptions->retrieve($subscription_id);
+		}catch(\Stripe\Exception\InvalidRequestException $e) {
+			return null;
 		}
 
-		return null;
+		if(!in_array($subscription->status, ['active', 'trialing', 'past_due'], true)){
+			return null;
+		}
+
+		$portal_session = $this->provider->billingPortal->sessions->create([
+			'customer'   => $subscription->customer,
+			'return_url' => env('APP_URL') . PAYMENT_SUCCESS_URL,
+		]);
+
+		return $portal_session->url;
 
 	}
 
@@ -329,9 +323,9 @@ class Stripe implements PaymentInterface {
 
 		$plan = $this->db->fetchSubscriptionPlanByRI((int) $recurring_invoice['company_id'], (int) $recurring_invoice['id'], (int) $recurring_invoice['payment_gateway']);
 		
-		if($plan){
+		if($plan && $plan->gateway_subscription_id){
 
-			$existing_url = $this->getExiststingSubscriptionUrl((int) $recurring_invoice['id']);
+			$existing_url = $this->getExistingSubscriptionUrl((string) $plan->gateway_subscription_id);
 			if($existing_url){
 				$this->insertRecurringInvoiceUrl((string) $existing_url, $recurring_invoice);
 				return $existing_url;
@@ -344,32 +338,10 @@ class Stripe implements PaymentInterface {
 
 		$freqency_array = Frequencies::getForGatewayFromValue((int) $recurring_invoice['frequency'], (int) $recurring_invoice['custom_frequency_days']);
 
-		$session = $this->provider->checkout->sessions->create([
-			'success_url' =>  env('APP_URL').PAYMENT_SUCCESS_URL,
-			'cancel_url'  =>  env('APP_URL').PAYMENT_CANCEL_URL,
-			'mode'        => 'subscription',
-			'subscription_data' => [
-				'metadata' => [
-					'recurring_invoice_id' => $recurring_invoice['id']
-				],
-			],
-			'line_items'  => [
-				[
-					'price_data' => [
-						'currency' => (string) $recurring_invoice['code'],
-						'unit_amount' => $cents,
-						'recurring' => [
-							'interval' => strtolower($freqency_array['interval_unit']), // 'day', 'week', 'month', or 'year'
-							'interval_count' => (int) $freqency_array['interval_count'],  // e.g., every 1 month
-						],
-						'product_data' => [
-							'name' => 'Subscription Plan',
-						],
-					],
-					'quantity' => 1,
-				],
-			],
-		]);
+		$uuid_token = Str::uuid()->toString();
+
+		$checkout_session = new CheckoutSession($this->provider, $recurring_invoice['code'], 'Subscription Plan', 'Subscription Plan', $cents, $uuid_token, (int) $recurring_invoice['id'], strtolower($freqency_array['interval_unit']), (int) $freqency_array['interval_count']);
+		$session = $checkout_session->create();
 
 		$data = [
 			'company_id'				=>	$recurring_invoice['company_id'],

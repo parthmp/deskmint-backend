@@ -14,28 +14,33 @@ class StripeController extends Controller{
 	public function __construct(private DatabaseOperations $database_operations){}
 
 	public function handlePaymentWebhook(Request $request){
+
+		$data = $request->all();
+		logger("\n\n\n\n\n\n");
+		logger($data['type']);
+		logger($data);
 		
-		try{
+		// try{
 
-			$data = $request->all();
+		// 	$data = $request->all();
 				
-			$settings_data = $this->database_operations->fetchStripeSettings($data);
+		// 	$settings_data = $this->database_operations->fetchStripeSettings($data);
 			
-			$payment = new Payment((int) $settings_data['webhook_data']['company_id']);
+		// 	$payment = new Payment((int) $settings_data['webhook_data']['company_id']);
 			
-			$payment->stripe()->handleWebhook($request, $settings_data);
+		// 	$payment->stripe()->handleWebhook($request, $settings_data);
 			
-		}catch(PaymentException $e){
+		// }catch(PaymentException $e){
 			
-			if($e->getValidity() === 'unsupported_event'){
-				return response('ok', 200);
-			}
+		// 	if($e->getValidity() === 'unsupported_event'){
+		// 		return response('ok', 200);
+		// 	}
 
-			return response($e->getMessage(), $e->getCode());
+		// 	return response($e->getMessage(), $e->getCode());
 			
-		}catch(Exception $e){
-			return response('processing failed', 500);
-		}
+		// }catch(Exception $e){
+		// 	return response('processing failed', 500);
+		// }
 
 	}
 
