@@ -3,6 +3,7 @@
 namespace App\Modules\Payment\Gateways\PayPal;
 
 use App\Enums\RecurringInvoices\Frequencies;
+use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
 use App\Exceptions\PaymentException;
 use App\Models\Transaction;
 use App\Models\TransactionGatewayDetail;
@@ -420,8 +421,7 @@ class PayPal implements PaymentInterface {
 			'payment_gateway'			=>	$recurring_invoice['payment_gateway'],
 			'gateway_subscription_id'	=>	$sub_data['id'],
 			'plan_id'					=>	$plan_id,
-			'payer_id'					=>	'',
-			'customer_id'				=>	'',
+			'payer_id'					=>	''
 		];
 
 		return DB::transaction(function () use ($data, $sub_data, $recurring_invoice) {
@@ -486,6 +486,8 @@ class PayPal implements PaymentInterface {
 
 		$this->db->upsertTransactionGatewayDetails((int) $transaction->id, 'subscription_sale_deails', $request_data);
 
+		//TODO: update next billing datetime here, fetch from paypal.
+
 		$recurring_invoice_module = app(RecurringInvoice::class);
 		$recurring_invoice_module->setCompanyId((int) $recurring_invoice_data['company_id'])->setRecurringInvoiceIds([$recurring_invoice_data['id']])->setOnlineTransactionData([
 			[
@@ -496,6 +498,45 @@ class PayPal implements PaymentInterface {
 
 		return true;
 		
+	}
+
+	/**
+	 * handleSubscriptionActivations function
+	 *
+	 * @param array $request_data
+	 * @return boolean
+	 */
+	private function handleSubscriptionActivation(array $request_data) : bool {
+
+		$payer_id = $request_data['resource']['subscriber']['payer_id'] ?? null;
+		if(!$payer_id){
+			return false;
+		}
+
+		$recurring_invoice_id = $request_data['resource']['custom_id'] ?? null;
+
+		if(!$recurring_invoice_id){
+			return false;
+		}
+
+		$paypal_status = $request_data['resource']['status'];
+
+		if(strtolower($paypal_status) !== 'active'){
+			return false;
+		}
+
+		$recurring_invoice = $this->db->fetchRecurringInvoiceEntry((int) $recurring_invoice_id);
+
+		if(!$recurring_invoice){
+			return false;
+		}
+
+		//update payer id and activate the recurring invoice.
+		$this->db->updatePayerId((int) $recurring_invoice->company_id, (int) $recurring_invoice->id, (string) $payer_id);
+		$this->db->changeRecurringInvoiceStatus($recurring_invoice, RecurringInvoiceStatus::ACTIVE->value);
+
+		return true;
+
 	}
 
 	/**
@@ -527,7 +568,9 @@ class PayPal implements PaymentInterface {
 			return $this->subscriptionSaleMade($request_data, $settings_data);
 
 		}else if((string) $event_type === PayPalEvents::SUBSCRIPTION_ACTIVATED->value){
-			return true;
+
+			return $this->handleSubscriptionActivation($request_data);
+
 		}else{
 
 			try{

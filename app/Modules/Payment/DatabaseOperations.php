@@ -2,6 +2,7 @@
 
 namespace App\Modules\Payment;
 
+use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
 use App\Models\Invoice;
 use App\Models\PaymentUrl;
 use App\Models\RecurringInvoice;
@@ -477,7 +478,6 @@ class DatabaseOperations{
 		$plan->gateway_subscription_id = $data['gateway_subscription_id'];
 		$plan->plan_id = $data['plan_id'];
 		$plan->payer_id = $data['payer_id'];
-		$plan->customer_id = $data['customer_id'];
 		return $plan->save();
 
 	}
@@ -619,6 +619,43 @@ class DatabaseOperations{
 	 */
 	public function fetchCompletedTransaction(int $company_id, string $order_id) : ?Transaction {
 		return Transaction::where([['company_id', '=', $company_id], ['token_id_identifier', '=', $order_id], ['status', '=', TransactionStatus::COMPLETED->value]])->first();
+	}
+
+	/**
+	 * updatePayerId function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @param string $payer_id
+	 * @return void
+	 */
+	public function updatePayerId(int $company_id, int $recurring_invoice_id, string $payer_id) : void {
+		SubscriptionPlan::where([['company_id', '=', $company_id], ['recurring_invoice_id', '=', $recurring_invoice_id]])->update([
+			'payer_id'	=>	$payer_id
+		]);
+	}
+
+	/**
+	 * fetchRecurringInvoiceEntry function
+	 *
+	 * @param integer $id
+	 * @param array $selects
+	 * @return RecurringInvoice|null
+	 */
+	public function fetchRecurringInvoiceEntry(int $id, array $selects = ['*']) : ?RecurringInvoice {
+		return RecurringInvoice::select(...$selects)->where('id', '=', $id)->first();
+	}
+	
+	/**
+	 * changeRecurringInvoiceStatus function
+	 *
+	 * @param RecurringInvoice $recurring_invoice
+	 * @param integer $status
+	 * @return void
+	 */
+	public function changeRecurringInvoiceStatus(RecurringInvoice $recurring_invoice, int $status) : void {
+		$recurring_invoice->status = $status;
+		$recurring_invoice->save();
 	}
 
 }
