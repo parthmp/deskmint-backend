@@ -585,6 +585,66 @@ class DatabaseOperations{
 
 	}
 
+	public function fetchStripeSettingsForSubscriptions(array $request_data) : ?array {
+		
+		$data = $this->getOrderIdAndRecurringInvoiceIdFromResponse($request_data);
+
+		$order_id = $data['order_id'];
+		$recurring_invoice_id = $data['recurring_invoice_id'];
+		$subscription_id = $data['subscription_id'];
+
+		if(!$order_id || !$recurring_invoice_id || !$subscription_id){
+			throw new PaymentException("invalid order id or invalid recurring_invoice_id or invalid subscription id");
+		}
+
+		if(!$recurring_invoice_id){
+			return null;
+		}
+
+		$recurring_invoice_data = $this->fetchRecurringInvoice((int) $recurring_invoice_id, ['recurring_invoices.*', 'currencies.code as currency_code'])->toArray();
+
+		return [
+			'recurring_invoice_data'	=>	$recurring_invoice_data,
+			'order_id'					=>	$order_id,
+			'recurring_invoice_id'		=>	$recurring_invoice_id,
+			'subscription_id'			=>	$subscription_id,
+		];
+
+	}
+
+	/**
+	 * getOrderIdAndRecurringInvoiceIdFromResponse function
+	 *
+	 * @param array $request_data
+	 * @return array
+	 */
+	private function getOrderIdAndRecurringInvoiceIdFromResponse(array $request_data) : array {
+		
+		$event = $request_data;
+		$invoice = $event['data']['object'];
+
+		$order_id = $invoice['lines']['data'][0]['metadata']['order_id'] ?? null;
+		$recurring_invoice_id = $invoice['lines']['data'][0]['metadata']['recurring_invoice_id'] ?? null;
+
+		if(!$order_id){
+			$order_id = $invoice['parent']['subscription_details']['metadata']['order_id'] ?? null;
+		}
+
+		if(!$recurring_invoice_id){
+			$recurring_invoice_id = $invoice['parent']['subscription_details']['metadata']['recurring_invoice_id'] ?? null;
+		}
+
+		$subscription_id = $invoice['parent']['subscription_details']['subscription'] ?? null;
+		
+		return [
+			'order_id'				=>	$order_id,
+			'recurring_invoice_id'	=>	$recurring_invoice_id,
+			'subscription_id'		=>	$subscription_id
+		];
+
+	}
+
+
 	/**
 	 * createTransactionForRecurringSale function
 	 *

@@ -15,6 +15,7 @@ use App\Modules\Payment\Enums\TransactionStatus;
 use App\Modules\Payment\Gateways\Stripe\Implementation\CheckoutSession;
 use App\Modules\Payment\Gateways\Stripe\Implementation\Credentials;
 use App\Modules\Payment\Jobs\FetchStripeBalanceTransactionJob;
+use App\Modules\RecurringInvoice\RecurringInvoice;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Exception;
@@ -177,6 +178,127 @@ class Stripe implements PaymentInterface {
 		}
 
 	}
+	
+	private function subscriptionSaleMade(array $request_data, array $settings_data) : bool {
+		
+		if(strtolower($request_data['data']['object']['status']) !== 'paid'){
+			return false;
+		}
+		
+		$recurring_invoice_data = $settings_data['webhook_data'];	
+		$settings = $settings_data['settings'];	
+
+		$subscription_id = $settings['subscription_id'];
+		$order_id = $settings['order_id'];
+
+		$completed_transaction = $this->db->fetchCompletedTransaction((int) $recurring_invoice_data['company_id'], (string) $order_id);
+		if($completed_transaction){
+			return true;
+		}
+
+		$subscription = $this->provider->subscriptions->retrieve($subscription_id, [
+			'expand' => ['latest_invoice.payments'],
+		]);
+
+		$payment_intent_id = null;
+
+		foreach($subscription->latest_invoice->payments->data ?? [] as $invoice_payment){
+			if($invoice_payment->status === 'paid' && $invoice_payment->payment->type === 'payment_intent'){
+				$payment_intent_id = $invoice_payment->payment->payment_intent;
+				break;
+			}
+		}
+		
+		$next_billing_time = \Carbon\Carbon::createFromTimestampUTC(
+			$subscription->items->data[0]->current_period_end
+		)->format('Y-m-d H:i:s');
+
+		$stripe_fees = $this->getStripeFees($payment_intent_id, $recurring_invoice_data['currency_code']);
+
+		$gateway_fee = $stripe_fees['gateway_fee'];
+		$net_amount = $stripe_fees['net_amount'];
+		
+		$transaction = $this->db->createTransactionForRecurringSale([
+			'currency_id'				=>	(int) $recurring_invoice_data['currency_id'],
+			'company_id'				=>	(int) $recurring_invoice_data['company_id'],
+			'amount'					=>	(string) $recurring_invoice_data['total'],
+			'refunded_amount'			=>	0,
+			'gateway_fees_amount'		=>	$gateway_fee,
+			'received_amount'			=>	$net_amount,
+			'payment_gateway'			=>	PaymentGateway::STRIPE->value,
+			'mode'						=>	'-',
+			'token_id_identifier'		=>	$order_id,
+			'is_approved'				=>	1,
+			'is_payment_captured'		=>	1,
+			'status'					=>	TransactionStatus::COMPLETED->value,
+			'is_echeck'					=>	0,
+			'paid_at'					=>	now(),
+			'created_at'				=>	now(),
+			'updated_at'				=>	now()
+		]);
+
+		$this->db->upsertTransactionGatewayDetails((int) $transaction->id, 'subscription_sale_deails', $request_data);
+
+		if(!$stripe_fees['found']){
+			FetchStripeBalanceTransactionJob::dispatch($payment_intent_id, $transaction->id, $this->api_secret, $recurring_invoice_data['currency_code'])->delay(15);
+		}
+
+		$recurring_invoice_module = app(RecurringInvoice::class);
+		$recurring_invoice_module->setCompanyId((int) $recurring_invoice_data['company_id'])->setRecurringInvoiceIds([$recurring_invoice_data['id']])->setOnlineTransactionData([
+			[
+				'recurring_invoice_id'	=>	$recurring_invoice_data['id'],
+				'transaction_id'		=>	$transaction->id,
+			]
+		])->executeActions(false, true);
+
+		$this->db->updateNextInvoiceDate((int) $recurring_invoice_data['company_id'], (int) $recurring_invoice_data['id'], $next_billing_time);
+
+		return true;
+		
+	}
+
+	/**
+	 * getStripeFees function
+	 *
+	 * @param string $payment_intent_id
+	 * @param string $currency_code
+	 * @return array
+	 */
+	private function getStripeFees(string $payment_intent_id, string $currency_code) : array {
+
+		$payment_intent = $this->provider->paymentIntents->retrieve($payment_intent_id, [
+			'expand' => ['latest_charge.balance_transaction']
+		]);
+		
+		$balance_transaction = $payment_intent->latest_charge->balance_transaction;
+		
+		$gateway_fee = 0;
+		$net_amount = 0;
+		$found = false;
+		
+		if($balance_transaction){
+			
+			$gateway_fee = BigDecimal::of($balance_transaction->fee)->dividedBy(100, 2, RoundingMode::HalfUp)->__toString();
+
+			$net_amount = BigDecimal::of($balance_transaction->net)->dividedBy(100, 2, RoundingMode::HalfUp)->__toString();
+			
+			if($balance_transaction->currency !== strtolower($currency_code)){
+				$found = true;
+				$exchange_rate = BigDecimal::of($balance_transaction->exchange_rate);
+				$gateway_fee = BigDecimal::of($gateway_fee)->dividedBy($exchange_rate, 2, RoundingMode::HalfUp)->__toString();
+				$net_amount = BigDecimal::of($net_amount)->dividedBy($exchange_rate, 2, RoundingMode::HalfUp)->__toString();
+
+			}
+
+		}
+
+		return [
+			'found'			=>	$found,
+			'gateway_fee'	=>	$gateway_fee,
+			'net_amount'	=>	$net_amount,
+		];
+
+	}
 
 	/**
 	 * handleWebhook function
@@ -201,8 +323,18 @@ class Stripe implements PaymentInterface {
 			logger("event type ".$event_type." is not added in the application");
 			return false;
 		}
+
+		if((string) $event_type === StripeEvents::INVOICE_PAID->value){
+			//subscription payments.
+			logger('inside invoice paid');
+			$this->subscriptionSaleMade($request_data, $settings_data);
+		}
 		
-		if((string) $event_type === StripeEvents::CHECKOUT_COMPLETED->value){
+		if((string) $event_type === StripeEvents::CHECKOUT_COMPLETED->value || (string) $event_type === StripeEvents::CHECKOUT_COMPLETED_ASYNC->value){
+
+			if($request_data['data']['object']['mode'] === 'subscription'){
+				return false;
+			}
 			
 			$data = $settings_data;
 
@@ -224,32 +356,13 @@ class Stripe implements PaymentInterface {
 			}
 			
 			$payment_intent_id = $request_data['data']['object']['payment_intent'];
-			
-			$payment_intent = $this->provider->paymentIntents->retrieve($payment_intent_id, [
-				'expand' => ['latest_charge.balance_transaction']
-			]);
-			
-			$balance_transaction = $payment_intent->latest_charge->balance_transaction;
-			
-			$gateway_fee = '0';
-			$net_amount  = '0';
-			
-			if($balance_transaction){
-				
-				$gateway_fee = BigDecimal::of($balance_transaction->fee)->dividedBy(100, 2, RoundingMode::HalfUp)->__toString();
 
-				$net_amount = BigDecimal::of($balance_transaction->net)->dividedBy(100, 2, RoundingMode::HalfUp)->__toString();
-				
-				if($balance_transaction->currency !== strtolower($data['webhook_data']['currency_code'])){
-					
-					$exchange_rate = BigDecimal::of($balance_transaction->exchange_rate);
-					$gateway_fee = BigDecimal::of($gateway_fee)->dividedBy($exchange_rate, 2, RoundingMode::HalfUp)->__toString();
-					$net_amount = BigDecimal::of($net_amount)->dividedBy($exchange_rate, 2, RoundingMode::HalfUp)->__toString();
+			$stripe_fees = $this->getStripeFees($payment_intent_id, $data['webhook_data']['currency_code']);
 
-				}
+			$gateway_fee = $stripe_fees['gateway_fee'];
+			$net_amount = $stripe_fees['net_amount'];
 
-			}else{
-				
+			if(!$stripe_fees['found']){
 				FetchStripeBalanceTransactionJob::dispatch($payment_intent_id, $transaction->id, $this->api_secret, $data['webhook_data']['currency_code'])->delay(15);
 			}
 
@@ -292,7 +405,7 @@ class Stripe implements PaymentInterface {
 		}
 
 		if($session->status === 'complete' && $session->subscription){
-			
+
 			$portal = $this->provider->billingPortal->sessions->create([
 				'customer'   => $session->customer,
 				'return_url' => env('APP_URL') . PAYMENT_SUCCESS_URL,
