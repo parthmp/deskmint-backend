@@ -69,6 +69,9 @@ class InsertInvoiceDataJob implements ShouldQueue {
 
 		try{
 
+			//lock
+			Redis::setex(config('global.invoice_lock_key'), (int) config('global.invoice_lock_seconds'), true);
+
 			FacadeDB::transaction(function () use ($actions) {
 				
 				
@@ -82,6 +85,7 @@ class InsertInvoiceDataJob implements ShouldQueue {
 						->insertPayments($this->online_transaction_data)
 						->insertSnapshots()
 						->updateLastInvoiceCreatedAt()
+						->updateNextInvoiceOn()
 						->getInserted();
 
 				FacadeDB::afterCommit(function() use ($inserted){

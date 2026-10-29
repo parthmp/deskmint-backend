@@ -180,8 +180,6 @@ class RecurringInvoiceService {
 		$snapshot_data['company_logo'] = $company['logo'] ?? '';
 		$snapshot_data['terms'] = $company['invoice_terms'] ?? '';
 		$snapshot_data['footer'] = $company['invoice_footer'] ?? '';
-
-		
 		
 		return [
 			'uuid'						=>	Str::uuid(),

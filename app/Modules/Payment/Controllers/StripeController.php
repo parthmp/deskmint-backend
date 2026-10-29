@@ -17,6 +17,13 @@ class StripeController extends Controller{
 	public function handlePaymentWebhook(Request $request){
 
 		$data = $request->all();
+
+		logger("\n\n\n");
+		logger("FROM STRIPE");
+		logger("===========");
+		logger($data);
+		logger("===========");
+		logger("\n\n\n");
 		
 		$event_type = $data['type'] ?? null;
 

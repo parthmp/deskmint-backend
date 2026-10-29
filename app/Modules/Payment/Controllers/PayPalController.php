@@ -23,12 +23,6 @@ class PayPalController extends Controller{
 	public function handlePaymentWebhook(Request $request){
 
 		$data = $request->all();
-		logger("\n\n\n");
-		logger("FROM PAYPAL");
-		logger("===========");
-		logger($data);
-		logger("===========");
-		logger("\n\n\n");
 		
 		$event_type = $data['event_type'] ?? null;
 

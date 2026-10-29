@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\RecurringInvoice as ModelsRecurringInvoice;
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\RecurringInvoice\RecurringInvoice;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -24,8 +25,8 @@ class CreateInvoicesFromRecurringInvoices extends Command
 		// Redis::setex(config('global.invoice_lock_key'), 10, true);
 		// echo "c";
 		// die();
-		$ids = ModelsRecurringInvoice::orderBy('id', 'desc')->limit(20)->get()->pluck('id')->toArray();
-		
+		$ids = ModelsRecurringInvoice::where('payment_gateway', '=', PaymentGateway::NONE->value)->orderBy('id', 'desc')->limit(3)->get()->pluck('id')->toArray();
+		logger($ids);
 		$recurring_invoice = app(RecurringInvoice::class);
         $recurring_invoice->setCompanyId(1)->setRecurringInvoiceIds($ids)->executeActions(false, true);
         // $recurring_invoice->setCompanyId(1)->setRecurringInvoiceIds([109])->setOnlineTransactionData([

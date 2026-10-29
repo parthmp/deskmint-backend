@@ -19,6 +19,7 @@ use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceCustomFieldValue;
 use App\Models\RecurringInvoiceItem;
 use App\Models\SettingsSection;
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Traits\SettingsDefault;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -769,6 +770,63 @@ class DB {
 			'hidden_sent_at' => now()
 		]);
 		
+	}
+
+	/**
+	 * fetchOfflineRecurringInvoiceData function
+	 *
+	 * @param integer $company_id
+	 * @param array $recurring_invoice_ids
+	 * @param array $selects
+	 * @return array
+	 */
+	public function fetchOfflineRecurringInvoiceData(int $company_id, array $recurring_invoice_ids, array $selects = ['*']) : array {
+		return RecurringInvoice::select(...$selects)->where([['company_id', '=', $company_id], ['payment_gateway', '=', PaymentGateway::NONE->value]])->whereIn('id', $recurring_invoice_ids)->get()->toArray();
+	}
+
+	/**
+	 * updateNextInvoiceOn function
+	 *
+	 * @param array $recurring_invoices
+	 * @return void
+	 */
+	public function updateNextInvoiceOn(array $recurring_invoices): void {
+
+		foreach(array_chunk($recurring_invoices, 50) as $chunk){
+
+			$ids = [];
+			$cases = [];
+			$case_bindings = [];
+
+			foreach($chunk as $entry){
+
+				if(!isset($entry['id'], $entry['next_invoice_on'])){
+					continue;
+				}
+
+				$id = (int) $entry['id'];
+				$ids[] = $id;
+
+				$cases[] = "WHEN id = ? THEN ?";
+				$case_bindings[] = $id;
+				$case_bindings[] = $entry['next_invoice_on'];
+			}
+
+			if(empty($ids)){
+				continue;
+			}
+
+			$cases_sql = implode(' ', $cases);
+			$ids_csv = implode(',', array_fill(0, count($ids), '?'));
+
+			$query = "
+				UPDATE recurring_invoices
+				SET next_invoice_on = CASE {$cases_sql} ELSE next_invoice_on END
+				WHERE id IN ({$ids_csv})
+			";
+
+			FacadesDB::update($query, array_merge($case_bindings, $ids));
+		}
 	}
 
 }

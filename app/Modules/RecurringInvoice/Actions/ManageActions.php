@@ -20,7 +20,8 @@ class ManageActions {
 		private InsertCustomFields $insert_custom_fields,
 		private InsertSnapshots $insert_snapshots,
 		private InsertPayments $insert_payments,
-		private UpdateLastInvoiceGenerated $update_last_invoice_generated
+		private UpdateLastInvoiceGenerated $update_last_invoice_generated,
+		private UpdateNextInvoiceOn $update_next_invoice_on
 	){}
 
 	/**
@@ -88,17 +89,11 @@ class ManageActions {
 			return $this;
 		}
 
-		//lock
-		Redis::setex(config('global.invoice_lock_key'), (int) config('global.invoice_lock_seconds'), true);
-		
 		$invoice_numbers = $this->invoice_settings_service->setCompany((int) $this->company_id)->getInvoiceNumbers();
 
 		$inserted = $this->insert_invoice->insertInvoice($this->data['data'], $invoice_numbers, $online_transaction_data);
 
 		$this->inserted = $inserted;
-
-		//release the lock.
-		Redis::del(config('global.invoice_lock_key'));
 
 		return $this;
 
@@ -246,11 +241,28 @@ class ManageActions {
 	 */
 	public function updateLastInvoiceCreatedAt() : self {
 
-		if($this->hasNoInsertedInvoices('insertPayments')){
+		if($this->hasNoInsertedInvoices('updateLastInvoiceCreatedAt')){
 			return $this;
 		}
 
 		$this->update_last_invoice_generated->updateLastInvoiceCreatedAt($this->company_id, $this->inserted);
+
+		return $this;
+
+	}
+
+	/**
+	 * updateNextInvoiceOn function
+	 *
+	 * @return self
+	 */
+	public function updateNextInvoiceOn() : self {
+
+		if($this->hasNoInsertedInvoices('updateNextInvoiceOn')){
+			return $this;
+		}
+
+		$this->update_next_invoice_on->updateNextInvoiceOn($this->company_id, $this->inserted);
 
 		return $this;
 
