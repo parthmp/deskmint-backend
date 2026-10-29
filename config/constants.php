@@ -53,3 +53,5 @@
 
 
 	if(!defined('INVOICES_DISK')) define('INVOICES_DISK', 'invoices_storage');
+
+	if(!defined('INVOICE_CHAIN_RUNNING')) define('INVOICE_CHAIN_RUNNING', 'invoice_chain_running');

@@ -21,19 +21,25 @@ class CreateInvoicesFromRecurringInvoices extends Command
      */
     public function handle()
     {
-		//Redis::del(config('global.invoice_lock_key'));
-		// Redis::setex(config('global.invoice_lock_key'), 10, true);
-		// echo "c";
-		// die();
-		$ids = ModelsRecurringInvoice::where('payment_gateway', '=', PaymentGateway::NONE->value)->orderBy('id', 'desc')->limit(3)->get()->pluck('id')->toArray();
-		logger($ids);
-		$recurring_invoice = app(RecurringInvoice::class);
-        $recurring_invoice->setCompanyId(1)->setRecurringInvoiceIds($ids)->executeActions(false, true);
-        // $recurring_invoice->setCompanyId(1)->setRecurringInvoiceIds([109])->setOnlineTransactionData([
-		// 	[
-		// 		'recurring_invoice_id'  => 109,
-		//  		'transaction_id'        => 101
-		// 	]
-		// ])->executeActions(false, true);
+
+		if(Redis::exists(INVOICE_CHAIN_RUNNING)){
+			logger('another invoice chain is already running');
+			return ;
+		}
+
+		if(Redis::exists(config('global.invoice_lock_key'))){
+			logger('invoices are locked');
+			return ;
+		}
+		
+		$gen_number = (int) config('global.recurring_invoice_batch_number');
+
+		$ids = ModelsRecurringInvoice::where([['payment_gateway', '=', PaymentGateway::NONE->value], ['next_invoice_on', '<', now()]])->orderBy('id', 'desc')->limit($gen_number)->get()->pluck('id')->toArray();
+		
+		if(!empty($ids)){
+			$recurring_invoice = app(RecurringInvoice::class);
+			$recurring_invoice->setCompanyId(1)->setRecurringInvoiceIds($ids)->executeActions(false, true);
+		}
+
     }
 }

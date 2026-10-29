@@ -22,9 +22,11 @@
 										'multiselect'
 									],
 
-		'invoice_lock_key'			=>	env('INVOICES_LOCK_KEY', 'invoice_lock'),
-		'invoice_lock_seconds'		=>	env('INVOICES_LOCK_SECONDS', 10),
-		'paypal_product_id'			=>	env('PAYPAL_PRODUCT_ID', 'PROD-DESKMINTRECURRING'),
-		'stripe_product_id'			=>	env('STRIPE_PRODUCT_ID', 'deskmint_subscription')
+		'invoice_lock_key'						=>	env('INVOICES_LOCK_KEY', 'invoice_lock'),
+		'invoice_lock_seconds'					=>	env('INVOICES_LOCK_SECONDS', 10),
+		'paypal_product_id'						=>	env('PAYPAL_PRODUCT_ID', 'PROD-DESKMINTRECURRING'),
+		'stripe_product_id'						=>	env('STRIPE_PRODUCT_ID', 'deskmint_subscription'),
+		'recurring_invoice_batch_number'		=>	env('RECURRING_INVOICE_BATCH_NUMBER', 50),
+		'recurring_invoice_interval_minutes'	=>	env('RECURRING_INVOICE_INTERVAL_MINUTES', 10),
 
 	];

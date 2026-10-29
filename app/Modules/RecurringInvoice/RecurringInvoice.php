@@ -4,6 +4,7 @@ namespace App\Modules\RecurringInvoice;
 
 use App\Modules\RecurringInvoice\DB\DB;
 use App\Modules\RecurringInvoice\Exceptions\RecurringInvoiceModuleException;
+use App\Modules\RecurringInvoice\Jobs\ClearChainFlagJob;
 use App\Modules\RecurringInvoice\Jobs\GenerateInvoicePDFsJob;
 use App\Modules\RecurringInvoice\Jobs\InsertInvoiceDataJob;
 use App\Modules\RecurringInvoice\Jobs\SendInvoiceGeneratedEmailsJob;
@@ -85,8 +86,15 @@ class RecurringInvoice {
 		}
 
 		if(!empty($batch)){
+
+			//lock
+			Redis::setex(INVOICE_CHAIN_RUNNING, 3600, $batch_id);
+
+			$batch[] = new ClearChainFlagJob();
+
 			Bus::chain($batch)->catch(function (Throwable $e) use($batch_id) {
 				Redis::del($batch_id);
+				Redis::del(INVOICE_CHAIN_RUNNING);
 			})->dispatch();
 		}
 
