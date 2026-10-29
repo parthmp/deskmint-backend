@@ -11,6 +11,8 @@ use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceCustomFieldValue;
 use App\Models\RecurringInvoicesCustomField;
 use App\Modules\CustomFields\CustomFields;
+use App\Modules\DataTable\Requests\DataTableRequest;
+use App\Modules\EasyIndex\EasyIndex;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\RecurringInvoice\DB\DB;
 use App\Modules\RecurringInvoice\RecurringInvoice as RecurringInvoiceModule;
@@ -40,7 +42,8 @@ class RecurringInvoiceService {
 		private RecurringInvoiceModule $reccuring_invoice_module,
 		private PaymentTypeRepository $payment_type_repository,
 		private InvoiceRepository $invoice_repository,
-		private DB $db
+		private DB $db,
+		private EasyIndex $easy_index
 	){}
 
 	/**
@@ -342,6 +345,269 @@ class RecurringInvoiceService {
 	public function executeActions(int $company_id, array $ids, bool $send_email, bool $start_subscription) : void {
 		$this->reccuring_invoice_module->setCompanyId($company_id)->setRecurringInvoiceIds($ids)->executeActions($send_email, $start_subscription);
 		//$this->reccuring_invoice_module->setCompanyId($company_id)->setRecurringInvoiceIds($ids)->executeActions($send_email, false);
+	}
+
+	/**
+	 * fetchIndex function
+	 *
+	 * @param DataTableRequest $request
+	 * @return array
+	 */
+	public function fetchIndex(DataTableRequest $request) : array {
+
+		$joins = [
+					[
+						'table' => 'recurring_invoices_flat',
+						'first' => 'recurring_invoices.id',
+						'operator' => '=',
+						'second' => 'recurring_invoices_flat.recurring_invoice_id',
+						'columns' => '' //this will be replaced by EasyIndex class.
+					],
+					// [
+					// 	'table' => 'clients',
+					// 	'first' => 'clients.id',
+					// 	'operator' => '=',
+					// 	'second' => 'invoices.client_id',
+					// 	'columns' => ['clients.first_name as first_name', 'clients.last_name as last_name', 'clients.client_company_name as client_company']
+					// ],
+					[
+						'table' => 'currencies',
+						'first' => 'currencies.id',
+						'operator' => '=',
+						'second' => 'recurring_invoices.currency_id',
+						'columns' => ['currencies.code as c_code']
+					],
+					[
+						'table' => 'clients',
+						'first' => 'clients.id',
+						'operator' => '=',
+						'second' => 'recurring_invoices.client_id',
+						'columns' => ['clients.full_name as full_name']
+					],
+					[
+						'table' => 'payment_types',
+						'first' => 'payment_types.id',
+						'operator' => '=',
+						'second' => 'recurring_invoices.payment_type_id',
+						'columns' => ['payment_types.payment_type as payment_type']
+					],
+					// [
+					// 	'table' => 'countries as b_countries',
+					// 	'first' => 'clients.billing_country_id',
+					// 	'operator' => '=',
+					// 	'second' => 'b_countries.id',
+					// 	'columns' => ['b_countries.country_name as b_country_name']
+					// ],
+					// [
+					// 	'table' => 'countries as s_countries',
+					// 	'first' => 'clients.shipping_country_id',
+					// 	'operator' => '=',
+					// 	'second' => 's_countries.id',
+					// 	'columns' => ['s_countries.country_name as s_country_name']
+					// ],
+					// [
+					// 	'table' => 'industries',
+					// 	'first' => 'clients.industry_id',
+					// 	'operator' => '=',
+					// 	'second' => 'industries.id',
+					// 	'columns' => ['industries.industry_name as industry_name']
+					// ]
+				];
+
+			$default_columns = [
+				'searchable_columns'	=>	['recurring_invoices.id', 'recurring_invoices.uuid', 'recurring_invoices.total', 'currencies.code',  'recurring_invoices.payment_gateway','recurring_invoices.status', 'clients.full_name', 'recurring_invoices.frequency'],
+				'searchable_dates'		=>	['invoices.created_at', 'invoices.due_date', 'invoices.invoice_date', 'invoices.last_reminder_sent_at'],
+				'show_columns'			=>	[
+					[
+						'label'	=>	'id',
+						'text'	=>	'ID',
+					],
+					[
+						'label'	=>	'full_name',
+						'text'	=>	'Name',
+					],
+					[
+						'label'	=>	'total',
+						'text'	=>	'Total',
+					],
+					[
+						'label'	=>	'c_code',
+						'text'	=>	'Currency',
+					],
+					[
+						'label'	=>	'payment_gateway',
+						'text'	=>	'Gateway',
+					],
+					[
+						'label'	=>	'status',
+	 					'text'	=>	'Status',
+					],
+					[
+						'label'	=>	'frequency',
+	 					'text'	=>	'Frequency',
+					],
+					[
+						'label'	=>	'created_at',
+	 					'text'	=>	'Added on',
+					]
+				],
+			];
+
+			$company_id = (int) Sanitize::input($request->input('company_id'));
+
+			$gateways = PaymentGateway::configuredOptions($company_id, false);
+
+			$rewrites = [
+				'data' => [
+					
+					'recurring_invoices.discount_type' => [
+						1	=>	'Percentage',
+						2	=>	"Amount"
+					],
+					'recurring_invoices.status' => [
+						RecurringInvoiceStatus::DRAFT->value				=>	RecurringInvoiceStatus::DRAFT->label(),
+						RecurringInvoiceStatus::SENT->value					=>	RecurringInvoiceStatus::SENT->label(),
+						RecurringInvoiceStatus::ACTIVE->value				=>	RecurringInvoiceStatus::ACTIVE->label(),
+						RecurringInvoiceStatus::PAUSED->value				=>	RecurringInvoiceStatus::PAUSED->label(),
+						RecurringInvoiceStatus::PENDING_APPROVAL->value		=>	RecurringInvoiceStatus::PENDING_APPROVAL->label(),
+						RecurringInvoiceStatus::CANCELLED->value			=>	RecurringInvoiceStatus::CANCELLED->label(),
+					],
+					'recurring_invoices.frequency' => [
+						Frequencies::DAILY->value			=>	Frequencies::DAILY->label(),
+						Frequencies::WEEKLY->value			=>	Frequencies::WEEKLY->label(),
+						Frequencies::BI_WEEKLY->value		=>	Frequencies::BI_WEEKLY->label(),
+						Frequencies::MONTHLY->value			=>	Frequencies::MONTHLY->label(),
+						Frequencies::THREE_MONTHS->value	=>	Frequencies::THREE_MONTHS->label(),
+						Frequencies::SIX_MONTHS->value		=>	Frequencies::SIX_MONTHS->label(),
+						Frequencies::YEARLY->value			=>	Frequencies::YEARLY->label(),
+						Frequencies::CUSTOM->value			=>	Frequencies::CUSTOM->label(),
+					],
+					'invoices.payment_gateway' => $gateways
+				],
+				'ui'	=>	[
+					'discount_type'	=>	[
+						[
+							'type'			=>	'label',
+							'highlight'		=>	'success',
+							'text'			=>	'Percentage',
+							'value'			=>	1,
+						],
+						[
+							'type'			=>	'label',
+							'highlight'		=>	'success',
+							'text'			=>	'Amount',
+							'value'			=>	2,
+						]
+					],
+					'frequency'	=>	[
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'info',
+							'text'		=>	Frequencies::DAILY->label(),
+							'value'		=>	Frequencies::DAILY->value,
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'info',
+							'text'		=>	Frequencies::WEEKLY->label(),
+							'value'		=>	Frequencies::WEEKLY->value,
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'info',
+							'text'		=>	Frequencies::BI_WEEKLY->label(),
+							'value'		=>	Frequencies::BI_WEEKLY->value,
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'info',
+							'text'		=>	Frequencies::MONTHLY->label(),
+							'value'		=>	Frequencies::MONTHLY->value,
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'info',
+							'text'		=>	Frequencies::THREE_MONTHS->label(),
+							'value'		=>	Frequencies::THREE_MONTHS->value,
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'info',
+							'text'		=>	Frequencies::SIX_MONTHS->label(),
+							'value'		=>	Frequencies::SIX_MONTHS->value,
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'info',
+							'text'		=>	Frequencies::YEARLY->label(),
+							'value'		=>	Frequencies::YEARLY->value,
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'info',
+							'text'		=>	Frequencies::CUSTOM->label(),
+							'value'		=>	Frequencies::CUSTOM->value,
+						],
+					],
+					'status'	=>	[
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'info',
+							'text'		=>	RecurringInvoiceStatus::DRAFT->label(),
+							'value'		=>	RecurringInvoiceStatus::DRAFT->value,
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'success',
+							'text'		=>	RecurringInvoiceStatus::SENT->label(),
+							'value'		=>	RecurringInvoiceStatus::SENT->value
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'success',
+							'text'		=>	RecurringInvoiceStatus::ACTIVE->label(),
+							'value'		=>	RecurringInvoiceStatus::ACTIVE->value
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'error',
+							'text'		=>	RecurringInvoiceStatus::PAUSED->label(),
+							'value'		=>	RecurringInvoiceStatus::PAUSED->value
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'error',
+							'text'		=>	RecurringInvoiceStatus::PENDING_APPROVAL->label(),
+							'value'		=>	RecurringInvoiceStatus::PENDING_APPROVAL->value
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'error',
+							'text'		=>	RecurringInvoiceStatus::CANCELLED->label(),
+							'value'		=>	RecurringInvoiceStatus::CANCELLED->value
+						],
+					],
+					'payment_gateway'	=>	[
+						
+					]
+				]
+
+			];
+
+		foreach($gateways as $gateway_key => $gateway){
+			$rewrites['ui']['payment_gateway'][] = [
+				'type'		=>	'label',
+				'highlight'	=>	'info',
+				'text'		=>	$gateway,
+				'value'		=>	$gateway_key
+			];
+		}
+
+		return $this->easy_index->setType('recurring_invoice')->setCustomFieldClass(RecurringInvoicesCustomField::class)->setJoins($joins)->setExceptionClass(RecurringInvoiceException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
+			'c_code'				=>		'currencies.code',
+			'payment_type'				=>		'payment_types.payment_type'
+		 ])->setRewrites($rewrites)->setModel(RecurringInvoice::class)->fetchIndex();
+
 	}
 
 }

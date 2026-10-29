@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceCustomFieldValue;
 use App\Models\InvoicesCustomField;
 use App\Modules\CustomFields\CustomFields;
+use App\Modules\DataTable\Requests\DataTableRequest;
 use App\Modules\EasyIndex\EasyIndex;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\InvoiceGeneration\InvoiceSettingsResolver;
@@ -79,7 +80,7 @@ class InvoiceFetchService{
 	 * @param string $segment
 	 * @return array
 	 */
-	public function fetchIndex(Request $request, string $segment) : array {
+	public function fetchIndex(DataTableRequest $request, string $segment) : array {
 		
 		$joins = [
 					[

@@ -298,6 +298,10 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	 */
 
 	Route::get('manage-recurring-invoices/fetch-initial-data', [RecurringInvoiceController::class, 'fetchInitialData']);
+	Route::get('manage-recurring-invoices', [RecurringInvoiceController::class, 'index']);
 	Route::post('manage-recurring-invoices', [RecurringInvoiceController::class, 'store']);
+	Route::get('manage-recurring-invoices/fetch-arranged-columns', [RecurringInvoiceController::class, 'fetchArrangedColumns']);
+	Route::post('manage-recurring-invoices/save-arranged-columns', [RecurringInvoiceController::class, 'saveArrangedColumns']);
+	
 	
 });

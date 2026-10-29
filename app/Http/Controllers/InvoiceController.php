@@ -22,6 +22,7 @@ use App\Modules\ApplyUnapply\Invoices\Requests\AlreadyAppliedRequest;
 use App\Modules\ApplyUnapply\Invoices\Requests\SearchEntriesRequest;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
+use App\Modules\DataTable\Requests\DataTableRequest;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use App\Services\Invoice\InvoiceService;
@@ -116,12 +117,12 @@ class InvoiceController extends Controller{
 
 	}
 
-	public function index(Request $request){
+	public function index(DataTableRequest $request){
 
 		try{
 
 			$segment = last(request()->segments());
-
+			$data = $request->validated();
 			return $this->invoice_service->fetchIndex($request, $segment);
 
 		}catch(InvoiceException $e){

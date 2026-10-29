@@ -8,6 +8,7 @@ use App\Jobs\GenerateInvoiceSnapshotJob;
 use App\Models\Credit;
 use App\Models\Invoice;
 use App\Modules\ApplyUnapply\Common\Traits\ApplyUnapplyCommon;
+use App\Modules\DataTable\Requests\DataTableRequest;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\InvoiceGeneration\InvoiceEmailContent;
 use App\Modules\InvoiceGeneration\InvoiceGenerator;
@@ -158,7 +159,7 @@ class InvoiceService{
 	 * @param string $segment
 	 * @return array
 	 */
-	public function fetchIndex(Request $request, string $segment) : array {
+	public function fetchIndex(DataTableRequest $request, string $segment) : array {
 		return $this->invoice_fetch_service->fetchIndex($request, $segment);
 	}
 
