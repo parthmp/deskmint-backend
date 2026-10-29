@@ -268,29 +268,41 @@ class Stripe implements PaymentInterface {
 	}
 
 	/**
-	 * getExistingSubscriptionUrl function
+	 * getExistingCheckoutUrl function
 	 *
-	 * @param string $subscription_id
-	 * @return string|null
+	 * @param string|null $session_id
+	 * @return array
 	 */
-	private function getExistingSubscriptionUrl(string $subscription_id) : ?string {
+	private function getExistingCheckoutUrl(?string $session_id) : array {
+
+		$none = ['url' => null, 'store' => false];
+
+		if(empty($session_id)){
+			return $none;
+		}
 
 		try{
-			$subscription = $this->provider->subscriptions->retrieve($subscription_id);
-		}catch(\Stripe\Exception\InvalidRequestException $e) {
-			return null;
+			$session = $this->provider->checkout->sessions->retrieve($session_id);
+		}catch(\Stripe\Exception\InvalidRequestException $e){
+			return $none;
 		}
 
-		if(!in_array($subscription->status, ['active', 'trialing', 'past_due'], true)){
-			return null;
+		if($session->status === 'open'){
+			return ['url' => $session->url, 'store' => true];
 		}
 
-		$portal_session = $this->provider->billingPortal->sessions->create([
-			'customer'   => $subscription->customer,
-			'return_url' => env('APP_URL') . PAYMENT_SUCCESS_URL,
-		]);
+		if($session->status === 'complete' && $session->subscription){
+			
+			$portal = $this->provider->billingPortal->sessions->create([
+				'customer'   => $session->customer,
+				'return_url' => env('APP_URL') . PAYMENT_SUCCESS_URL,
+			]);
 
-		return $portal_session->url;
+			return ['url' => $portal->url, 'store' => false];
+
+		}
+
+		return $none;
 
 	}
 
@@ -323,14 +335,21 @@ class Stripe implements PaymentInterface {
 
 		$plan = $this->db->fetchSubscriptionPlanByRI((int) $recurring_invoice['company_id'], (int) $recurring_invoice['id'], (int) $recurring_invoice['payment_gateway']);
 		
-		if($plan && $plan->gateway_subscription_id){
+		if($plan){
+			
+			if($plan->stripe_session_id){
 
-			$existing_url = $this->getExistingSubscriptionUrl((string) $plan->gateway_subscription_id);
-			if($existing_url){
-				$this->insertRecurringInvoiceUrl((string) $existing_url, $recurring_invoice);
-				return $existing_url;
+				$url_data = $this->getExistingCheckoutUrl($plan->stripe_session_id);
+
+				if($url_data['url']){
+					if($url_data['store']){
+						$this->insertRecurringInvoiceUrl((string) $url_data['url'], $recurring_invoice);
+					}
+					return $url_data['url'];
+				}
+
 			}
-
+			
 		}
 		
 
@@ -342,12 +361,13 @@ class Stripe implements PaymentInterface {
 
 		$checkout_session = new CheckoutSession($this->provider, $recurring_invoice['code'], 'Subscription Plan', 'Subscription Plan', $cents, $uuid_token, (int) $recurring_invoice['id'], strtolower($freqency_array['interval_unit']), (int) $freqency_array['interval_count']);
 		$session = $checkout_session->create();
-
+		
 		$data = [
 			'company_id'				=>	$recurring_invoice['company_id'],
 			'recurring_invoice_id'		=>	$recurring_invoice['id'],
 			'payment_gateway'			=>	$recurring_invoice['payment_gateway'],
 			'gateway_subscription_id'	=>	'', //update this after customer approves.
+			'stripe_session_id'			=>	(string) $session->id,
 			'plan_id'					=>	'',
 			'payer_id'					=>	''
 		];

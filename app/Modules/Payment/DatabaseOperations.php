@@ -483,6 +483,8 @@ class DatabaseOperations{
 		$plan->payment_gateway = $data['payment_gateway'];
 		$plan->gateway_subscription_id = $data['gateway_subscription_id'];
 		$plan->plan_id = $data['plan_id'];
+
+		$plan->stripe_session_id = $data['stripe_session_id'] ?? null;
 		
 		return $plan->save();
 
