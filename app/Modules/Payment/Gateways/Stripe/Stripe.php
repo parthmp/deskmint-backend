@@ -190,7 +190,7 @@ class Stripe implements PaymentInterface {
 
 		$subscription_id = $settings['subscription_id'];
 		$order_id = $settings['order_id'];
-
+		
 		$completed_transaction = $this->db->fetchCompletedTransaction((int) $recurring_invoice_data['company_id'], (string) $order_id);
 		if($completed_transaction){
 			return true;

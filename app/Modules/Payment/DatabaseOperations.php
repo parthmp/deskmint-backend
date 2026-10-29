@@ -623,12 +623,13 @@ class DatabaseOperations{
 		$event = $request_data;
 		$invoice = $event['data']['object'];
 
-		$order_id = $invoice['lines']['data'][0]['metadata']['order_id'] ?? null;
+		//$order_id = $invoice['lines']['data'][0]['metadata']['order_id'] ?? null;
 		$recurring_invoice_id = $invoice['lines']['data'][0]['metadata']['recurring_invoice_id'] ?? null;
-
-		if(!$order_id){
-			$order_id = $invoice['parent']['subscription_details']['metadata']['order_id'] ?? null;
-		}
+		$order_id = $invoice['id'] ?? null;
+		
+		// if(!$order_id){
+		// 	$order_id = $invoice['parent']['subscription_details']['metadata']['order_id'] ?? null;
+		// }
 
 		if(!$recurring_invoice_id){
 			$recurring_invoice_id = $invoice['parent']['subscription_details']['metadata']['recurring_invoice_id'] ?? null;

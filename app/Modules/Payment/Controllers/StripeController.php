@@ -43,7 +43,7 @@ class StripeController extends Controller{
 		if((string) $event_type === StripeEvents::INVOICE_PAID->value){
 			
 			$fetched_data = $this->database_operations->fetchStripeSettingsForSubscriptions($data);
-
+			
 			$settings_data['webhook_data'] = $fetched_data['recurring_invoice_data'];
 			$settings_data['settings'] = [
 				'order_id'					=>	$fetched_data['order_id'],

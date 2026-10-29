@@ -37,7 +37,7 @@ class PayPalController extends Controller{
 		];
 
 		if(in_array((string) $event_type, $sub_events)){
-
+			
 			$data = $this->database_operations->fetchPayPalSettingsForSubscriptions($data);
 			$settings_data['webhook_data'] = $data['recurring_invoice_data'];
 			$settings_data['settings'] = $data['settings'];
