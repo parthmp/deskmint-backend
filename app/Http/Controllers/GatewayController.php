@@ -61,7 +61,7 @@ class GatewayController extends Controller {
 		}
 
 		//check if payment url already exist for past 2 hours with same payment method, total.
-		$existing_url = $this->gateway_service->fetchExistingPaymentUrl($invoice->id);
+		$existing_url = $this->gateway_service->fetchExistingPaymentUrl((int) $invoice->id, (int) $invoice->currency_id);
 		
 		if($existing_url === null){
 
@@ -146,7 +146,7 @@ class GatewayController extends Controller {
 			return $this->showRequestPage($pr);
 		}
 
-		$existing_url = $this->gateway_service->fetchExistingPaymentUrlForRequest($pr->id);
+		$existing_url = $this->gateway_service->fetchExistingPaymentUrlForRequest((int) $pr->id, (int) $pr->currency_id);
 		
 		if($existing_url === null){
 			

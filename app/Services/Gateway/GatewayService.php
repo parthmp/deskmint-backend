@@ -193,9 +193,9 @@ class GatewayService{
 	 * @param integer $invoice_id
 	 * @return string|null
 	 */
-	public function fetchExistingPaymentUrl(int $invoice_id) : ?string {
+	public function fetchExistingPaymentUrl(int $invoice_id, int $currency_id) : ?string {
 
-		$transaction = $this->gateway_repository->fetchTransactionOfPast($invoice_id);
+		$transaction = $this->gateway_repository->fetchTransactionOfPast($invoice_id, $currency_id);
 		
 		if(!$transaction){
 			return null;
@@ -232,11 +232,12 @@ class GatewayService{
 	 * fetchExistingPaymentUrlForRequest function
 	 *
 	 * @param integer $pr_id
+	 * @param integer $currency_id
 	 * @return string|null
 	 */
-	public function fetchExistingPaymentUrlForRequest(int $pr_id) : ?string {
+	public function fetchExistingPaymentUrlForRequest(int $pr_id, int $currency_id) : ?string {
 
-		$transaction = $this->gateway_repository->fetchTransactionOfPastForRequests($pr_id);
+		$transaction = $this->gateway_repository->fetchTransactionOfPastForRequests($pr_id, $currency_id);
 		
 		if(!$transaction){
 			return null;

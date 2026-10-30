@@ -44,10 +44,11 @@ class GatewayRepository{
 	 * fetchTransactionOfPast function
 	 *
 	 * @param integer $invoice_id
+	 * @param integer $currency_id
 	 * @return Transaction|null
 	 */
-	public function fetchTransactionOfPast(int $invoice_id) : ?Transaction {
-		return Transaction::select('payment_urls.url as payment_url', 'transactions.amount as amount', 'transactions.payment_gateway as payment_gateway')->join('transaction_references', 'transaction_references.transaction_id', '=', 'transactions.id')->join('payment_urls', 'payment_urls.transaction_id', '=', 'transactions.id')->where([['transactions.created_at', '>', now()->subHours(2)], ['transaction_references.invoice_id', '=',$invoice_id]])->orderBy('transactions.id', 'desc')->first();
+	public function fetchTransactionOfPast(int $invoice_id, int $currency_id) : ?Transaction {
+		return Transaction::select('payment_urls.url as payment_url', 'transactions.amount as amount', 'transactions.payment_gateway as payment_gateway')->join('transaction_references', 'transaction_references.transaction_id', '=', 'transactions.id')->join('payment_urls', 'payment_urls.transaction_id', '=', 'transactions.id')->where([['transactions.created_at', '>', now()->subHours(2)], ['transaction_references.invoice_id', '=',$invoice_id], ['transactions.currency_id', '=', $currency_id]])->orderBy('transactions.id', 'desc')->first();
 	}
 
 	/**
@@ -84,10 +85,11 @@ class GatewayRepository{
 	 * fetchTransactionOfPastForRequests function
 	 *
 	 * @param integer $pr_id
+	 * @param integer $currency_id
 	 * @return Transaction|null
 	 */
-	public function fetchTransactionOfPastForRequests(int $pr_id) : ?Transaction {
-		return Transaction::select('payment_urls.url as payment_url', 'transactions.amount as amount', 'transactions.payment_gateway as payment_gateway')->join('transaction_references', 'transaction_references.transaction_id', '=', 'transactions.id')->join('payment_urls', 'payment_urls.transaction_id', '=', 'transactions.id')->where([['transactions.created_at', '>', now()->subHours(2)], ['transaction_references.payment_request_id', '=',$pr_id]])->orderBy('transactions.id', 'desc')->first();
+	public function fetchTransactionOfPastForRequests(int $pr_id, int $currency_id) : ?Transaction {
+		return Transaction::select('payment_urls.url as payment_url', 'transactions.amount as amount', 'transactions.payment_gateway as payment_gateway')->join('transaction_references', 'transaction_references.transaction_id', '=', 'transactions.id')->join('payment_urls', 'payment_urls.transaction_id', '=', 'transactions.id')->where([['transactions.created_at', '>', now()->subHours(2)], ['transaction_references.payment_request_id', '=',$pr_id], ['transactions.currency_id', '=', $currency_id]])->orderBy('transactions.id', 'desc')->first();
 	}
 	
 	/**

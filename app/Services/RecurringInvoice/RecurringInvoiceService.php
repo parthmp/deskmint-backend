@@ -149,7 +149,7 @@ class RecurringInvoiceService {
 		$custom_frequency_days = (int) Sanitize::input($request->input('settings.custom_frequency_days'));
 		
 		$mark_invoices_paid = (bool) Sanitize::input($request->input('settings.mark_invoices_paid'));
-		//$send_email = (bool) Sanitize::input($request->input('settings.send_email'));
+		$send_email = (bool) Sanitize::input($request->input('settings.send_email'));
 		$timezone = (string) Sanitize::input($request->input('timezone'));
 
 		$send_email_for_invoice = (bool) $request->input('settings.send_email_for_invoice');
@@ -161,10 +161,13 @@ class RecurringInvoiceService {
 			$send_email_for_invoice = 0;
 		}
 		$status = RecurringInvoiceStatus::DRAFT->value;
-		// always use draft, will update status if sending successes.
-		// if($send_email){
-		// 	$status = RecurringInvoiceStatus::SENT->value;
-		// }
+		
+		if($send_email){
+			$status = RecurringInvoiceStatus::SENT->value;
+			if((int) $payment_gateway !== PaymentGateway::NONE->value){
+				$status = RecurringInvoiceStatus::PENDING_APPROVAL->value;
+			}
+		}
 
 		if((int) $payment_gateway !== PaymentGateway::NONE->value){
 			$mark_invoices_paid = 1;
