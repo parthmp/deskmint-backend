@@ -575,7 +575,7 @@ class DatabaseOperations{
 			return null;
 		}
 
-		$recurring_invoice_data = $this->fetchRecurringInvoice((int) $recurring_invoice_id, ['recurring_invoices.*', 'currencies.code as currency_code'])->toArray();
+		$recurring_invoice_data = $this->fetchRecurringInvoice((int) $recurring_invoice_id, ['recurring_invoices.*', 'currencies.code as currency_code']);
 
 		$settings = $this->settings_section_repository->fetchSettings((int) $recurring_invoice_data['company_id'], PAYMENTS_PAYPAL_TYPE, true);
 
@@ -602,7 +602,7 @@ class DatabaseOperations{
 			return null;
 		}
 
-		$recurring_invoice_data = $this->fetchRecurringInvoice((int) $recurring_invoice_id, ['recurring_invoices.*', 'currencies.code as currency_code'])->toArray();
+		$recurring_invoice_data = $this->fetchRecurringInvoice((int) $recurring_invoice_id, ['recurring_invoices.*', 'currencies.code as currency_code']);
 
 		return [
 			'recurring_invoice_data'	=>	$recurring_invoice_data,

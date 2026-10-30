@@ -153,4 +153,25 @@ class RecurringInvoiceController extends Controller {
 
 	}
 
+
+	public function show(Request $request, int $recurring_invoice_id){
+		
+		//try{
+			
+			$recurring_invoice_id = (int) Sanitize::input($recurring_invoice_id);
+
+			$company_id = (int) Sanitize::input($request->input('company_id'));
+
+			return $this->recurring_invoice_service->fetchRecurringInvoice((int) $company_id, (int) $recurring_invoice_id);
+
+		// }catch(RecurringInvoiceException $e){
+		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		// }catch(Exception $e){
+		// 	return General::wentWrong($e);
+		// }
+
+		
+
+	}
+
 }

@@ -20,4 +20,8 @@ class RecurringInvoiceItem extends Model
 	// public function custom_field_values(){
     // 	return $this->hasMany(AdditionalProductColumnsFieldValue::class, 'row_uuid', 'row_uuid');
 	// }
+
+	public function custom_field_values(){
+    	return $this->hasMany(AdditionalProductColumnsFieldValue::class, 'row_uuid', 'row_uuid');
+	}
 }

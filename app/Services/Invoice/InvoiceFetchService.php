@@ -23,6 +23,7 @@ use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Carbon\Carbon;
 use Generator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -266,16 +267,27 @@ class InvoiceFetchService{
 	 * assembleProductRowsForEdit function
 	 *
 	 * @param integer $company_id
-	 * @param integer $invoice_id
+	 * @param integer|null $invoice_id
+	 * @param Collection|null $items_passed
+	 * @param array|null $rows_settings_passed
 	 * @return array
 	 */
-	private function assembleProductRowsForEdit(int $company_id, int $invoice_id) : array {
+	public function assembleProductRowsForEdit(int $company_id, ?int $invoice_id, ?Collection $items_passed = null, ?array $rows_settings_passed = null) : array {
 
-		$this->invoice_settings_resolver = $this->invoice_settings_resolver->setCompanyId($company_id)->setInvoiceId($invoice_id);
+		$rows_settings = $rows_settings_passed;
 
-		$rows_settings = $this->invoice_settings_resolver->fetchCurrentRowsSettings();
+		if(!$rows_settings_passed){
+			$this->invoice_settings_resolver = $this->invoice_settings_resolver->setCompanyId($company_id)->setInvoiceId($invoice_id);
+			$rows_settings = $this->invoice_settings_resolver->fetchCurrentRowsSettings();
+		}
 		
-		$items = $this->invoice_db_operations->setCompanyId($company_id)->setInvoiceId($invoice_id)->execRequiredSettings()->fetchInvoiceItemsWithCustomCols();
+		$items = $items_passed;
+
+		if(!$items_passed){
+			$items = $this->invoice_db_operations->setCompanyId($company_id)->setInvoiceId($invoice_id)->execRequiredSettings()->fetchInvoiceItemsWithCustomCols();
+		}
+		
+		
 		
 		$rows = [];
 		$row_index = 0;

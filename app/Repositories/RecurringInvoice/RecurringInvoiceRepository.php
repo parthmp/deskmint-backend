@@ -7,6 +7,7 @@ use App\Models\AdditionalProductColumnsFieldValueRi;
 use App\Models\PaymentType;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceItem;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
 class RecurringInvoiceRepository {
@@ -22,6 +23,19 @@ class RecurringInvoiceRepository {
 	public function fetchById(int $company_id, int $recurring_invoice_id, array $selects = ['*']) : ?RecurringInvoice {
 		return RecurringInvoice::select(...$selects)->where([['company_id', '=', $company_id], ['id', '=', $recurring_invoice_id]])->first();
 	}
+
+	/**
+	 * fetchWithJoin function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return RecurringInvoice|null
+	 */
+	public function fetchWithJoin(int $company_id, int $recurring_invoice_id) : ?RecurringInvoice {
+		return RecurringInvoice::select('recurring_invoices.*', 'currencies.id as currency_id', 'currencies.code as currency_code', 'clients.first_name', 'clients.last_name')->join('clients', 'clients.id', '=', 'recurring_invoices.client_id')->join('currencies', 'currencies.id', '=', 'clients.currency_id')->where([['recurring_invoices.company_id', '=', $company_id], ['recurring_invoices.id', '=', $recurring_invoice_id]])->first();
+	}
+
+	
 	
 	/**
 	 * saveOrUpdate function
@@ -129,5 +143,21 @@ class RecurringInvoiceRepository {
 
 		return true;
 
+	}
+
+	/**
+	 * fetchRecurringInvoiceItemsWithCustomCols function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return Collection
+	 */
+	public function fetchRecurringInvoiceItemsWithCustomCols(int $company_id, int $recurring_invoice_id) : Collection {
+		return RecurringInvoiceItem::where([['recurring_invoice_id', '=', $recurring_invoice_id]])
+								->withTrashed()
+								->with(['product', 'custom_field_values.custom_product_field' => function($query) use($company_id) {
+        								$query->where('company_id', $company_id);
+    							}])
+								->get();
 	}
 }

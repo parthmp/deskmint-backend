@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
 use App\Models\RecurringInvoice as ModelsRecurringInvoice;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\RecurringInvoice\RecurringInvoice;
@@ -34,7 +35,7 @@ class CreateInvoicesFromRecurringInvoices extends Command
 		
 		$gen_number = (int) config('global.recurring_invoice_batch_number');
 
-		$ids = ModelsRecurringInvoice::where([['payment_gateway', '=', PaymentGateway::NONE->value], ['next_invoice_on', '<', now()]])->orderBy('id', 'desc')->limit($gen_number)->get()->pluck('id')->toArray();
+		$ids = ModelsRecurringInvoice::where([['payment_gateway', '=', PaymentGateway::NONE->value], ['next_invoice_on', '<', now()], ['status', '=', RecurringInvoiceStatus::ACTIVE->value]])->orderBy('id', 'desc')->limit($gen_number)->get()->pluck('id')->toArray();
 		
 		if(!empty($ids)){
 			$recurring_invoice = app(RecurringInvoice::class);

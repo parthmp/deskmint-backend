@@ -303,6 +303,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	Route::get('manage-recurring-invoices/fetch-arranged-columns', [RecurringInvoiceController::class, 'fetchArrangedColumns']);
 	Route::post('manage-recurring-invoices/save-arranged-columns', [RecurringInvoiceController::class, 'saveArrangedColumns']);
 	Route::get('manage-recurring-invoices/send-email', [RecurringInvoiceController::class, 'sendEmail']);
+	Route::get('manage-recurring-invoices/{id}', [RecurringInvoiceController::class, 'show']);
 	
 	
 });

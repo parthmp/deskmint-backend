@@ -7,6 +7,8 @@ use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
 use App\Exceptions\RecurringInvoiceException;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
+use App\Models\InvoiceCustomFieldValue;
+use App\Models\Payment;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceCustomFieldValue;
 use App\Models\RecurringInvoicesCustomField;
@@ -16,12 +18,14 @@ use App\Modules\EasyIndex\EasyIndex;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\RecurringInvoice\DB\DB;
 use App\Modules\RecurringInvoice\RecurringInvoice as RecurringInvoiceModule;
+use App\Modules\Settings\Settings;
 use App\Repositories\Client\ClientRepository;
 use App\Repositories\Invoice\InvoiceRepository;
 use App\Repositories\PaymentType\PaymentTypeRepository;
 use App\Repositories\RecurringInvoice\RecurringInvoiceRepository;
 use App\Services\Invoice\InvoiceBaseService;
 use App\Services\Invoice\InvoiceCalculationService;
+use App\Services\Invoice\InvoiceFetchService;
 use App\Services\Invoice\InvoiceValidationService;
 use App\Traits\InvoiceBase;
 use Illuminate\Http\Request;
@@ -41,9 +45,10 @@ class RecurringInvoiceService {
 		private InvoiceCalculationService $invoice_calculation_service,
 		private RecurringInvoiceModule $reccuring_invoice_module,
 		private PaymentTypeRepository $payment_type_repository,
-		private InvoiceRepository $invoice_repository,
+		private InvoiceFetchService $invoice_fetch_service,
 		private DB $db,
-		private EasyIndex $easy_index
+		private EasyIndex $easy_index,
+		private Settings $settings
 	){}
 
 	/**
@@ -489,7 +494,7 @@ class RecurringInvoiceService {
 						Frequencies::YEARLY->value			=>	Frequencies::YEARLY->label(),
 						Frequencies::CUSTOM->value			=>	Frequencies::CUSTOM->label(),
 					],
-					'invoices.payment_gateway' => $gateways
+					'recurring_invoices.payment_gateway' => $gateways
 				],
 				'ui'	=>	[
 					'mark_paid_automatically'	=>	[
@@ -642,6 +647,70 @@ class RecurringInvoiceService {
 	 */
 	public function fetchRecurringInvoiceById(int $company_id, int $recurring_invoice_id, array $selects = ['*']) : ?RecurringInvoice {
 		return $this->recurring_invoice_repository->fetchById($company_id, $recurring_invoice_id, $selects);
+	}
+
+	/**
+	 * isLocked function
+	 *
+	 * @param integer $payment_gateway
+	 * @param integer $status
+	 * @return boolean
+	 */
+	private function isLocked(int $payment_gateway, int $status) : bool {
+
+		if($status === RecurringInvoiceStatus::CANCELLED->value){
+			return true;
+		}
+
+		if($payment_gateway === PaymentGateway::PAYPAL->value){
+
+			if($status === RecurringInvoiceStatus::ACTIVE->value || $status === RecurringInvoiceStatus::PAUSED->value){
+				return true;
+			}
+
+		}
+
+		return false;
+
+	}
+
+	public function fetchRecurringInvoice(int $company_id, int $recurring_invoice_id) : array {
+
+		$recurring_invoice = $this->recurring_invoice_repository->fetchWithJoin($company_id, $recurring_invoice_id);
+
+		if(empty($recurring_invoice)){
+			throw new RecurringInvoiceException('invalid recurring invoice id', 'invalid_invoice_id', config('global.error_code'));
+		}
+		
+		// unset($recurring_invoice->pattern_matched);
+		// unset($recurring_invoice->scan_chars);
+		// unset($recurring_invoice->settings_snapshot);
+
+		$custom_fields = $this->custom_fields->fetchCustomFieldValues($recurring_invoice_id, 'recurring_invoice', RecurringInvoiceCustomFieldValue::class);
+		//$custom_fields = $this->custom_fields->fetchCustomFieldValues(6568, 'invoice', InvoiceCustomFieldValue::class);
+
+		$rows_settings = $this->settings->setCompanyId((int) $company_id)->fetch()->InvoiceRowSettings();
+		$items = $this->recurring_invoice_repository->fetchRecurringInvoiceItemsWithCustomCols((int) $company_id, (int) $recurring_invoice_id);
+
+		$product_rows = $this->invoice_fetch_service->assembleProductRowsForEdit($company_id, null, $items, $rows_settings);
+
+		$locked_message = 'You can not edit cancelled recurring invoice';
+
+		$locked = $this->isLocked((int) $recurring_invoice->payment_gateway, (int) $recurring_invoice->status);
+
+		if($locked){
+			$locked_message = 'Due to limitations on PayPal\'s side you can not edit this recurring invoice, create a new recurring invoice.';
+		}
+
+		return [
+			'invoice'			=>	$recurring_invoice,
+			'custom_fields' 	=> 	$custom_fields,
+			'product_rows'		=>	$product_rows,
+			'locked'			=>	$locked,
+			'locked_client'		=>	(PaymentGateway::NONE->value !== (int) $recurring_invoice->payment_gateway),
+			'locked_message'	=>	$locked_message,
+			'cancelled'			=>	((int) $recurring_invoice->status === (int) RecurringInvoiceStatus::CANCELLED->value)
+		];
 	}
 
 }
