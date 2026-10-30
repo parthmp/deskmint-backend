@@ -36,15 +36,7 @@ class RecurringInvoiceController extends Controller {
 		[
 			'label'			=>	'mark_paid_automatically',
 			'text'			=>	'Mark paid'
-		],
-		[
-			'label'			=>	'last_invoice_created_at',
-			'text'			=>	'Last invoice at'
-		],
-		[
-			'label'			=>	'next_invoice_on',
-			'text'			=>	'Next invoice after'
-		],
+		]
 		
 	];
 
@@ -62,7 +54,7 @@ class RecurringInvoiceController extends Controller {
 
 
 	public function fetchArrangedColumns(Request $request){
-		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'recurring_invoices', 'recurring_invoices', RecurringInvoicesCustomField::class, 'recurring_invoice', remove_columns:['company_id', 'client_id', 'currency_id', 'invoice_terms', 'payment_gateway', 'payment_type_id', 'mark_paid_automatically', 'timezone', 'send_invoice_email', 'last_invoice_created_at', 'next_invoice_on', 'settings_snapshot', 'hidden_sent_at', 'updated_at'], additional_fields: $this->additional_fields);
+		return $this->arranged_data_table_columns->fetchArrangedColumnsData($request, 'recurring_invoices', 'recurring_invoices', RecurringInvoicesCustomField::class, 'recurring_invoice', remove_columns:['company_id', 'client_id', 'currency_id', 'invoice_terms', 'payment_gateway', 'payment_type_id', 'mark_paid_automatically', 'timezone', 'send_invoice_email', 'settings_snapshot', 'hidden_sent_at', 'updated_at'], additional_fields: $this->additional_fields);
 	}
 	
 
@@ -116,7 +108,7 @@ class RecurringInvoiceController extends Controller {
 
 			});
 
-			
+			return response(['message' => 'Scheduled successfully', 'validity' => 'scheduled_success'], 200);
 
 		}catch(RecurringInvoiceException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());

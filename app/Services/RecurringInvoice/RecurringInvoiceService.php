@@ -416,7 +416,7 @@ class RecurringInvoiceService {
 
 			$default_columns = [
 				'searchable_columns'	=>	['recurring_invoices.id', 'recurring_invoices.uuid', 'recurring_invoices.total', 'currencies.code',  'recurring_invoices.payment_gateway','recurring_invoices.status', 'clients.full_name', 'recurring_invoices.frequency'],
-				'searchable_dates'		=>	['invoices.created_at', 'invoices.due_date', 'invoices.invoice_date', 'invoices.last_reminder_sent_at'],
+				'searchable_dates'		=>	['recurring_invoices.created_at', 'recurring_invoices.sent_at', 'recurring_invoices.last_invoice_created_at', 'recurring_invoices.next_invoice_on'],
 				'show_columns'			=>	[
 					[
 						'label'	=>	'id',
@@ -464,6 +464,10 @@ class RecurringInvoiceService {
 						1	=>	'Percentage',
 						2	=>	"Amount"
 					],
+					'recurring_invoices.mark_paid_automatically' => [
+						1	=>	'Yes',
+						0	=>	"No"
+					],
 					'recurring_invoices.status' => [
 						RecurringInvoiceStatus::DRAFT->value				=>	RecurringInvoiceStatus::DRAFT->label(),
 						RecurringInvoiceStatus::SENT->value					=>	RecurringInvoiceStatus::SENT->label(),
@@ -485,6 +489,20 @@ class RecurringInvoiceService {
 					'invoices.payment_gateway' => $gateways
 				],
 				'ui'	=>	[
+					'mark_paid_automatically'	=>	[
+						[
+							'type'			=>	'label',
+							'highlight'		=>	'success',
+							'text'			=>	'Yes',
+							'value'			=>	1,
+						],
+						[
+							'type'			=>	'label',
+							'highlight'		=>	'error',
+							'text'			=>	'No',
+							'value'			=>	0,
+						]
+					],
 					'discount_type'	=>	[
 						[
 							'type'			=>	'label',
@@ -604,8 +622,9 @@ class RecurringInvoiceService {
 		}
 
 		return $this->easy_index->setType('recurring_invoice')->setCustomFieldClass(RecurringInvoicesCustomField::class)->setJoins($joins)->setExceptionClass(RecurringInvoiceException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
-			'c_code'				=>		'currencies.code',
-			'payment_type'				=>		'payment_types.payment_type'
+			'c_code'			=>		'currencies.code',
+			'full_name'			=>		'clients.full_name',
+			'payment_type'		=>		'payment_types.payment_type'
 		 ])->setRewrites($rewrites)->setModel(RecurringInvoice::class)->fetchIndex();
 
 	}

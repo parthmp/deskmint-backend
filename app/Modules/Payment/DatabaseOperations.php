@@ -11,6 +11,7 @@ use App\Models\SubscriptionPlan;
 use App\Models\Transaction;
 use App\Models\TransactionGatewayDetail;
 use App\Models\TransactionReference;
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Enums\PayPalEvents;
 use App\Modules\Payment\Enums\TransactionStatus;
 use App\Modules\Payment\Exceptions\PaymentException;
@@ -477,9 +478,9 @@ class DatabaseOperations{
 			$plan->uuid = Str::uuid()->toString();
 			$plan->company_id = $data['company_id'];
 			$plan->recurring_invoice_id = $data['recurring_invoice_id'];
-			$plan->payer_id = $data['payer_id'];
+			
 		}
-
+		$plan->payer_id = $data['payer_id'];
 		$plan->payment_gateway = $data['payment_gateway'];
 		$plan->gateway_subscription_id = $data['gateway_subscription_id'];
 		$plan->plan_id = $data['plan_id'];
@@ -728,6 +729,20 @@ class DatabaseOperations{
 	}
 
 	/**
+	 * changeRecurringInvoiceStatusById function
+	 *
+	 * @param integer $id
+	 * @param integer $status
+	 * @return void
+	 */
+	public function changeRecurringInvoiceStatusById(int $id, int $status) : void {
+		$recurring_invoice = RecurringInvoice::where('id', '=', $id)->first();
+		if($recurring_invoice){
+			$this->changeRecurringInvoiceStatus($recurring_invoice, $status);
+		}
+	}
+
+	/**
 	 * updateNextInvoiceDate function
 	 *
 	 * @param integer $company_id
@@ -740,6 +755,31 @@ class DatabaseOperations{
 		RecurringInvoice::where([['company_id', '=', $company_id], ['id', '=', $recurring_invoice_id]])->update([
 			'next_invoice_on'	=>	$next_invoice_on
 		]);
+
+	}
+
+	/**
+	 * updateSubscriptionPlanforStripe function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @param string $gateway_subscription_id
+	 * @param string $payer_id
+	 * @return void
+	 */
+	public function updateSubscriptionPlanforStripe(int $company_id, int $recurring_invoice_id,  string $gateway_subscription_id, string $payer_id) : void {
+
+		$sub_plan = $this->fetchSubscriptionPlanByRI($company_id, $recurring_invoice_id, PaymentGateway::STRIPE->value);
+
+		if($sub_plan){
+			if(!$sub_plan->gateway_subscription_id){
+				$sub_plan->gateway_subscription_id = $gateway_subscription_id;
+			}
+			if(!$sub_plan->payer_id){
+				$sub_plan->payer_id = $payer_id;
+			}
+			$sub_plan->save();
+		}
 
 	}
 

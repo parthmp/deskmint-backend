@@ -3,6 +3,7 @@
 namespace App\Modules\Payment\Gateways\Stripe;
 
 use App\Enums\RecurringInvoices\Frequencies;
+use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
 use App\Exceptions\PaymentException;
 use App\Helpers\General;
 use App\Models\Transaction;
@@ -178,7 +179,36 @@ class Stripe implements PaymentInterface {
 		}
 
 	}
+
+	/**
+	 * getSubscriptionAndPayerId function
+	 *
+	 * @param array $request_data
+	 * @return array
+	 */
+	private function getSubscriptionAndPayerId(array $request_data) : array {
+
+		$subscription_id = $request_data['data']['object']['lines']['data'][0]['parent']['subscription_item_details']['subscription'] ?? null;
+		if(!$subscription_id){
+			$subscription_id = $request_data['data']['object']['parent']['subscription_details']['subscription'] ?? null;
+		}
+
+		$payer_id = $request_data['data']['object']['customer'] ?? null;
+
+		return [
+			'subscription_id'	=>	$subscription_id,
+			'payer_id'			=>	$payer_id
+		];
+
+	}
 	
+	/**
+	 * subscriptionSaleMade function
+	 *
+	 * @param array $request_data
+	 * @param array $settings_data
+	 * @return boolean
+	 */
 	private function subscriptionSaleMade(array $request_data, array $settings_data) : bool {
 		
 		if(strtolower($request_data['data']['object']['status']) !== 'paid'){
@@ -250,6 +280,14 @@ class Stripe implements PaymentInterface {
 				'transaction_id'		=>	$transaction->id,
 			]
 		])->executeActions(false, true);
+
+		$sub_data = $this->getSubscriptionAndPayerId($request_data);
+		if($sub_data['subscription_id']){
+			$this->db->updateSubscriptionPlanforStripe((int) $recurring_invoice_data['company_id'], (int) $recurring_invoice_data['id'], (string) $sub_data['subscription_id'], (string) $sub_data['payer_id']);
+		}
+
+		//update status here.
+		$this->db->changeRecurringInvoiceStatusById($recurring_invoice_data['id'], RecurringInvoiceStatus::ACTIVE->value);
 
 		$this->db->updateNextInvoiceDate((int) $recurring_invoice_data['company_id'], (int) $recurring_invoice_data['id'], $next_billing_time);
 
