@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
 use App\Exceptions\RecurringInvoiceException;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
+use App\Http\Requests\RecurringInvoices\SendRecurringInvoiceEmailRequest;
 use App\Models\RecurringInvoicesCustomField;
 use App\Modules\ArrangedDataTableColumns\ArrangedDataTableColumns;
 use App\Modules\ArrangedDataTableColumns\Exceptions\InvalidDataProvidedException;
@@ -127,6 +129,28 @@ class RecurringInvoiceController extends Controller {
 			return General::wentWrong($e);
 		}
 		
+	}
+
+	public function sendEmail(SendRecurringInvoiceEmailRequest $request){
+
+		$data = $request->validated();
+
+		try{
+
+			$recurring_invoice = $this->recurring_invoice_service->fetchRecurringInvoiceById((int) $data['company_id'], (int) $data['recurring_invoice_id'], ['id', 'status']);
+
+			if((int) $recurring_invoice->status === RecurringInvoiceStatus::DRAFT->value || (int) $recurring_invoice->status === RecurringInvoiceStatus::SENT->value || (int) $recurring_invoice->status === RecurringInvoiceStatus::PENDING_APPROVAL->value){
+				$this->recurring_invoice_service->executeActions(company_id: (int) $data['company_id'], ids: [$data['recurring_invoice_id']], send_email: true, start_subscription: false);
+			}
+
+			return response(['message' => 'Sent successfully', 'validity' => 'scheduled_success'], 200);
+
+		}catch(Exception $e){
+			return General::wentWrong($e);
+		}
+
+		
+
 	}
 
 }

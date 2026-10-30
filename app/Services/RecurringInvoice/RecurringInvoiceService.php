@@ -632,4 +632,16 @@ class RecurringInvoiceService {
 
 	}
 
+	/**
+	 * fetchRecurringInvoiceById function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @param array $selects
+	 * @return RecurringInvoice|null
+	 */
+	public function fetchRecurringInvoiceById(int $company_id, int $recurring_invoice_id, array $selects = ['*']) : ?RecurringInvoice {
+		return $this->recurring_invoice_repository->fetchById($company_id, $recurring_invoice_id, $selects);
+	}
+
 }

@@ -130,5 +130,4 @@ class RecurringInvoiceRepository {
 		return true;
 
 	}
-
 }
