@@ -729,7 +729,10 @@ class RecurringInvoiceService {
 
 		$show_custom = (int) $recurring_invoice['frequency'] === Frequencies::CUSTOM->value;
 
+		$is_stripe_active = (int) $recurring_invoice['status'] === RecurringInvoiceStatus::ACTIVE->value && (int) $recurring_invoice['payment_gateway'] === PaymentGateway::STRIPE->value;
+
 		return [
+			'is_stripe_active'	=>	$is_stripe_active,
 			'show_custom'		=>	$show_custom,
 			'invoice'			=>	$recurring_invoice,
 			'custom_fields' 	=> 	$custom_fields,

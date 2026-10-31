@@ -250,37 +250,41 @@ class RecurringInvoiceValidationService {
 			if($discount_array['discount_type'] === 'percentage'){
 				$discount_type = 'percentage';
 			}
-
-			$product_rows = $this->filterValidProductRows($request->input('data.product_rows'), $company_id);
-			$totals = $this->invoice_calculation_service->calculateInvoice($product_rows, $discount_type, $discount_array['discount_number']);
-			$global_total = $totals['global_total'];
 			
 			$changed = false;
 
-			$frequency = (int) Sanitize::input($request->input('settings.frequency'));
-			$custom_frequency_days = (int) Sanitize::input($request->input('settings.custom_frequency_days'));
-			//check if frequency changed or total changed
-			if((int) $recurring_invoice->frequency !== $frequency){
-				$changed = true;
-			}else if((int) $recurring_invoice->frequency === $frequency && (int) $recurring_invoice->custom_frequency_days !== $custom_frequency_days && $frequency === Frequencies::CUSTOM->value){
-				$changed = true;
-			}else if(!BigDecimal::of($recurring_invoice->total)->isEqualTo(BigDecimal::of($global_total))){
-				$changed = true;
-			}
+			if((int) $recurring_invoice->status === RecurringInvoiceStatus::ACTIVE->value){
 
-			if($changed){
+				$product_rows = $this->filterValidProductRows($request->input('data.product_rows'), $company_id);
+				$totals = $this->invoice_calculation_service->calculateInvoice($product_rows, $discount_type, $discount_array['discount_number']);
+				$global_total = $totals['global_total'];
 
-				//now check if user wanted the custom datetime and validate.
-				$charge_now = (bool) Sanitize::input($request->input('settings.charge_now'));
-				if(!$charge_now){
-					
-					$start_datetime = (string) Sanitize::input($request->input('settings.subscription_start_datetime'));
-					
-					$start = Carbon::parse($start_datetime, 'UTC')->utc();
-					$minimum_start = Carbon::now('UTC')->addHours(24);
+				$frequency = (int) Sanitize::input($request->input('settings.frequency'));
+				$custom_frequency_days = (int) Sanitize::input($request->input('settings.custom_frequency_days'));
+				//check if frequency changed or total changed
+				if((int) $recurring_invoice->frequency !== $frequency){
+					$changed = true;
+				}else if((int) $recurring_invoice->frequency === $frequency && (int) $recurring_invoice->custom_frequency_days !== $custom_frequency_days && $frequency === Frequencies::CUSTOM->value){
+					$changed = true;
+				}else if(!BigDecimal::of($recurring_invoice->total)->isEqualTo(BigDecimal::of($global_total))){
+					$changed = true;
+				}
 
-					if($start->lt($minimum_start)){
-						throw new RecurringInvoiceException('Invoice generation date must be ahead more than 24 hours from now', 'not_allowed_24_hours', $error_code, 2);
+				if($changed){
+
+					//now check if user wanted the custom datetime and validate.
+					$charge_now = (bool) Sanitize::input($request->input('settings.charge_now'));
+					if(!$charge_now){
+						
+						$start_datetime = (string) Sanitize::input($request->input('settings.subscription_start_datetime'));
+						
+						$start = Carbon::parse($start_datetime, 'UTC')->utc();
+						$minimum_start = Carbon::now('UTC')->addHours(24);
+
+						if($start->lt($minimum_start)){
+							throw new RecurringInvoiceException('Invoice generation date must be ahead more than 24 hours from now', 'not_allowed_24_hours', $error_code, 2);
+						}
+
 					}
 
 				}
