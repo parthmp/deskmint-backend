@@ -18,7 +18,7 @@ trait InvoiceValidation {
 	 *
 	 * @return ProductRepository
 	 */
-	private function getProductRepository() : ProductRepository {
+	private function getProductRepositoryIv() : ProductRepository {
         return app(ProductRepository::class);
     }
 
@@ -75,7 +75,7 @@ trait InvoiceValidation {
 		}
 
 		// Check if at least one exists in database for this company
-		return $this->getProductRepository()->ifProductsExists($company_id, $product_ids);
+		return $this->getProductRepositoryIv()->ifProductsExists($company_id, $product_ids);
 
 	}
 

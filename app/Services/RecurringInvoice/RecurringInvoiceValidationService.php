@@ -3,6 +3,7 @@
 namespace App\Services\RecurringInvoice;
 
 use App\Enums\RecurringInvoices\Frequencies;
+use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
 use App\Exceptions\RecurringInvoiceException;
 use App\Helpers\Sanitize;
 use App\Models\Payment;
@@ -14,15 +15,21 @@ use App\Modules\CustomFields\CustomFields;
 use App\Modules\CustomFields\Exceptions\InvalidCustomFieldsException;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Repositories\RecurringInvoice\RecurringInvoiceRepository;
+use App\Services\Invoice\InvoiceBaseService;
+use App\Services\Invoice\InvoiceCalculationService;
+use App\Traits\InvoiceBase;
+use Brick\Math\BigDecimal;
 use Carbon\Carbon;
 
 class RecurringInvoiceValidationService {
 
-	use InvoiceValidation;
+	use InvoiceValidation, InvoiceBase;
 
 	public function __construct(
 		private CustomFields $custom_fields,
-		private RecurringInvoiceRepository $recurring_invoice_repository
+		private RecurringInvoiceRepository $recurring_invoice_repository,
+		private InvoiceCalculationService $invoice_calculation_service,
+		private InvoiceBaseService $invoice_base_service
 	){}
 
 	/**
@@ -153,7 +160,7 @@ class RecurringInvoiceValidationService {
 		$payment_gateway_number = Sanitize::input($request->input('settings.payment_gateway'));
 
 		if(!$this->validateStartDateTime($start_datetime) && (int) $payment_gateway_number === PaymentGateway::NONE->value){
-			throw new RecurringInvoiceException('Please select future start datetime', 'invalid_request_tab2', config('global.error_code'), 2);
+			throw new RecurringInvoiceException('Please select future invoice generation datetime', 'invalid_request_tab2', config('global.error_code'), 2);
 		}
 
 		if(!$this->ifSubmittedFieldsAreSameAsDefined($request, $company_id)){
@@ -197,6 +204,89 @@ class RecurringInvoiceValidationService {
 			new \DateTimeZone($timezone);
 		}catch(\Exception $e){
 			throw new RecurringInvoiceException('Invalid request', 'invalid_timezone', config('global.error_code'), 2);
+		}
+
+		return true;
+
+	}
+
+	/**
+	 * validateForEdit function
+	 *
+	 * @param Request $request
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return boolean
+	 */
+	public function validateForEdit(Request $request, int $company_id, int $recurring_invoice_id) : bool {
+
+		$error_code = (int) config('global.error_code');
+
+		$recurring_invoice = $this->recurring_invoice_repository->fetchById($company_id, $recurring_invoice_id);
+
+		if(!$recurring_invoice){
+			throw new RecurringInvoiceException('invalid request', 'invalid_request_ri', $error_code, 2);
+		}
+
+		if((int) $recurring_invoice->status === RecurringInvoiceStatus::CANCELLED->value){
+			throw new RecurringInvoiceException('You can not modify cancelled recurring invoice', 'cancelled', $error_code, 2);
+		}
+
+		$db_payment_gateway = (int) $recurring_invoice->payment_gateway;
+
+		//paypal not allowed.
+		if($db_payment_gateway === PaymentGateway::PAYPAL->value){
+			
+			if((int) $recurring_invoice->status === RecurringInvoiceStatus::ACTIVE->value || (int) $recurring_invoice->status === RecurringInvoiceStatus::PAUSED->value){
+				throw new RecurringInvoiceException('You can not modify this recurring invoice due to paypal api limitations', 'paypal_restricted', $error_code, 2);
+			}
+
+		}
+
+		if((int) $recurring_invoice->payment_gateway === PaymentGateway::STRIPE->value){
+
+			$discount_array = $this->invoice_base_service->getDiscountNumberAndType($request);
+			$discount_type = 'amount';
+			if($discount_array['discount_type'] === 'percentage'){
+				$discount_type = 'percentage';
+			}
+
+			$product_rows = $this->filterValidProductRows($request->input('data.product_rows'), $company_id);
+			$totals = $this->invoice_calculation_service->calculateInvoice($product_rows, $discount_type, $discount_array['discount_number']);
+			$global_total = $totals['global_total'];
+			
+			$changed = false;
+
+			$frequency = (int) Sanitize::input($request->input('settings.frequency'));
+			$custom_frequency_days = (int) Sanitize::input($request->input('settings.custom_frequency_days'));
+			//check if frequency changed or total changed
+			if((int) $recurring_invoice->frequency !== $frequency){
+				$changed = true;
+			}else if((int) $recurring_invoice->frequency === $frequency && (int) $recurring_invoice->custom_frequency_days !== $custom_frequency_days && $frequency === Frequencies::CUSTOM->value){
+				$changed = true;
+			}else if(!BigDecimal::of($recurring_invoice->total)->isEqualTo(BigDecimal::of($global_total))){
+				$changed = true;
+			}
+
+			if($changed){
+
+				//now check if user wanted the custom datetime and validate.
+				$charge_now = (bool) Sanitize::input($request->input('settings.charge_now'));
+				if(!$charge_now){
+					
+					$start_datetime = (string) Sanitize::input($request->input('settings.subscription_start_datetime'));
+					
+					$start = Carbon::parse($start_datetime, 'UTC')->utc();
+					$minimum_start = Carbon::now('UTC')->addHours(24);
+
+					if($start->lt($minimum_start)){
+						throw new RecurringInvoiceException('Invoice generation date must be ahead more than 24 hours from now', 'not_allowed_24_hours', $error_code, 2);
+					}
+
+				}
+
+			}
+
 		}
 
 		return true;

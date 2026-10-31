@@ -28,6 +28,7 @@ use App\Services\Invoice\InvoiceCalculationService;
 use App\Services\Invoice\InvoiceFetchService;
 use App\Services\Invoice\InvoiceValidationService;
 use App\Traits\InvoiceBase;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use \Illuminate\Support\Str;
 
@@ -99,6 +100,18 @@ class RecurringInvoiceService {
 	 */
 	public function validate(Request $request, int $company_id) : bool {
 		return $this->recurring_invoice_validation_service->validate($request, $company_id);
+	}
+
+	/**
+	 * validateForEdit function
+	 *
+	 * @param Request $request
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return boolean
+	 */
+	public function validateForEdit(Request $request, int $company_id, int $recurring_invoice_id) : bool {
+		return $this->recurring_invoice_validation_service->validateForEdit($request, $company_id, $recurring_invoice_id);
 	}
 
 	/**
@@ -699,17 +712,32 @@ class RecurringInvoiceService {
 		$locked = $this->isLocked((int) $recurring_invoice->payment_gateway, (int) $recurring_invoice->status);
 
 		if($locked){
-			$locked_message = 'Due to limitations on PayPal\'s side you can not edit this recurring invoice, create a new recurring invoice.';
+			$locked_message = 'Due to limitations on PayPal\'s side you can not edit this recurring invoice. Cancel, delete and create a new recurring invoice.';
 		}
 
+		$recurring_invoice = $recurring_invoice->toArray();
+
+		$next_invoice_on = Carbon::parse($recurring_invoice['next_invoice_on'])->clone()->timezone('UTC');
+		$recurring_invoice['next_invoice_on'] = $next_invoice_on->toISOString();
+
+		if((int) $recurring_invoice['payment_gateway'] !== PaymentGateway::NONE->value){
+			$future_date = Carbon::now('UTC')->clone()->addHours(25);
+			if($next_invoice_on->lt($future_date)){
+				$recurring_invoice['next_invoice_on'] = $future_date->toISOString();
+			}	
+		}
+
+		$show_custom = (int) $recurring_invoice['frequency'] === Frequencies::CUSTOM->value;
+
 		return [
+			'show_custom'		=>	$show_custom,
 			'invoice'			=>	$recurring_invoice,
 			'custom_fields' 	=> 	$custom_fields,
 			'product_rows'		=>	$product_rows,
 			'locked'			=>	$locked,
-			'locked_client'		=>	(PaymentGateway::NONE->value !== (int) $recurring_invoice->payment_gateway),
+			'locked_client'		=>	(PaymentGateway::NONE->value !== (int) $recurring_invoice['payment_gateway']),
 			'locked_message'	=>	$locked_message,
-			'cancelled'			=>	((int) $recurring_invoice->status === (int) RecurringInvoiceStatus::CANCELLED->value)
+			'cancelled'			=>	((int) $recurring_invoice['status'] === (int) RecurringInvoiceStatus::CANCELLED->value)
 		];
 	}
 

@@ -156,7 +156,7 @@ class RecurringInvoiceController extends Controller {
 
 	public function show(Request $request, int $recurring_invoice_id){
 		
-		//try{
+		try{
 			
 			$recurring_invoice_id = (int) Sanitize::input($recurring_invoice_id);
 
@@ -164,13 +164,45 @@ class RecurringInvoiceController extends Controller {
 
 			return $this->recurring_invoice_service->fetchRecurringInvoice((int) $company_id, (int) $recurring_invoice_id);
 
-		// }catch(RecurringInvoiceException $e){
-		// 	return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
-		// }catch(Exception $e){
-		// 	return General::wentWrong($e);
-		// }
+		}catch(RecurringInvoiceException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong($e);
+		}
 
-		
+	}
+
+	public function update(Request $request, int $recurring_invoice_id){
+
+		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$recurring_invoice_id = (int) Sanitize::input($recurring_invoice_id);
+
+		try{
+
+			$this->recurring_invoice_service->validate($request, $company_id);
+			$this->recurring_invoice_service->validateForEdit($request, (int) $company_id, (int) $recurring_invoice_id);
+			// $send_email = (bool) Sanitize::input($request->input('settings.send_email'));
+
+			// DB::transaction(function () use ($request, $company_id, $send_email) {
+				
+			// 	$recurring_invoice = $this->recurring_invoice_service->save($request, $company_id);
+				
+			// 	DB::afterCommit(function() use ($send_email, $recurring_invoice, $company_id){
+				
+			// 		$this->recurring_invoice_service->executeActions(company_id: $company_id, ids: [$recurring_invoice->id], send_email: $send_email, start_subscription: false);
+					
+			// 	});
+
+			// });
+
+			return response(['message' => 'Updated successfully', 'validity' => 'scheduled_success'], 200);
+
+		}catch(RecurringInvoiceException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong();
+		}
+
 
 	}
 
