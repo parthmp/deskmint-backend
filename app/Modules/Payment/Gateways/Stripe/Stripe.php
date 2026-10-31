@@ -540,23 +540,24 @@ class Stripe implements PaymentInterface {
 	}
 
 	/**
-	 * updatePausedSubscription function
+	 * updateSubscription function
 	 *
+	 * @param boolean $charge_now
+	 * @param integer|null $anchor_date
 	 * @return void
 	 */
-	public function updatePausedSubscription() : void {
+	public function updateSubscription(bool $charge_now = false, ?int $anchor_date = null) : void {
 
-		
 		$data = $this->dto->getData();
 
 		$sub = $this->provider->subscriptions->retrieve($data['subscription_id']);
 
 		$item = $sub->items->data[0];
 		$subscription_item_id = $item->id;
-		
+
 		$product_id = (new ProductResolver($this->provider))->id();
-		
-		$this->provider->subscriptions->update($data['subscription_id'], [
+
+		$stripe_array = [
 			'items' => [[
 				'id' => $subscription_item_id,
 				'price_data' => [
@@ -570,10 +571,26 @@ class Stripe implements PaymentInterface {
 				],
 			]],
 			'proration_behavior' => 'none',
-		]);
+		];
 
+		if($anchor_date){
+			
+			//Future start date. Wins over charge_now, and works whether or not it's trialing.
+			$stripe_array['trial_end'] = (int) $anchor_date;
+
+		}elseif($charge_now){
+			
+			if($sub->status === 'trialing'){
+				//billing_cycle_anchor can't be used mid-trial, so end the trial instead
+				$stripe_array['trial_end'] = 'now';
+			}else{
+				$stripe_array['billing_cycle_anchor'] = 'now';
+			}
+
+		}
+
+		$this->provider->subscriptions->update($data['subscription_id'], $stripe_array);
 
 	}
-
 
 }

@@ -17,7 +17,7 @@ use App\Modules\DataTable\Requests\DataTableRequest;
 use App\Modules\EasyIndex\EasyIndex;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Gateways\Payment as GatewaysPayment;
-use App\Modules\Payment\Gateways\Stripe\DTO\UpdatePausedSubscription;
+use App\Modules\Payment\Gateways\Stripe\DTO\UpdateSubscription;
 use App\Modules\RecurringInvoice\DB\DB;
 use App\Modules\RecurringInvoice\RecurringInvoice as RecurringInvoiceModule;
 use App\Modules\Settings\Settings;
@@ -799,18 +799,25 @@ class RecurringInvoiceService {
 
 					
 					$payment = new GatewaysPayment((int) $recurring_invoice->company_id);
+					$context = new UpdateSubscription($sub->gateway_subscription_id, $entry_data['global_total'], $recurring_invoice->currency->code, $frequency, $custom_frequency_days);
 
-					if((int) $recurring_invoice->status === RecurringInvoiceStatus::ACTIVE->value){
+					$anchor_date = null;
 
-						//change frequency, amount and see if user wants to charge customer now or on a future date.
+					$charge_now = (bool) Sanitize::input($request->input('settings.charge_now'));
+					if(!$charge_now){
 						
-					}else if((int) $recurring_invoice->status === RecurringInvoiceStatus::PAUSED->value){
+						$start_datetime = (string) Sanitize::input($request->input('settings.subscription_start_datetime'));
 						
-						//change frequency and amount only.
-						$context = new UpdatePausedSubscription($sub->gateway_subscription_id, $entry_data['global_total'], $recurring_invoice->currency->code, $frequency, $custom_frequency_days);
-						$payment->stripe()->setContext($context)->updatePausedSubscription();
+						$start = Carbon::parse($start_datetime, 'UTC')->utc();
+						$minimum_start = Carbon::now('UTC')->addHours(24);
+
+						if(!$start->lt($minimum_start)){
+							$anchor_date = $start->timestamp;
+						}
 
 					}
+
+					$payment->stripe()->setContext($context)->updateSubscription($charge_now, (int) $anchor_date);
 
 				}catch(CardException $e){
 					

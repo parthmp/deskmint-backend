@@ -7,7 +7,7 @@ use App\Helpers\General;
 use App\Modules\Payment\Contracts\GenericDTO;
 use Override;
 
-class UpdatePausedSubscription implements GenericDTO {
+class UpdateSubscription implements GenericDTO {
 
 	public function __construct(
 		private string $subscription_id,
