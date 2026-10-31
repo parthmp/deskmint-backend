@@ -16,6 +16,8 @@ use App\Modules\CustomFields\CustomFields;
 use App\Modules\DataTable\Requests\DataTableRequest;
 use App\Modules\EasyIndex\EasyIndex;
 use App\Modules\Payment\Enums\PaymentGateway;
+use App\Modules\Payment\Gateways\Payment as GatewaysPayment;
+use App\Modules\Payment\Gateways\Stripe\DTO\UpdatePausedSubscription;
 use App\Modules\RecurringInvoice\DB\DB;
 use App\Modules\RecurringInvoice\RecurringInvoice as RecurringInvoiceModule;
 use App\Modules\Settings\Settings;
@@ -31,6 +33,12 @@ use App\Traits\InvoiceBase;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use \Illuminate\Support\Str;
+use Stripe\Exception\ApiConnectionException;
+use Stripe\Exception\ApiErrorException;
+use Stripe\Exception\AuthenticationException;
+use Stripe\Exception\CardException;
+use Stripe\Exception\InvalidRequestException;
+use Stripe\Exception\RateLimitException;
 
 class RecurringInvoiceService {
 
@@ -44,7 +52,7 @@ class RecurringInvoiceService {
 		private ClientRepository $client_repository,
 		private InvoiceBaseService $invoice_base_service,
 		private InvoiceCalculationService $invoice_calculation_service,
-		private RecurringInvoiceModule $reccuring_invoice_module,
+		private RecurringInvoiceModule $recurring_invoice_module,
 		private PaymentTypeRepository $payment_type_repository,
 		private InvoiceFetchService $invoice_fetch_service,
 		private DB $db,
@@ -345,12 +353,12 @@ class RecurringInvoiceService {
 		$rows = $data['rows'];
 		unset($data['rows']);
 
-		$reccuring_invoice = $this->recurring_invoice_repository->saveOrUpdate($data, $company_id, $recurring_invoice_id);
-		$this->upsertItems($reccuring_invoice->id, $rows);
-		$this->custom_fields->upsertCustomFieldValues($request, $reccuring_invoice->id, RecurringInvoicesCustomField::class, RecurringInvoiceCustomFieldValue::class, 'recurring_invoices_flat', 'recurring_invoice', $add);
-		$this->upsertCustomProductRows($request, (int) $reccuring_invoice->id, $company_id);
+		$recurring_invoice = $this->recurring_invoice_repository->saveOrUpdate($data, $company_id, $recurring_invoice_id);
+		$this->upsertItems($recurring_invoice->id, $rows);
+		$this->custom_fields->upsertCustomFieldValues($request, $recurring_invoice->id, RecurringInvoicesCustomField::class, RecurringInvoiceCustomFieldValue::class, 'recurring_invoices_flat', 'recurring_invoice', $add);
+		$this->upsertCustomProductRows($request, (int) $recurring_invoice->id, $company_id);
 
-		return $reccuring_invoice;
+		return $recurring_invoice;
 
 	}
 
@@ -364,7 +372,7 @@ class RecurringInvoiceService {
 	 * @return void
 	 */
 	public function executeActions(int $company_id, array $ids, bool $send_email, bool $start_subscription) : void {
-		$this->reccuring_invoice_module->setCompanyId($company_id)->setRecurringInvoiceIds($ids)->executeActions($send_email, $start_subscription);
+		$this->recurring_invoice_module->setCompanyId($company_id)->setRecurringInvoiceIds($ids)->executeActions($send_email, $start_subscription);
 		//$this->reccuring_invoice_module->setCompanyId($company_id)->setRecurringInvoiceIds($ids)->executeActions($send_email, false);
 	}
 
@@ -742,6 +750,103 @@ class RecurringInvoiceService {
 			'locked_message'	=>	$locked_message,
 			'cancelled'			=>	((int) $recurring_invoice['status'] === (int) RecurringInvoiceStatus::CANCELLED->value)
 		];
+	}
+
+	/**
+	 * isStripeAllowed function
+	 *
+	 * @param RecurringInvoice $recurring_invoice
+	 * @return boolean
+	 */
+	public function isStripeAllowed(RecurringInvoice $recurring_invoice) : bool {
+
+		if((int) $recurring_invoice->payment_gateway === PaymentGateway::STRIPE->value){
+			if((int) $recurring_invoice->status === RecurringInvoiceStatus::ACTIVE->value || (int) $recurring_invoice->status === RecurringInvoiceStatus::PAUSED->value){
+				return true;
+			}
+		}
+
+		return false;
+
+	}
+
+	/**
+	 * updateStripeSubscriptionIfRequired function
+	 *
+	 * @param Request $request
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return boolean
+	 */
+	public function updateStripeSubscriptionIfRequired(Request $request, int $company_id, int $recurring_invoice_id) : bool {
+
+		$recurring_invoice = $this->recurring_invoice_repository->fetchByIdWithCurrency($company_id, $recurring_invoice_id);
+		
+		if($this->isStripeAllowed($recurring_invoice)){
+			
+			$entry_data = $this->recurring_invoice_validation_service->isStripeEntryChanged($request, $company_id, $recurring_invoice);
+			
+			if($entry_data['changed']){
+					
+				$error_code = (int) config('global.error_code');
+
+				$sub = $this->recurring_invoice_repository->fetchSubscriptionPlan($company_id, $recurring_invoice_id);
+
+				$frequency = (int) Sanitize::input($request->input('settings.frequency'));
+				$custom_frequency_days = (int) Sanitize::input($request->input('settings.custom_frequency_days'));
+
+				try{
+
+					
+					$payment = new GatewaysPayment((int) $recurring_invoice->company_id);
+
+					if((int) $recurring_invoice->status === RecurringInvoiceStatus::ACTIVE->value){
+
+						//change frequency, amount and see if user wants to charge customer now or on a future date.
+						
+					}else if((int) $recurring_invoice->status === RecurringInvoiceStatus::PAUSED->value){
+						
+						//change frequency and amount only.
+						$context = new UpdatePausedSubscription($sub->gateway_subscription_id, $entry_data['global_total'], $recurring_invoice->currency->code, $frequency, $custom_frequency_days);
+						$payment->stripe()->setContext($context)->updatePausedSubscription();
+
+					}
+
+				}catch(CardException $e){
+					
+					logger()->warning('Stripe card error', ['code' => $e->getStripeCode(), 'decline' => $e->getDeclineCode()]);
+					throw new RecurringInvoiceException($e->getMessage(), 'card_error', $error_code, 2);
+
+				}catch(InvalidRequestException $e){
+					
+					logger()->error('Stripe invalid request', ['message' => $e->getMessage(), 'param' => $e->getStripeParam()]);
+					throw new RecurringInvoiceException('Could not update subscription', 'invalid_request', $error_code, 2);
+
+				}catch(RateLimitException | ApiConnectionException $e){
+					
+					logger()->warning('Stripe transient error', ['message' => $e->getMessage()]);
+					throw new RecurringInvoiceException('Payment service busy, try again', 'try_again', $error_code, 2);
+
+				}catch(AuthenticationException $e){
+					
+					logger()->critical('Stripe auth failed', ['message' => $e->getMessage()]);
+					throw new RecurringInvoiceException('Failed to authenticate', 'config_error', $error_code, 2);
+
+				}catch(ApiErrorException $e){
+					
+					logger()->error('Stripe API error', ['message' => $e->getMessage(), 'request_id' => $e->getRequestId()]);
+					throw new RecurringInvoiceException('Payment service error', 'stripe_error', $error_code, 2);
+
+				}
+
+			}
+			
+
+		}
+
+		return true;
+			
+
 	}
 
 }

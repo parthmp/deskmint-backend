@@ -5,6 +5,7 @@ namespace App\Services\PaymentSettingsStripe;
 use App\Repositories\SettingsSection\SettingsSectionRepository;
 use App\Traits\SettingsDefault;
 use Exception;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * PaymentSettingsStripeService class
@@ -67,6 +68,8 @@ class PaymentSettingsStripeService{
 			'webhook_secret'	=>	$webhook_secret,
 		]);
 
+		Cache::forget('stripe_product_ok_' . config('global.stripe_product_id'));
+
 		return $this->settings_section_repository->updateByObj($json, $stripe_settings);
 
 	}
@@ -78,6 +81,7 @@ class PaymentSettingsStripeService{
 	 * @return void
 	 */
 	public function destroy(int $company_id) : void {
+		Cache::forget('stripe_product_ok_' . config('global.stripe_product_id'));
 		$this->settings_section_repository->destroy($company_id, $this->type);
 	}
 

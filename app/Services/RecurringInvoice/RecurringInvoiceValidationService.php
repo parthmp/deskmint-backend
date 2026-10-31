@@ -7,6 +7,7 @@ use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
 use App\Exceptions\RecurringInvoiceException;
 use App\Helpers\Sanitize;
 use App\Models\Payment;
+use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoicesCustomField;
 use App\Traits\InvoiceValidation;
 use Illuminate\Http\Request;
@@ -211,6 +212,46 @@ class RecurringInvoiceValidationService {
 	}
 
 	/**
+	 * isStripeEntryChanged function
+	 *
+	 * @param Request $request
+	 * @param integer $company_id
+	 * @param RecurringInvoice $recurring_invoice
+	 * @return array
+	 */
+	public function isStripeEntryChanged(Request $request, int $company_id, RecurringInvoice $recurring_invoice) : array {
+
+		$changed = false;
+
+		$discount_array = $this->invoice_base_service->getDiscountNumberAndType($request);
+		$discount_type = 'amount';
+		if($discount_array['discount_type'] === 'percentage'){
+			$discount_type = 'percentage';
+		}
+
+		$product_rows = $this->filterValidProductRows($request->input('data.product_rows'), $company_id);
+		$totals = $this->invoice_calculation_service->calculateInvoice($product_rows, $discount_type, $discount_array['discount_number']);
+		$global_total = $totals['global_total'];
+
+		$frequency = (int) Sanitize::input($request->input('settings.frequency'));
+		$custom_frequency_days = (int) Sanitize::input($request->input('settings.custom_frequency_days'));
+		//check if frequency changed or total changed
+		if((int) $recurring_invoice->frequency !== $frequency){
+			$changed = true;
+		}else if((int) $recurring_invoice->frequency === $frequency && (int) $recurring_invoice->custom_frequency_days !== $custom_frequency_days && $frequency === Frequencies::CUSTOM->value){
+			$changed = true;
+		}else if(!BigDecimal::of($recurring_invoice->total)->isEqualTo(BigDecimal::of($global_total))){
+			$changed = true;
+		}
+
+		return [
+			'changed'		=>	$changed,
+			'global_total'	=>	$global_total,
+		];
+
+	}
+
+	/**
 	 * validateForEdit function
 	 *
 	 * @param Request $request
@@ -245,30 +286,11 @@ class RecurringInvoiceValidationService {
 
 		if((int) $recurring_invoice->payment_gateway === PaymentGateway::STRIPE->value){
 
-			$discount_array = $this->invoice_base_service->getDiscountNumberAndType($request);
-			$discount_type = 'amount';
-			if($discount_array['discount_type'] === 'percentage'){
-				$discount_type = 'percentage';
-			}
-			
-			$changed = false;
-
 			if((int) $recurring_invoice->status === RecurringInvoiceStatus::ACTIVE->value){
 
-				$product_rows = $this->filterValidProductRows($request->input('data.product_rows'), $company_id);
-				$totals = $this->invoice_calculation_service->calculateInvoice($product_rows, $discount_type, $discount_array['discount_number']);
-				$global_total = $totals['global_total'];
+				$entry_change = $this->isStripeEntryChanged($request, (int) $company_id, $recurring_invoice);
 
-				$frequency = (int) Sanitize::input($request->input('settings.frequency'));
-				$custom_frequency_days = (int) Sanitize::input($request->input('settings.custom_frequency_days'));
-				//check if frequency changed or total changed
-				if((int) $recurring_invoice->frequency !== $frequency){
-					$changed = true;
-				}else if((int) $recurring_invoice->frequency === $frequency && (int) $recurring_invoice->custom_frequency_days !== $custom_frequency_days && $frequency === Frequencies::CUSTOM->value){
-					$changed = true;
-				}else if(!BigDecimal::of($recurring_invoice->total)->isEqualTo(BigDecimal::of($global_total))){
-					$changed = true;
-				}
+				$changed = $entry_change['changed'];
 
 				if($changed){
 

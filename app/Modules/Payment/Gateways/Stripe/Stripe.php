@@ -15,6 +15,7 @@ use App\Modules\Payment\Enums\StripeEvents;
 use App\Modules\Payment\Enums\TransactionStatus;
 use App\Modules\Payment\Gateways\Stripe\Implementation\CheckoutSession;
 use App\Modules\Payment\Gateways\Stripe\Implementation\Credentials;
+use App\Modules\Payment\Gateways\Stripe\Implementation\ProductResolver;
 use App\Modules\Payment\Jobs\FetchStripeBalanceTransactionJob;
 use App\Modules\RecurringInvoice\RecurringInvoice;
 use Brick\Math\BigDecimal;
@@ -510,6 +511,7 @@ class Stripe implements PaymentInterface {
 
 		$uuid_token = Str::uuid()->toString();
 
+		
 		$checkout_session = new CheckoutSession($this->provider, $recurring_invoice['code'], 'Subscription Plan', 'Subscription Plan', $cents, $uuid_token, (int) $recurring_invoice['id'], strtolower($freqency_array['interval_unit']), (int) $freqency_array['interval_count']);
 		$session = $checkout_session->create();
 		
@@ -534,6 +536,42 @@ class Stripe implements PaymentInterface {
 			return $url;
 
 		});
+
+	}
+
+	/**
+	 * updatePausedSubscription function
+	 *
+	 * @return void
+	 */
+	public function updatePausedSubscription() : void {
+
+		
+		$data = $this->dto->getData();
+
+		$sub = $this->provider->subscriptions->retrieve($data['subscription_id']);
+
+		$item = $sub->items->data[0];
+		$subscription_item_id = $item->id;
+		
+		$product_id = (new ProductResolver($this->provider))->id();
+		
+		$this->provider->subscriptions->update($data['subscription_id'], [
+			'items' => [[
+				'id' => $subscription_item_id,
+				'price_data' => [
+					'currency' => $data['currency'],
+					'product' => $product_id,
+					'unit_amount' => $data['price'],
+					'recurring' => [
+						'interval' => $data['frequency'],
+						'interval_count' => $data['interval'],
+					],
+				],
+			]],
+			'proration_behavior' => 'none',
+		]);
+
 
 	}
 

@@ -7,6 +7,8 @@ use App\Models\AdditionalProductColumnsFieldValueRi;
 use App\Models\PaymentType;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceItem;
+use App\Models\SubscriptionPlan;
+use App\Modules\Payment\Enums\PaymentGateway;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
@@ -48,15 +50,26 @@ class RecurringInvoiceRepository {
 	public function saveOrUpdate(array $data, int $company_id, ?int $recurring_invoice_id) : RecurringInvoice {
 
 		if($recurring_invoice_id){
+			
 			$recurring_invoice = $this->fetchById($company_id, $recurring_invoice_id);
+
+			if((int) $recurring_invoice->payment_gateway === PaymentGateway::NONE->value){
+				$recurring_invoice->client_id = $data['client_id'];
+				$recurring_invoice->currency_id = $data['currency_id'];
+			}
+
 		}else{
 			$recurring_invoice = new RecurringInvoice();
 			$recurring_invoice->uuid = $data['uuid'];
 			$recurring_invoice->company_id = $data['company_id'];
+			$recurring_invoice->status = $data['status'];
+			$recurring_invoice->payment_gateway = $data['payment_gateway'];
+			$recurring_invoice->client_id = $data['client_id'];
+			$recurring_invoice->currency_id = $data['currency_id'];
 		}
+	
 		
-		$recurring_invoice->client_id = $data['client_id'];
-		$recurring_invoice->currency_id = $data['currency_id'];
+		
 		$recurring_invoice->po_number = $data['po_number'];
 		$recurring_invoice->discount = $data['discount'];
 		$recurring_invoice->discount_type = $data['discount_type'];
@@ -65,9 +78,9 @@ class RecurringInvoiceRepository {
 		$recurring_invoice->subtotal = $data['subtotal'];
 		$recurring_invoice->tax_amount = $data['tax_amount'];
 		$recurring_invoice->total = $data['total'];
-		$recurring_invoice->status = $data['status'];
+		
 		$recurring_invoice->invoice_terms = $data['invoice_terms'];
-		$recurring_invoice->payment_gateway = $data['payment_gateway'];
+		
 		$recurring_invoice->payment_type_id = $data['payment_type_id'];
 		$recurring_invoice->frequency = $data['frequency'];
 		$recurring_invoice->custom_frequency_days = $data['custom_frequency_days'];
@@ -160,4 +173,28 @@ class RecurringInvoiceRepository {
     							}])
 								->get();
 	}
+
+	/**
+	 * fetchSubScriptionPlan function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return SubscriptionPlan|null
+	 */
+	public function fetchSubscriptionPlan(int $company_id, int $recurring_invoice_id) : ?SubscriptionPlan {
+		return SubscriptionPlan::where([['company_id', '=', $company_id], ['recurring_invoice_id', '=', $recurring_invoice_id]])->orderBy('id', 'desc')->first();
+	}
+
+	/**
+	 * fetchByIdWithCurrency function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return RecurringInvoice|null
+	 */
+	public function fetchByIdWithCurrency(int $company_id, int $recurring_invoice_id) : ?RecurringInvoice {
+		return RecurringInvoice::where([['company_id', '=', $company_id], ['id', '=', $recurring_invoice_id]])->with('currency')->first();
+	}
+
+
 }

@@ -24,6 +24,9 @@ class CheckoutSession {
 	 * @return \Stripe\Checkout\Session
 	 */
 	public function create() : \Stripe\Checkout\Session {
+
+		$product_id = (new ProductResolver($this->provider))->id();
+
 		$is_subscription = $this->recurring_invoice_id > 0;
 
 		$product_data = ['name' => $this->name];
@@ -31,10 +34,16 @@ class CheckoutSession {
 			$product_data['description'] = $this->description;
 		}
 
+		// $price_data = [
+		// 	'currency'     => strtolower($this->currency_code),
+		// 	'product_data' => $product_data,
+		// 	'unit_amount'  => $this->cents,
+		// ];
+
 		$price_data = [
-			'currency'     => strtolower($this->currency_code),
-			'product_data' => $product_data,
-			'unit_amount'  => $this->cents,
+			'currency'    => strtolower($this->currency_code),
+			'product'     => $product_id,
+			'unit_amount' => $this->cents,
 		];
 
 		if($is_subscription){
