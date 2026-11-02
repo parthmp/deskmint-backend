@@ -217,6 +217,13 @@ class Stripe implements PaymentInterface {
 		}
 		
 		$recurring_invoice_data = $settings_data['webhook_data'];	
+		$amount_paid = (int) $request_data['data']['object']['amount_paid'];
+		$cents_amount = General::toCents($recurring_invoice_data['total']);
+		
+		if($amount_paid !== $cents_amount){
+			return false;
+		}
+
 		$settings = $settings_data['settings'];	
 
 		$subscription_id = $settings['subscription_id'];
@@ -244,10 +251,19 @@ class Stripe implements PaymentInterface {
 			$subscription->items->data[0]->current_period_end
 		)->format('Y-m-d H:i:s');
 
-		$stripe_fees = $this->getStripeFees($payment_intent_id, $recurring_invoice_data['currency_code']);
+		
+		$gateway_fee = 0;
+		$net_amount = 0;
 
-		$gateway_fee = $stripe_fees['gateway_fee'];
-		$net_amount = $stripe_fees['net_amount'];
+		$stripe_fees['found'] = false;
+
+		$currency_code = $data['webhook_data']['currency_code'] ?? null;
+		if($payment_intent_id && $currency_code){
+			$stripe_fees = $this->getStripeFees($payment_intent_id, $currency_code);
+			$gateway_fee = $stripe_fees['gateway_fee'];
+			$net_amount = $stripe_fees['net_amount'];
+		}
+
 		
 		$transaction = $this->db->createTransactionForRecurringSale([
 			'currency_id'				=>	(int) $recurring_invoice_data['currency_id'],
@@ -284,7 +300,7 @@ class Stripe implements PaymentInterface {
 
 		$sub_data = $this->getSubscriptionAndPayerId($request_data);
 		if($sub_data['subscription_id']){
-			$this->db->updateSubscriptionPlanforStripe((int) $recurring_invoice_data['company_id'], (int) $recurring_invoice_data['id'], (string) $sub_data['subscription_id'], (string) $sub_data['payer_id']);
+			$this->db->updateSubscriptionPlanforStripe((int) $recurring_invoice_data['company_id'], (int) $recurring_invoice_data['id'], (string) $sub_data['subscription_id'], (string) $sub_data['payer_id'], (int) $recurring_invoice_data['frequency'], (int) $recurring_invoice_data['custom_frequency_days'], (string) $recurring_invoice_data['total']);
 		}
 
 		//update status here.
@@ -365,7 +381,6 @@ class Stripe implements PaymentInterface {
 
 		if((string) $event_type === StripeEvents::INVOICE_PAID->value){
 			//subscription payments.
-			logger('inside invoice paid');
 			$this->subscriptionSaleMade($request_data, $settings_data);
 		}
 		
@@ -396,11 +411,18 @@ class Stripe implements PaymentInterface {
 			
 			$payment_intent_id = $request_data['data']['object']['payment_intent'];
 
-			$stripe_fees = $this->getStripeFees($payment_intent_id, $data['webhook_data']['currency_code']);
+			$gateway_fee = 0;
+			$net_amount = 0;
 
-			$gateway_fee = $stripe_fees['gateway_fee'];
-			$net_amount = $stripe_fees['net_amount'];
+			$stripe_fees['found'] = false;
 
+			$currency_code = $data['webhook_data']['currency_code'] ?? null;
+			if($payment_intent_id && $currency_code){
+				$stripe_fees = $this->getStripeFees($payment_intent_id, $currency_code);
+				$gateway_fee = $stripe_fees['gateway_fee'];
+				$net_amount = $stripe_fees['net_amount'];
+			}
+			
 			if(!$stripe_fees['found']){
 				FetchStripeBalanceTransactionJob::dispatch($payment_intent_id, $transaction->id, $this->api_secret, $data['webhook_data']['currency_code'])->delay(15);
 			}
@@ -487,7 +509,7 @@ class Stripe implements PaymentInterface {
 		$data = $this->dto->getData();
 		$recurring_invoice = $data['recurring_invoice']->toArray();
 
-		$plan = $this->db->fetchSubscriptionPlanByRI((int) $recurring_invoice['company_id'], (int) $recurring_invoice['id'], (int) $recurring_invoice['payment_gateway']);
+		$plan = $this->db->fetchSubscriptionPlanByRI((int) $recurring_invoice['company_id'], (int) $recurring_invoice['id'], (int) $recurring_invoice['payment_gateway'], (int) $recurring_invoice['frequency'], (int) $recurring_invoice['custom_frequency_days'], (string) $recurring_invoice['total']);
 		
 		if($plan){
 			
@@ -520,12 +542,17 @@ class Stripe implements PaymentInterface {
 		$data = [
 			'company_id'				=>	$recurring_invoice['company_id'],
 			'recurring_invoice_id'		=>	$recurring_invoice['id'],
+			'total'						=>	$recurring_invoice['total'],
+			'frequency'					=>	$recurring_invoice['frequency'],
+			'custom_frequency_days'		=>	$recurring_invoice['custom_frequency_days'],
 			'payment_gateway'			=>	$recurring_invoice['payment_gateway'],
 			'gateway_subscription_id'	=>	'', //update this after customer approves.
 			'stripe_session_id'			=>	(string) $session->id,
 			'plan_id'					=>	'',
 			'payer_id'					=>	''
 		];
+
+		logger($data);
 
 		$url = $session->url;
 

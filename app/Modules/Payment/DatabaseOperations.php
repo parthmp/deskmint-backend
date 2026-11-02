@@ -779,19 +779,19 @@ class DatabaseOperations{
 	 * @param string $payer_id
 	 * @return void
 	 */
-	public function updateSubscriptionPlanforStripe(int $company_id, int $recurring_invoice_id,  string $gateway_subscription_id, string $payer_id) : void {
+	public function updateSubscriptionPlanforStripe(int $company_id, int $recurring_invoice_id,  string $gateway_subscription_id, string $payer_id, int $frequency, int $custom_days, string $total) : void {
 
-		// $sub_plan = $this->fetchSubscriptionPlanByRI($company_id, $recurring_invoice_id, PaymentGateway::STRIPE->value);
+		$sub_plan = $this->fetchSubscriptionPlanByRI($company_id, $recurring_invoice_id, PaymentGateway::STRIPE->value, $frequency, $custom_days, $total);
 
-		// if($sub_plan){
-		// 	if(!$sub_plan->gateway_subscription_id){
-		// 		$sub_plan->gateway_subscription_id = $gateway_subscription_id;
-		// 	}
-		// 	if(!$sub_plan->payer_id){
-		// 		$sub_plan->payer_id = $payer_id;
-		// 	}
-		// 	$sub_plan->save();
-		// }
+		if($sub_plan){
+			if(!$sub_plan->gateway_subscription_id){
+				$sub_plan->gateway_subscription_id = $gateway_subscription_id;
+			}
+			if(!$sub_plan->payer_id){
+				$sub_plan->payer_id = $payer_id;
+			}
+			$sub_plan->save();
+		}
 
 	}
 

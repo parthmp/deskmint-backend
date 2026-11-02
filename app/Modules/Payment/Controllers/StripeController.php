@@ -18,15 +18,15 @@ class StripeController extends Controller{
 
 		$data = $request->all();
 
-		logger("\n\n\n");
-		logger("FROM STRIPE");
-		logger("===========");
-		logger($data);
-		logger("===========");
-		logger("\n\n\n");
+		// logger("\n\n\n");
+		// logger("FROM STRIPE");
+		// logger("===========");
+		// logger($data);
+		// logger("===========");
+		// logger("\n\n\n");
 		
 		$event_type = $data['type'] ?? null;
-
+		
 		if(!in_array((string) $event_type, StripeEvents::getAll())){
 			logger("event type ".$event_type." is not added in the application for stripe");
 			return response('ok', 200);
@@ -41,6 +41,11 @@ class StripeController extends Controller{
 		}
 		
 		if((string) $event_type === StripeEvents::INVOICE_PAID->value){
+			
+			$amount_paid = (int) $data['data']['object']['amount_paid'];
+			if($amount_paid === 0){
+				return response('ok', 200);
+			}
 			
 			$fetched_data = $this->database_operations->fetchStripeSettingsForSubscriptions($data);
 			if(!$fetched_data['recurring_invoice_data']){

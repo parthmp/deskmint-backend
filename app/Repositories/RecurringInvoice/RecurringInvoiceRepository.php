@@ -7,6 +7,7 @@ use App\Models\AdditionalProductColumnsFieldValueRi;
 use App\Models\PaymentType;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceItem;
+use App\Models\RecurringInvoiceUrl;
 use App\Models\SubscriptionPlan;
 use App\Modules\Payment\Enums\PaymentGateway;
 use Illuminate\Database\Eloquent\Collection;
@@ -35,6 +36,17 @@ class RecurringInvoiceRepository {
 	 */
 	public function fetchWithJoin(int $company_id, int $recurring_invoice_id) : ?RecurringInvoice {
 		return RecurringInvoice::select('recurring_invoices.*', 'currencies.id as currency_id', 'currencies.code as currency_code', 'clients.first_name', 'clients.last_name')->join('clients', 'clients.id', '=', 'recurring_invoices.client_id')->join('currencies', 'currencies.id', '=', 'clients.currency_id')->where([['recurring_invoices.company_id', '=', $company_id], ['recurring_invoices.id', '=', $recurring_invoice_id]])->first();
+	}
+
+	/**
+	 * deleteRecurringUrls function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return void
+	 */
+	public function deleteRecurringUrls(int $company_id, int $recurring_invoice_id) : void {
+		RecurringInvoiceUrl::where([['company_id', '=', $company_id], ['recurring_invoice_id', '=', $recurring_invoice_id]])->forceDelete();
 	}
 
 	
@@ -91,6 +103,8 @@ class RecurringInvoiceRepository {
 		$recurring_invoice->settings_snapshot = $data['settings_snapshot'];
 		$recurring_invoice->hidden_sent_at = $data['hidden_sent_at'];
 		$recurring_invoice->save();
+
+		$this->deleteRecurringUrls((int) $data['company_id'], (int) $recurring_invoice->id);
 
 		return $recurring_invoice;
 
@@ -194,6 +208,20 @@ class RecurringInvoiceRepository {
 	 */
 	public function fetchByIdWithCurrency(int $company_id, int $recurring_invoice_id) : ?RecurringInvoice {
 		return RecurringInvoice::where([['company_id', '=', $company_id], ['id', '=', $recurring_invoice_id]])->with('currency')->first();
+	}
+
+	/**
+	 * updateNextInvoiceOn function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @param string $datetime
+	 * @return void
+	 */
+	public function updateNextInvoiceOn(int $company_id, int $recurring_invoice_id, string $datetime) : void {
+		RecurringInvoice::where([['company_id', '=', $company_id], ['id', '=', $recurring_invoice_id]])->update([
+			'next_invoice_on'	=>	$datetime
+		]);
 	}
 
 

@@ -127,9 +127,12 @@ class RecurringInvoiceService {
 	 *
 	 * @param Request $request
 	 * @param integer $company_id
+	 * @param integer|null $recurring_invoice_id
 	 * @return array
 	 */
-	private function assembleData(Request $request, int $company_id) : array {
+	private function assembleData(Request $request, int $company_id, ?int $recurring_invoice_id = null) : array {
+
+		$update = $recurring_invoice_id !== null;
 
 		$client_id = (int) Sanitize::input($request->input('data.invoice_details.client.client_id'));
 		$client = $this->client_repository->fetchById($client_id, ['currency_id']);
@@ -170,6 +173,11 @@ class RecurringInvoiceService {
 			$next_invoice_on = General::formatTimezoneDatetime($subscription_start_datetime, 'UTC', true, true);
 		}
 
+		if($update){
+			$next_invoice_on = (string) Sanitize::input($request->input('settings.subscription_start_datetime'));
+			$next_invoice_on = Carbon::parse($next_invoice_on, 'UTC')->format('Y-m-d H:i:s');
+		}
+
 		
 		$frequency = (int) Sanitize::input($request->input('settings.frequency'));
 		$custom_frequency_days = (int) Sanitize::input($request->input('settings.custom_frequency_days'));
@@ -202,6 +210,8 @@ class RecurringInvoiceService {
 		if((int) $payment_gateway !== PaymentGateway::NONE->value){
 			$mark_invoices_paid = 1;
 		}
+
+		
 		
 
 		$all_settings = $this->db->fetchSettings($company_id);
@@ -353,7 +363,7 @@ class RecurringInvoiceService {
 			$add = false;
 		}
 
-		$data = $this->assembleData($request, $company_id);
+		$data = $this->assembleData($request, $company_id, $recurring_invoice_id);
 		$rows = $data['rows'];
 		unset($data['rows']);
 
@@ -806,7 +816,7 @@ class RecurringInvoiceService {
 					$context = new UpdateSubscription($sub->gateway_subscription_id, $entry_data['global_total'], $recurring_invoice->currency->code, $frequency, $custom_frequency_days);
 
 					$anchor_date = null;
-
+					
 					$charge_now = (bool) Sanitize::input($request->input('settings.charge_now'));
 					if(!$charge_now){
 						
@@ -822,6 +832,7 @@ class RecurringInvoiceService {
 					}
 
 					$payment->stripe()->setContext($context)->updateSubscription($charge_now, (int) $anchor_date);
+					
 
 				}catch(CardException $e){
 					
@@ -831,7 +842,7 @@ class RecurringInvoiceService {
 				}catch(InvalidRequestException $e){
 					
 					logger()->error('Stripe invalid request', ['message' => $e->getMessage(), 'param' => $e->getStripeParam()]);
-					throw new RecurringInvoiceException('Could not update subscription', 'invalid_request', $error_code, 2);
+					throw new RecurringInvoiceException($e->getMessage(), 'invalid_request', $error_code, 2);
 
 				}catch(RateLimitException | ApiConnectionException $e){
 					
