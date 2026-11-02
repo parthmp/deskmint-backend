@@ -210,4 +210,13 @@ class RecurringInvoiceController extends Controller {
 
 	}
 
+	public function invoiceView(Request $request, int $recurring_invoice_id){
+
+		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$recurring_invoice_id = (int) Sanitize::input((string) $recurring_invoice_id);
+
+		return $this->recurring_invoice_service->fetchInvoiceView($company_id, $recurring_invoice_id);
+
+	}
+
 }

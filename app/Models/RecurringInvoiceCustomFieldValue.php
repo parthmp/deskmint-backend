@@ -23,4 +23,8 @@ class RecurringInvoiceCustomFieldValue extends Model
 	public function invoices_custom_field_wt(){
 		return $this->belongsTo(RecurringInvoicesCustomField::class, 'recurring_invoices_custom_field_id')->withTrashed();
 	}
+
+	public function recurring_invoices_custom_field_wt(){
+		return $this->belongsTo(RecurringInvoicesCustomField::class, 'recurring_invoices_custom_field_id')->withTrashed();
+	}
 }

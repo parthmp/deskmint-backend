@@ -4,8 +4,10 @@ namespace App\Repositories\RecurringInvoice;
 
 use App\Models\AdditionalProductColumnsField;
 use App\Models\AdditionalProductColumnsFieldValueRi;
+use App\Models\ClientCustomFieldValue;
 use App\Models\PaymentType;
 use App\Models\RecurringInvoice;
+use App\Models\RecurringInvoiceCustomFieldValue;
 use App\Models\RecurringInvoiceItem;
 use App\Models\RecurringInvoiceUrl;
 use App\Models\SubscriptionPlan;
@@ -222,6 +224,80 @@ class RecurringInvoiceRepository {
 		RecurringInvoice::where([['company_id', '=', $company_id], ['id', '=', $recurring_invoice_id]])->update([
 			'next_invoice_on'	=>	$datetime
 		]);
+	}
+
+	/**
+	 * fetchClientCustomFieldValuesForView function
+	 *
+	 * @param integer $client_id
+	 * @return Collection|null
+	 */
+	public function fetchClientCustomFieldValuesForView(int $client_id) : ?Collection {
+
+		$data = ClientCustomFieldValue::where('client_id', '=',$client_id)->withTrashed()->with(['clients_custom_field_wt.custom_field_type_wt'])->get();
+		return $data;
+
+	}
+
+	/**
+	 * fetchCustomFieldValuesOfRecurringInvoice function
+	 *
+	 * @param integer $recurring_invoice_id
+	 * @return Collection|null
+	 */
+	public function fetchCustomFieldValuesOfRecurringInvoice(int $recurring_invoice_id) : ?Collection {
+		
+		return RecurringInvoiceCustomFieldValue::where('recurring_invoice_id', '=',$recurring_invoice_id)
+										->withTrashed()
+										->with([
+											'recurring_invoices_custom_field_wt' => function ($query) {
+												$query->withTrashed()
+													->with(['custom_field_type_wt' => function ($q) {
+														$q->withTrashed();
+													}]);
+											},
+										])
+										->get();
+	}
+
+	/**
+	 * fetchItemsWithCustomCols function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return Collection
+	 */
+	public function fetchItemsWithCustomCols(int $company_id, int $recurring_invoice_id) : Collection {
+
+		return RecurringInvoiceItem::where('recurring_invoice_id', '=', $recurring_invoice_id)
+					->withTrashed()
+					->with([
+						'product',
+						'custom_field_values_ri' => function ($query) use ($recurring_invoice_id, $company_id) {
+							$query->withTrashed()->where('recurring_invoice_id', '=', $recurring_invoice_id)
+								->whereHas('custom_product_field', function ($q) use ($company_id) {
+									$q->withTrashed()
+										->where('company_id', $company_id);
+								})
+								->with(['custom_product_field' => function ($q) use ($company_id) {
+									$q->withTrashed()
+										->where('company_id', $company_id);
+								}]);
+						},
+					])
+					->get();
+	
+	}
+
+	/**
+	 * fetchRecurringInvoiceDataForSnapshot function
+	 *
+	 * @param integer $recurring_invoice_id
+	 * @param array $selects
+	 * @return RecurringInvoice
+	 */
+	public function fetchRecurringInvoiceDataForSnapshot(int $recurring_invoice_id, $selects = ['*']) : RecurringInvoice {
+		return RecurringInvoice::select(...$selects)->where('id', '=', $recurring_invoice_id)->with('client_wt', 'currency', 'client_wt.billing_country', 'company_wt', 'client_wt.currency')->withTrashed()->first();
 	}
 
 

@@ -5,6 +5,7 @@ namespace App\Modules\InvoiceGeneration;
 use App\Helpers\General;
 use App\Models\Company;
 use App\Models\Invoice;
+use App\Models\RecurringInvoice;
 use App\Modules\InvoiceGeneration\InvoiceSettingsResolver;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Repositories\Invoice\InvoiceRepository;
@@ -29,7 +30,7 @@ class InvoiceSnapshot {
 
 	private int $company_id;
 	private int $invoice_id;
-	private Invoice $invoice;
+	private Invoice|RecurringInvoice $invoice;
 	private string $timezone;
 
 	public function __construct(
@@ -57,11 +58,11 @@ class InvoiceSnapshot {
 	 * setInvoiceId function
 	 *
 	 * @param integer $invoice_id
-	 * @param Invoice|null $invoice
+	 * @param null|Invoice|RecurringInvoice|null $invoice
 	 * @param boolean $resolver
 	 * @return self
 	 */
-	public function setInvoiceId(int $invoice_id, ?Invoice $invoice = null, $resolver = true) : self {
+	public function setInvoiceId(int $invoice_id, null|Invoice|RecurringInvoice $invoice = null, $resolver = true) : self {
 		
 		$this->invoice_id = $invoice_id;
 
@@ -154,6 +155,12 @@ class InvoiceSnapshot {
 
 
 		foreach($field_values as $custom_field_value){
+
+			if(!isset($field[$type.'s_custom_field_id'])){
+				logger('not set');
+				logger($field);
+				logger("\n\n\n");
+			}
 			
 			if((int) $field[$type.'s_custom_field_id'] === (int) $custom_field_value->{$type.'s_custom_field_id'}){
 				
@@ -406,7 +413,12 @@ class InvoiceSnapshot {
 				}
 
 			}else{
-				$invoice_details_with_values[] = $this->parseCustomFields($invoice_custom_fields, $field, 'invoice');
+				$type = 'invoice';
+				if($this->invoice instanceof RecurringInvoice){
+					$type = 'recurring_invoice';
+				}
+				
+				$invoice_details_with_values[] = $this->parseCustomFields($invoice_custom_fields, $field, $type);
 			}
 
 		}
@@ -537,7 +549,7 @@ class InvoiceSnapshot {
 		foreach($total_fields_settings as $field){	
 			
 			if(trim(strtolower($field['text'])) === 'paid to date'){
-				$math = BigDecimal::of($this->invoice->total)->minus($this->invoice->balance_due);
+				$math = BigDecimal::of($this->invoice->total)->minus($this->invoice->balance_due ?? 0);
 				$show_value = $math->toScale(2, RoundingMode::HalfUp)->__toString();
 			}else{
 				$mapped = $field['mapped'][0];

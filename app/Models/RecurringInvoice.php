@@ -15,5 +15,21 @@ class RecurringInvoice extends Model
 	public function currency(){
 		return $this->belongsTo(Currency::class, 'currency_id');
 	}
+
+	public function client(){
+		return $this->belongsTo(Client::class, 'client_id');
+	}
+
+	public function client_wt(){
+		return $this->belongsTo(Client::class, 'client_id')->withTrashed();
+	}
+
+	public function company(){
+		return $this->belongsTo(Company::class, 'company_id');
+	}
+
+	public function company_wt(){
+		return $this->belongsTo(Company::class, 'company_id')->withTrashed();
+	}
 	
 }

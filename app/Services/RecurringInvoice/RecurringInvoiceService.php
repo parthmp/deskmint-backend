@@ -15,6 +15,7 @@ use App\Models\RecurringInvoicesCustomField;
 use App\Modules\CustomFields\CustomFields;
 use App\Modules\DataTable\Requests\DataTableRequest;
 use App\Modules\EasyIndex\EasyIndex;
+use App\Modules\InvoiceGeneration\InvoiceSnapshot;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Gateways\Payment as GatewaysPayment;
 use App\Modules\Payment\Gateways\Stripe\DTO\UpdateSubscription;
@@ -868,6 +869,48 @@ class RecurringInvoiceService {
 
 		return true;
 			
+
+	}
+
+	/**
+	 * fetchInvoiceView function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return array
+	 */
+	public function fetchInvoiceView(int $company_id, int $recurring_invoice_id) : array {
+
+		$recurring_invoice = $this->recurring_invoice_repository->fetchRecurringInvoiceDataForSnapshot($recurring_invoice_id);
+
+		$snapshot_data = json_decode($recurring_invoice->settings_snapshot, true);
+
+		$clients_custom_field_values = $this->recurring_invoice_repository->fetchClientCustomFieldValuesForView($recurring_invoice->client_id);
+		$company_additional_fields = $this->db->fetchAdditionalCompanyFields($company_id);
+		
+		$invoice_custom_field_values = $this->recurring_invoice_repository->fetchCustomFieldValuesOfRecurringInvoice((int) $recurring_invoice->id) ?? [];
+
+		$default_company = $this->db->fetchDefaultCompanyById($company_id);
+		$invoice_items = $this->recurring_invoice_repository->fetchItemsWithCustomCols($company_id, (int) $recurring_invoice->id);
+
+		$snapshot = app(InvoiceSnapshot::class)
+						->setCompanyId($company_id, false)
+						->setInvoiceId((int) $recurring_invoice->id, $recurring_invoice, false)
+						->setTimezone($recurring_invoice->timezone)
+						->setLogoSnapsot($snapshot_data['company_logo'])
+						->setGeneralSettings($snapshot_data['general_settings'])
+						->setClientSnapshot($snapshot_data['client_settings'], $clients_custom_field_values)
+						->setCompanySnapshot($snapshot_data['company_settings'], $company_additional_fields)
+						->setInvoiceSnapshot($snapshot_data['invoice_settings'], $invoice_custom_field_values, $default_company, $snapshot_data['product_column_settings'], $invoice_items)
+						->setInvoiceRowsSnapshot($snapshot_data['product_column_settings'], $invoice_items)
+						->setTotalsSnapshot($snapshot_data['total_field_settings'])
+						->setTermsSnapshot()
+						->output();
+
+		return [
+			'snapshot'			=>	$snapshot,
+			'recurring_invoice'	=>	$recurring_invoice
+		];
 
 	}
 
