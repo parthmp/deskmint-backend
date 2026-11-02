@@ -279,10 +279,12 @@ class GatewayService{
 	 * @param integer $payment_gateway
 	 * @param string $total
 	 * @param integer $currency_id
+	 * @param integer $frequency
+	 * @param integer $custom_days
 	 * @return string|null
 	 */
-	public function fetchCachedUrlForRecurringInvoice(int $company_id, int $recurring_invoice_id, int $payment_gateway, string $total, int $currency_id) : ?string {
-		return $this->gateway_repository->fetchCachedUrlForRecurringInvoice($company_id, $recurring_invoice_id, $payment_gateway, $total, $currency_id);
+	public function fetchCachedUrlForRecurringInvoice(int $company_id, int $recurring_invoice_id, int $payment_gateway, string $total, int $currency_id, int $frequency, int $custom_days) : ?string {
+		return $this->gateway_repository->fetchCachedUrlForRecurringInvoice($company_id, $recurring_invoice_id, $payment_gateway, $total, $currency_id, $frequency, $custom_days);
 	}
 
 	/**

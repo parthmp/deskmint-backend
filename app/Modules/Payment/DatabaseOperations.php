@@ -3,6 +3,7 @@
 namespace App\Modules\Payment;
 
 use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
+use App\Models\PayPalPlan;
 use App\Models\Invoice;
 use App\Models\PaymentUrl;
 use App\Models\RecurringInvoice;
@@ -472,14 +473,20 @@ class DatabaseOperations{
 	 */
 	public function upsertSubScriptionPlan(array $data) : bool {
 
-		$plan = $this->fetchSubscriptionPlanByRI((int) $data['company_id'], (int) $data['recurring_invoice_id'], (int) $data['payment_gateway']);
+		$plan = $this->fetchSubscriptionPlanByRI((int) $data['company_id'], (int) $data['recurring_invoice_id'], (int) $data['payment_gateway'], (int) $data['frequency'], (int) $data['custom_frequency_days'], (string) $data['total']);
 		if(!$plan){
+
+			SubscriptionPlan::where([['company_id', '=', (int) $data['company_id']], ['recurring_invoice_id', '=', (int) $data['recurring_invoice_id']]])->forceDelete();
+
 			$plan = new SubscriptionPlan();
 			$plan->uuid = Str::uuid()->toString();
 			$plan->company_id = $data['company_id'];
 			$plan->recurring_invoice_id = $data['recurring_invoice_id'];
 			
 		}
+		$plan->total = $data['total'];
+		$plan->frequency = $data['frequency'];
+		$plan->custom_frequency_days = $data['custom_frequency_days'];
 		$plan->payer_id = $data['payer_id'];
 		$plan->payment_gateway = $data['payment_gateway'];
 		$plan->gateway_subscription_id = $data['gateway_subscription_id'];
@@ -504,6 +511,8 @@ class DatabaseOperations{
 		$url->company_id = $data['company_id'];
 		$url->recurring_invoice_id = $data['recurring_invoice_id'];
 		$url->payment_gateway = $data['payment_gateway'];
+		$url->frequency = $data['frequency'];
+		$url->custom_frequency_days = $data['custom_frequency_days'];
 		$url->total = $data['total'];
 		$url->currency_id = $data['currency_id'];
 		$url->url = $data['url'];
@@ -518,10 +527,13 @@ class DatabaseOperations{
 	 * @param integer $company_id
 	 * @param integer $recurring_invoice_id
 	 * @param integer $payment_gateway
+	 * @param integer $frequency
+	 * @param integer $custom_days
+	 * @param string $total
 	 * @return SubscriptionPlan|null
 	 */
-	public function fetchSubscriptionPlanByRI(int $company_id, int $recurring_invoice_id, int $payment_gateway) : ?SubscriptionPlan {
-		return SubscriptionPlan::where([['company_id', '=', $company_id], ['recurring_invoice_id', '=', $recurring_invoice_id], ['payment_gateway', '=', $payment_gateway]])->orderBy('id', 'desc')->first();
+	public function fetchSubscriptionPlanByRI(int $company_id, int $recurring_invoice_id, int $payment_gateway, int $frequency, int $custom_days, string $total) : ?SubscriptionPlan {
+		return SubscriptionPlan::where([['company_id', '=', $company_id], ['recurring_invoice_id', '=', $recurring_invoice_id], ['payment_gateway', '=', $payment_gateway], ['frequency', '=', $frequency], ['custom_frequency_days', '=', $custom_days], ['total', '=', $total]])->orderBy('id', 'desc')->first();
 	}
 
 	/**
@@ -769,17 +781,55 @@ class DatabaseOperations{
 	 */
 	public function updateSubscriptionPlanforStripe(int $company_id, int $recurring_invoice_id,  string $gateway_subscription_id, string $payer_id) : void {
 
-		$sub_plan = $this->fetchSubscriptionPlanByRI($company_id, $recurring_invoice_id, PaymentGateway::STRIPE->value);
+		// $sub_plan = $this->fetchSubscriptionPlanByRI($company_id, $recurring_invoice_id, PaymentGateway::STRIPE->value);
 
-		if($sub_plan){
-			if(!$sub_plan->gateway_subscription_id){
-				$sub_plan->gateway_subscription_id = $gateway_subscription_id;
-			}
-			if(!$sub_plan->payer_id){
-				$sub_plan->payer_id = $payer_id;
-			}
-			$sub_plan->save();
-		}
+		// if($sub_plan){
+		// 	if(!$sub_plan->gateway_subscription_id){
+		// 		$sub_plan->gateway_subscription_id = $gateway_subscription_id;
+		// 	}
+		// 	if(!$sub_plan->payer_id){
+		// 		$sub_plan->payer_id = $payer_id;
+		// 	}
+		// 	$sub_plan->save();
+		// }
+
+	}
+
+	/**
+	 * fetchPayPalPlan function
+	 *
+	 * @param string $interval_unit
+	 * @param integer $interval_count
+	 * @param integer $currency_id
+	 * @return PayPalPlan|null
+	 */
+	public function fetchPayPalPlan(string $interval_unit, int $interval_count, int $currency_id) : ?PayPalPlan {
+
+		$interval_unit = trim(strtolower($interval_unit));
+		return PayPalPlan::where([['interval_unit', '=', $interval_unit], ['interval_count', '=', $interval_count], ['currency_id', '=', $currency_id]])->orderBy('id', 'desc')->first();
+
+	}
+
+	/**
+	 * insertPayPalPlan function
+	 *
+	 * @param string $interval_unit
+	 * @param integer $interval_count
+	 * @param integer $currency_id
+	 * @param string $product_id
+	 * @param string $paypal_plan_id
+	 * @return void
+	 */
+	public function insertPayPalPlan(string $interval_unit, int $interval_count, int $currency_id, string $product_id, string $paypal_plan_id) : void {
+
+		$pp = new PayPalPlan();
+		$pp->uuid = Str::uuid()->toString();
+		$pp->paypal_product_id = $product_id;
+		$pp->paypal_plan_id = $paypal_plan_id;
+		$pp->interval_unit = $interval_unit;
+		$pp->interval_count = $interval_count;
+		$pp->currency_id = $currency_id;
+		$pp->save();
 
 	}
 

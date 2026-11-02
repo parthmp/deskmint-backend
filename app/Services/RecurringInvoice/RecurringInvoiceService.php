@@ -195,6 +195,10 @@ class RecurringInvoiceService {
 			}
 		}
 
+		if($frequency !== Frequencies::CUSTOM->value){
+			$custom_frequency_days = 0;
+		}
+
 		if((int) $payment_gateway !== PaymentGateway::NONE->value){
 			$mark_invoices_paid = 1;
 		}

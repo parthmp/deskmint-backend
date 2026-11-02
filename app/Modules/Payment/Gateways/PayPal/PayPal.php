@@ -240,13 +240,13 @@ class PayPal implements PaymentInterface {
 	}
 
 	/**
-	 * createPlan function
+	 * getOrCreatePlan function
 	 *
 	 * @param string $product_id
 	 * @param array $recurring_invoice
 	 * @return string
 	 */
-	private function createPlan(string $product_id, array $recurring_invoice) : string {
+	private function getOrCreatePlan(string $product_id, array $recurring_invoice) : string {
 
 		$freqency_array = Frequencies::getForGatewayFromValue((int) $recurring_invoice['frequency'], (int) $recurring_invoice['custom_frequency_days']);
 
@@ -254,32 +254,54 @@ class PayPal implements PaymentInterface {
 			throw new \RuntimeException('Unexpected freqency_array value');
 		}
 
+		$paypal_plan = $this->db->fetchPayPalPlan((string) $freqency_array['interval_unit'], (int) $freqency_array['interval_count'], (int) $recurring_invoice['currency_id']);
+		if($paypal_plan){
+			$plan = $this->provider->showPlanDetails($paypal_plan->paypal_plan_id);
+			if($plan['status'] === 'ACTIVE'){
+				logger('reusing plan');
+				logger($plan['id']);
+				return $plan['id'];
+			}
+		}
 
-		$plan = $this->provider->createPlan([
-			'product_id' => $product_id,
-			'name'       => 'Subscription Plan',
-			'status'     => 'ACTIVE',
-			'billing_cycles' => [
-				[
-					'frequency'      => $freqency_array,
-					'tenure_type'    => 'REGULAR',
-					'sequence'       => 1,
-					'total_cycles'   => 0,
-					'pricing_scheme' => [
-						'fixed_price' => ['value' => $recurring_invoice['total'], 'currency_code' => $recurring_invoice['code']],
+
+		try{
+
+			$plan = $this->provider->createPlan([
+				'product_id' => $product_id,
+				'name'       => 'Subscription Plan',
+				'status'     => 'ACTIVE',
+				'billing_cycles' => [
+					[
+						'frequency'      => $freqency_array,
+						'tenure_type'    => 'REGULAR',
+						'sequence'       => 1,
+						'total_cycles'   => 0,
+						'pricing_scheme' => [
+							'fixed_price' => ['value' => $recurring_invoice['total'], 'currency_code' => $recurring_invoice['code']],
+						],
 					],
 				],
-			],
-			'payment_preferences' => [
-				'auto_bill_outstanding'     => true,
-				'setup_fee'                 => ['value' => '0', 'currency_code' => $recurring_invoice['code']],
-				'setup_fee_failure_action'  => 'CONTINUE',
-				'payment_failure_threshold' => 3,
-			],
-		]);
+				'payment_preferences' => [
+					'auto_bill_outstanding'     => false,
+					'setup_fee'                 => ['value' => '0', 'currency_code' => $recurring_invoice['code']],
+					'setup_fee_failure_action'  => 'CONTINUE',
+					'payment_failure_threshold' => 3,
+				],
+			]);
 		
-		$plan_id = $plan['id'];
-		return $plan_id;
+		
+			$plan_id = $plan['id'];
+			
+			$this->db->insertPayPalPlan((string) $freqency_array['interval_unit'], (int) $freqency_array['interval_count'], (int) $recurring_invoice['currency_id'], $product_id, $plan_id);
+
+			return $plan_id;
+
+		}catch(Exception $e){
+			throw new \RuntimeException('Failed to create a plan');
+		}
+
+		return '';
 
 	}
 
@@ -326,6 +348,8 @@ class PayPal implements PaymentInterface {
 		return $this->db->insertRecurringInvoiceUrl([
 			'company_id'				=>	$recurring_invoice['company_id'],
 			'recurring_invoice_id'		=>	$recurring_invoice['id'],
+			'frequency'					=>	$recurring_invoice['frequency'],
+			'custom_frequency_days'		=>	$recurring_invoice['custom_frequency_days'],
 			'payment_gateway'			=>	$recurring_invoice['payment_gateway'],
 			'total'						=>	$recurring_invoice['total'],
 			'currency_id'				=>	$recurring_invoice['currency_id'],
@@ -351,6 +375,19 @@ class PayPal implements PaymentInterface {
 				],
 				'email_address' => $recurring_invoice['email'],
 			],
+			'plan'    => [
+				'billing_cycles' => [
+					[
+						'sequence'       => 1,
+						'pricing_scheme' => [
+							'fixed_price' => [
+								'value'         => $recurring_invoice['total'],
+								'currency_code' => $recurring_invoice['code'],
+							],
+						],
+					],
+				],
+			],
 			'application_context' => [
 				'brand_name'          => config('app.name'),
 				'locale'              => 'en-US',
@@ -360,8 +397,8 @@ class PayPal implements PaymentInterface {
 					'payer_selected'  => 'PAYPAL',
 					'payee_preferred' => 'IMMEDIATE_PAYMENT_REQUIRED',
 				],
-				"cancel_url" => env('APP_URL').PAYMENT_CANCEL_URL,
-				"return_url" => env('APP_URL').PAYMENT_SUCCESS_URL
+				"cancel_url" => config('app.url').PAYMENT_CANCEL_URL,
+				"return_url" => config('app.url').PAYMENT_SUCCESS_URL
 			],
 		]);
 
@@ -392,7 +429,7 @@ class PayPal implements PaymentInterface {
 		$data = $this->dto->getData();
 		$recurring_invoice = $data['recurring_invoice']->toArray();
 		
-		$plan = $this->db->fetchSubscriptionPlanByRI((int) $recurring_invoice['company_id'], (int) $recurring_invoice['id'], (int) $recurring_invoice['payment_gateway']);
+		$plan = $this->db->fetchSubscriptionPlanByRI((int) $recurring_invoice['company_id'], (int) $recurring_invoice['id'], (int) $recurring_invoice['payment_gateway'], (int) $recurring_invoice['frequency'], (int) $recurring_invoice['custom_frequency_days'], (string) $recurring_invoice['total']);
 
 		if($plan){
 
@@ -409,7 +446,7 @@ class PayPal implements PaymentInterface {
 		$product_id = $this->ensurePaypalProduct();
 
 		//makes api call to paypal
-		$plan_id = $this->createPlan($product_id, $recurring_invoice);
+		$plan_id = $this->getOrCreatePlan($product_id, $recurring_invoice);
 
 		//makes api call to paypal
 		$sub_data = $this->createSubscription($plan_id, $recurring_invoice);
@@ -417,6 +454,9 @@ class PayPal implements PaymentInterface {
 		$data = [
 			'company_id'				=>	$recurring_invoice['company_id'],
 			'recurring_invoice_id'		=>	$recurring_invoice['id'],
+			'frequency'					=>	$recurring_invoice['frequency'],
+			'total'						=>	$recurring_invoice['total'],
+			'custom_frequency_days'		=>	$recurring_invoice['custom_frequency_days'],
 			'payment_gateway'			=>	$recurring_invoice['payment_gateway'],
 			'gateway_subscription_id'	=>	$sub_data['id'],
 			'plan_id'					=>	$plan_id,
@@ -440,11 +480,14 @@ class PayPal implements PaymentInterface {
 	 *
 	 * @param integer $company_id
 	 * @param integer $recurring_invoice_id
+	 * @param integer $freqency
+	 * @param integer $custom_days
+	 * @param string $total
 	 * @return void
 	 */
-	private function updateNextInvoiceOn(int $company_id, int $recurring_invoice_id) : void {
+	private function updateNextInvoiceOn(int $company_id, int $recurring_invoice_id, int $freqency, int $custom_days, string $total) : void {
 
-		$sub_plan = $this->db->fetchSubscriptionPlanByRI($company_id, $recurring_invoice_id, PaymentGateway::PAYPAL->value);
+		$sub_plan = $this->db->fetchSubscriptionPlanByRI($company_id, $recurring_invoice_id, PaymentGateway::PAYPAL->value, $freqency, $custom_days, $total);
 
 		if($sub_plan){
 
@@ -523,7 +566,7 @@ class PayPal implements PaymentInterface {
 		])->executeActions(false, true);
 
 		//update next invoice date
-		$this->updateNextInvoiceOn((int) $recurring_invoice_data['company_id'], (int) $recurring_invoice_data['id']);
+		$this->updateNextInvoiceOn((int) $recurring_invoice_data['company_id'], (int) $recurring_invoice_data['id'], (int) $recurring_invoice_data['frequency'], (int) $recurring_invoice_data['custom_frequency_days'], (string) $recurring_invoice_data['total']);
 
 		return true;
 		

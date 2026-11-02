@@ -469,6 +469,8 @@ class Stripe implements PaymentInterface {
 			'company_id'				=>	$recurring_invoice['company_id'],
 			'recurring_invoice_id'		=>	$recurring_invoice['id'],
 			'payment_gateway'			=>	$recurring_invoice['payment_gateway'],
+			'frequency'					=>	$recurring_invoice['frequency'],
+			'custom_frequency_days'		=>	$recurring_invoice['custom_frequency_days'],
 			'total'						=>	$recurring_invoice['total'],
 			'currency_id'				=>	$recurring_invoice['currency_id'],
 			'url'						=>	$url

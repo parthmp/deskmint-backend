@@ -110,11 +110,13 @@ class GatewayRepository{
 	 * @param integer $payment_gateway
 	 * @param string $total
 	 * @param integer $currency_id
+	 * @param integer $frequency
+	 * @param integer $custom_days
 	 * @return string|null
 	 */
-	public function fetchCachedUrlForRecurringInvoice(int $company_id, int $recurring_invoice_id, int $payment_gateway, string $total, int $currency_id) : ?string {
+	public function fetchCachedUrlForRecurringInvoice(int $company_id, int $recurring_invoice_id, int $payment_gateway, string $total, int $currency_id, int $frequency, int $custom_days) : ?string {
 
-		$record = RecurringInvoiceUrl::where([['company_id', '=', $company_id], ['recurring_invoice_id', '=', $recurring_invoice_id], ['payment_gateway', '=', $payment_gateway], ['total', '=', $total], ['currency_id', '=', $currency_id], ['created_at', '>', now()->subHours(2)]])->orderBy('id', 'desc')->first();
+		$record = RecurringInvoiceUrl::where([['company_id', '=', $company_id], ['recurring_invoice_id', '=', $recurring_invoice_id], ['payment_gateway', '=', $payment_gateway], ['total', '=', $total], ['currency_id', '=', $currency_id], ['frequency', '=', $frequency], ['custom_frequency_days', '=', $custom_days], ['created_at', '>', now()->subHours(2)]])->orderBy('id', 'desc')->first();
 
 		if(!$record){
 			return null;
