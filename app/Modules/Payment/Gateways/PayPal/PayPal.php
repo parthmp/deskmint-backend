@@ -520,7 +520,15 @@ class PayPal implements PaymentInterface {
 			return false;
 		}
 
-		$recurring_invoice_data = $settings_data['webhook_data'];	
+		$recurring_invoice_data = $settings_data['webhook_data'];
+
+		$amount_paid = $request_data['resource']['amount']['total'];
+		$currency_code = $request_data['resource']['amount']['currency'];
+		if((string) $amount_paid !== (string) $recurring_invoice_data['total'] || strtolower($recurring_invoice_data['currency_code']) !== strtolower($currency_code)){
+			return false;
+		}
+
+
 		$settings = $settings_data['settings'];	
 
 		$order_id = $request_data['resource']['id'] ?? null;
@@ -636,7 +644,7 @@ class PayPal implements PaymentInterface {
 		}
 
 		if((string) $event_type === PayPalEvents::SALE_COMPLETED->value){
-
+			
 			return $this->subscriptionSaleMade($request_data, $settings_data);
 
 		}else if((string) $event_type === PayPalEvents::SUBSCRIPTION_ACTIVATED->value){

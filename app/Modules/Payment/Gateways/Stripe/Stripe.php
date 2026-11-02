@@ -218,9 +218,10 @@ class Stripe implements PaymentInterface {
 		
 		$recurring_invoice_data = $settings_data['webhook_data'];	
 		$amount_paid = (int) $request_data['data']['object']['amount_paid'];
+		$currency_code = (string) $request_data['data']['object']['currency'];
 		$cents_amount = General::toCents($recurring_invoice_data['total']);
 		
-		if($amount_paid !== $cents_amount){
+		if($amount_paid !== $cents_amount || strtolower($recurring_invoice_data['currency_code']) !== strtolower($currency_code)){
 			return false;
 		}
 
