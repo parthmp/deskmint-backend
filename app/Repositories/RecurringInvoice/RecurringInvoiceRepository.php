@@ -297,7 +297,7 @@ class RecurringInvoiceRepository {
 	 * @return RecurringInvoice
 	 */
 	public function fetchRecurringInvoiceDataForSnapshot(int $recurring_invoice_id, $selects = ['*']) : RecurringInvoice {
-		return RecurringInvoice::select(...$selects)->where('id', '=', $recurring_invoice_id)->with('client_wt', 'currency', 'client_wt.billing_country', 'company_wt', 'client_wt.currency')->withTrashed()->first();
+		return RecurringInvoice::select(...$selects)->where('id', '=', $recurring_invoice_id)->with('client_wt', 'currency', 'client_wt.billing_country', 'company_wt', 'client_wt.currency', 'payment_type')->withTrashed()->first();
 	}
 
 

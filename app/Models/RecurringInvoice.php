@@ -31,5 +31,9 @@ class RecurringInvoice extends Model
 	public function company_wt(){
 		return $this->belongsTo(Company::class, 'company_id')->withTrashed();
 	}
+
+	public function payment_type(){
+		return $this->belongsTo(PaymentType::class, 'payment_type_id')->withTrashed();
+	}
 	
 }

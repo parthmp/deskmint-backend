@@ -941,9 +941,22 @@ class RecurringInvoiceService {
 						->setTermsSnapshot()
 						->output();
 
+		$next_invoice_on = $recurring_invoice->next_invoice_on ?? null;
+		if($next_invoice_on){
+			$next_invoice_on = Carbon::parse($next_invoice_on, 'UTC')->toISOString();
+		}
+
+		$data = [
+			'frequency' 					=> Frequencies::getLabelByValue((int) $recurring_invoice->frequency),
+			'payment_type' 					=> $recurring_invoice->payment_type->payment_type ?? '',
+			'send_invoice_generation_email' => $recurring_invoice->send_invoice_email,
+			'mark_paid' 					=> $recurring_invoice->mark_paid_automatically,
+			'next_invoice_on' 				=> $next_invoice_on,
+		];
+
 		return [
 			'snapshot'			=>	$snapshot,
-			'recurring_invoice'	=>	$recurring_invoice
+			'recurring_invoice'	=>	$data
 		];
 
 	}

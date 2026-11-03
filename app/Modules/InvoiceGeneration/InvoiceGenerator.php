@@ -326,7 +326,13 @@ class InvoiceGenerator {
 
 					if($mapped[0] === 'tax'){
 
-						$vat_rate = $vat_rate->plus($item['tax']);
+						if(trim((string) $item['tax']) === ''){
+							$temp_tax = 0;
+						}else{
+							$temp_tax = $item['tax'];
+						}
+
+						$vat_rate = $vat_rate->plus(BigDecimal::of($temp_tax));
 						break;
 
 					}
@@ -345,7 +351,13 @@ class InvoiceGenerator {
 
 							foreach($item['custom_field_values'] as $custom_field){
 								if((int) $custom_field['apc_field_id'] === $id_column){
-									$vat_rate = $vat_rate->plus($custom_field['value']);
+									if(trim((string) $custom_field['value']) === ''){
+										$temp_vat = 0;
+									}else{
+										$temp_vat = $custom_field['value'];
+									}
+									
+									$vat_rate = $vat_rate->plus(BigDecimal::of($temp_vat));
 								}
 							}
 
