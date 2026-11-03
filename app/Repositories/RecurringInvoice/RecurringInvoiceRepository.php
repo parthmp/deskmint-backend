@@ -300,5 +300,21 @@ class RecurringInvoiceRepository {
 		return RecurringInvoice::select(...$selects)->where('id', '=', $recurring_invoice_id)->with('client_wt', 'currency', 'client_wt.billing_country', 'company_wt', 'client_wt.currency', 'payment_type')->withTrashed()->first();
 	}
 
+	/**
+	 * updateStatusAndNextInvoice function
+	 *
+	 * @param RecurringInvoice $recurring_invoice
+	 * @param integer $status
+	 * @param string|null $next_invoice_on
+	 * @return void
+	 */
+	public function updateStatusAndNextInvoice(RecurringInvoice $recurring_invoice, int $status, ?string $next_invoice_on) : void {
+
+		$recurring_invoice->status = $status;
+		$recurring_invoice->next_invoice_on = $next_invoice_on;
+		$recurring_invoice->save();
+
+	}
+
 
 }

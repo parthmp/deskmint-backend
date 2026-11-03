@@ -319,4 +319,25 @@ class RecurringInvoiceValidationService {
 
 	}
 
+
+	/**
+	 * validatePause function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return boolean
+	 */
+	public function validatePause(int $company_id, int $recurring_invoice_id) : bool {
+
+		$recurring_invoice = $this->recurring_invoice_repository->fetchById($company_id, $recurring_invoice_id);
+		
+		if((int) $recurring_invoice->status !== RecurringInvoiceStatus::ACTIVE->value){
+			$status_name = RecurringInvoiceStatus::getRecurringInvoiceStatusLabel((int) $recurring_invoice->status);
+			throw new RecurringInvoiceException('You can not pause an invoice with status '.$status_name, 'invalid_status', (int) config('global.error_code'), 0);
+		}
+
+		return true;
+
+	}
+
 }

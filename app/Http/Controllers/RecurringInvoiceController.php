@@ -204,7 +204,7 @@ class RecurringInvoiceController extends Controller {
 		}catch(RecurringInvoiceException $e){
 			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
 		}catch(Exception $e){
-			return General::wentWrong();
+			return General::wentWrong($e);
 		}
 
 
@@ -216,6 +216,28 @@ class RecurringInvoiceController extends Controller {
 		$recurring_invoice_id = (int) Sanitize::input((string) $recurring_invoice_id);
 
 		return $this->recurring_invoice_service->fetchInvoiceView($company_id, $recurring_invoice_id);
+
+	}
+
+	public function pause(Request $request, int $recurring_invoice_id){
+
+		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$recurring_invoice_id = (int) Sanitize::input((string) $recurring_invoice_id);
+
+		try{
+
+			$this->recurring_invoice_service->validatePause($company_id, $recurring_invoice_id);
+
+			$meta = $this->recurring_invoice_service->pauseSubscription($company_id, $recurring_invoice_id);
+
+			return response(['message' => 'Status updated successfully', 'validity' => 'status_success', 'tab_switch' => 0, 'meta' => $meta], 200);
+
+
+		}catch(RecurringInvoiceException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong($e);
+		}
 
 	}
 

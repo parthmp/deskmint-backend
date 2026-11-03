@@ -961,4 +961,51 @@ class RecurringInvoiceService {
 
 	}
 
+	/**
+	 * validatePause function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return boolean
+	 */
+	public function validatePause(int $company_id, int $recurring_invoice_id) : bool {
+		return $this->recurring_invoice_validation_service->validatePause($company_id, $recurring_invoice_id);
+	}
+
+	/**
+	 * pauseSubscription function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return array
+	 */
+	public function pauseSubscription(int $company_id, int $recurring_invoice_id) : array {
+
+		$selects = [
+			'id',
+			'payment_gateway',
+			'status',
+			'next_invoice_on'
+		];
+
+		$recurring_invoice = $this->recurring_invoice_repository->fetchById($company_id, $recurring_invoice_id, $selects);
+
+		$payment_gateway = (int) $recurring_invoice->payment_gateway;
+
+		if($payment_gateway === PaymentGateway::PAYPAL->value){
+
+		}else if($payment_gateway === PaymentGateway::STRIPE->value){
+			
+		}
+
+		$this->recurring_invoice_repository->updateStatusAndNextInvoice($recurring_invoice, RecurringInvoiceStatus::PAUSED->value, null);
+
+		return [
+			'status_text'	=>	RecurringInvoiceStatus::PAUSED->label(),
+			'status_value'	=>	RecurringInvoiceStatus::PAUSED->value,
+			'highlight'		=>	'error'
+		];
+
+	}
+
 }
