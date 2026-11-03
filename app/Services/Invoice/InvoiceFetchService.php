@@ -25,6 +25,7 @@ use Carbon\Carbon;
 use Generator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 
@@ -255,11 +256,51 @@ class InvoiceFetchService{
 			$archived_status = ArchivedStatus::YES->value;
 		}
 
-		$archived_filter = ['is_archived', '=', $archived_status];
+		$archived_filter = [['is_archived', '=', $archived_status]];
 
-		return $this->easy_index->setType('invoice')->setAndWhere([$archived_filter])->setCustomFieldClass(InvoicesCustomField::class)->setJoins($joins)->setExceptionClass(InvoiceException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
+
+		$filter_data = $this->getFilterData($request, 'invoices');
+
+		$merged_filter = array_merge($archived_filter, $filter_data);
+
+		return $this->easy_index->setType('invoice')->setAndWhere($merged_filter)->setCustomFieldClass(InvoicesCustomField::class)->setJoins($joins)->setExceptionClass(InvoiceException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
 			'c_code'				=>		'currencies.code'
 		 ])->setRewrites($rewrites)->setModel(Invoice::class)->fetchIndex();
+	}
+
+	/**
+	 * getFilterData function
+	 *
+	 * @param Request $request
+	 * @param string $table
+	 * @return array
+	 */
+	private function getFilterData(Request $request, string $table) : array {
+
+		$columns = Schema::getColumnListing($table);
+
+		$fields = [];
+
+		$filter_data = (string) Sanitize::input($request->input('filter_data'));
+		if($filter_data){
+			
+			$filter_data_array = json_decode(base64_decode($filter_data), true);
+
+			if(!empty($filter_data_array)){
+				foreach($filter_data_array as $filter){
+
+					if(in_array($filter['filter_key'], $columns)){
+						$fields[] = [
+							$filter['filter_key'], '=', $filter['filter_value']
+						];
+					}
+					
+				}
+			}
+		}
+
+		return $fields;
+
 	}
 	
 	

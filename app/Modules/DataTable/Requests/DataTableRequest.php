@@ -29,6 +29,12 @@ class DataTableRequest extends FormRequest
 
 		$per_page = $this->input('per_page') ? Sanitize::input($this->input('per_page')) : null;
 
+		$filter_data = '';
+
+		if($this->exists('filter_data')){
+			$filter_data = (string) Sanitize::input($this->input('filter_data'));
+		}
+
 		$this->merge([
 			'company_id'			=>			$company_id,
 			'searched_term'			=>			$searched_term,
@@ -36,7 +42,8 @@ class DataTableRequest extends FormRequest
 			'sorted_column'			=>			$sorted_column,
 			'default_per_page'		=>			$default_per_page,
 			'date_range'			=>			$date_range,
-			'per_page'				=>			$per_page
+			'per_page'				=>			$per_page,
+			'filter_data'			=>			$filter_data
 		]);
 
 	}
@@ -56,7 +63,8 @@ class DataTableRequest extends FormRequest
 			'current_page'			=>	'sometimes',
 			'sorted_column'			=>	'sometimes',
 			//'default_per_page'		=>	'sometimes',
-			'date_range'			=>	'sometimes'
+			'date_range'			=>	'sometimes',
+			'filter_data'			=>	'sometimes'
         ];
     }
 }
