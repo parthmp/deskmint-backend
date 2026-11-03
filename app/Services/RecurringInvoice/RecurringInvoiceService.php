@@ -873,6 +873,36 @@ class RecurringInvoiceService {
 	}
 
 	/**
+	 * removeInvoiceFields function
+	 *
+	 * @param array $keys
+	 * @param array $invoice_settings
+	 * @return array
+	 */
+	private function removeInvoiceFields(array $keys, array $invoice_settings) : array {
+
+		foreach($invoice_settings as $index => $record){
+			
+			if(!isset($record['mapped'])){
+				continue;
+			}
+
+			if(is_string($record['mapped'])){
+				continue;
+			}
+
+			foreach($record['mapped'] as $mapped){
+				if(in_array($mapped, $keys)){
+					unset($invoice_settings[$index]);
+					break;
+				}
+			}
+		}
+
+		return array_values($invoice_settings);
+	}
+
+	/**
 	 * fetchInvoiceView function
 	 *
 	 * @param integer $company_id
@@ -883,7 +913,8 @@ class RecurringInvoiceService {
 
 		$recurring_invoice = $this->recurring_invoice_repository->fetchRecurringInvoiceDataForSnapshot($recurring_invoice_id);
 
-		$snapshot_data = json_decode($recurring_invoice->settings_snapshot, true);
+		$snapshot_string = str_ireplace('invoices_custom_field_id', 'recurring_invoices_custom_field_id', (string) $recurring_invoice->settings_snapshot);
+		$snapshot_data = json_decode($snapshot_string, true);
 
 		$clients_custom_field_values = $this->recurring_invoice_repository->fetchClientCustomFieldValuesForView($recurring_invoice->client_id);
 		$company_additional_fields = $this->db->fetchAdditionalCompanyFields($company_id);
@@ -892,6 +923,9 @@ class RecurringInvoiceService {
 
 		$default_company = $this->db->fetchDefaultCompanyById($company_id);
 		$invoice_items = $this->recurring_invoice_repository->fetchItemsWithCustomCols($company_id, (int) $recurring_invoice->id);
+		
+		$snapshot_data['invoice_settings'] = $this->removeInvoiceFields(['invoice_number', 'invoice_date', 'due_date', 'balance_due'], $snapshot_data['invoice_settings']);
+		$snapshot_data['total_field_settings'] = $this->removeInvoiceFields(['invoice_number', 'invoice_date', 'due_date', 'balance_due'], $snapshot_data['total_field_settings']);
 
 		$snapshot = app(InvoiceSnapshot::class)
 						->setCompanyId($company_id, false)

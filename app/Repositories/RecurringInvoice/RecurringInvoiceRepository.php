@@ -273,7 +273,7 @@ class RecurringInvoiceRepository {
 					->withTrashed()
 					->with([
 						'product',
-						'custom_field_values_ri' => function ($query) use ($recurring_invoice_id, $company_id) {
+						'custom_field_values' => function ($query) use ($recurring_invoice_id, $company_id) {
 							$query->withTrashed()->where('recurring_invoice_id', '=', $recurring_invoice_id)
 								->whereHas('custom_product_field', function ($q) use ($company_id) {
 									$q->withTrashed()

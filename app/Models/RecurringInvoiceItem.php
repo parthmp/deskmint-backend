@@ -22,10 +22,10 @@ class RecurringInvoiceItem extends Model
 	// }
 
 	public function custom_field_values(){
-    	return $this->hasMany(AdditionalProductColumnsFieldValue::class, 'row_uuid', 'row_uuid');
-	}
-
-	public function custom_field_values_ri(){
     	return $this->hasMany(AdditionalProductColumnsFieldValueRi::class, 'row_uuid', 'row_uuid');
 	}
+
+	// public function custom_field_values_ri(){
+    // 	return $this->hasMany(AdditionalProductColumnsFieldValueRi::class, 'row_uuid', 'row_uuid');
+	// }
 }
