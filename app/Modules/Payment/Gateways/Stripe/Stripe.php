@@ -357,6 +357,20 @@ class Stripe implements PaymentInterface {
 	}
 
 	/**
+	 * handleSubscriptionStatus function
+	 *
+	 * @param array $settings_data
+	 * @param integer $status
+	 * @return void
+	 */
+	private function handleSubscriptionStatus(array $settings_data, int $status) : void {
+
+		$recurring_invoice = $settings_data['recurring_invoice'];
+		$this->db->changeRecurringInvoiceStatus($recurring_invoice, $status);
+
+	}
+
+	/**
 	 * handleWebhook function
 	 *
 	 * @param Request $request
@@ -383,6 +397,18 @@ class Stripe implements PaymentInterface {
 		if((string) $event_type === StripeEvents::INVOICE_PAID->value){
 			//subscription payments.
 			$this->subscriptionSaleMade($request_data, $settings_data);
+		}
+
+		if((string) $event_type === StripeEvents::SUBSCRIPTION_PAUSED->value){
+			$this->handleSubscriptionStatus($settings_data, RecurringInvoiceStatus::PAUSED->value);
+		}
+
+		if((string) $event_type === StripeEvents::SUBSCRIPTION_RESUMED->value){
+			$this->handleSubscriptionStatus($settings_data, RecurringInvoiceStatus::ACTIVE->value);
+		}
+
+		if((string) $event_type === StripeEvents::SUBSCRIPTION_CANCELLED->value){
+			$this->handleSubscriptionStatus($settings_data, RecurringInvoiceStatus::CANCELLED->value);
 		}
 		
 		if((string) $event_type === StripeEvents::CHECKOUT_COMPLETED->value || (string) $event_type === StripeEvents::CHECKOUT_COMPLETED_ASYNC->value){
@@ -621,6 +647,48 @@ class Stripe implements PaymentInterface {
 
 		$this->provider->subscriptions->update($data['subscription_id'], $stripe_array);
 
+	}
+
+	/**
+	 * pauseSubscription function
+	 *
+	 * @param string $subscription_id
+	 * @return void
+	 */
+	public function pauseSubscription(string $subscription_id) : void {
+		$this->provider->request('post', "/v1/subscriptions/{$subscription_id}/pause", [
+			'bill_for' => [
+				'unused_time_from' => ['type' => 'none'],
+				'outstanding_usage_through' => ['type' => 'none'],
+			],
+		], []);
+	}
+
+	/**
+	 * activateSubscription function
+	 *
+	 * @param string $subscription_id
+	 * @return void
+	 */
+	public function activateSubscription(string $subscription_id) : void {
+		$this->provider->request('post', "/v1/subscriptions/{$subscription_id}/resume", [
+			'payment_behavior' => 'resume_on_payment_success',
+			'billing_cycle_anchor' => 'unchanged',
+			'proration_behavior' => 'none',
+		], []);
+	}
+
+	/**
+	 * cancelSubscription function
+	 *
+	 * @param string $subscription_id
+	 * @return void
+	 */
+	public function cancelSubscription(string $subscription_id) : void {
+		$this->provider->subscriptions->cancel($subscription_id, [
+			'prorate' => false,
+			'invoice_now' => false,
+		]);
 	}
 
 }

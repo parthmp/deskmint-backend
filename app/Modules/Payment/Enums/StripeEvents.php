@@ -7,6 +7,10 @@ enum StripeEvents : string {
 	case CHECKOUT_COMPLETED = 'checkout.session.completed';
 	case CHECKOUT_COMPLETED_ASYNC = 'checkout.session.async_payment_succeeded';
 
+	case SUBSCRIPTION_PAUSED = 'customer.subscription.paused';
+	case SUBSCRIPTION_RESUMED = 'customer.subscription.resumed';
+	case SUBSCRIPTION_CANCELLED = 'customer.subscription.deleted';
+
 	case INVOICE_PAID = 'invoice.paid';
 
 	/**

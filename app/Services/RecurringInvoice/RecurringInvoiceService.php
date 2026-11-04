@@ -1024,7 +1024,7 @@ class RecurringInvoiceService {
 		if($payment_gateway !== PaymentGateway::NONE->value){
 			$sub_plan = $this->recurring_invoice_repository->fetchSubscriptionPlan($company_id, $recurring_invoice_id);
 			if(!$sub_plan){
-				throw new RecurringInvoiceException("No subscritpion plan found", "no_sub_plan", 2);
+				throw new RecurringInvoiceException("No subscritpion plan found", "no_sub_plan", (int) config('global.error_code'));
 			}
 		}
 
@@ -1101,6 +1101,17 @@ class RecurringInvoiceService {
 
 				}else if($payment_gateway === PaymentGateway::STRIPE->value){
 					
+					$stripe = $payment->stripe();
+
+					if($type === 'pause'){
+						$stripe->pauseSubscription((string) $sub_plan->gateway_subscription_id);
+					}else if($type === 'start'){
+						$stripe->activateSubscription((string) $sub_plan->gateway_subscription_id);
+					}else if($type === 'cancel'){
+						$stripe->cancelSubscription((string) $sub_plan->gateway_subscription_id);
+					}
+
+
 				}
 
 			}
@@ -1109,7 +1120,7 @@ class RecurringInvoiceService {
 
 		}catch (Exception $e){
 
-			throw new RecurringInvoiceException("Unable to update subscription on the gateway", "update_failed_gateway", 2);
+			throw new RecurringInvoiceException("Unable to update subscription on the gateway", "update_failed_gateway", (int) config('global.error_code'));
 
 		}
 

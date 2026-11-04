@@ -18,12 +18,12 @@ class StripeController extends Controller{
 
 		$data = $request->all();
 
-		// logger("\n\n\n");
-		// logger("FROM STRIPE");
-		// logger("===========");
-		// logger($data);
-		// logger("===========");
-		// logger("\n\n\n");
+		logger("\n\n\n");
+		logger("FROM STRIPE");
+		logger("===========");
+		logger($data);
+		logger("===========");
+		logger("\n\n\n");
 		
 		$event_type = $data['type'] ?? null;
 		
@@ -39,20 +39,42 @@ class StripeController extends Controller{
 				$settings_data = $this->database_operations->fetchStripeSettings($data);
 			}
 		}
+
+		$sub_events = [
+			StripeEvents::INVOICE_PAID->value,
+			StripeEvents::SUBSCRIPTION_PAUSED->value,
+			StripeEvents::SUBSCRIPTION_RESUMED->value,
+			StripeEvents::SUBSCRIPTION_CANCELLED->value
+		];
 		
-		if((string) $event_type === StripeEvents::INVOICE_PAID->value){
+		if(in_array((string) $event_type, $sub_events)){
+
+			$fetched_data['recurring_invoice_data'] = null;
 			
-			$amount_paid = (int) $data['data']['object']['amount_paid'];
-			if($amount_paid === 0){
-				return response('ok', 200);
+			if((string) $event_type === StripeEvents::INVOICE_PAID->value){
+
+				$amount_paid = (int) $data['data']['object']['amount_paid'];
+				if($amount_paid === 0){
+					return response('ok', 200);
+				}
+					
+				$fetched_data = $this->database_operations->fetchStripeSettingsForInvoicePaid($data);
+				
+			}else if((string) $event_type === StripeEvents::SUBSCRIPTION_PAUSED->value || (string) $event_type === StripeEvents::SUBSCRIPTION_RESUMED->value || (string) $event_type === StripeEvents::SUBSCRIPTION_CANCELLED->value){
+				
+				$fetched_data = $this->database_operations->fetchStripeSettingsForSubscriptionPaused($data);
+				
+				if(!$fetched_data){
+					return response('ok', 200);
+				}
 			}
 			
-			$fetched_data = $this->database_operations->fetchStripeSettingsForSubscriptions($data);
 			if(!$fetched_data['recurring_invoice_data']){
 				return response('ok', 200);
 			}
 			
 			$settings_data['webhook_data'] = $fetched_data['recurring_invoice_data']->toArray();
+			$settings_data['recurring_invoice'] = $fetched_data['recurring_invoice_data'];
 			$settings_data['settings'] = [
 				'order_id'					=>	$fetched_data['order_id'],
 				'recurring_invoice_id'		=>	$fetched_data['recurring_invoice_id'],

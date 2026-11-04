@@ -603,7 +603,7 @@ class DatabaseOperations{
 
 	}
 
-	public function fetchStripeSettingsForSubscriptions(array $request_data) : ?array {
+	public function fetchStripeSettingsForInvoicePaid(array $request_data) : ?array {
 		
 		$data = $this->getOrderIdAndRecurringInvoiceIdFromResponse($request_data);
 
@@ -847,6 +847,32 @@ class DatabaseOperations{
 	 */
 	public function fetchRecurringInvoiceWithClient(int $company_id, int $recurring_invoice_id) : ?RecurringInvoice {
 		return RecurringInvoice::where([['company_id', '=', $company_id], ['id', '=', $recurring_invoice_id]])->with('client_wt')->first();
+	}
+
+	/**
+	 * fetchStripeSettingsForSubscriptionPaused function
+	 *
+	 * @param array $request_data
+	 * @return array|null
+	 */
+	public function fetchStripeSettingsForSubscriptionPaused(array $request_data) : ?array {
+
+		$order_id = $request_data['data']['object']['metadata']['order_id'] ?? null;
+		$recurring_invoice_id = $request_data['data']['object']['metadata']['recurring_invoice_id'] ?? null;
+
+		if(!$order_id || !$recurring_invoice_id){
+			return null;
+		}
+
+		$recurring_invoice_data = $this->fetchRecurringInvoice((int) $recurring_invoice_id, ['recurring_invoices.*', 'currencies.code as currency_code']);
+
+		return [
+			'recurring_invoice_data'	=>	$recurring_invoice_data,
+			'order_id'					=>	$order_id,
+			'recurring_invoice_id'		=>	$recurring_invoice_id,
+			'subscription_id'			=>	null
+		];
+
 	}
 
 }
