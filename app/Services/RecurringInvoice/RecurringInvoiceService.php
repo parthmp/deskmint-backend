@@ -20,6 +20,7 @@ use App\Modules\InvoiceGeneration\InvoiceSnapshot;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Gateways\Payment as GatewaysPayment;
 use App\Modules\Payment\Gateways\Stripe\DTO\UpdateSubscription;
+use App\Modules\RecurringInvoice\Actions\UpdateNextInvoiceOn;
 use App\Modules\RecurringInvoice\DB\DB;
 use App\Modules\RecurringInvoice\RecurringInvoice as RecurringInvoiceModule;
 use App\Modules\Settings\Settings;
@@ -60,7 +61,8 @@ class RecurringInvoiceService {
 		private InvoiceFetchService $invoice_fetch_service,
 		private DB $db,
 		private EasyIndex $easy_index,
-		private Settings $settings
+		private Settings $settings,
+		private UpdateNextInvoiceOn $update_next_invoice_on
 	){}
 
 	/**
@@ -1083,9 +1085,13 @@ class RecurringInvoiceService {
 
 		try{
 
+			$next_invoice_on = null;
+
 			if($allow_gateway_call){
 
 				$payment = new GatewaysPayment((int) $company_id);
+
+				
 
 				if($payment_gateway === PaymentGateway::PAYPAL->value){
 
@@ -1094,7 +1100,8 @@ class RecurringInvoiceService {
 					if($type === 'pause'){
 						$paypal->pauseSubscription((string) $sub_plan->gateway_subscription_id);
 					}else if($type === 'start'){
-						$paypal->activateSubscription((string) $sub_plan->gateway_subscription_id);
+						$details = $paypal->activateSubscription((string) $sub_plan->gateway_subscription_id);
+						$next_invoice_on = Carbon::parse($details['next_invoice_on'], 'UTC');
 					}else if($type === 'cancel'){
 						$paypal->cancelSubscription((string) $sub_plan->gateway_subscription_id);
 					}
@@ -1106,7 +1113,8 @@ class RecurringInvoiceService {
 					if($type === 'pause'){
 						$stripe->pauseSubscription((string) $sub_plan->gateway_subscription_id);
 					}else if($type === 'start'){
-						$stripe->activateSubscription((string) $sub_plan->gateway_subscription_id);
+						$details = $stripe->activateSubscription((string) $sub_plan->gateway_subscription_id);
+						$next_invoice_on = Carbon::parse($details['next_invoice_on'], 'UTC');
 					}else if($type === 'cancel'){
 						$stripe->cancelSubscription((string) $sub_plan->gateway_subscription_id);
 					}
@@ -1116,7 +1124,19 @@ class RecurringInvoiceService {
 
 			}
 
-			$this->recurring_invoice_repository->updateStatus($recurring_invoice, $status_value);
+			if($payment_gateway === PaymentGateway::NONE->value && $type === 'start'){
+				//TODO:calculate for none.
+				$next_invoice_on = $this->update_next_invoice_on->nextInvoiceOn(Carbon::parse($recurring_invoice->next_invoice_on, 'UTC'), (int) $recurring_invoice->frequency, (int) $recurring_invoice->custom_frequency_days);
+			}
+
+			$iso_date = null;
+			if($next_invoice_on){
+				$iso_date = $next_invoice_on->toISOString();
+				$next_invoice_on = $next_invoice_on->format('Y-m-d H:i:s');
+			}
+
+			
+			$this->recurring_invoice_repository->updateStatusAndNextDate($recurring_invoice, $status_value, $next_invoice_on);
 
 		}catch (Exception $e){
 
@@ -1127,7 +1147,8 @@ class RecurringInvoiceService {
 		return [
 			'status_text'	=>	$status_text,
 			'status_value'	=>	$status_value,
-			'highlight'		=>	$highlight
+			'highlight'		=>	$highlight,
+			'iso_date'		=>	$iso_date
 		];
 
 	}

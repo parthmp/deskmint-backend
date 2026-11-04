@@ -775,10 +775,15 @@ class PayPal implements PaymentInterface {
 	 * activateSubscription function
 	 *
 	 * @param string $subscription_id
-	 * @return void
+	 * @return array
 	 */
-	public function activateSubscription(string $subscription_id) : void {
+	public function activateSubscription(string $subscription_id) : array {
 		$this->provider->activateSubscription($subscription_id, 'Activating');
+		$details = $this->provider->showSubscriptionDetails($subscription_id);
+		$next_invoice_on = $details['billing_info']['next_billing_time'] ?? null;
+		return [
+			'next_invoice_on' => $next_invoice_on
+		];
 	}
 
 	/**

@@ -24,9 +24,9 @@ class PayPalController extends Controller{
 
 		$data = $request->all();
 		
-		logger("\n\n\n");
-		logger($data);
-		logger("\n\n\n");
+		// logger("\n\n\n");
+		// logger($data);
+		// logger("\n\n\n");
 
 		$event_type = $data['event_type'] ?? null;
 

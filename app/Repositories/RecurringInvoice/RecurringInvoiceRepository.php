@@ -307,9 +307,13 @@ class RecurringInvoiceRepository {
 	 * @param integer $status
 	 * @return void
 	 */
-	public function updateStatus(RecurringInvoice $recurring_invoice, int $status) : void {
+	public function updateStatusAndNextDate(RecurringInvoice $recurring_invoice, int $status, ?string $next_date) : void {
 
 		$recurring_invoice->status = $status;
+		if($next_date){
+			$recurring_invoice->next_invoice_on = $next_date;
+		}
+		
 		$recurring_invoice->save();
 
 	}

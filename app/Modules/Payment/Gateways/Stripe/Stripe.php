@@ -23,6 +23,7 @@ use App\Modules\Payment\Traits\Shared;
 use App\Modules\RecurringInvoice\RecurringInvoice;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -695,14 +696,25 @@ class Stripe implements PaymentInterface {
 	 * activateSubscription function
 	 *
 	 * @param string $subscription_id
-	 * @return void
+	 * @return array
 	 */
-	public function activateSubscription(string $subscription_id) : void {
+	public function activateSubscription(string $subscription_id) : array {
+
 		$this->provider->request('post', "/v1/subscriptions/{$subscription_id}/resume", [
 			'payment_behavior' => 'resume_on_payment_success',
 			'billing_cycle_anchor' => 'unchanged',
 			'proration_behavior' => 'none',
 		], []);
+
+		$sub = $this->provider->subscriptions->retrieve($subscription_id);
+		$ts = $sub->items->data[0]->current_period_end ?? null;
+
+		$next_invoice_on = $ts ? Carbon::createFromTimestampUTC($ts)->format('Y-m-d\TH:i:s\Z') : null;
+
+		return [
+			'next_invoice_on' => $next_invoice_on
+		];
+		
 	}
 
 	/**
