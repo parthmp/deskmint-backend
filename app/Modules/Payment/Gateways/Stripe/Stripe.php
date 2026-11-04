@@ -7,6 +7,8 @@ use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
 use App\Exceptions\PaymentException;
 use App\Helpers\General;
 use App\Models\Transaction;
+use App\Modules\Notifications\Enums\NotificationType;
+use App\Modules\Notifications\Notification;
 use App\Modules\Payment\Contracts\GenericDTO;
 use App\Modules\Payment\Contracts\PaymentInterface;
 use App\Modules\Payment\DatabaseOperations;
@@ -17,6 +19,7 @@ use App\Modules\Payment\Gateways\Stripe\Implementation\CheckoutSession;
 use App\Modules\Payment\Gateways\Stripe\Implementation\Credentials;
 use App\Modules\Payment\Gateways\Stripe\Implementation\ProductResolver;
 use App\Modules\Payment\Jobs\FetchStripeBalanceTransactionJob;
+use App\Modules\Payment\Traits\Shared;
 use App\Modules\RecurringInvoice\RecurringInvoice;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
@@ -27,6 +30,8 @@ use Stripe\StripeClient as Provider;
 use Illuminate\Support\Str;
 
 class Stripe implements PaymentInterface {
+
+	use Shared;
 
 	private DatabaseOperations $db;
 	private ?Provider $provider = null;
@@ -368,6 +373,24 @@ class Stripe implements PaymentInterface {
 		$recurring_invoice = $settings_data['recurring_invoice'];
 		$this->db->changeRecurringInvoiceStatus($recurring_invoice, $status);
 
+	}	
+
+	/**
+	 * notifyAdmin function
+	 *
+	 * @param array $request_data
+	 * @param array $settings_data
+	 * @return void
+	 */
+	private function notifyAdmin(array $request_data, array $settings_data) : void {
+
+		$subscription_id = $request_data['data']['object']['parent']['subscription_details']['subscription'] ?? null;
+		
+		if($subscription_id){
+			$this->sendPaymentFailedAdminEmail($subscription_id, $settings_data, 'Stripe');
+		}
+		
+
 	}
 
 	/**
@@ -409,6 +432,11 @@ class Stripe implements PaymentInterface {
 
 		if((string) $event_type === StripeEvents::SUBSCRIPTION_CANCELLED->value){
 			$this->handleSubscriptionStatus($settings_data, RecurringInvoiceStatus::CANCELLED->value);
+		}
+
+		if((string) $event_type === StripeEvents::SUBSCRIPTION_PAYMENT_FAILED->value){
+			$this->notifyAdmin($request_data, $settings_data);
+			$this->handleSubscriptionStatus($settings_data, RecurringInvoiceStatus::PAYMENT_FAILED->value);
 		}
 		
 		if((string) $event_type === StripeEvents::CHECKOUT_COMPLETED->value || (string) $event_type === StripeEvents::CHECKOUT_COMPLETED_ASYNC->value){
@@ -579,8 +607,7 @@ class Stripe implements PaymentInterface {
 			'payer_id'					=>	''
 		];
 
-		logger($data);
-
+		
 		$url = $session->url;
 
 		return DB::transaction(function () use ($data, $url, $recurring_invoice) {

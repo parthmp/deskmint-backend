@@ -10,6 +10,7 @@ enum StripeEvents : string {
 	case SUBSCRIPTION_PAUSED = 'customer.subscription.paused';
 	case SUBSCRIPTION_RESUMED = 'customer.subscription.resumed';
 	case SUBSCRIPTION_CANCELLED = 'customer.subscription.deleted';
+	case SUBSCRIPTION_PAYMENT_FAILED = 'invoice.payment_failed';
 
 	case INVOICE_PAID = 'invoice.paid';
 

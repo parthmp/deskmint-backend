@@ -44,7 +44,8 @@ class StripeController extends Controller{
 			StripeEvents::INVOICE_PAID->value,
 			StripeEvents::SUBSCRIPTION_PAUSED->value,
 			StripeEvents::SUBSCRIPTION_RESUMED->value,
-			StripeEvents::SUBSCRIPTION_CANCELLED->value
+			StripeEvents::SUBSCRIPTION_CANCELLED->value,
+			StripeEvents::SUBSCRIPTION_PAYMENT_FAILED->value
 		];
 		
 		if(in_array((string) $event_type, $sub_events)){
@@ -59,8 +60,11 @@ class StripeController extends Controller{
 				}
 					
 				$fetched_data = $this->database_operations->fetchStripeSettingsForInvoicePaid($data);
+				if(!$fetched_data){
+					return response('ok', 200);
+				}
 				
-			}else if((string) $event_type === StripeEvents::SUBSCRIPTION_PAUSED->value || (string) $event_type === StripeEvents::SUBSCRIPTION_RESUMED->value || (string) $event_type === StripeEvents::SUBSCRIPTION_CANCELLED->value){
+			}else if((string) $event_type === StripeEvents::SUBSCRIPTION_PAUSED->value || (string) $event_type === StripeEvents::SUBSCRIPTION_RESUMED->value || (string) $event_type === StripeEvents::SUBSCRIPTION_CANCELLED->value || (string) $event_type === StripeEvents::SUBSCRIPTION_PAYMENT_FAILED->value){
 				
 				$fetched_data = $this->database_operations->fetchStripeSettingsForSubscriptionPaused($data);
 				

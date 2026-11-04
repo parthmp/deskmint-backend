@@ -864,7 +864,7 @@ class DatabaseOperations{
 			return null;
 		}
 
-		$recurring_invoice_data = $this->fetchRecurringInvoice((int) $recurring_invoice_id, ['recurring_invoices.*', 'currencies.code as currency_code']);
+		$recurring_invoice_data = $this->fetchRecurringInvoice((int) $recurring_invoice_id, ['recurring_invoices.*', 'currencies.code as currency_code', 'clients.first_name', 'clients.last_name']);
 
 		return [
 			'recurring_invoice_data'	=>	$recurring_invoice_data,

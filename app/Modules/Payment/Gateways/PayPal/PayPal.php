@@ -17,6 +17,7 @@ use App\Modules\Payment\Contracts\PaymentInterface;
 use App\Modules\Payment\Enums\PayPalEvents;
 use App\Modules\Payment\Gateways\PayPal\Implementation\Credentials;
 use App\Modules\Payment\Gateways\PayPal\Implementation\Order;
+use App\Modules\Payment\Traits\Shared;
 use App\Modules\RecurringInvoice\RecurringInvoice;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
@@ -27,6 +28,8 @@ use Illuminate\Support\Facades\DB;
 use Srmklive\PayPal\Services\PayPal as Provider;
 
 class PayPal implements PaymentInterface {
+
+	use Shared;
 
 	private ?array $order_response = null;
 	private ?string $invoice_or_request_payment_url = null;
@@ -656,27 +659,21 @@ class PayPal implements PaymentInterface {
 	}
 
 	/**
-	 * sendPaymentFailedAdminEmail function
+	 * notifyAdmin function
 	 *
 	 * @param array $request_data
 	 * @param array $settings_data
 	 * @return void
 	 */
-	private function sendPaymentFailedAdminEmail(array $request_data, array $settings_data) : void {
+	private function notifyAdmin(array $request_data, array $settings_data) : void {
 
 		$paypal_sub_id = $request_data['resource']['id'] ?? null;
 		
-		$recurring_invoice_data = $settings_data['webhook_data'];
+		if($paypal_sub_id){
+			$this->sendPaymentFailedAdminEmail($paypal_sub_id, $settings_data, 'PayPal');
+		}
+		
 
-		$message = 'Hello, PayPal could not complete a payment for subscription (ID: '.$paypal_sub_id.'). Please contact the customer to resolve the issue.';
-		$message .= "\n";
-		$message .= "\nDetails are,\n";
-		$message .= "System recurring invoice id: ".$recurring_invoice_data['id'];
-		$message .= "\n";
-		$message .= "Client: ".$recurring_invoice_data['first_name'].' '.$recurring_invoice_data['last_name'];
-
-		$notification = app(Notification::class);
-		$notification->notify((int) $recurring_invoice_data['company_id'], NotificationType::SUBSCRIPTION_PAYMENT_FAILED, 'Failed to charge subscription', $message, []);
 	}
 
 	/**
@@ -712,7 +709,7 @@ class PayPal implements PaymentInterface {
 
 		}else if((string) $event_type === PayPalEvents::SUBSCRIPTION_PAYMENT_FAILED->value){
 			$this->updateStatusOnly($request_data, RecurringInvoiceStatus::PAYMENT_FAILED->value);
-			$this->sendPaymentFailedAdminEmail($request_data, $settings_data);
+			$this->notifyAdmin($request_data, $settings_data);
 		}else if((string) $event_type === PayPalEvents::SUBSCRIPTION_CANCELLED->value){
 			$this->updateStatusOnly($request_data, RecurringInvoiceStatus::CANCELLED->value);
 		}else{
