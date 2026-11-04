@@ -544,7 +544,7 @@ class DatabaseOperations{
 	 * @return RecurringInvoice|null
 	 */
 	public function fetchRecurringInvoice(int $id, array $selects = ['*']) : ?RecurringInvoice {
-		return RecurringInvoice::select(...$selects)->join('currencies', 'currencies.id', '=', 'recurring_invoices.currency_id')->where('recurring_invoices.id', '=', $id)->first();
+		return RecurringInvoice::select(...$selects)->join('currencies', 'currencies.id', '=', 'recurring_invoices.currency_id')->join('clients', 'clients.id', '=', 'recurring_invoices.client_id')->where('recurring_invoices.id', '=', $id)->first();
 	}
 
 	/**
@@ -563,7 +563,7 @@ class DatabaseOperations{
 			}
 		}
 
-		if((string) $event_type === PayPalEvents::SUBSCRIPTION_ACTIVATED->value || (string) $event_type === PayPalEvents::SUBSCRIPTION_SUSPENDED->value){
+		if((string) $event_type === PayPalEvents::SUBSCRIPTION_ACTIVATED->value || (string) $event_type === PayPalEvents::SUBSCRIPTION_SUSPENDED->value || (string) $event_type === PayPalEvents::SUBSCRIPTION_PAYMENT_FAILED->value){
 			if(isset($request_data['resource']['custom_id'])){
 				return (int) $request_data['resource']['custom_id'];
 			}
@@ -587,9 +587,14 @@ class DatabaseOperations{
 			return null;
 		}
 
-		$recurring_invoice_data = $this->fetchRecurringInvoice((int) $recurring_invoice_id, ['recurring_invoices.*', 'currencies.code as currency_code']);
+		$recurring_invoice_data = $this->fetchRecurringInvoice((int) $recurring_invoice_id, ['recurring_invoices.*', 'currencies.code as currency_code', 'clients.first_name', 'clients.last_name']);
 
-		$settings = $this->settings_section_repository->fetchSettings((int) $recurring_invoice_data['company_id'], PAYMENTS_PAYPAL_TYPE, true);
+		if($recurring_invoice_data){
+			$settings = $this->settings_section_repository->fetchSettings((int) $recurring_invoice_data['company_id'], PAYMENTS_PAYPAL_TYPE, true);
+		}else{
+			$settings = null;
+		}
+		
 
 		return [
 			'recurring_invoice_data'	=>	$recurring_invoice_data,
@@ -831,6 +836,17 @@ class DatabaseOperations{
 		$pp->currency_id = $currency_id;
 		$pp->save();
 
+	}
+
+	/**
+	 * fetchRecurringInvoiceWithClient function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return RecurringInvoice|null
+	 */
+	public function fetchRecurringInvoiceWithClient(int $company_id, int $recurring_invoice_id) : ?RecurringInvoice {
+		return RecurringInvoice::where([['company_id', '=', $company_id], ['id', '=', $recurring_invoice_id]])->with('client_wt')->first();
 	}
 
 }

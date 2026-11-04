@@ -6,6 +6,7 @@ enum NotificationType : string {
 
     case INVOICE_OVERPAID = 'invoice overpaid';
     case INVOICE_CANCELLED_PAID = 'cancelled invoice paid';
+    case SUBSCRIPTION_PAYMENT_FAILED = 'Subscription payment failed';
 
     // public function label() : string {
     //     return match($this) {

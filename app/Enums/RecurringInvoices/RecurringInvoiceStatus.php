@@ -10,6 +10,8 @@ enum RecurringInvoiceStatus : int {
     case PAUSED = 4;
     case PENDING_APPROVAL = 5;
     case CANCELLED = 6;
+    case PAYMENT_FAILED = 7;
+    case EXPIRED = 8;
 
     public function label() : string {
         return match($this) {
@@ -18,7 +20,9 @@ enum RecurringInvoiceStatus : int {
             self::ACTIVE 			=> 'Active',
             self::PAUSED 			=> 'Paused',
             self::PENDING_APPROVAL 	=> 'Pending approval',
-			self::CANCELLED 		=> 'Cancelled'
+			self::CANCELLED 		=> 'Cancelled',
+			self::PAYMENT_FAILED 	=> 'Payment failed',
+			self::EXPIRED 			=> 'Expired'
         };
     }
 

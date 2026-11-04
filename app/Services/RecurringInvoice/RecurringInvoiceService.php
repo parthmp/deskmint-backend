@@ -519,6 +519,8 @@ class RecurringInvoiceService {
 						RecurringInvoiceStatus::ACTIVE->value				=>	RecurringInvoiceStatus::ACTIVE->label(),
 						RecurringInvoiceStatus::PAUSED->value				=>	RecurringInvoiceStatus::PAUSED->label(),
 						RecurringInvoiceStatus::PENDING_APPROVAL->value		=>	RecurringInvoiceStatus::PENDING_APPROVAL->label(),
+						RecurringInvoiceStatus::PAYMENT_FAILED->value		=>	RecurringInvoiceStatus::PAYMENT_FAILED->label(),
+						RecurringInvoiceStatus::EXPIRED->value				=>	RecurringInvoiceStatus::EXPIRED->label(),
 						RecurringInvoiceStatus::CANCELLED->value			=>	RecurringInvoiceStatus::CANCELLED->label(),
 					],
 					'recurring_invoices.frequency' => [
@@ -648,6 +650,18 @@ class RecurringInvoiceService {
 							'highlight'	=>	'error',
 							'text'		=>	RecurringInvoiceStatus::CANCELLED->label(),
 							'value'		=>	RecurringInvoiceStatus::CANCELLED->value
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'error',
+							'text'		=>	RecurringInvoiceStatus::PAYMENT_FAILED->label(),
+							'value'		=>	RecurringInvoiceStatus::PAYMENT_FAILED->value
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'error',
+							'text'		=>	RecurringInvoiceStatus::EXPIRED->label(),
+							'value'		=>	RecurringInvoiceStatus::EXPIRED->value
 						],
 					],
 					'payment_gateway'	=>	[

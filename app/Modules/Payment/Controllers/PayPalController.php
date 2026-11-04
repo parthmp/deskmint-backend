@@ -39,11 +39,15 @@ class PayPalController extends Controller{
 			PayPalEvents::SALE_COMPLETED->value,
 			PayPalEvents::SUBSCRIPTION_ACTIVATED->value,
 			PayPalEvents::SUBSCRIPTION_SUSPENDED->value,
+			PayPalEvents::SUBSCRIPTION_PAYMENT_FAILED->value,
 		];
 
 		if(in_array((string) $event_type, $sub_events)){
 			
 			$data = $this->database_operations->fetchPayPalSettingsForSubscriptions($data);
+			if(!$data){
+				return response('ok', 200);
+			}
 			if(!$data['recurring_invoice_data']){
 				return response('ok', 200);
 			}
@@ -53,7 +57,7 @@ class PayPalController extends Controller{
 		}else{
 			$settings_data = $this->database_operations->fetchPayPalSettings($data);
 		}
-
+		
 		$payment = new Payment((int) $settings_data['webhook_data']['company_id']);
 		$payment->paypal((string) $settings_data['webhook_data']['currency_code'])->handleWebhook($request, $settings_data);
 

@@ -7,6 +7,8 @@ use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
 use App\Exceptions\PaymentException;
 use App\Models\Transaction;
 use App\Models\TransactionGatewayDetail;
+use App\Modules\Notifications\Enums\NotificationType;
+use App\Modules\Notifications\Notification;
 use App\Modules\Payment\DatabaseOperations;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Enums\TransactionStatus;
@@ -565,6 +567,8 @@ class PayPal implements PaymentInterface {
 
 		$this->db->upsertTransactionGatewayDetails((int) $transaction->id, 'subscription_sale_deails', $request_data);
 
+		$this->updateStatusOnly($request_data, RecurringInvoiceStatus::ACTIVE->value);
+
 		$recurring_invoice_module = app(RecurringInvoice::class);
 		$recurring_invoice_module->setCompanyId((int) $recurring_invoice_data['company_id'])->setRecurringInvoiceIds([$recurring_invoice_data['id']])->setOnlineTransactionData([
 			[
@@ -631,6 +635,51 @@ class PayPal implements PaymentInterface {
 	}
 
 	/**
+	 * updateStatusOnly function
+	 *
+	 * @param array $request_data
+	 * @param integer $status
+	 * @return boolean
+	 */
+	private function updateStatusOnly(array $request_data, int $status) : bool {
+
+		$recurring_invoice_id = $request_data['resource']['custom_id'] ?? null;
+
+		if(!$recurring_invoice_id){
+			return false;
+		}
+
+		$recurring_invoice = $this->db->fetchRecurringInvoiceEntry((int) $recurring_invoice_id);
+		
+		$this->db->changeRecurringInvoiceStatus($recurring_invoice, $status);
+		return true;
+	}
+
+	/**
+	 * sendPaymentFailedAdminEmail function
+	 *
+	 * @param array $request_data
+	 * @param array $settings_data
+	 * @return void
+	 */
+	private function sendPaymentFailedAdminEmail(array $request_data, array $settings_data) : void {
+
+		$paypal_sub_id = $request_data['resource']['id'] ?? null;
+		
+		$recurring_invoice_data = $settings_data['webhook_data'];
+
+		$message = 'Hello, PayPal could not complete a payment for subscription (ID: '.$paypal_sub_id.'). Please contact the customer to resolve the issue.';
+		$message .= "\n";
+		$message .= "\nDetails are,\n";
+		$message .= "System recurring invoice id: ".$recurring_invoice_data['id'];
+		$message .= "\n";
+		$message .= "Client: ".$recurring_invoice_data['first_name'].' '.$recurring_invoice_data['last_name'];
+
+		$notification = app(Notification::class);
+		$notification->notify((int) $recurring_invoice_data['company_id'], NotificationType::SUBSCRIPTION_PAYMENT_FAILED, 'Failed to charge subscription', $message, []);
+	}
+
+	/**
 	 * handleWebhook function
 	 *
 	 * @param Request $request
@@ -661,6 +710,9 @@ class PayPal implements PaymentInterface {
 
 			return $this->handleSubscriptionStatus($request_data);
 
+		}else if((string) $event_type === PayPalEvents::SUBSCRIPTION_PAYMENT_FAILED->value){
+			$this->updateStatusOnly($request_data, RecurringInvoiceStatus::PAYMENT_FAILED->value);
+			$this->sendPaymentFailedAdminEmail($request_data, $settings_data);
 		}else{
 
 			try{
