@@ -12,6 +12,7 @@ use App\Models\Payment;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceCustomFieldValue;
 use App\Models\RecurringInvoicesCustomField;
+use App\Models\SubscriptionPlan;
 use App\Modules\CustomFields\CustomFields;
 use App\Modules\DataTable\Requests\DataTableRequest;
 use App\Modules\EasyIndex\EasyIndex;
@@ -988,17 +989,25 @@ class RecurringInvoiceService {
 	}
 
 	/**
-	 * pauseSubscription function
+	 * validateActivation function
 	 *
 	 * @param integer $company_id
 	 * @param integer $recurring_invoice_id
-	 * @return array
+	 * @return boolean
 	 */
-	public function pauseSubscription(int $company_id, int $recurring_invoice_id) : array {
+	public function validateActivation(int $company_id, int $recurring_invoice_id) : bool {
+		return $this->recurring_invoice_validation_service->validateActivation($company_id, $recurring_invoice_id);
+	}
 
-		$recurring_invoice = $this->recurring_invoice_repository->fetchByIdWithCurrency($company_id, $recurring_invoice_id);
-
-		$payment_gateway = (int) $recurring_invoice->payment_gateway;
+	/**
+	 * findSubscriptionPlan function
+	 *
+	 * @param integer $payment_gateway
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return SubscriptionPlan|null
+	 */
+	private function findSubscriptionPlan(int $payment_gateway, int $company_id, int $recurring_invoice_id) : ?SubscriptionPlan {
 
 		$sub_plan = null;
 		if($payment_gateway !== PaymentGateway::NONE->value){
@@ -1008,19 +1017,60 @@ class RecurringInvoiceService {
 			}
 		}
 
+		return $sub_plan;
+
+	}
+
+	/**
+	 * handleSubscription function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return array
+	 */
+	public function handleSubscription(int $company_id, int $recurring_invoice_id, string $type) : array {
+
+		$recurring_invoice = $this->recurring_invoice_repository->fetchByIdWithCurrency($company_id, $recurring_invoice_id);
+
+		$payment_gateway = (int) $recurring_invoice->payment_gateway;
+
+		$sub_plan = $this->findSubscriptionPlan($payment_gateway, $company_id, $recurring_invoice_id);
+
+		$status_text = '';
+		$status_value = '';
+		$highlight = '';
+
+		if($type === 'pause'){
+			
+			$status_text = RecurringInvoiceStatus::PAUSED->label();
+			$status_value = RecurringInvoiceStatus::PAUSED->value;
+			$highlight = 'error';
+
+		}else if($type === 'start'){
+
+			$status_text = RecurringInvoiceStatus::ACTIVE->label();
+			$status_value = RecurringInvoiceStatus::ACTIVE->value;
+			$highlight = 'success';
+
+		}
+
 		try{
 
 			$payment = new GatewaysPayment((int) $company_id);
 
 			if($payment_gateway === PaymentGateway::PAYPAL->value){
 
-				$payment->paypal((string) $recurring_invoice->currency->code)->pauseSubscription((string) $sub_plan->gateway_subscription_id);
+				if($type === 'pause'){
+					$payment->paypal((string) $recurring_invoice->currency->code)->pauseSubscription((string) $sub_plan->gateway_subscription_id);
+				}else if($type === 'start'){
+					$payment->paypal((string) $recurring_invoice->currency->code)->activateSubscription((string) $sub_plan->gateway_subscription_id);
+				}
 
 			}else if($payment_gateway === PaymentGateway::STRIPE->value){
 				
 			}
 
-			//$this->recurring_invoice_repository->updateStatusAndNextInvoice($recurring_invoice, RecurringInvoiceStatus::PAUSED->value, null);
+			$this->recurring_invoice_repository->updateStatus($recurring_invoice, $status_value);
 
 		}catch (Exception $e){
 
@@ -1029,9 +1079,9 @@ class RecurringInvoiceService {
 		}
 
 		return [
-			'status_text'	=>	RecurringInvoiceStatus::PAUSED->label(),
-			'status_value'	=>	RecurringInvoiceStatus::PAUSED->value,
-			'highlight'		=>	'error'
+			'status_text'	=>	$status_text,
+			'status_value'	=>	$status_value,
+			'highlight'		=>	$highlight
 		];
 
 	}

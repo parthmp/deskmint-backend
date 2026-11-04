@@ -301,17 +301,15 @@ class RecurringInvoiceRepository {
 	}
 
 	/**
-	 * updateStatusAndNextInvoice function
+	 * updateStatus function
 	 *
 	 * @param RecurringInvoice $recurring_invoice
 	 * @param integer $status
-	 * @param string|null $next_invoice_on
 	 * @return void
 	 */
-	public function updateStatusAndNextInvoice(RecurringInvoice $recurring_invoice, int $status, ?string $next_invoice_on) : void {
+	public function updateStatus(RecurringInvoice $recurring_invoice, int $status) : void {
 
 		$recurring_invoice->status = $status;
-		$recurring_invoice->next_invoice_on = $next_invoice_on;
 		$recurring_invoice->save();
 
 	}

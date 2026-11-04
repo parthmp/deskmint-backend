@@ -772,5 +772,15 @@ class PayPal implements PaymentInterface {
 		$this->provider->suspendSubscription($subscription_id, 'Paused');
 	}
 
+	/**
+	 * activateSubscription function
+	 *
+	 * @param string $subscription_id
+	 * @return void
+	 */
+	public function activateSubscription(string $subscription_id) : void {
+		$this->provider->activateSubscription($subscription_id, 'Activating');
+	}
+
 
 }
