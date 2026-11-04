@@ -1000,6 +1000,17 @@ class RecurringInvoiceService {
 	}
 
 	/**
+	 * validateCancellation function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return boolean
+	 */
+	public function validateCancellation(int $company_id, int $recurring_invoice_id) : bool {
+		return $this->recurring_invoice_validation_service->validateCancellation($company_id, $recurring_invoice_id);
+	}
+
+	/**
 	 * findSubscriptionPlan function
 	 *
 	 * @param integer $payment_gateway
@@ -1040,6 +1051,8 @@ class RecurringInvoiceService {
 		$status_value = '';
 		$highlight = '';
 
+		$allow_gateway_call = true;
+
 		if($type === 'pause'){
 			
 			$status_text = RecurringInvoiceStatus::PAUSED->label();
@@ -1052,22 +1065,44 @@ class RecurringInvoiceService {
 			$status_value = RecurringInvoiceStatus::ACTIVE->value;
 			$highlight = 'success';
 
+		}else if($type === 'cancel'){
+
+			$status_text = RecurringInvoiceStatus::CANCELLED->label();
+			$status_value = RecurringInvoiceStatus::CANCELLED->value;
+			$highlight = 'error';
+
+			$allow_gateway_status_array = [
+				RecurringInvoiceStatus::ACTIVE->value,
+				RecurringInvoiceStatus::PAUSED->value,
+				RecurringInvoiceStatus::PAYMENT_FAILED->value,
+			];
+
+			$allow_gateway_call = (bool) in_array((int) $recurring_invoice->status, $allow_gateway_status_array);
+
 		}
 
 		try{
 
-			$payment = new GatewaysPayment((int) $company_id);
+			if($allow_gateway_call){
 
-			if($payment_gateway === PaymentGateway::PAYPAL->value){
+				$payment = new GatewaysPayment((int) $company_id);
 
-				if($type === 'pause'){
-					$payment->paypal((string) $recurring_invoice->currency->code)->pauseSubscription((string) $sub_plan->gateway_subscription_id);
-				}else if($type === 'start'){
-					$payment->paypal((string) $recurring_invoice->currency->code)->activateSubscription((string) $sub_plan->gateway_subscription_id);
+				if($payment_gateway === PaymentGateway::PAYPAL->value){
+
+					$paypal = $payment->paypal((string) $recurring_invoice->currency->code);
+
+					if($type === 'pause'){
+						$paypal->pauseSubscription((string) $sub_plan->gateway_subscription_id);
+					}else if($type === 'start'){
+						$paypal->activateSubscription((string) $sub_plan->gateway_subscription_id);
+					}else if($type === 'cancel'){
+						$paypal->cancelSubscription((string) $sub_plan->gateway_subscription_id);
+					}
+
+				}else if($payment_gateway === PaymentGateway::STRIPE->value){
+					
 				}
 
-			}else if($payment_gateway === PaymentGateway::STRIPE->value){
-				
 			}
 
 			$this->recurring_invoice_repository->updateStatus($recurring_invoice, $status_value);

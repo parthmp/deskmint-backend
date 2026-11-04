@@ -366,4 +366,29 @@ class RecurringInvoiceValidationService {
 
 	}
 
+	/**
+	 * validateCancellation function
+	 *
+	 * @param integer $company_id
+	 * @param integer $recurring_invoice_id
+	 * @return boolean
+	 */
+	public function validateCancellation(int $company_id, int $recurring_invoice_id) : bool {
+
+		$recurring_invoice = $this->recurring_invoice_repository->fetchById($company_id, $recurring_invoice_id);
+
+		$status_array = [
+			RecurringInvoiceStatus::CANCELLED->value,
+			RecurringInvoiceStatus::EXPIRED->value
+		];
+
+		if(in_array((int) $recurring_invoice->status, $status_array)){
+			$status_name = RecurringInvoiceStatus::getRecurringInvoiceStatusLabel((int) $recurring_invoice->status);
+			throw new RecurringInvoiceException('You can not cancel an invoice with status '.$status_name, 'invalid_status', (int) config('global.error_code'), 0);
+		}
+
+		return true;
+
+	}
+
 }

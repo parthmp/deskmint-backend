@@ -40,6 +40,7 @@ class PayPalController extends Controller{
 			PayPalEvents::SUBSCRIPTION_ACTIVATED->value,
 			PayPalEvents::SUBSCRIPTION_SUSPENDED->value,
 			PayPalEvents::SUBSCRIPTION_PAYMENT_FAILED->value,
+			PayPalEvents::SUBSCRIPTION_CANCELLED->value,
 		];
 
 		if(in_array((string) $event_type, $sub_events)){

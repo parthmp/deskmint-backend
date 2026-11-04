@@ -713,6 +713,8 @@ class PayPal implements PaymentInterface {
 		}else if((string) $event_type === PayPalEvents::SUBSCRIPTION_PAYMENT_FAILED->value){
 			$this->updateStatusOnly($request_data, RecurringInvoiceStatus::PAYMENT_FAILED->value);
 			$this->sendPaymentFailedAdminEmail($request_data, $settings_data);
+		}else if((string) $event_type === PayPalEvents::SUBSCRIPTION_CANCELLED->value){
+			$this->updateStatusOnly($request_data, RecurringInvoiceStatus::CANCELLED->value);
 		}else{
 
 			try{
@@ -780,6 +782,16 @@ class PayPal implements PaymentInterface {
 	 */
 	public function activateSubscription(string $subscription_id) : void {
 		$this->provider->activateSubscription($subscription_id, 'Activating');
+	}
+
+	/**
+	 * cancelSubscription function
+	 *
+	 * @param string $subscription_id
+	 * @return void
+	 */
+	public function cancelSubscription(string $subscription_id) : void {
+		$this->provider->cancelSubscription($subscription_id, 'Cancelled');
 	}
 
 

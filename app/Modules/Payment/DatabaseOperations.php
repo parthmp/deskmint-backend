@@ -563,7 +563,7 @@ class DatabaseOperations{
 			}
 		}
 
-		if((string) $event_type === PayPalEvents::SUBSCRIPTION_ACTIVATED->value || (string) $event_type === PayPalEvents::SUBSCRIPTION_SUSPENDED->value || (string) $event_type === PayPalEvents::SUBSCRIPTION_PAYMENT_FAILED->value){
+		if((string) $event_type === PayPalEvents::SUBSCRIPTION_ACTIVATED->value || (string) $event_type === PayPalEvents::SUBSCRIPTION_SUSPENDED->value || (string) $event_type === PayPalEvents::SUBSCRIPTION_PAYMENT_FAILED->value || (string) $event_type === PayPalEvents::SUBSCRIPTION_CANCELLED->value){
 			if(isset($request_data['resource']['custom_id'])){
 				return (int) $request_data['resource']['custom_id'];
 			}

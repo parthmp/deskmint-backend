@@ -307,6 +307,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 
 	Route::get('manage-recurring-invoices/pause/{id}', [RecurringInvoiceController::class, 'pause']);
 	Route::get('manage-recurring-invoices/activate/{id}', [RecurringInvoiceController::class, 'activate']);
+	Route::get('manage-recurring-invoices/cancel/{id}', [RecurringInvoiceController::class, 'cancel']);
 	Route::get('manage-recurring-invoices/{id}', [RecurringInvoiceController::class, 'show']);
 	Route::patch('manage-recurring-invoices/{id}', [RecurringInvoiceController::class, 'update']);
 	

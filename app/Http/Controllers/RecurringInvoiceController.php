@@ -263,4 +263,26 @@ class RecurringInvoiceController extends Controller {
 
 	}
 
+	public function cancel(Request $request, int $recurring_invoice_id){
+
+		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$recurring_invoice_id = (int) Sanitize::input((string) $recurring_invoice_id);
+
+		try{
+
+			$this->recurring_invoice_service->validateCancellation($company_id, $recurring_invoice_id);
+
+			$meta = $this->recurring_invoice_service->handleSubscription($company_id, $recurring_invoice_id, 'cancel');
+
+			return response(['message' => 'Status updated successfully', 'validity' => 'status_success', 'tab_switch' => 0, 'meta' => $meta], 200);
+
+
+		}catch(RecurringInvoiceException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong($e);
+		}
+
+	}
+
 }
