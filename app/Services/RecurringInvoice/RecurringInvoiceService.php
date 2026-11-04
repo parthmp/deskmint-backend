@@ -32,6 +32,7 @@ use App\Services\Invoice\InvoiceFetchService;
 use App\Services\Invoice\InvoiceValidationService;
 use App\Traits\InvoiceBase;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
 use \Illuminate\Support\Str;
 use Stripe\Exception\ApiConnectionException;
@@ -981,24 +982,37 @@ class RecurringInvoiceService {
 	 */
 	public function pauseSubscription(int $company_id, int $recurring_invoice_id) : array {
 
-		$selects = [
-			'id',
-			'payment_gateway',
-			'status',
-			'next_invoice_on'
-		];
-
-		$recurring_invoice = $this->recurring_invoice_repository->fetchById($company_id, $recurring_invoice_id, $selects);
+		$recurring_invoice = $this->recurring_invoice_repository->fetchByIdWithCurrency($company_id, $recurring_invoice_id);
 
 		$payment_gateway = (int) $recurring_invoice->payment_gateway;
 
-		if($payment_gateway === PaymentGateway::PAYPAL->value){
-
-		}else if($payment_gateway === PaymentGateway::STRIPE->value){
-			
+		$sub_plan = null;
+		if($payment_gateway !== PaymentGateway::NONE->value){
+			$sub_plan = $this->recurring_invoice_repository->fetchSubscriptionPlan($company_id, $recurring_invoice_id);
+			if(!$sub_plan){
+				throw new RecurringInvoiceException("No subscritpion plan found", "no_sub_plan", 2);
+			}
 		}
 
-		$this->recurring_invoice_repository->updateStatusAndNextInvoice($recurring_invoice, RecurringInvoiceStatus::PAUSED->value, null);
+		try{
+
+			$payment = new GatewaysPayment((int) $company_id);
+
+			if($payment_gateway === PaymentGateway::PAYPAL->value){
+
+				$payment->paypal((string) $recurring_invoice->currency->code)->pauseSubscription((string) $sub_plan->gateway_subscription_id);
+
+			}else if($payment_gateway === PaymentGateway::STRIPE->value){
+				
+			}
+
+			//$this->recurring_invoice_repository->updateStatusAndNextInvoice($recurring_invoice, RecurringInvoiceStatus::PAUSED->value, null);
+
+		}catch (Exception $e){
+
+			throw new RecurringInvoiceException("Unable to update subscription on the gateway", "update_failed_gateway", 2);
+
+		}
 
 		return [
 			'status_text'	=>	RecurringInvoiceStatus::PAUSED->label(),

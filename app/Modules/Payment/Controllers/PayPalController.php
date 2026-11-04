@@ -24,6 +24,10 @@ class PayPalController extends Controller{
 
 		$data = $request->all();
 		
+		logger("\n\n\n");
+		logger($data);
+		logger("\n\n\n");
+
 		$event_type = $data['event_type'] ?? null;
 
 		if(!in_array((string) $event_type, PayPalEvents::getAll())){
@@ -34,6 +38,7 @@ class PayPalController extends Controller{
 		$sub_events = [
 			PayPalEvents::SALE_COMPLETED->value,
 			PayPalEvents::SUBSCRIPTION_ACTIVATED->value,
+			PayPalEvents::SUBSCRIPTION_SUSPENDED->value,
 		];
 
 		if(in_array((string) $event_type, $sub_events)){

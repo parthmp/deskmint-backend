@@ -315,6 +315,4 @@ class RecurringInvoiceRepository {
 		$recurring_invoice->save();
 
 	}
-
-
 }

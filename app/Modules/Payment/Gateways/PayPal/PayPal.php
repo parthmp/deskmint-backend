@@ -587,7 +587,7 @@ class PayPal implements PaymentInterface {
 	 * @param array $request_data
 	 * @return boolean
 	 */
-	private function handleSubscriptionActivation(array $request_data) : bool {
+	private function handleSubscriptionStatus(array $request_data) : bool {
 
 		$payer_id = $request_data['resource']['subscriber']['payer_id'] ?? null;
 		if(!$payer_id){
@@ -601,9 +601,16 @@ class PayPal implements PaymentInterface {
 		}
 
 		$paypal_status = $request_data['resource']['status'];
+		$paypal_status = trim(strtolower((string) $paypal_status));
 
-		if(strtolower($paypal_status) !== 'active'){
+		$update_status = RecurringInvoiceStatus::ACTIVE->value;
+
+		if($paypal_status !== 'active' && $paypal_status !== 'suspended'){
 			return false;
+		}
+
+		if($paypal_status === 'suspended'){
+			$update_status = RecurringInvoiceStatus::PAUSED->value;
 		}
 
 		$recurring_invoice = $this->db->fetchRecurringInvoiceEntry((int) $recurring_invoice_id);
@@ -612,9 +619,12 @@ class PayPal implements PaymentInterface {
 			return false;
 		}
 
-		//update payer id and activate the recurring invoice.
-		$this->db->updatePayerId((int) $recurring_invoice->company_id, (int) $recurring_invoice->id, (string) $payer_id);
-		$this->db->changeRecurringInvoiceStatus($recurring_invoice, RecurringInvoiceStatus::ACTIVE->value);
+		if($update_status === RecurringInvoiceStatus::ACTIVE->value){
+			//update payer id and activate the recurring invoice.
+			$this->db->updatePayerId((int) $recurring_invoice->company_id, (int) $recurring_invoice->id, (string) $payer_id);
+		}
+
+		$this->db->changeRecurringInvoiceStatus($recurring_invoice, $update_status);
 
 		return true;
 
@@ -647,9 +657,9 @@ class PayPal implements PaymentInterface {
 			
 			return $this->subscriptionSaleMade($request_data, $settings_data);
 
-		}else if((string) $event_type === PayPalEvents::SUBSCRIPTION_ACTIVATED->value){
+		}else if((string) $event_type === PayPalEvents::SUBSCRIPTION_ACTIVATED->value || (string) $event_type === PayPalEvents::SUBSCRIPTION_SUSPENDED->value){
 
-			return $this->handleSubscriptionActivation($request_data);
+			return $this->handleSubscriptionStatus($request_data);
 
 		}else{
 
@@ -698,6 +708,16 @@ class PayPal implements PaymentInterface {
 		
 		return false;
 
+	}
+
+	/**
+	 * pauseSubscription function
+	 *
+	 * @param string $subscription_id
+	 * @return void
+	 */
+	public function pauseSubscription(string $subscription_id) : void {
+		$this->provider->suspendSubscription($subscription_id, 'Paused');
 	}
 
 
