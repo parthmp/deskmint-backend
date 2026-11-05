@@ -249,13 +249,17 @@ class InvoiceGenerator {
 
 		if(trim($company['company_identifier']) !== '' && trim($company['scheme']) !== ''){
 			$seller = $seller->setCompanyId(new Identifier($company['company_identifier'], $company['scheme']));
+			
 		}
-
+		
+		
 		$seller = $seller->setName($company['company_name']);
 
-		if($company['gst_vat_number'] !== ''){
-			$seller = $seller->setVatNumber($company['gst_vat_number']);
+		if($company['gst_vat_number']){
+			$seller = $seller->setVatNumber($company['country']['country_code'].$company['gst_vat_number']);
 		}
+
+		
 
 		$seller_company_address = [];
 
@@ -294,6 +298,8 @@ class InvoiceGenerator {
 		if($client['peppol_identifier'] !== '' && $client['peppol_scheme'] !== ''){
 			$buyer = $buyer->setElectronicAddress(new Identifier($client['peppol_identifier'], $client['peppol_scheme']));
 		}
+
+		$inv->setBuyerReference('CUST-'.$client['id']);
 
 		$buyer_name = ($client['client_company_name'] !== '') ? $client['client_company_name'] : $client['first_name'].' '.$client['last_name'];
 
@@ -373,12 +379,20 @@ class InvoiceGenerator {
 			
 		}
 
-		$allowance = new AllowanceOrCharge();
-		$allowance->setReason('Global Discount')->setAmount($this->data['meta']['invoice']['discount_amount_post_tax']);
-		$inv->addAllowance($allowance);
+		if(BigDecimal::of($this->data['meta']['invoice']['discount_amount_post_tax'])->isGreaterThan(BigDecimal::of(0))){
+
+			$allowance = new AllowanceOrCharge();
+			$allowance->setReason('Global Discount')->setAmount($this->data['meta']['invoice']['discount_amount_post_tax']);
+			$inv->addAllowance($allowance);
+
+		}
+		
 
 		$writer = new UblWriter();
 		$xml = $writer->export($inv);
+		logger("\n\n\n");
+		logger($xml);
+		logger("\n\n\n");
 		$disk = Storage::disk($this->disk);
 		
 		$saved_xml = false;

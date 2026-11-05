@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\GatewayController;
+use App\Models\InvoiceSnapshot as ModelsInvoiceSnapshot;
 use App\Models\User;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
 use App\Modules\InvoiceGeneration\InvoiceGenerator;
@@ -14,7 +15,25 @@ Route::get('/', function () {
 	//return (new InvoiceGenerator(1, 4))->modifyInvoiceTemplate()->getInvoiceHTML();
 	//return (new InvoiceGenerator(1, 52, 330))->generatePDF(save:true, add_random:false)->stream();
 	//return (new InvoiceGenerator(1, 4, 330))->generatePDF(save:true, add_random:true)->generateEInvoice()->sendEmail();
-	//return app(InvoiceGenerator::class)->setCompanyId(1)->setInvoiceId(134)->exec()->generatePDF(save: true, add_random: false)->generateEInvoice();
+	$snapshot = app(InvoiceSnapshot::class)
+						->setCompanyId(1)
+						->setInvoiceId(6645)
+						->setTimezone((string) 'asia/kolkata')
+						->setLogoSnapsot()
+						->setGeneralSettings()
+						->setClientSnapshot()
+						->setCompanySnapshot()
+						->setInvoiceSnapshot()
+						->setInvoiceRowsSnapshot()
+						->setTotalsSnapshot()
+						->setTermsSnapshot()
+						->output();
+			
+				ModelsInvoiceSnapshot::updateOrCreate(
+					['invoice_id' 	=> 6645],
+					['snapshot' 	=> $snapshot]
+				);
+	app(InvoiceGenerator::class)->setCompanyId(1)->setInvoiceId(6645)->exec()->generatePDF(save: true, add_random: false)->generateEInvoice();
 	//$snapshot = app(InvoiceSnapshot::class)->setCompanyId(1)->setInvoiceId(88)->setTimezoneOffset(-330)->setLogoSnapsot()->setGeneralSettings()->setClientSnapshot()->setCompanySnapshot()->setInvoiceSnapshot()->setInvoiceRowsSnapshot()->setTotalsSnapshot()->setTermsSnapshot();
 	//return $snapshot->output();
 	//app(NotificationService::class)->notify(1, 'test', 'title here', 'message here', ['whatever']);
