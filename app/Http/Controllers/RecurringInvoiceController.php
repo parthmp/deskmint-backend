@@ -285,4 +285,25 @@ class RecurringInvoiceController extends Controller {
 
 	}
 
+	public function destroy(Request $request){
+
+		$company_id = (int) Sanitize::input($request->input('company_id'));
+		$ids = (array) Sanitize::recursive($request->input('ids'));
+
+		try{
+
+			$this->recurring_invoice_service->validateDeletion($company_id, $ids);
+
+			$this->recurring_invoice_service->delete($company_id, $ids);
+
+			return response(['message' => 'Recurring invoice(s) deleted successfully', 'validity' => 'deletesuccess', 'tab_switch' => 0], 200);
+
+		}catch(RecurringInvoiceException $e){
+			return response(['message' => $e->getMessage(), 'validity' => $e->getValidity(), 'tab_switch' => $e->getTab()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong($e);
+		}
+
+	}
+
 }

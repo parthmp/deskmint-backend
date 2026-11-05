@@ -317,4 +317,28 @@ class RecurringInvoiceRepository {
 		$recurring_invoice->save();
 
 	}
+
+	/**
+	 * fetchRecurringInvoices function
+	 *
+	 * @param integer $company_id
+	 * @param array $recurring_invoice_ids
+	 * @param array $selects
+	 * @return Collection
+	 */
+	public function fetchRecurringInvoices(int $company_id, array $recurring_invoice_ids, array $selects = ['*0']) : Collection {
+		return RecurringInvoice::select(...$selects)->where('company_id', '=', $company_id)->whereIn('id', $recurring_invoice_ids)->get();
+	}
+
+	/**
+	 * deleteRecurringInvoices function
+	 *
+	 * @param integer $company_id
+	 * @param array $recurring_invoice_ids
+	 * @return void
+	 */
+	public function deleteRecurringInvoices(int $company_id, array $recurring_invoice_ids) : void {
+		RecurringInvoice::where('company_id', '=', $company_id)->whereIn('id', $recurring_invoice_ids)->delete();
+	}
+
 }

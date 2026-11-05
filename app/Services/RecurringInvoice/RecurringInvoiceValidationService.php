@@ -391,4 +391,33 @@ class RecurringInvoiceValidationService {
 
 	}
 
+	/**
+	 * validateDeletion function
+	 *
+	 * @param integer $company_id
+	 * @param array $recurring_invoice_ids
+	 * @return boolean
+	 */
+	public function validateDeletion(int $company_id, array $recurring_invoice_ids) : bool {
+
+		$records = $this->recurring_invoice_repository->fetchRecurringInvoices($company_id, $recurring_invoice_ids, ['status'])->pluck('status')->toArray();
+
+		$allowed = [
+			RecurringInvoiceStatus::DRAFT->value,
+			RecurringInvoiceStatus::SENT->value,
+			RecurringInvoiceStatus::PENDING_APPROVAL->value,
+			RecurringInvoiceStatus::CANCELLED->value,
+			RecurringInvoiceStatus::EXPIRED->value,
+		];
+		
+		foreach($records as $db_state){
+			if(!in_array((int) $db_state, $allowed)){
+				throw new RecurringInvoiceException('Recurring invoice(s) with status: '.RecurringInvoiceStatus::ACTIVE->label().', '.RecurringInvoiceStatus::PAUSED->label().' and '.RecurringInvoiceStatus::PAYMENT_FAILED->label().' are not allowed for deletion', 'invalid_status', (int) config('global.error_code'), 0);
+			}
+		}
+
+		return true;
+
+	}
+
 }

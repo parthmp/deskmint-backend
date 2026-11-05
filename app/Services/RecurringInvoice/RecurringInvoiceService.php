@@ -1013,6 +1013,17 @@ class RecurringInvoiceService {
 	}
 
 	/**
+	 * validateDeletion function
+	 *
+	 * @param integer $company_id
+	 * @param array $recurring_invoice_ids
+	 * @return boolean
+	 */
+	public function validateDeletion(int $company_id, array $recurring_invoice_ids) : bool {
+		return $this->recurring_invoice_validation_service->validateDeletion($company_id, $recurring_invoice_ids);
+	}
+
+	/**
 	 * findSubscriptionPlan function
 	 *
 	 * @param integer $payment_gateway
@@ -1151,6 +1162,17 @@ class RecurringInvoiceService {
 			'iso_date'		=>	$iso_date
 		];
 
+	}
+
+	/**
+	 * delete function
+	 *
+	 * @param integer $company_id
+	 * @param array $recurring_invoice_ids
+	 * @return void
+	 */
+	public function delete(int $company_id, array $recurring_invoice_ids) : void {
+		$this->recurring_invoice_repository->deleteRecurringInvoices($company_id, $recurring_invoice_ids);
 	}
 
 }
