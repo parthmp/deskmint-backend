@@ -390,9 +390,7 @@ class InvoiceGenerator {
 
 		$writer = new UblWriter();
 		$xml = $writer->export($inv);
-		logger("\n\n\n");
-		logger($xml);
-		logger("\n\n\n");
+		
 		$disk = Storage::disk($this->disk);
 		
 		$saved_xml = false;
