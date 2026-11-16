@@ -561,4 +561,65 @@ class InvoiceService{
 
 	}
 
+	/**
+	 * getAppliedAmountOfInvoice function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return string
+	 */
+	public function getAppliedAmountOfInvoice(int $company_id, int $invoice_id) : string {
+
+		$applied = BigDecimal::of(0);
+
+		$rows = $this->invoice_repository->fetchAppliedAmountRowsForInvoice($company_id, $invoice_id, ['total_applied']);
+
+		if($rows){
+			foreach($rows as $row){
+				$applied = $applied->plus(BigDecimal::of($row->total_applied));
+			}
+		}
+		
+		return $applied->toScale(2, RoundingMode::HalfUp)->__toString();
+
+	}
+
+	/**
+	 * refundsFetchInit function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function refundsFetchInit(int $company_id, int $invoice_id) : array {
+
+		$invoice = $this->invoice_repository->fetchById($invoice_id);
+
+		if(!$invoice){
+			throw new InvoiceException('Invalid invoice provided', 'invalid_invoice_id', (int) config('global.error_code'));
+		}
+
+		$applied_amount = $this->getAppliedAmountOfInvoice($company_id, $invoice_id);
+
+		return [
+			'invoice_number'		=>	$invoice->invoice_number,
+			'client'				=>	$invoice->first_name.' '.$invoice->last_name,
+			'currency'				=>	$invoice->currency_code,
+			'applied_amount'		=>	$applied_amount,
+			'total'					=>	$invoice->total,
+		];
+
+	}
+
+	/**
+	 * refundsFetchDropdownOptions function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function refundsFetchDropdownOptions(int $company_id, int $invoice_id) : array {
+		return $this->invoice_repository->fetchDataForDropdownOptions($company_id, $invoice_id);
+	}
+
 }

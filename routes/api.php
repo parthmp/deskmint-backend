@@ -191,6 +191,11 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	//Route::resource('manage-invoices', InvoiceController::class)->except(array_merge(config('global.skip_routes'), ['destroy']));
 	Route::delete('manage-invoices/invoices', [InvoiceController::class, 'destroy']);
 	Route::delete('manage-invoices/archived', [InvoiceController::class, 'destroy']);
+
+	//invoice refunds.
+	Route::get('manage-invoices/refunds/fetch-init/{id}', [InvoiceController::class, 'refundsFetchInit']);
+	Route::get('manage-invoices/refunds/fetch-dropdown-options/{id}', [InvoiceController::class, 'refundsFetchDropdownOptions']);
+
 	/**
 	 * invoiced end
 	 */

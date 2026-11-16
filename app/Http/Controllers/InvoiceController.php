@@ -607,5 +607,38 @@ class InvoiceController extends Controller{
 
 	}
 
+	/**
+	 * refunds start
+	 */
+
+	public function refundsFetchInit(Request $request, int $id){
+
+		$id = (int) Sanitize::input((string) $id);
+		$company_id = (int) Sanitize::input((string) $request->input('company_id'));
+
+		try{
+			return $this->invoice_service->refundsFetchInit($company_id, $id);
+		}catch(InvoiceException $e){
+			return response(['message' => $e->getMessage(), 'valdity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong($e);
+		}
+		
+
+	}
+
+	public function refundsFetchDropdownOptions(Request $request, int $id){
+
+		$id = (int) Sanitize::input((string) $id);
+		$company_id = (int) Sanitize::input((string) $request->input('company_id'));
+
+		return $this->invoice_service->refundsFetchDropdownOptions($company_id, $id);
+
+	}
+
+	/**
+	 * refunds end
+	 */
+
 
 }
