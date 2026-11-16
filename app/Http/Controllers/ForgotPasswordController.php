@@ -24,7 +24,7 @@ class ForgotPasswordController extends Controller{
 		}
 		
 		$user = $this->user_service->fetchUserByEmail($data['email_address']);
-
+		
 		if($user){
 			try{
 				
