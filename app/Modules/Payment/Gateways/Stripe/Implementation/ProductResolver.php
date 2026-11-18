@@ -22,10 +22,13 @@ class ProductResolver {
 		$product_id = config('global.stripe_product_id');
 
 		$cache_key = 'stripe_product_ok_'.$product_id;
-
-		return Cache::remember($cache_key, now()->addDay(), function () use ($product_id){
+		
+		$product_id = Cache::remember($cache_key, now()->addDay(), function () use ($product_id){
 			return $this->ensure($product_id);
 		});
+
+		
+		return $product_id;
 	}
 
 	/**
@@ -55,10 +58,10 @@ class ProductResolver {
 		}
 
 		try{
-
+			
 			$this->provider->products->create([
 				'id'   =>  $product_id,
-				'name' =>  'Subscription Plan',
+				'name' =>  'Payment to '.config('app.name'),
 			]);
 
 		}catch(InvalidRequestException $e){

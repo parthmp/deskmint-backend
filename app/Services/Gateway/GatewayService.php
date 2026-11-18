@@ -2,6 +2,7 @@
 
 namespace App\Services\Gateway;
 
+use App\Exceptions\PaymentException;
 use App\Jobs\SendEmailJob;
 use App\Models\Invoice;
 use App\Models\PaymentRequest;
@@ -60,11 +61,13 @@ class GatewayService{
 			return $gateway_data['invoice_or_request_payment_url'];
 
 		}else if((int) $payment_gateway === PaymentGateway::STRIPE->value){
-
+			
+			
 			$context = new StripeInvoiceRequestData((string) $data['currency'], (int) $data['company_id'], (int) $data['currency_id'], (string) $data['amount'], $data['payment_request_id'], $data['invoice_id'], $data['invoice_number'], (int) $data['client_id']);
 			$gateway_data = $payment->stripe()->setContext($context)->getInvoiceOrRequestData($payment_request);
-
+			
 			return $gateway_data['invoice_or_request_payment_url'];
+
 
 		}
 

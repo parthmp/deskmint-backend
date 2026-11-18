@@ -360,6 +360,7 @@ class PaymentRequestService {
 
 		return $this->easy_index->setType('payment_request')->setJoins($joins)->setExceptionClass(PaymentRequestException::class)->setRequest($request)->setDefaultColumns($default_columns)->setAdditionalSearchables([ /* map additional searchables here for deep joins */
 			'c_code'				=>		'currencies.code',
+			'token'					=>		'transactions.token_id_identifier',
 			'full_name'				=>		'clients.full_name'
 		 ])->setRewrites($rewrites)->setModel(PaymentRequest::class)->fetchIndex();
 	}

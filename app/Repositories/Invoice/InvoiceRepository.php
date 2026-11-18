@@ -670,18 +670,18 @@ class InvoiceRepository{
 	 * @param integer $invoice_id
 	 * @return array
 	 */
-	public function fetchDataForDropdownOptions(int $company_id, int $invoice_id) : array {
+	// public function fetchDataForDropdownOptions(int $company_id, int $invoice_id) : array {
 
-		$selects = [
-			'invoice_ledger.total_applied as applied',
-			'invoice_ledger.total_applied_refund as refunded',
-			'credits.credit_number as credit_number',
-			'invoices.payment_gateway as payment_gateway',
-			'payments.payment_number as payment_number'
-		];
+	// 	$selects = [
+	// 		'invoice_ledger.total_applied as applied',
+	// 		'invoice_ledger.total_applied_refund as refunded',
+	// 		'credits.credit_number as credit_number',
+	// 		'invoices.payment_gateway as payment_gateway',
+	// 		'payments.payment_number as payment_number'
+	// 	];
 
-		return InvoiceLedger::select(...$selects)->where([['invoice_ledger.company_id', '=', $company_id], ['invoice_ledger.invoice_id', '=', $invoice_id]])->leftJoin('credits', 'invoice_ledger.credit_id', '=', 'credits.id')->leftJoin('payments', 'invoice_ledger.payment_id', '=', 'payments.id')->leftJoin('currencies as c_currencies', 'c_currencies.id', '=', 'credits.currency_id')->leftJoin('currencies as p_currencies', 'p_currencies.id', '=', 'payments.currency_id')->join('invoices', 'invoices.id', '=', 'invoice_ledger.invoice_id')->orderBy('invoice_ledger.updated_at', 'asc')->get()->toArray();
-	}
+	// 	return InvoiceLedger::select(...$selects)->where([['invoice_ledger.company_id', '=', $company_id], ['invoice_ledger.invoice_id', '=', $invoice_id]])->leftJoin('credits', 'invoice_ledger.credit_id', '=', 'credits.id')->leftJoin('payments', 'invoice_ledger.payment_id', '=', 'payments.id')->leftJoin('currencies as c_currencies', 'c_currencies.id', '=', 'credits.currency_id')->leftJoin('currencies as p_currencies', 'p_currencies.id', '=', 'payments.currency_id')->join('invoices', 'invoices.id', '=', 'invoice_ledger.invoice_id')->orderBy('invoice_ledger.updated_at', 'asc')->get()->toArray();
+	// }
 
 	/**
 	 * refunds end

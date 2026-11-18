@@ -116,7 +116,7 @@ class Stripe implements PaymentInterface {
 			$payment_request_id = null;
 
 			if($is_payment_request){
-
+				
 				if(!$data['payment_request_id']){
 					throw new PaymentException("payment request id not provided.");
 				}
@@ -139,7 +139,7 @@ class Stripe implements PaymentInterface {
 				$desc = 'Payment for invoice # '.$data['invoice_number'];
 			}
 
-
+			
 			$checkout_session = new CheckoutSession($this->provider, $data['currency_code'], $name, $desc, $data['amount_in_cents'], $uuid_token);
 			$session = $checkout_session->create();
 
@@ -147,10 +147,15 @@ class Stripe implements PaymentInterface {
 			$this->db->upsertTransactionReference((int) $data['company_id'], (int) $data['client_id'], $invoice_id, $payment_request_id, (int) $transaction->id);
 			$this->db->insertEmptyTransactionGatewayDetails($transaction->id);
 
+		}catch(\Stripe\Exception\ApiErrorException $e){
+
+			logger('Stripe API Error: ' . $e->getMessage());
+			
+			throw new PaymentException("Unable to generate payment url: " . $e->getMessage());
+
 		}catch(Exception $e){
-			logger(json_encode($e->getMessage()));
-			return [];
-			//throw new PaymentException("Unable to generate payment url", "url_generation_failed", config('global.error_code'));
+			logger('General Payment Error: ' . $e->getMessage());
+			throw new PaymentException("Unable to generate payment url: " . $e->getMessage());
 		}
 
 		$checkout_url = $session->url;

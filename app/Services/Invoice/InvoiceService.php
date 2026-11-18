@@ -619,7 +619,8 @@ class InvoiceService{
 	 * @return array
 	 */
 	public function refundsFetchDropdownOptions(int $company_id, int $invoice_id) : array {
-		return $this->invoice_repository->fetchDataForDropdownOptions($company_id, $invoice_id);
+		return [];
+		//return $this->invoice_repository->fetchDataForDropdownOptions($company_id, $invoice_id);
 	}
 
 }

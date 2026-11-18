@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\PaymentRequests\PaymentRequestStatus;
 use App\Enums\RecurringInvoices\Frequencies;
 use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
+use App\Exceptions\PaymentException;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\PaymentRequest;
@@ -65,14 +66,23 @@ class GatewayController extends Controller {
 		
 		if($existing_url === null){
 
-			//generate url.
-			$url = $this->gateway_service->generatePaymentUrl($invoice);
-			
-			if($url === '' || ($url === null && (int) $invoice->payment_gateway !== PaymentGateway::NONE->value)){
-				return redirect('/pay-invoice/failure/'.$invoice->payment_gateway);
+			try{
+
+				//generate url.
+				$url = $this->gateway_service->generatePaymentUrl($invoice);
+				
+				if($url === '' || ($url === null && (int) $invoice->payment_gateway !== PaymentGateway::NONE->value)){
+					return redirect('/pay-invoice/failure/'.$invoice->payment_gateway);
+				}
+
+				return redirect($url);
+
+			}catch(PaymentException $e){
+				$payment_method_name = PaymentGateway::getLabelByValue((int) $invoice->payment_gateway);
+				return view('payment.url_generation_error', ['payment_method_name' => $payment_method_name, 'error' => $e->getMessage()]);
 			}
 
-			return redirect($url);
+			
 
 		}
 
@@ -150,14 +160,21 @@ class GatewayController extends Controller {
 		
 		if($existing_url === null){
 			
-			//generate url.
-			$url = $this->gateway_service->generatePaymentUrl($pr);
-			
-			if($url === '' || ($url === null && (int) $pr->payment_gateway !== PaymentGateway::NONE->value)){
-				return redirect('/pay-request/failure/'.$pr->payment_gateway);
-			}
+			try{
 
-			return redirect($url);
+				//generate url.
+				$url = $this->gateway_service->generatePaymentUrl($pr);
+				
+				if($url === '' || ($url === null && (int) $pr->payment_gateway !== PaymentGateway::NONE->value)){
+					return redirect('/pay-request/failure/'.$pr->payment_gateway);
+				}
+
+				return redirect($url);
+
+			}catch(PaymentException $e){
+				$payment_method_name = PaymentGateway::getLabelByValue((int) $pr->payment_gateway);
+				return view('payment.url_generation_error', ['payment_method_name' => $payment_method_name, 'error' => $e->getMessage()]);
+			}
 
 		}
 
