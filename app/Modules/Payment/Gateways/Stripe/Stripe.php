@@ -155,7 +155,7 @@ class Stripe implements PaymentInterface {
 
 		}catch(Exception $e){
 			logger('General Payment Error: ' . $e->getMessage());
-			throw new PaymentException("Unable to generate payment url: " . $e->getMessage());
+			throw new PaymentException("Unable to generate payment url");
 		}
 
 		$checkout_url = $session->url;

@@ -14,6 +14,7 @@ use App\Modules\InvoiceGeneration\InvoiceEmailContent;
 use App\Modules\InvoiceGeneration\InvoiceGenerator;
 use App\Modules\InvoiceGeneration\InvoiceSnapshot;
 use App\Modules\Payment\Enums\InvoiceStatus;
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Repositories\Client\ClientRepository;
 use App\Repositories\Credit\CreditRepository;
 use App\Repositories\Invoice\InvoiceRepository;
@@ -612,6 +613,62 @@ class InvoiceService{
 	}
 
 	/**
+	 * assembleDropDownData function
+	 *
+	 * @param array $data
+	 * @return array
+	 */
+	private function assembleDropDownData(array $data) : array {
+
+		$dropdown = [];
+
+		foreach($data as $row){
+
+			$applied = BigDecimal::of($row['total_applied']);
+			$refunded = BigDecimal::of($row['total_applied_refund']);
+
+			$sum = $applied->minus($refunded);
+
+			if($sum->isGreaterThan(BigDecimal::of(0))){
+
+				$payment_gateway = PaymentGateway::getLabelByValue(PaymentGateway::NONE->value);
+				$type = 'Credit';
+
+				if(array_key_exists('payment_gateway', $row)){
+					$type = 'Payment';
+				}
+
+				if(isset($row['payment_gateway'])){
+					if($row['payment_gateway']){
+						$payment_gateway = PaymentGateway::getLabelByValue((int) $row['payment_gateway']);
+					}
+				}
+
+				$amount = $sum->toScale(2, RoundingMode::HalfUp)->__toString();
+
+				$text = $amount.' '.$row['code'].' '.$type.' ('.$payment_gateway.')';
+
+				$dropdown[] = [
+					
+					'text'		=>	$text,
+					'value'		=>	$row['id'],
+					'meta'		=>	[
+						'id'					=>	$row['id'],
+						'amount'				=>	$amount,
+						'type'					=>	$type,
+						'payment_gateway'		=>	$payment_gateway
+					]
+				];
+
+			}
+
+		}
+
+		return $dropdown;
+
+	}
+
+	/**
 	 * refundsFetchDropdownOptions function
 	 *
 	 * @param integer $company_id
@@ -619,8 +676,12 @@ class InvoiceService{
 	 * @return array
 	 */
 	public function refundsFetchDropdownOptions(int $company_id, int $invoice_id) : array {
-		return [];
-		//return $this->invoice_repository->fetchDataForDropdownOptions($company_id, $invoice_id);
+		$data = $this->invoice_repository->fetchDataForDropdownOptions($company_id, $invoice_id);
+
+		$payments = $this->assembleDropDownData($data['payments']);
+		$credits = $this->assembleDropDownData($data['credits']);
+		return array_merge($payments, $credits);
+
 	}
 
 }

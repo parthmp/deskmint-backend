@@ -670,18 +670,27 @@ class InvoiceRepository{
 	 * @param integer $invoice_id
 	 * @return array
 	 */
-	// public function fetchDataForDropdownOptions(int $company_id, int $invoice_id) : array {
+	public function fetchDataForDropdownOptions(int $company_id, int $invoice_id) : array {
 
-	// 	$selects = [
-	// 		'invoice_ledger.total_applied as applied',
-	// 		'invoice_ledger.total_applied_refund as refunded',
-	// 		'credits.credit_number as credit_number',
-	// 		'invoices.payment_gateway as payment_gateway',
-	// 		'payments.payment_number as payment_number'
-	// 	];
+		$selects = [
+			'invoice_ledger.id',
+			'invoice_ledger.total_applied',
+			'currencies.code',
+			'invoice_ledger.total_applied_refund'
+		];
 
-	// 	return InvoiceLedger::select(...$selects)->where([['invoice_ledger.company_id', '=', $company_id], ['invoice_ledger.invoice_id', '=', $invoice_id]])->leftJoin('credits', 'invoice_ledger.credit_id', '=', 'credits.id')->leftJoin('payments', 'invoice_ledger.payment_id', '=', 'payments.id')->leftJoin('currencies as c_currencies', 'c_currencies.id', '=', 'credits.currency_id')->leftJoin('currencies as p_currencies', 'p_currencies.id', '=', 'payments.currency_id')->join('invoices', 'invoices.id', '=', 'invoice_ledger.invoice_id')->orderBy('invoice_ledger.updated_at', 'asc')->get()->toArray();
-	// }
+		$payments = InvoiceLedger::select(...array_merge($selects, ['transactions.payment_gateway']))->where([['invoice_ledger.company_id', '=', $company_id], ['invoice_ledger.invoice_id', '=', $invoice_id], ['invoice_ledger.payment_id', '<>', null]])->join('payments', 'invoice_ledger.payment_id', '=', 'payments.id')->join('currencies', 'currencies.id', '=', 'payments.currency_id')->join('invoices', 'invoices.id', '=', 'invoice_ledger.invoice_id')->leftJoin('transactions', 'transactions.id', '=', 'payments.transaction_id')->orderBy('invoice_ledger.id', 'desc')->get()->toArray();
+
+
+
+		$credits = InvoiceLedger::select(...$selects)->where([['invoice_ledger.company_id', '=', $company_id], ['invoice_ledger.invoice_id', '=', $invoice_id], ['invoice_ledger.credit_id', '<>', null]])->join('credits', 'invoice_ledger.credit_id', '=', 'credits.id')->join('currencies', 'currencies.id', '=', 'credits.currency_id')->join('invoices', 'invoices.id', '=', 'invoice_ledger.invoice_id')->orderBy('invoice_ledger.id', 'desc')->get()->toArray();
+
+		return [
+			'payments'		=>	$payments,
+			'credits'		=> 	$credits
+		];
+
+	}
 
 	/**
 	 * refunds end
