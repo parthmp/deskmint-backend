@@ -727,4 +727,20 @@ class InvoiceService{
 
 	}
 
+	/**
+	 * validateIssueRefunds function
+	 *
+	 * @param Request $request
+	 * @return boolean
+	 */
+	public function validateIssueRefunds(Request $request) : bool {
+		return $this->invoice_validation_service->validateIssueRefunds($request);
+	}
+
+	public function issueRefunds(int $company_id, bool $full_refund, array $refund_entries) : void {
+
+		
+
+	}
+
 }

@@ -645,6 +645,26 @@ class InvoiceController extends Controller{
 
 	}
 
+	public function refundsIssue(Request $request, int $id){
+
+		$id = (int) Sanitize::input((string) $id);
+		$company_id = (int) Sanitize::input((string) $request->input('company_id'));
+
+		try{
+
+			$this->invoice_service->validateIssueRefunds($request);
+
+			
+
+		}catch(InvoiceException $e){
+			return response(['message' => $e->getMessage(), 'valdity' => $e->getValidity()], $e->getCode());
+		}catch(Exception $e){
+			return General::wentWrong($e);
+		}
+
+
+	}
+
 	/**
 	 * refunds end
 	 */

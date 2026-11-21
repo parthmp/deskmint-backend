@@ -16,6 +16,8 @@ use App\Services\Invoice\Exceptions\InvoiceException;
 use App\Services\Product\ProductFieldService;
 use App\Services\Invoice\InvoiceSettingsService;
 use App\Traits\InvoiceValidation;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -187,6 +189,85 @@ class InvoiceValidationService extends ProductFieldService {
 		]);
 
 		return !$v->fails();
+
+	}
+
+	/**
+	 * validateIssueRefunds function
+	 *
+	 * @param Request $request
+	 * @return boolean
+	 */
+	public function validateIssueRefunds(Request $request) : bool {
+
+		$full_refund = (bool) $request->input('refund_full');
+		$company_id = (int) Sanitize::input($request->input('company_id'));
+
+		if(!$full_refund){
+
+			$refund_entries = (array) $request->input('refund_entries');
+
+			if(empty($refund_entries)){
+				throw new InvoiceException("Please select at least one entry to refund from dropdown", "refund_entries_empty", (int) config('global.error_code'));
+			}
+
+			$ids = [];
+
+			foreach($refund_entries as $entry){
+				
+				$id = $entry['meta']['id'] ?? null;
+				if(!$id){
+					throw new InvoiceException("Invalid refund entries provided", "invalid_refund_entries", (int) config('global.error_code'));
+				}
+
+				$ids[] = $id;
+
+			}
+
+			$ledger = $this->invoice_repository->fetchInvoiceLedgerEntriesByIds($company_id, $ids);
+
+			if((int) count($ids) !== (int) $ledger->count()){
+				throw new InvoiceException("Refund entries do not match", "refund_entries_unmatch", (int) config('global.error_code'));
+			}
+
+			foreach($ledger as $ledger_entry){
+
+				foreach($refund_entries as $refund_entry){
+
+					if((int) $ledger_entry->id === (int) $refund_entry['meta']['id']){
+
+						if((string) $refund_entry['meta']['filled_amount'] === ''){
+							throw new InvoiceException("Please enter the refund amount for #".$refund_entry['meta']['id'], "filled_data_empty", (int) config('global.error_code'));
+						}
+
+						$already_refunded = BigDecimal::of($ledger_entry->total_applied_refund);
+						$already_amount = BigDecimal::of($ledger_entry->total_applied);
+
+						$allowed = $already_amount->minus($already_refunded);
+
+						if($allowed->isLessThan(BigDecimal::of(0))){
+							$allowed = BigDecimal::of(0);
+						}
+
+						$filled_amount = BigDecimal::of($refund_entry['meta']['filled_amount']);
+
+						if($filled_amount->isGreaterThan($allowed)){
+							$allowed_string = $allowed->toScale(2, RoundingMode::HalfUp)->__toString();
+							throw new InvoiceException("Allowed refund amount for #".$refund_entry['meta']['id']." is ".$allowed_string, "not_allowed_amount", (int) config('global.error_code'));
+						}
+
+					}
+
+				}
+
+			}
+
+
+
+		}
+
+
+		return true;
 
 	}
 

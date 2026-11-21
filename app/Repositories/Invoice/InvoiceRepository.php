@@ -709,6 +709,18 @@ class InvoiceRepository{
 	}
 
 	/**
+	 * fetchInvoiceLedgerEntriesByIds function
+	 *
+	 * @param integer $company_id
+	 * @param array $ids
+	 * @param array $columns
+	 * @return Collection
+	 */
+	public function fetchInvoiceLedgerEntriesByIds(int $company_id, array $ids, array $columns = ['*']) : Collection {
+		return InvoiceLedger::select(...$columns)->where('company_id', '=', $company_id)->whereIn('id', $ids)->get();
+	}
+
+	/**
 	 * refunds end
 	 */
 
