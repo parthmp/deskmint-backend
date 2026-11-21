@@ -636,6 +636,15 @@ class InvoiceController extends Controller{
 
 	}
 
+	public function refundsFetchAll(Request $request, int $id){
+
+		$id = (int) Sanitize::input((string) $id);
+		$company_id = (int) Sanitize::input((string) $request->input('company_id'));
+
+		return $this->invoice_service->fetchAllRefunds((int) $company_id, (int) $id);
+
+	}
+
 	/**
 	 * refunds end
 	 */

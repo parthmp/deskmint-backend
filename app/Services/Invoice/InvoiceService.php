@@ -23,6 +23,7 @@ use App\Repositories\Product\ProductRepository;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -655,6 +656,7 @@ class InvoiceService{
 					'meta'		=>	[
 						'id'					=>	$row['id'],
 						'amount'				=>	$amount,
+						'filled_amount'			=>	'',
 						'type'					=>	$type,
 						'payment_gateway'		=>	$payment_gateway
 					]
@@ -681,6 +683,47 @@ class InvoiceService{
 		$payments = $this->assembleDropDownData($data['payments']);
 		$credits = $this->assembleDropDownData($data['credits']);
 		return array_merge($payments, $credits);
+
+	}
+
+	/**
+	 * fetchAllRefunds function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @return array
+	 */
+	public function fetchAllRefunds(int $company_id, int $invoice_id) : array {
+
+		$refund_logs = $this->invoice_repository->fetchRefundLogs($company_id, $invoice_id, [
+			'refund_logs.id',
+			'refund_logs.payment_id',
+			'refund_logs.credit_id',
+			'refund_logs.amount',
+			'currencies.code',
+		]);
+
+		$refunds = [];
+
+		foreach($refund_logs as $log){
+
+			$type = 'Payment';
+
+			if($log->credit_id){
+				$type = 'Credit';
+			}
+
+			$refunds[] = [
+				'id'		=>	$log->id,
+				'type'		=>	$type,
+				'amount'	=>	$log->amount,
+				'currency'	=>	$log->code,
+				'issued_on'	=>	Carbon::parse($log->created_at, 'UTC')->toISOString(),
+			];
+
+		}
+
+		return $refunds;
 
 	}
 

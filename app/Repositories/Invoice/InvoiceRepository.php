@@ -11,6 +11,7 @@ use App\Models\InvoiceLedger;
 use App\Models\InvoiceSnapshot;
 use App\Models\Payment;
 use App\Models\PaymentType;
+use App\Models\RefundLog;
 use App\Models\Transaction;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Enums\PaymentStatus;
@@ -689,6 +690,21 @@ class InvoiceRepository{
 			'payments'		=>	$payments,
 			'credits'		=> 	$credits
 		];
+
+	}
+
+	/**
+	 * fetchRefundLogs function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param array $selects
+	 * @return Collection
+	 */
+	public function fetchRefundLogs(int $company_id, int $invoice_id, array $selects = ['*']) : Collection {
+
+		$refunds = RefundLog::select(...$selects)->where([['company_id', '=', $company_id], ['invoice_id', '=', $invoice_id]])->join('currencies', 'currencies.id', '=', 'refund_logs.currency_id')->get();
+		return $refunds;
 
 	}
 

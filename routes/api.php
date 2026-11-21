@@ -195,6 +195,7 @@ Route::middleware(['throttle:600,1', 'auth:sanctum', ValidateDeviceAndTokens::cl
 	//invoice refunds.
 	Route::get('manage-invoices/refunds/fetch-init/{id}', [InvoiceController::class, 'refundsFetchInit']);
 	Route::get('manage-invoices/refunds/fetch-dropdown-options/{id}', [InvoiceController::class, 'refundsFetchDropdownOptions']);
+	Route::get('manage-invoices/refunds/fetch-all-refunds/{id}', [InvoiceController::class, 'refundsFetchAll']);
 
 	/**
 	 * invoiced end
