@@ -25,6 +25,7 @@ use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -889,25 +890,12 @@ class InvoiceService{
 	}
 
 	/**
-	 * refundCredits function
+	 * assembleLedgerRows function
 	 *
-	 * @param integer $company_id
-	 * @param array $credits
-	 * @return BigDecimal
+	 * @param Collection $ledger_entries
+	 * @return array
 	 */
-	private function refundCredits(int $company_id, array $credits) : BigDecimal {
-
-		$refunded = BigDecimal::of(0);
-
-		foreach($credits as $credit){
-			$refunded = $refunded->plus(BigDecimal::of($credit['amount']));
-		}
-
-		$this->invoice_repository->updateLedgerForRefunds($company_id, $credits, 'credit');
-		
-		//update credit rows after this.
-		$credit_ids = array_column($credits, 'credit_id');
-		$ledger_entries = $this->invoice_repository->fetchLedgerEntriesForRefundAmountSum($company_id, $credit_ids, 'credit', ['credit_id', 'total_applied_refund']);
+	private function assembleLedgerRows(Collection $ledger_entries) : array {
 
 		$pc_rows = [];
 
@@ -938,7 +926,92 @@ class InvoiceService{
 
 		$pc_rows = null;
 
+		return $final_rows;
+
+	}
+
+	/**
+	 * assembeCreditRowsForUpdate function
+	 *
+	 * @param Collection $db_credits
+	 * @param array $final_rows
+	 * @return array
+	 */
+	private function assembeCreditRowsForUpdate(Collection $db_credits, array $final_rows) : array {
+
+		$update_db_credits = [];
+
+		foreach($db_credits as $db_credit){
+
+			foreach($final_rows as $final_row){
+
+				if((int) $final_row['credit_id'] === (int) $db_credit->id){
+
+					$applied_amount = BigDecimal::of($db_credit->applied_amount);
+					$left_to_apply = BigDecimal::of($db_credit->amount_left_to_be_applied);
+
+					$calculated_amount = BigDecimal::of($final_row['amount']);
+
+					$applied_amount = $applied_amount->minus($calculated_amount);
+					$left_to_apply = $left_to_apply->plus($calculated_amount);
+
+					if($left_to_apply->isGreaterThan(BigDecimal::of($db_credit->amount))){
+						$left_to_apply = BigDecimal::of($db_credit->amount);
+					}
+
+					if($applied_amount->isLessThan(BigDecimal::of(0))){
+						$applied_amount = BigDecimal::of(0);
+					}
+
+					$applied_amount = $applied_amount->toScale(2, RoundingMode::HalfUp)->__toString();
+					$left_to_apply = $left_to_apply->toScale(2, RoundingMode::HalfUp)->__toString();
+					
+
+					$update_db_credits[] = [
+						'id'						=>	$db_credit->id,
+						'applied_amount'			=>	$applied_amount,
+						'amount_left_to_be_applied'	=>	$left_to_apply,
+						'updated_at'				=>	Carbon::now()->format('Y-m-d H:i:s')
+					];
+
+				}
+
+			}
+
+		}
+
+		return $update_db_credits;
+
+	}
+
+	/**
+	 * refundCredits function
+	 *
+	 * @param integer $company_id
+	 * @param array $credits
+	 * @return BigDecimal
+	 */
+	private function refundCredits(int $company_id, array $credits) : BigDecimal {
+
+		$refunded = BigDecimal::of(0);
+
+		foreach($credits as $credit){
+			$refunded = $refunded->plus(BigDecimal::of($credit['amount']));
+		}
+
+		$this->invoice_repository->updateLedgerForRefunds($company_id, $credits, 'credit');
+		
+		//update credit rows after this.
+		$credit_ids = array_column($credits, 'credit_id');
+		$ledger_entries = $this->invoice_repository->fetchLedgerEntriesForRefundAmountSum($company_id, $credit_ids, 'credit', ['credit_id', 'total_applied_refund']);
+
+		$final_rows = $this->assembleLedgerRows($ledger_entries);
+
 		//update credits row db here
+		$db_credits = $this->invoice_repository->fetchCreditsByIds($company_id, $credit_ids);
+		$update_db_credits = $this->assembeCreditRowsForUpdate($db_credits, $final_rows);
+
+		$this->invoice_repository->updateCredits($update_db_credits);
 
 		return $refunded;
 

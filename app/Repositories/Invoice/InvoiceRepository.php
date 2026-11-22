@@ -805,6 +805,70 @@ class InvoiceRepository{
 		return InvoiceLedger::select(...$columns)->where('company_id', '=', $company_id)->whereIn($type.'_id', $ids)->get();
 	}
 
+	/**
+	 * fetchCreditsByIds function
+	 *
+	 * @param integer $company_id
+	 * @param array $ids
+	 * @param array $columns
+	 * @return Collection
+	 */
+	public function fetchCreditsByIds(int $company_id, array $ids, array $columns = ['*']) : Collection {
+		return Credit::select(...$columns)->where('company_id', '=', $company_id)->whereIn('id', $ids)->get();
+	}
+
+	/**
+	 * updateCredits function
+	 *
+	 * @param array $update_db_credits
+	 * @return void
+	 */
+	public function updateCredits(array $update_db_credits) : void {
+
+		if(empty($update_db_credits)){
+			return;
+		}
+
+		$columns = ['applied_amount', 'amount_left_to_be_applied', 'updated_at'];
+
+		foreach(array_chunk($update_db_credits, 15) as $chunk){
+
+			$set_sql = [];
+			$bindings = [];
+			$ids = [];
+
+			foreach($chunk as $row){
+				$ids[] = (int) $row['id'];
+			}
+
+			foreach($columns as $column){
+
+				$cases = [];
+
+				foreach($chunk as $row){
+					$cases[]    = 'WHEN ? THEN ?';
+					$bindings[] = (int) $row['id'];
+					$bindings[] = $row[$column];
+				}
+
+				$set_sql[] = $column." = CASE id ".implode(' ', $cases)." END";
+			}
+
+			$placeholders = implode(',', array_fill(0, count($ids), '?'));
+			
+			$bindings = array_merge($bindings, $ids);
+
+			DB::update(
+				"UPDATE credits
+				SET ".implode(', ', $set_sql)."
+				WHERE id IN ({$placeholders})",
+				$bindings
+			);
+
+		}
+
+	}
+
 
 
 
