@@ -829,7 +829,7 @@ class InvoiceRepository{
 			return;
 		}
 
-		$columns = ['applied_amount', 'amount_left_to_be_applied', 'updated_at'];
+		$columns = ['applied_amount', 'amount_left_to_be_applied', 'status', 'updated_at'];
 
 		foreach(array_chunk($update_db_credits, 15) as $chunk){
 
@@ -855,7 +855,7 @@ class InvoiceRepository{
 			}
 
 			$placeholders = implode(',', array_fill(0, count($ids), '?'));
-			
+
 			$bindings = array_merge($bindings, $ids);
 
 			DB::update(
@@ -867,6 +867,16 @@ class InvoiceRepository{
 
 		}
 
+	}
+
+	/**
+	 * insertRefundLogs function
+	 *
+	 * @param array $logs
+	 * @return void
+	 */
+	public function insertRefundLogs(array $logs) : void {
+		RefundLog::insert($logs);
 	}
 
 

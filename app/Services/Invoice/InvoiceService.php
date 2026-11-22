@@ -857,6 +857,7 @@ class InvoiceService{
 				'ledger_id'				=>	$payment['id'],
 				'payment_id'			=>	$payment['payment_id'],
 				'amount'				=>	$to_be_refunded,
+				'original_amount'		=>	$user_applied ?? $payment['total_applied'],
 				'payment_gateway'		=>	$payment['payment_gateway'],
 				'transaction_id'		=>	$payment['transaction_id'],
 				'currency_id'			=>	$payment['currency_id'],
@@ -878,10 +879,11 @@ class InvoiceService{
 			$to_be_refunded = $this->calculateToBeRefunded($credit['total_applied'], $credit['total_applied_refund'], $user_applied);
 
 			$entries['credits'][] = [
-				'ledger_id'		=>	$credit['id'],
-				'credit_id'		=>	$credit['credit_id'],
-				'currency_id'	=>	$credit['currency_id'],
-				'amount'		=>	$to_be_refunded
+				'ledger_id'			=>	$credit['id'],
+				'credit_id'			=>	$credit['credit_id'],
+				'currency_id'		=>	$credit['currency_id'],
+				'amount'			=>	$to_be_refunded,
+				'original_amount'	=>	$user_applied ?? $credit['total_applied']
 			];
 		}
 
@@ -963,14 +965,24 @@ class InvoiceService{
 						$applied_amount = BigDecimal::of(0);
 					}
 
+					$status = CreditStatus::NOT_APPLIED->value;
+
+					if($applied_amount->isEqualTo(BigDecimal::of($db_credit->amount))){
+						$status = CreditStatus::APPLIED->value;
+					}else if($applied_amount->isLessThan(BigDecimal::of($db_credit->amount)) && $applied_amount->isGreaterThan(BigDecimal::of(0))){
+						$status = CreditStatus::PARTIALLY_APPLIED->value;
+					}
+
 					$applied_amount = $applied_amount->toScale(2, RoundingMode::HalfUp)->__toString();
 					$left_to_apply = $left_to_apply->toScale(2, RoundingMode::HalfUp)->__toString();
+					
 					
 
 					$update_db_credits[] = [
 						'id'						=>	$db_credit->id,
 						'applied_amount'			=>	$applied_amount,
 						'amount_left_to_be_applied'	=>	$left_to_apply,
+						'status'					=>	$status,
 						'updated_at'				=>	Carbon::now()->format('Y-m-d H:i:s')
 					];
 
@@ -1018,6 +1030,31 @@ class InvoiceService{
 	}
 
 	/**
+	 * insertRefundLogs function
+	 *
+	 * @param array $data
+	 * @return void
+	 */
+	private function insertRefundLogs(int $company_id, int $invoice_id, array $data) : void {
+
+		$logs = [];
+
+		foreach($data as $row){
+			$logs[] = [
+				'company_id'	=>	$company_id,
+				'invoice_id'	=>	$invoice_id,
+				'payment_id'	=>	$row['payment_id'] ?? null,
+				'credit_id'		=>	$row['credit_id'] ?? null,
+				'amount'		=>	$row['original_amount'],
+				'currency_id'	=>	$row['currency_id']
+			];
+		}
+
+		$this->invoice_repository->insertRefundLogs($logs);
+
+	}
+
+	/**
 	 * issueRefunds function
 	 *
 	 * @param integer $company_id
@@ -1039,15 +1076,16 @@ class InvoiceService{
 
 		$data = $this->normalizeRefundEntries($company_id, $invoice_id, $full_refund, $refund_entries);
 		
-		//logger($data);
+		logger($data);
 		//proceed to refund.
-		DB::transaction(function() use ($company_id, $data)  {
+		DB::transaction(function() use ($company_id, $invoice_id, $data)  {
 
 			$credits = $data['credits'];
 			$offline_payments = $data['payments_offline'];
 			$online_payments = $data['payments_online'];
-
+			
 			$credit_refunded_amount = $this->refundCredits($company_id, $credits);
+			$this->insertRefundLogs($company_id, $invoice_id, $credits);
 
 
 		});
