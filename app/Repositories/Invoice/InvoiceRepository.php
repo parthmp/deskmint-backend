@@ -677,10 +677,12 @@ class InvoiceRepository{
 			'invoice_ledger.id',
 			'invoice_ledger.total_applied',
 			'currencies.code',
-			'invoice_ledger.total_applied_refund'
+			'invoice_ledger.total_applied_refund',
+			'invoice_ledger.credit_id',
+			'invoice_ledger.payment_id'
 		];
 
-		$payments = InvoiceLedger::select(...array_merge($selects, ['transactions.payment_gateway']))->where([['invoice_ledger.company_id', '=', $company_id], ['invoice_ledger.invoice_id', '=', $invoice_id], ['invoice_ledger.payment_id', '<>', null]])->join('payments', 'invoice_ledger.payment_id', '=', 'payments.id')->join('currencies', 'currencies.id', '=', 'payments.currency_id')->join('invoices', 'invoices.id', '=', 'invoice_ledger.invoice_id')->leftJoin('transactions', 'transactions.id', '=', 'payments.transaction_id')->orderBy('invoice_ledger.id', 'desc')->get()->toArray();
+		$payments = InvoiceLedger::select(...array_merge($selects, ['transactions.payment_gateway', 'transactions.refund_token', 'transactions.id as transaction_id']))->where([['invoice_ledger.company_id', '=', $company_id], ['invoice_ledger.invoice_id', '=', $invoice_id], ['invoice_ledger.payment_id', '<>', null]])->join('payments', 'invoice_ledger.payment_id', '=', 'payments.id')->join('currencies', 'currencies.id', '=', 'payments.currency_id')->join('invoices', 'invoices.id', '=', 'invoice_ledger.invoice_id')->leftJoin('transactions', 'transactions.id', '=', 'payments.transaction_id')->orderBy('invoice_ledger.id', 'desc')->get()->toArray();
 
 
 
@@ -718,6 +720,32 @@ class InvoiceRepository{
 	 */
 	public function fetchInvoiceLedgerEntriesByIds(int $company_id, array $ids, array $columns = ['*']) : Collection {
 		return InvoiceLedger::select(...$columns)->where('company_id', '=', $company_id)->whereIn('id', $ids)->get();
+	}
+
+	/**
+	 * fetchPaymentDataForRefundEntries function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param array $ids
+	 * @param array $columns
+	 * @return Collection
+	 */
+	public function fetchPaymentDataForRefundEntries(int $company_id, int $invoice_id, array $ids, array $columns = ['*']) : Collection {
+		return InvoiceLedger::select($columns)->where([['invoice_ledger.company_id', '=', $company_id], ['invoice_ledger.invoice_id', '=', $invoice_id], ['invoice_ledger.payment_id', '<>', null], ['invoice_ledger.credit_id', '=', null]])->whereIn('invoice_ledger.id', $ids)->join('payments', 'invoice_ledger.payment_id', '=', 'payments.id')->join('currencies', 'currencies.id', '=', 'payments.currency_id')->join('invoices', 'invoices.id', '=', 'invoice_ledger.invoice_id')->leftJoin('transactions', 'transactions.id', '=', 'payments.transaction_id')->orderBy('invoice_ledger.id', 'desc')->get();
+	}
+
+	/**
+	 * fetchCreditDataForRefundEntries function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param array $ids
+	 * @param array $columns
+	 * @return Collection
+	 */
+	public function fetchCreditDataForRefundEntries(int $company_id, int $invoice_id, array $ids, array $columns = ['*']) : Collection {
+		return InvoiceLedger::select($columns)->where([['invoice_ledger.company_id', '=', $company_id], ['invoice_ledger.invoice_id', '=', $invoice_id], ['invoice_ledger.credit_id', '<>', null], ['invoice_ledger.payment_id', '=', null]])->whereIn('invoice_ledger.id', $ids)->join('credits', 'invoice_ledger.credit_id', '=', 'credits.id')->join('currencies', 'currencies.id', '=', 'credits.currency_id')->join('invoices', 'invoices.id', '=', 'invoice_ledger.invoice_id')->orderBy('invoice_ledger.id', 'desc')->get();
 	}
 
 	/**

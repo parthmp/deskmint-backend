@@ -737,9 +737,157 @@ class InvoiceService{
 		return $this->invoice_validation_service->validateIssueRefunds($request);
 	}
 
-	public function issueRefunds(int $company_id, bool $full_refund, array $refund_entries) : void {
+	/**
+	 * calculateToBeRefunded function
+	 *
+	 * @param string $applied
+	 * @param string $applied_refund
+	 * @return string
+	 */
+	private function calculateToBeRefunded(string $applied, string $applied_refund) : string {
+		$applied = BigDecimal::of($applied);
+		$refunded = BigDecimal::of($applied_refund);
+		$to_be_refunded = $applied->minus($refunded);
+		return $to_be_refunded->toScale(2, RoundingMode::HalfUp)->__toString();
+	}
 
-		
+	/**
+	 * addEmptyAmountFields function
+	 *
+	 * @param array $refund_entries
+	 * @param array $payment_or_credit
+	 * @return array
+	 */
+	private function addEmptyAmountFields(array $refund_entries, array $payment_or_credit) : array {
+
+		$entries = [];
+
+		foreach($refund_entries as $entry){
+			foreach($payment_or_credit as $pc_entry){
+				if((int) $entry['meta']['id'] === (int) $pc_entry['id']){
+
+					$temp = $pc_entry;
+					$temp['total_applied_refund'] = 0;
+					$temp['total_applied'] = $entry['meta']['filled_amount'];
+					$entries[] = $temp;
+
+				}
+			}
+		}
+
+		return $entries;
+
+	}
+
+	/**
+	 * normalizeRefundEntries function
+	 *
+	 * @param integer $company_id
+	 * @param integer $invoice_id
+	 * @param boolean $full_refund
+	 * @param array $refund_entries
+	 * @return array
+	 */
+	private function normalizeRefundEntries(int $company_id, int $invoice_id, bool $full_refund, array $refund_entries) : array {
+
+		$entries['payments_offline'] = [];
+		$entries['payments_online'] = [];
+		$entries['credits'] = [];
+
+		if($full_refund){
+
+			$data = $this->invoice_repository->fetchDataForDropdownOptions($company_id, $invoice_id);
+			$payments = $data['payments'];
+			$credits = $data['credits'];
+
+		}else{
+
+			$ledger_ids = [];
+			foreach($refund_entries as $entry){
+				$id = $entry['meta']['id'];
+				$ledger_ids[] = $id;
+			}
+
+			$credits = $this->invoice_repository->fetchCreditDataForRefundEntries($company_id, $invoice_id, $ledger_ids, [
+				'invoice_ledger.id',
+				'invoice_ledger.credit_id'
+			]);
+
+			$payments = $this->invoice_repository->fetchPaymentDataForRefundEntries($company_id, $invoice_id, $ledger_ids, [
+				'invoice_ledger.id',
+				'invoice_ledger.payment_id',
+				'transactions.payment_gateway',
+				'transactions.refund_token',
+				'transactions.id as transaction_id'
+			]);
+
+			//weave
+			$credits = $this->addEmptyAmountFields($refund_entries, $credits->toArray());
+			$payments = $this->addEmptyAmountFields($refund_entries, $payments->toArray());
+
+		}
+
+		foreach($payments as $payment){
+
+			$to_be_refunded = $this->calculateToBeRefunded($payment['total_applied'], $payment['total_applied_refund']);
+
+			$element =  [
+				'ledger_id'				=>	$payment['id'],
+				'payment_id'			=>	$payment['payment_id'],
+				'amount'				=>	$to_be_refunded,
+				'payment_gateway'		=>	$payment['payment_gateway'],
+				'transaction_id'		=>	$payment['transaction_id'],
+				'refund_token'			=>	$payment['refund_token']
+			];
+
+			if($payment['payment_gateway']){
+				$entries['payments_online'][] = $element;
+			}else{
+				$entries['payments_offline'][] = $element;
+			}
+
+			
+		}
+
+		foreach($credits as $credit){
+
+			$to_be_refunded = $this->calculateToBeRefunded($credit['total_applied'], $credit['total_applied_refund']);
+
+			$entries['credits'][] = [
+				'ledger_id'		=>	$credit['id'],
+				'credit_id'		=>	$credit['credit_id'],
+				'amount'		=>	$to_be_refunded
+			];
+		}
+
+		return $entries;
+
+	}
+
+	/**
+	 * issueRefunds function
+	 *
+	 * @param integer $company_id
+	 * @param boolean $full_refund
+	 * @param array $refund_entries
+	 * @return void
+	 */
+	public function issueRefunds(int $company_id, int $invoice_id, bool $full_refund, array $refund_entries) : void {
+
+		/**
+		 * amount
+		 * gateway
+		 * refund token
+		 * type : credit or payment
+		 * process credits first
+		 * then offline payments
+		 * then online payments
+		 */
+
+		$entries = $this->normalizeRefundEntries($company_id, $invoice_id, $full_refund, $refund_entries);
+		logger($entries);
+		//proceed to refund.
+
 
 	}
 

@@ -200,6 +200,10 @@ class InvoiceValidationService extends ProductFieldService {
 	 */
 	public function validateIssueRefunds(Request $request) : bool {
 
+		if(!$request->has('refund_full') || !$request->has('company_id') || !$request->has('refund_entries')){
+			throw new InvoiceException("Invalid data provided", "invalid_data", (int) config('global.error_code'));
+		}
+
 		$full_refund = (bool) $request->input('refund_full');
 		$company_id = (int) Sanitize::input($request->input('company_id'));
 
@@ -234,10 +238,14 @@ class InvoiceValidationService extends ProductFieldService {
 
 				foreach($refund_entries as $refund_entry){
 
-					if((int) $ledger_entry->id === (int) $refund_entry['meta']['id']){
+					$refund_entry_id = (int) Sanitize::input((string) $refund_entry['meta']['id']);
 
-						if((string) $refund_entry['meta']['filled_amount'] === ''){
-							throw new InvoiceException("Please enter the refund amount for #".$refund_entry['meta']['id'], "filled_data_empty", (int) config('global.error_code'));
+					if((int) $ledger_entry->id === $refund_entry_id){
+
+						$refund_entry_filled_amount = Sanitize::input($refund_entry['meta']['filled_amount']);
+
+						if((string) $refund_entry_filled_amount === ''){
+							throw new InvoiceException("Please enter the refund amount for #".$refund_entry_id, "filled_data_empty", (int) config('global.error_code'));
 						}
 
 						$already_refunded = BigDecimal::of($ledger_entry->total_applied_refund);
@@ -249,11 +257,11 @@ class InvoiceValidationService extends ProductFieldService {
 							$allowed = BigDecimal::of(0);
 						}
 
-						$filled_amount = BigDecimal::of($refund_entry['meta']['filled_amount']);
+						$filled_amount = BigDecimal::of($refund_entry_filled_amount);
 
 						if($filled_amount->isGreaterThan($allowed)){
 							$allowed_string = $allowed->toScale(2, RoundingMode::HalfUp)->__toString();
-							throw new InvoiceException("Allowed refund amount for #".$refund_entry['meta']['id']." is ".$allowed_string, "not_allowed_amount", (int) config('global.error_code'));
+							throw new InvoiceException("Allowed refund amount for #".$refund_entry_id." is ".$allowed_string, "not_allowed_amount", (int) config('global.error_code'));
 						}
 
 					}
