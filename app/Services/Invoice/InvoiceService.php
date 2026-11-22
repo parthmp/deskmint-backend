@@ -742,23 +742,37 @@ class InvoiceService{
 	 *
 	 * @param string $applied
 	 * @param string $applied_refund
+	 * @param string|null $user_applied
 	 * @return string
 	 */
-	private function calculateToBeRefunded(string $applied, string $applied_refund) : string {
+	private function calculateToBeRefunded(string $applied, string $applied_refund, ?string $user_applied = null) : string {
+
 		$applied = BigDecimal::of($applied);
-		$refunded = BigDecimal::of($applied_refund);
-		$to_be_refunded = $applied->minus($refunded);
+		$to_be_refunded = BigDecimal::of($applied_refund);
+
+		if($user_applied){
+			$to_be_refunded = $to_be_refunded->plus(BigDecimal::of($user_applied));
+		}else{
+			$to_be_refunded = $applied;
+		}
+
+		if($to_be_refunded->isGreaterThan($applied)){
+			$to_be_refunded = $applied;
+		}
+		
 		return $to_be_refunded->toScale(2, RoundingMode::HalfUp)->__toString();
+
 	}
 
+
 	/**
-	 * addEmptyAmountFields function
+	 * addUserAppliedAmount function
 	 *
 	 * @param array $refund_entries
 	 * @param array $payment_or_credit
 	 * @return array
 	 */
-	private function addEmptyAmountFields(array $refund_entries, array $payment_or_credit) : array {
+	private function addUserAppliedAmount(array $refund_entries, array $payment_or_credit) : array {
 
 		$entries = [];
 
@@ -767,8 +781,7 @@ class InvoiceService{
 				if((int) $entry['meta']['id'] === (int) $pc_entry['id']){
 
 					$temp = $pc_entry;
-					$temp['total_applied_refund'] = 0;
-					$temp['total_applied'] = $entry['meta']['filled_amount'];
+					$temp['user_applied'] = $entry['meta']['filled_amount'];
 					$entries[] = $temp;
 
 				}
@@ -777,7 +790,7 @@ class InvoiceService{
 
 		return $entries;
 
-	}
+	} 
 
 	/**
 	 * normalizeRefundEntries function
@@ -810,7 +823,10 @@ class InvoiceService{
 
 			$credits = $this->invoice_repository->fetchCreditDataForRefundEntries($company_id, $invoice_id, $ledger_ids, [
 				'invoice_ledger.id',
-				'invoice_ledger.credit_id'
+				'credits.currency_id',
+				'invoice_ledger.credit_id',
+				'invoice_ledger.total_applied_refund',
+				'invoice_ledger.total_applied'
 			]);
 
 			$payments = $this->invoice_repository->fetchPaymentDataForRefundEntries($company_id, $invoice_id, $ledger_ids, [
@@ -818,18 +834,23 @@ class InvoiceService{
 				'invoice_ledger.payment_id',
 				'transactions.payment_gateway',
 				'transactions.refund_token',
-				'transactions.id as transaction_id'
+				'payments.currency_id',
+				'transactions.id as transaction_id',
+				'invoice_ledger.total_applied_refund',
+				'invoice_ledger.total_applied'
 			]);
 
 			//weave
-			$credits = $this->addEmptyAmountFields($refund_entries, $credits->toArray());
-			$payments = $this->addEmptyAmountFields($refund_entries, $payments->toArray());
+			$credits = $this->addUserAppliedAmount($refund_entries, $credits->toArray());
+			$payments = $this->addUserAppliedAmount($refund_entries, $payments->toArray());
 
 		}
 
 		foreach($payments as $payment){
 
-			$to_be_refunded = $this->calculateToBeRefunded($payment['total_applied'], $payment['total_applied_refund']);
+			$user_applied = $payment['user_applied'] ?? null;
+
+			$to_be_refunded = $this->calculateToBeRefunded($payment['total_applied'], $payment['total_applied_refund'], $user_applied);
 
 			$element =  [
 				'ledger_id'				=>	$payment['id'],
@@ -837,6 +858,7 @@ class InvoiceService{
 				'amount'				=>	$to_be_refunded,
 				'payment_gateway'		=>	$payment['payment_gateway'],
 				'transaction_id'		=>	$payment['transaction_id'],
+				'currency_id'			=>	$payment['currency_id'],
 				'refund_token'			=>	$payment['refund_token']
 			];
 
@@ -851,16 +873,74 @@ class InvoiceService{
 
 		foreach($credits as $credit){
 
-			$to_be_refunded = $this->calculateToBeRefunded($credit['total_applied'], $credit['total_applied_refund']);
+			$user_applied = $credit['user_applied'] ?? null;
+			$to_be_refunded = $this->calculateToBeRefunded($credit['total_applied'], $credit['total_applied_refund'], $user_applied);
 
 			$entries['credits'][] = [
 				'ledger_id'		=>	$credit['id'],
 				'credit_id'		=>	$credit['credit_id'],
+				'currency_id'	=>	$credit['currency_id'],
 				'amount'		=>	$to_be_refunded
 			];
 		}
 
 		return $entries;
+
+	}
+
+	/**
+	 * refundCredits function
+	 *
+	 * @param integer $company_id
+	 * @param array $credits
+	 * @return BigDecimal
+	 */
+	private function refundCredits(int $company_id, array $credits) : BigDecimal {
+
+		$refunded = BigDecimal::of(0);
+
+		foreach($credits as $credit){
+			$refunded = $refunded->plus(BigDecimal::of($credit['amount']));
+		}
+
+		$this->invoice_repository->updateLedgerForRefunds($company_id, $credits, 'credit');
+		
+		//update credit rows after this.
+		$credit_ids = array_column($credits, 'credit_id');
+		$ledger_entries = $this->invoice_repository->fetchLedgerEntriesForRefundAmountSum($company_id, $credit_ids, 'credit', ['credit_id', 'total_applied_refund']);
+
+		$pc_rows = [];
+
+		//calculate refund amount per entry
+		foreach($ledger_entries as $ledger_entry){
+
+			$key = 'pc_entry_'.$ledger_entry->credit_id;
+
+			if(!isset($pc_rows[$key])){
+				$pc_rows[$key] = [
+					'amount'	=>	BigDecimal::of(0),
+					'credit_id'	=>	$ledger_entry->credit_id,
+				];
+			}
+
+			$pc_rows[$key]['amount'] = $pc_rows[$key]['amount']->plus(BigDecimal::of($ledger_entry->total_applied_refund));
+
+		}
+		
+		$final_rows = [];
+
+		foreach($pc_rows as $pc_row){
+			$final_rows[] = [
+				'amount'	=>	$pc_row['amount']->toScale(2, RoundingMode::HalfUp)->__toString(),
+				'credit_id'	=>	$pc_row['credit_id'],
+			];
+		}
+
+		$pc_rows = null;
+
+		//update credits row db here
+
+		return $refunded;
 
 	}
 
@@ -884,9 +964,22 @@ class InvoiceService{
 		 * then online payments
 		 */
 
-		$entries = $this->normalizeRefundEntries($company_id, $invoice_id, $full_refund, $refund_entries);
-		logger($entries);
+		$data = $this->normalizeRefundEntries($company_id, $invoice_id, $full_refund, $refund_entries);
+		
+		//logger($data);
 		//proceed to refund.
+		DB::transaction(function() use ($company_id, $data)  {
+
+			$credits = $data['credits'];
+			$offline_payments = $data['payments_offline'];
+			$online_payments = $data['payments_online'];
+
+			$credit_refunded_amount = $this->refundCredits($company_id, $credits);
+
+
+		});
+		
+
 
 
 	}
