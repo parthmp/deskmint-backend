@@ -999,6 +999,18 @@ class InvoiceRepository{
 		return Invoice::select(...$columns)->where('company_id', '=', $company_id)->whereIn('id', $ids)->get();
 	}
 
+	/**
+	 * fetchPaymentByIds function
+	 *
+	 * @param integer $company_id
+	 * @param array $ids
+	 * @param array $columns
+	 * @return Collection
+	 */
+	public function fetchPaymentByIds(int $company_id, array $ids, array $columns = ['*']) : Collection {
+		return Payment::select(...$columns)->where('company_id', '=', $company_id)->whereIn('id', $ids)->get();
+	}
+
 
 	/**
 	 * refunds end

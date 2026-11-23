@@ -899,7 +899,7 @@ class InvoiceService{
 	 * @param string $type
 	 * @return array
 	 */
-	private function assembleLedgerRows(Collection $ledger_entries, string $type) : array {
+	private function assembleLedgerRows(int $company_id, Collection $ledger_entries, string $type) : array {
 
 		$pc_rows = [];
 
@@ -923,9 +923,30 @@ class InvoiceService{
 		
 		$final_rows = [];
 
+		
+		$payments = null;
+
+		if($type === 'payment'){
+			$payment_ids = array_column($pc_rows, $id_column_text);
+			$payments = $this->invoice_repository->fetchPaymentByIds($company_id, $payment_ids, ['id', 'refunded_amount']);
+		}
+		
+
 		foreach($pc_rows as $pc_row){
+
+			$temp_amount = $pc_row['amount'];
+
+			if($type === 'payment'){
+				foreach($payments as $payment){
+					if((int) $payment->id === (int) $pc_row[$id_column_text]){
+						$already_refunded = BigDecimal::of($payment->refunded_amount);
+						$temp_amount = $temp_amount->plus($already_refunded);
+					}
+				}
+			}
+
 			$final_rows[] = [
-				'amount'		=>	$pc_row['amount']->toScale(2, RoundingMode::HalfUp)->__toString(),
+				'amount'		=>	$temp_amount->toScale(2, RoundingMode::HalfUp)->__toString(),
 				$id_column_text	=>	$pc_row[$id_column_text],
 			];
 		}
@@ -1015,7 +1036,7 @@ class InvoiceService{
 		$credit_or_payment_ids = array_column($credits_or_payments, $type.'_id');
 		$ledger_entries = $this->invoice_repository->fetchLedgerEntriesForRefundAmountSum($company_id, $credit_or_payment_ids, $type, [$type.'_id', 'total_applied_refund']);
 
-		$final_rows = $this->assembleLedgerRows($ledger_entries, $type);
+		$final_rows = $this->assembleLedgerRows($company_id, $ledger_entries, $type);
 		
 		if($type === 'credit'){
 
