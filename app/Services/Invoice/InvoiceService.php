@@ -928,26 +928,28 @@ class InvoiceService{
 
 		if($type === 'payment'){
 			$payment_ids = array_column($pc_rows, $id_column_text);
-			$payments = $this->invoice_repository->fetchPaymentByIds($company_id, $payment_ids, ['id', 'refunded_amount']);
+			$payments = $this->invoice_repository->fetchPaymentByIds($company_id, $payment_ids, ['id', 'unapplied_amount_refund']);
 		}
 		
 
 		foreach($pc_rows as $pc_row){
 
 			$temp_amount = $pc_row['amount'];
+			$applied_refund_amount = $pc_row['amount'];
 
 			if($type === 'payment'){
 				foreach($payments as $payment){
 					if((int) $payment->id === (int) $pc_row[$id_column_text]){
-						$already_refunded = BigDecimal::of($payment->refunded_amount);
+						$already_refunded = BigDecimal::of($payment->unapplied_amount_refund);
 						$temp_amount = $temp_amount->plus($already_refunded);
 					}
 				}
 			}
 
 			$final_rows[] = [
-				'amount'		=>	$temp_amount->toScale(2, RoundingMode::HalfUp)->__toString(),
-				$id_column_text	=>	$pc_row[$id_column_text],
+				'amount'				=>	$temp_amount->toScale(2, RoundingMode::HalfUp)->__toString(),
+				$id_column_text			=>	$pc_row[$id_column_text],
+				'applied_refund_amount' => 	$applied_refund_amount->toScale(2, RoundingMode::HalfUp)->__toString()
 			];
 		}
 
@@ -1157,6 +1159,53 @@ class InvoiceService{
 	}
 
 	/**
+	 * updateTransactionsForRefunds function
+	 *
+	 * @param integer $company_id
+	 * @param array $payment_ids
+	 * @return void
+	 */
+	private function updateTransactionsForRefunds(int $company_id, array $payment_ids) : void {
+
+		$payments = $this->invoice_repository->fetchPaymentByIds($company_id, $payment_ids, ['id', 'refunded_amount', 'transaction_id']);
+
+		$records = [];
+
+		foreach($payments as $payment){
+			
+			if($payment->transaction_id !== null){
+
+				$key = 'transaction_'.$payment->transaction_id;
+
+				if(!isset($records[$key])){
+					$records[$key] = [
+						'id'				=>	$payment->transaction_id,
+						'refunded_amount'	=>	BigDecimal::of(0),
+					];
+				}
+
+				$records[$key]['refunded_amount'] = $records[$key]['refunded_amount']->plus(BigDecimal::of($payment->refunded_amount));
+		
+			}
+
+		}
+
+		$final_records = [];
+
+		foreach($records as $record){
+			$final_records[] = [
+				'id'				=>	$record['id'],
+				'refunded_amount'	=>	$record['refunded_amount']->toScale(2, RoundingMode::HalfUp)->__toString()
+			];
+		}
+
+		$records = null;
+
+		$this->invoice_repository->updateTransactions($company_id, $final_records);
+
+	}
+
+	/**
 	 * issueRefunds function
 	 *
 	 * @param integer $company_id
@@ -1194,6 +1243,12 @@ class InvoiceService{
 			$this->insertRefundLogs($company_id, $invoice_id, $online_payments);
 
 			$this->updateInvoiceRefundAmount($company_id, [$invoice_id]);
+
+			if(!empty($online_payments)){
+				$payment_ids = array_column($online_payments, 'payment_id');
+				$this->updateTransactionsForRefunds($company_id, $payment_ids);
+			}
+			
 
 			DB::afterCommit(function() use ($company_id, $invoice_id){
 				GenerateInvoiceSnapshotJob::dispatch($company_id, $invoice_id, true);

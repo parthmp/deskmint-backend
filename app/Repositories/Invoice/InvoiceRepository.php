@@ -893,25 +893,35 @@ class InvoiceRepository{
 
 		foreach(array_chunk($data, 15) as $chunk){
 
-			$cases = [];
-			$bindings = [];
+			$refund_cases = [];
+			$applied_cases = [];
+			$refund_bindings = [];
+			$applied_bindings = [];
 			$ids = [];
 
 			foreach($chunk as $row){
-				$cases[] = 'WHEN ? THEN ?';
-				$bindings[] = (int) $row['payment_id'];
-				$bindings[] = (string) $row['amount'];
+				$refund_cases[] = 'WHEN ? THEN ?';
+				$refund_bindings[] = (int) $row['payment_id'];
+				$refund_bindings[] = (string) $row['amount'];
+
+				$applied_cases[] = 'WHEN ? THEN ?';
+				$applied_bindings[] = (int) $row['payment_id'];
+				$applied_bindings[] = (string) $row['applied_refund_amount'];
+
 				$ids[] = (int) $row['payment_id'];
 			}
 
-			$case_sql = implode(' ', $cases);
+			$refund_case_sql = implode(' ', $refund_cases);
+			$applied_case_sql = implode(' ', $applied_cases);
 			$placeholders = implode(',', array_fill(0, count($ids), '?'));
 
-			$bindings = array_merge($bindings, $ids);
+			// bindings order: refunded_amount CASE, applied_amount_refund CASE, ids
+			$bindings = array_merge($refund_bindings, $applied_bindings, $ids);
 
 			DB::update(
 				"UPDATE payments
-				SET refunded_amount = CASE id {$case_sql} END
+				SET refunded_amount = CASE id {$refund_case_sql} END,
+				applied_amount_refund = CASE id {$applied_case_sql} END
 				WHERE id IN ({$placeholders})",
 				$bindings
 			);
@@ -1009,6 +1019,53 @@ class InvoiceRepository{
 	 */
 	public function fetchPaymentByIds(int $company_id, array $ids, array $columns = ['*']) : Collection {
 		return Payment::select(...$columns)->where('company_id', '=', $company_id)->whereIn('id', $ids)->get();
+	}
+
+
+	/**
+	 * updateTransactions function
+	 *
+	 * @param integer $company_id
+	 * @param array $data
+	 * @return void
+	 */
+	public function updateTransactions(int $company_id, array $data) : void {
+
+		if(empty($data)){
+			return;
+		}
+
+		$updated_at = Carbon::now()->format('Y-m-d H:i:s');
+
+		foreach(array_chunk($data, 15) as $chunk){
+
+			$cases    = [];
+			$bindings = [];
+			$ids      = [];
+
+			foreach($chunk as $row){
+				$cases[] = 'WHEN ? THEN ?';
+				$bindings[] = (int) $row['id'];
+				$bindings[] = $row['refunded_amount'];
+				$ids[] = (int) $row['id'];
+			}
+
+			$case_sql = implode(' ', $cases);
+			$placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+			$bindings = array_merge($bindings, [$updated_at, $company_id], $ids);
+
+			DB::update(
+				"UPDATE transactions
+				SET refunded_amount = CASE id {$case_sql} END,
+				updated_at = ?
+				WHERE company_id = ?
+				AND id IN ({$placeholders})",
+				$bindings
+			);
+
+		}
+
 	}
 
 
