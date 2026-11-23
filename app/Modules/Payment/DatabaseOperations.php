@@ -273,6 +273,8 @@ class DatabaseOperations{
 		
 		$breakdown = $data['resource']['seller_receivable_breakdown'];
 
+		$capture_id = $data['resource']['id']; 
+
 		$gateway_fee = $breakdown['paypal_fee']['value'];         		// 0.94  - PayPal's cut
 		$net_amount = $breakdown['net_amount']['value'];         		// 14.92 - what you actually received
 		
@@ -280,6 +282,9 @@ class DatabaseOperations{
 		$transaction->received_amount = $net_amount;
 
 		$transaction->is_payment_captured = 1;
+
+		$transaction->refund_token = $capture_id;
+
 		$transaction->status = (int) TransactionStatus::COMPLETED->value;
 		$transaction->paid_at = now();
 		
@@ -366,9 +371,12 @@ class DatabaseOperations{
 			Log::error('Payment update failed $transaction was null');
 			throw new PaymentException('failed to update database', 'db_failed', config('global.error_code'));
 		}
+
+		$payment_intent = $data['data']['object']['payment_intent'];
 		
 		$transaction->is_approved = 1;
 		$transaction->is_payment_captured = 1;
+		$transaction->refund_token = $payment_intent;
 		$transaction->status = (int) TransactionStatus::COMPLETED->value;
 		//$transaction->payment_captured_details = json_encode($data);
 		$transaction->gateway_fees_amount = $data['gateway_fees_amount'];

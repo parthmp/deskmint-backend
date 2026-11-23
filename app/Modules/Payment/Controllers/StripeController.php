@@ -18,12 +18,12 @@ class StripeController extends Controller{
 
 		$data = $request->all();
 
-		logger("\n\n\n");
-		logger("FROM STRIPE");
-		logger("===========");
-		logger($data);
-		logger("===========");
-		logger("\n\n\n");
+		// logger("\n\n\n");
+		// logger("FROM STRIPE");
+		// logger("===========");
+		// logger($data);
+		// logger("===========");
+		// logger("\n\n\n");
 		
 		$event_type = $data['type'] ?? null;
 		

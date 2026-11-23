@@ -1248,6 +1248,8 @@ class InvoiceService{
 				$payment_ids = array_column($online_payments, 'payment_id');
 				$this->updateTransactionsForRefunds($company_id, $payment_ids);
 			}
+
+			
 			
 
 			DB::afterCommit(function() use ($company_id, $invoice_id){

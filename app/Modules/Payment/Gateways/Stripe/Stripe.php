@@ -245,37 +245,40 @@ class Stripe implements PaymentInterface {
 		if($completed_transaction){
 			return true;
 		}
+		
 
-		$subscription = $this->provider->subscriptions->retrieve($subscription_id, [
-			'expand' => ['latest_invoice.payments'],
+		$subscription = $this->provider->subscriptions->retrieve($subscription_id);
+
+		$period_end = $subscription->items->data[0]->current_period_end ?? null;
+		$next_billing_time = $period_end ? \Carbon\Carbon::createFromTimestampUTC($period_end)->format('Y-m-d H:i:s') : null;
+
+		$invoice_id = $request_data['data']['object']['id'] ?? $subscription->latest_invoice;
+		$invoice = $this->provider->invoices->retrieve($invoice_id, [
+			'expand' => ['payments'],
 		]);
 
 		$payment_intent_id = null;
-
-		foreach($subscription->latest_invoice->payments->data ?? [] as $invoice_payment){
+		foreach($invoice->payments->data ?? [] as $invoice_payment){
 			if($invoice_payment->status === 'paid' && $invoice_payment->payment->type === 'payment_intent'){
-				$payment_intent_id = $invoice_payment->payment->payment_intent;
+				$pi = $invoice_payment->payment->payment_intent;
+				$payment_intent_id = is_string($pi) ? $pi : ($pi->id ?? null);
 				break;
 			}
 		}
-		
-		$next_billing_time = \Carbon\Carbon::createFromTimestampUTC(
-			$subscription->items->data[0]->current_period_end
-		)->format('Y-m-d H:i:s');
 
-		
+		$gateway_fee = 0;
+		$net_amount  = 0;
+		$currency_code = $data['webhook_data']['currency_code'] ?? null;
+
 		$gateway_fee = 0;
 		$net_amount = 0;
-
 		$stripe_fees['found'] = false;
 
-		$currency_code = $data['webhook_data']['currency_code'] ?? null;
 		if($payment_intent_id && $currency_code){
 			$stripe_fees = $this->getStripeFees($payment_intent_id, $currency_code);
-			$gateway_fee = $stripe_fees['gateway_fee'];
-			$net_amount = $stripe_fees['net_amount'];
+			$gateway_fee = $stripe_fees['gateway_fee'] ?? 0;
+			$net_amount  = $stripe_fees['net_amount'] ?? 0;
 		}
-
 		
 		$transaction = $this->db->createTransactionForRecurringSale([
 			'currency_id'				=>	(int) $recurring_invoice_data['currency_id'],
@@ -287,6 +290,7 @@ class Stripe implements PaymentInterface {
 			'payment_gateway'			=>	PaymentGateway::STRIPE->value,
 			'mode'						=>	'-',
 			'token_id_identifier'		=>	$order_id,
+			'refund_token'				=>	$payment_intent_id,
 			'is_approved'				=>	1,
 			'is_payment_captured'		=>	1,
 			'status'					=>	TransactionStatus::COMPLETED->value,

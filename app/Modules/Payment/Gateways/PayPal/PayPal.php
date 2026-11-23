@@ -559,6 +559,7 @@ class PayPal implements PaymentInterface {
 			'payment_gateway'			=>	PaymentGateway::PAYPAL->value,
 			'mode'						=>	$settings['mode'],
 			'token_id_identifier'		=>	$order_id,
+			'refund_token'				=>	$order_id,
 			'is_approved'				=>	1,
 			'is_payment_captured'		=>	1,
 			'status'					=>	TransactionStatus::COMPLETED->value,
