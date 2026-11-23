@@ -705,7 +705,7 @@ class InvoiceRepository{
 	 */
 	public function fetchRefundLogs(int $company_id, int $invoice_id, array $selects = ['*']) : Collection {
 
-		$refunds = RefundLog::select(...$selects)->where([['company_id', '=', $company_id], ['invoice_id', '=', $invoice_id]])->join('currencies', 'currencies.id', '=', 'refund_logs.currency_id')->get();
+		$refunds = RefundLog::select(...$selects)->where([['company_id', '=', $company_id], ['invoice_id', '=', $invoice_id]])->join('currencies', 'currencies.id', '=', 'refund_logs.currency_id')->orderBy('id', 'desc')->get();
 		return $refunds;
 
 	}
@@ -879,7 +879,46 @@ class InvoiceRepository{
 		RefundLog::insert($logs);
 	}
 
+	/**
+	 * updatePaymentsForRefunds function
+	 *
+	 * @param array $data
+	 * @return void
+	 */
+	public function updatePaymentsForRefunds(array $data) : void {
 
+		if(empty($data)){
+			return;
+		}
+
+		foreach(array_chunk($data, 15) as $chunk){
+
+			$cases = [];
+			$bindings = [];
+			$ids = [];
+
+			foreach($chunk as $row){
+				$cases[] = 'WHEN ? THEN ?';
+				$bindings[] = (int) $row['payment_id'];
+				$bindings[] = (string) $row['amount'];
+				$ids[] = (int) $row['payment_id'];
+			}
+
+			$case_sql = implode(' ', $cases);
+			$placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+			$bindings = array_merge($bindings, $ids);
+
+			DB::update(
+				"UPDATE payments
+				SET refunded_amount = CASE id {$case_sql} END
+				WHERE id IN ({$placeholders})",
+				$bindings
+			);
+
+		}
+
+	}
 
 
 	/**

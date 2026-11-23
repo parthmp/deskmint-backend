@@ -701,6 +701,7 @@ class InvoiceService{
 			'refund_logs.payment_id',
 			'refund_logs.credit_id',
 			'refund_logs.amount',
+			'refund_logs.created_at',
 			'currencies.code',
 		]);
 
@@ -895,21 +896,24 @@ class InvoiceService{
 	 * assembleLedgerRows function
 	 *
 	 * @param Collection $ledger_entries
+	 * @param string $type
 	 * @return array
 	 */
-	private function assembleLedgerRows(Collection $ledger_entries) : array {
+	private function assembleLedgerRows(Collection $ledger_entries, string $type) : array {
 
 		$pc_rows = [];
+
+		$id_column_text = $type.'_id';
 
 		//calculate refund amount per entry
 		foreach($ledger_entries as $ledger_entry){
 
-			$key = 'pc_entry_'.$ledger_entry->credit_id;
+			$key = 'pc_entry_'.$ledger_entry->{$id_column_text};
 
 			if(!isset($pc_rows[$key])){
 				$pc_rows[$key] = [
-					'amount'	=>	BigDecimal::of(0),
-					'credit_id'	=>	$ledger_entry->credit_id,
+					'amount'		=>	BigDecimal::of(0),
+					$id_column_text	=>	$ledger_entry->{$id_column_text},
 				];
 			}
 
@@ -921,8 +925,8 @@ class InvoiceService{
 
 		foreach($pc_rows as $pc_row){
 			$final_rows[] = [
-				'amount'	=>	$pc_row['amount']->toScale(2, RoundingMode::HalfUp)->__toString(),
-				'credit_id'	=>	$pc_row['credit_id'],
+				'amount'		=>	$pc_row['amount']->toScale(2, RoundingMode::HalfUp)->__toString(),
+				$id_column_text	=>	$pc_row[$id_column_text],
 			];
 		}
 
@@ -997,35 +1001,35 @@ class InvoiceService{
 	}
 
 	/**
-	 * refundCredits function
+	 * processRefunds function
 	 *
 	 * @param integer $company_id
-	 * @param array $credits
-	 * @return BigDecimal
+	 * @param array $credits_or_payments
+	 * @param string $type
+	 * @return void
 	 */
-	private function refundCredits(int $company_id, array $credits) : BigDecimal {
+	private function processRefunds(int $company_id, array $credits_or_payments, string $type) : void {
 
-		$refunded = BigDecimal::of(0);
-
-		foreach($credits as $credit){
-			$refunded = $refunded->plus(BigDecimal::of($credit['amount']));
-		}
-
-		$this->invoice_repository->updateLedgerForRefunds($company_id, $credits, 'credit');
+		$this->invoice_repository->updateLedgerForRefunds($company_id, $credits_or_payments, $type);
 		
-		//update credit rows after this.
-		$credit_ids = array_column($credits, 'credit_id');
-		$ledger_entries = $this->invoice_repository->fetchLedgerEntriesForRefundAmountSum($company_id, $credit_ids, 'credit', ['credit_id', 'total_applied_refund']);
+		$credit_or_payment_ids = array_column($credits_or_payments, $type.'_id');
+		$ledger_entries = $this->invoice_repository->fetchLedgerEntriesForRefundAmountSum($company_id, $credit_or_payment_ids, $type, [$type.'_id', 'total_applied_refund']);
 
-		$final_rows = $this->assembleLedgerRows($ledger_entries);
+		$final_rows = $this->assembleLedgerRows($ledger_entries, $type);
+		
+		if($type === 'credit'){
 
-		//update credits row db here
-		$db_credits = $this->invoice_repository->fetchCreditsByIds($company_id, $credit_ids);
-		$update_db_credits = $this->assembeCreditRowsForUpdate($db_credits, $final_rows);
+			//update credits row db here
+			$db_credits = $this->invoice_repository->fetchCreditsByIds($company_id, $credit_or_payment_ids);
+			$update_db_credits = $this->assembeCreditRowsForUpdate($db_credits, $final_rows);
+			$this->invoice_repository->updateCredits($update_db_credits);
 
-		$this->invoice_repository->updateCredits($update_db_credits);
+		}else{
+			
+			//for payments
+			$this->invoice_repository->updatePaymentsForRefunds($final_rows);
 
-		return $refunded;
+		}
 
 	}
 
@@ -1046,7 +1050,9 @@ class InvoiceService{
 				'payment_id'	=>	$row['payment_id'] ?? null,
 				'credit_id'		=>	$row['credit_id'] ?? null,
 				'amount'		=>	$row['original_amount'],
-				'currency_id'	=>	$row['currency_id']
+				'currency_id'	=>	$row['currency_id'],
+				'created_at'	=>	Carbon::now()->format('Y-m-d H:i:s'),
+				'updated_at'	=>	Carbon::now()->format('Y-m-d H:i:s')
 			];
 		}
 
@@ -1084,8 +1090,12 @@ class InvoiceService{
 			$offline_payments = $data['payments_offline'];
 			$online_payments = $data['payments_online'];
 			
-			$credit_refunded_amount = $this->refundCredits($company_id, $credits);
-			$this->insertRefundLogs($company_id, $invoice_id, $credits);
+			//$this->processRefunds($company_id, $credits, 'credit');
+			$this->processRefunds($company_id, $offline_payments, 'payment');
+			$this->processRefunds($company_id, $online_payments, 'payment');
+			//$this->insertRefundLogs($company_id, $invoice_id, $credits);
+			$this->insertRefundLogs($company_id, $invoice_id, $offline_payments);
+			$this->insertRefundLogs($company_id, $invoice_id, $online_payments);
 
 
 		});
