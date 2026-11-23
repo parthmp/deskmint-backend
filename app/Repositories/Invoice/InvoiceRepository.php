@@ -920,6 +920,85 @@ class InvoiceRepository{
 
 	}
 
+	/**
+	 * fetchLedgerEntriesByInvoiceIds function
+	 *
+	 * @param integer $company_id
+	 * @param array $invoice_ids
+	 * @param array $columns
+	 * @return Collection
+	 */
+	public function fetchLedgerEntriesByInvoiceIds(int $company_id, array $invoice_ids, array $columns = ['*']) : Collection {
+		return InvoiceLedger::select(...$columns)->where('company_id', '=', $company_id)->whereIn('invoice_id', $invoice_ids)->get();
+	}
+
+	/**
+	 * updateInvoicesForRefundedAmount function
+	 *
+	 * @param integer $company_id
+	 * @param array $data
+	 * @return void
+	 */
+	public function updateInvoicesForRefundedAmount(int $company_id, array $data) : void {
+
+		if(empty($data)){
+			return;
+		}
+
+		$updated_at = Carbon::now()->format('Y-m-d H:i:s');
+
+		foreach(array_chunk($data, 15) as $chunk){
+
+			$refund_cases = [];
+			$status_cases = [];
+			$refund_bindings = [];
+			$status_bindings = [];
+			$ids = [];
+
+			foreach($chunk as $row){
+				$refund_cases[] = 'WHEN ? THEN ?';
+				$refund_bindings[] = (int) $row['id'];
+				$refund_bindings[] = $row['refunded_amount'];
+
+				$status_cases[] = 'WHEN ? THEN ?';
+				$status_bindings[] = (int) $row['id'];
+				$status_bindings[] = $row['status'];
+
+				$ids[] = (int) $row['id'];
+			}
+
+			$refund_case_sql = implode(' ', $refund_cases);
+			$status_case_sql = implode(' ', $status_cases);
+			$placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+			// bindings order: refunded_amount CASE, status CASE, updated_at, company_id, ids
+			$bindings = array_merge($refund_bindings, $status_bindings, [$updated_at, $company_id], $ids);
+
+			DB::update(
+				"UPDATE invoices
+				SET refunded_amount = CASE id {$refund_case_sql} END,
+				status = CASE id {$status_case_sql} END,
+				updated_at = ?
+				WHERE company_id = ?
+				AND id IN ({$placeholders})",
+				$bindings
+			);
+
+		}
+
+	}
+
+	/**
+	 * fetchInvoiceByIds function
+	 *
+	 * @param integer $company_id
+	 * @param array $ids
+	 * @return Collection
+	 */
+	public function fetchInvoiceByIds(int $company_id, array $ids, array $columns = ['*']) : Collection {
+		return Invoice::select(...$columns)->where('company_id', '=', $company_id)->whereIn('id', $ids)->get();
+	}
+
 
 	/**
 	 * refunds end

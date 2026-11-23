@@ -1061,6 +1061,81 @@ class InvoiceService{
 	}
 
 	/**
+	 * updateInvoiceRefundAmount function
+	 *
+	 * @param integer $company_id
+	 * @param array $invoice_ids
+	 * @return void
+	 */
+	private function updateInvoiceRefundAmount(int $company_id, array $invoice_ids) : void {
+
+		$ledger_entries = $this->invoice_repository->fetchLedgerEntriesByInvoiceIds($company_id, $invoice_ids);
+		
+		//assemble entries
+		$raw_invoices_data = [];
+		foreach($ledger_entries as $entry){
+
+			if(!isset($raw_invoices_data['inv_'.$entry->invoice_id])){
+
+				$raw_invoices_data['inv_'.$entry->invoice_id] = [
+					'id'				=>	$entry->invoice_id,
+					'refunded_amount'	=>	BigDecimal::of(0)
+				];
+
+			}
+
+			$raw_invoices_data['inv_'.$entry->invoice_id]['refunded_amount'] = $raw_invoices_data['inv_'.$entry->invoice_id]['refunded_amount']->plus($entry->total_applied_refund);
+
+		}
+
+		$invoice_data = [];
+
+		$invoices = $this->invoice_repository->fetchInvoiceByIds($company_id, $invoice_ids, ['id', 'total', 'status', 'balance_due']);
+
+		$zero = BigDecimal::of(0);
+
+		foreach($raw_invoices_data as $element){
+
+			foreach($invoices as $invoice){
+
+				if((int) $invoice->id === $element['id']){
+
+					$status = $invoice->status;
+
+					$total = BigDecimal::of($invoice->total);
+					$balance_due = BigDecimal::of($invoice->balance_due);
+					
+
+					if($total->isEqualTo($element['refunded_amount'])){
+						$status = InvoiceStatus::REFUNDED->value;
+					}else if($total->isGreaterThan($element['refunded_amount'])){
+						$status = InvoiceStatus::PARTIALLY_REFUNDED->value;
+					}else if($total->isGreaterThan($element['refunded_amount']) && $element['refunded_amount']->isEqualTo($zero) && $balance_due->isEqualTo($zero)){
+						$status = InvoiceStatus::PAID->value;
+					}else if($total->isGreaterThan($element['refunded_amount']) && $element['refunded_amount']->isEqualTo($zero) && $balance_due->isGreaterThan($zero) && $balance_due->isLessThan($total)){
+						$status = InvoiceStatus::PARTIALLY_PAID->value;
+					}
+
+
+					$invoice_data[] = [
+						'id'				=>	$element['id'],
+						'status'			=>	$status,
+						'refunded_amount'	=>	$element['refunded_amount']->toScale(2, RoundingMode::HalfUp)->__toString(),
+					];
+
+				}
+
+			}
+			
+		}
+
+		$raw_invoices_data = null;
+
+		$this->invoice_repository->updateInvoicesForRefundedAmount($company_id, $invoice_data);
+
+	}
+
+	/**
 	 * issueRefunds function
 	 *
 	 * @param integer $company_id
@@ -1090,13 +1165,18 @@ class InvoiceService{
 			$offline_payments = $data['payments_offline'];
 			$online_payments = $data['payments_online'];
 			
-			//$this->processRefunds($company_id, $credits, 'credit');
+			$this->processRefunds($company_id, $credits, 'credit');
 			$this->processRefunds($company_id, $offline_payments, 'payment');
 			$this->processRefunds($company_id, $online_payments, 'payment');
-			//$this->insertRefundLogs($company_id, $invoice_id, $credits);
+			$this->insertRefundLogs($company_id, $invoice_id, $credits);
 			$this->insertRefundLogs($company_id, $invoice_id, $offline_payments);
 			$this->insertRefundLogs($company_id, $invoice_id, $online_payments);
 
+			$this->updateInvoiceRefundAmount($company_id, [$invoice_id]);
+
+			DB::afterCommit(function() use ($company_id, $invoice_id){
+				GenerateInvoiceSnapshotJob::dispatch($company_id, $invoice_id, true);
+			});
 
 		});
 		

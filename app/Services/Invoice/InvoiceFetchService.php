@@ -184,6 +184,8 @@ class InvoiceFetchService{
 						InvoiceStatus::CANCELLED->value				=>	InvoiceStatus::CANCELLED->label(),
 						InvoiceStatus::PARTIALLY_PAID->value		=>	InvoiceStatus::PARTIALLY_PAID->label(),
 						InvoiceStatus::PAID->value					=>	InvoiceStatus::PAID->label(),
+						InvoiceStatus::PARTIALLY_REFUNDED->value	=>	InvoiceStatus::PARTIALLY_REFUNDED->label(),
+						InvoiceStatus::REFUNDED->value				=>	InvoiceStatus::REFUNDED->label(),
 					],
 					'invoices.payment_gateway' => $gateways
 				],
@@ -232,6 +234,18 @@ class InvoiceFetchService{
 							'highlight'	=>	'success',
 							'text'		=>	InvoiceStatus::PAID->label(),
 							'value'		=>	InvoiceStatus::PAID->value
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'error',
+							'text'		=>	InvoiceStatus::PARTIALLY_REFUNDED->label(),
+							'value'		=>	InvoiceStatus::PARTIALLY_REFUNDED->value
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'error',
+							'text'		=>	InvoiceStatus::REFUNDED->label(),
+							'value'		=>	InvoiceStatus::REFUNDED->value
 						]
 					],
 					'payment_gateway'	=>	[
