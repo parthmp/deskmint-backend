@@ -3,10 +3,12 @@
 namespace App\Services\Invoice;
 
 use App\Enums\Credits\CreditStatus;
+use App\Enums\RefundLogs\RefundLogStatus;
 use App\Helpers\Sanitize;
 use App\Jobs\GenerateInvoiceSnapshotJob;
 use App\Models\Credit;
 use App\Models\Invoice;
+use App\Models\RefundLog;
 use App\Modules\ApplyUnapply\Common\Traits\ApplyUnapplyCommon;
 use App\Modules\DataTable\Requests\DataTableRequest;
 use App\Modules\InvoiceGeneration\InvoiceDBOperations;
@@ -15,6 +17,7 @@ use App\Modules\InvoiceGeneration\InvoiceGenerator;
 use App\Modules\InvoiceGeneration\InvoiceSnapshot;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Enums\PaymentGateway;
+use App\Modules\Payment\Gateways\Payment;
 use App\Repositories\Client\ClientRepository;
 use App\Repositories\Credit\CreditRepository;
 use App\Repositories\Invoice\InvoiceRepository;
@@ -28,6 +31,7 @@ use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class InvoiceService{
 
@@ -855,6 +859,7 @@ class InvoiceService{
 			$to_be_refunded = $this->calculateToBeRefunded($payment['total_applied'], $payment['total_applied_refund'], $user_applied);
 
 			$element =  [
+				'uuid'					=>	Str::uuid()->toString(),
 				'ledger_id'				=>	$payment['id'],
 				'payment_id'			=>	$payment['payment_id'],
 				'amount'				=>	$to_be_refunded,
@@ -866,8 +871,10 @@ class InvoiceService{
 			];
 
 			if($payment['payment_gateway']){
+				$element['status']	= RefundLogStatus::PENDING->value;
 				$entries['payments_online'][] = $element;
 			}else{
+				$element['status']	= RefundLogStatus::COMPLETED->value;
 				$entries['payments_offline'][] = $element;
 			}
 
@@ -884,6 +891,7 @@ class InvoiceService{
 				'credit_id'			=>	$credit['credit_id'],
 				'currency_id'		=>	$credit['currency_id'],
 				'amount'			=>	$to_be_refunded,
+				'status'			=>	RefundLogStatus::COMPLETED->value,
 				'original_amount'	=>	$user_applied ?? $credit['total_applied']
 			];
 		}
@@ -1067,15 +1075,22 @@ class InvoiceService{
 		$logs = [];
 
 		foreach($data as $row){
+
+			$uuid = Str::uuid()->toString();
+
 			$logs[] = [
-				'company_id'	=>	$company_id,
-				'invoice_id'	=>	$invoice_id,
-				'payment_id'	=>	$row['payment_id'] ?? null,
-				'credit_id'		=>	$row['credit_id'] ?? null,
-				'amount'		=>	$row['original_amount'],
-				'currency_id'	=>	$row['currency_id'],
-				'created_at'	=>	Carbon::now()->format('Y-m-d H:i:s'),
-				'updated_at'	=>	Carbon::now()->format('Y-m-d H:i:s')
+				'uuid'				=>	$uuid,
+				'gateway_refund_id'	=>	$row['gateway_refund_id'] ?? null,
+				'status'			=>	$row['status'],
+				'company_id'		=>	$company_id,
+				'invoice_id'		=>	$invoice_id,
+				'payment_id'		=>	$row['payment_id'] ?? null,
+				'credit_id'			=>	$row['credit_id'] ?? null,
+				'amount'			=>	$row['original_amount'],
+				'transaction_id'	=>	$row['transaction_id'] ?? null,
+				'currency_id'		=>	$row['currency_id'],
+				'created_at'		=>	Carbon::now()->format('Y-m-d H:i:s'),
+				'updated_at'		=>	Carbon::now()->format('Y-m-d H:i:s')
 			];
 		}
 
@@ -1228,33 +1243,60 @@ class InvoiceService{
 		$data = $this->normalizeRefundEntries($company_id, $invoice_id, $full_refund, $refund_entries);
 		
 		logger($data);
+
+		$temp_online_payments = $data['payments_online'];
+
+		$online_payments = [];
+
+		//call apis
+		foreach($temp_online_payments as $temp_online_payment){
+
+			if((int) $temp_online_payment['payment_gateway'] === PaymentGateway::STRIPE->value){
+				
+				$payment = new Payment((int) $company_id);
+				$response = $payment->stripe()->refund((string) $temp_online_payment['refund_token'], (string) $temp_online_payment['original_amount'], (int) $temp_online_payment['ledger_id']);
+				logger($response);
+				if((bool) $response['success']){
+					$temp_online_payment['gateway_refund_id'] = $response['refund_id'];
+					$online_payments[] = $temp_online_payment;
+				}
+
+			}
+
+		}
+
+		DB::transaction(function() use ($company_id, $invoice_id, $online_payments) {
+			$this->insertRefundLogs($company_id, $invoice_id, $online_payments);
+		});
+
+
 		//proceed to refund.
 		DB::transaction(function() use ($company_id, $invoice_id, $data)  {
 
-			$credits = $data['credits'];
-			$offline_payments = $data['payments_offline'];
-			$online_payments = $data['payments_online'];
+			// $credits = $data['credits'];
+			// $offline_payments = $data['payments_offline'];
+			// //$online_payments = $data['payments_online'];
 			
-			$this->processRefunds($company_id, $credits, 'credit');
-			$this->processRefunds($company_id, $offline_payments, 'payment');
-			$this->processRefunds($company_id, $online_payments, 'payment');
-			$this->insertRefundLogs($company_id, $invoice_id, $credits);
-			$this->insertRefundLogs($company_id, $invoice_id, $offline_payments);
-			$this->insertRefundLogs($company_id, $invoice_id, $online_payments);
+			// $this->processRefunds($company_id, $credits, 'credit');
+			// $this->processRefunds($company_id, $offline_payments, 'payment');
+			// //$this->processRefunds($company_id, $online_payments, 'payment');
+			// $this->insertRefundLogs($company_id, $invoice_id, $credits);
+			// $this->insertRefundLogs($company_id, $invoice_id, $offline_payments);
+			// //$this->insertRefundLogs($company_id, $invoice_id, $online_payments);
 
-			$this->updateInvoiceRefundAmount($company_id, [$invoice_id]);
+			// $this->updateInvoiceRefundAmount($company_id, [$invoice_id]);
 
-			if(!empty($online_payments)){
-				$payment_ids = array_column($online_payments, 'payment_id');
-				$this->updateTransactionsForRefunds($company_id, $payment_ids);
-			}
+			// // if(!empty($online_payments)){
+			// // 	$payment_ids = array_column($online_payments, 'payment_id');
+			// // 	$this->updateTransactionsForRefunds($company_id, $payment_ids);
+			// // }
 
 			
 			
 
-			DB::afterCommit(function() use ($company_id, $invoice_id){
-				GenerateInvoiceSnapshotJob::dispatch($company_id, $invoice_id, true);
-			});
+			// DB::afterCommit(function() use ($company_id, $invoice_id){
+			// 	GenerateInvoiceSnapshotJob::dispatch($company_id, $invoice_id, true);
+			// });
 
 		});
 		

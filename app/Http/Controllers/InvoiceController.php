@@ -650,7 +650,7 @@ class InvoiceController extends Controller{
 		$invoice_id = (int) Sanitize::input((string) $id);
 		$company_id = (int) Sanitize::input((string) $request->input('company_id'));
 
-		try{
+		//try{
 
 			$this->invoice_service->validateIssueRefunds($request);
 
@@ -660,11 +660,11 @@ class InvoiceController extends Controller{
 			$this->invoice_service->issueRefunds($company_id, $invoice_id, $full_refund, $refund_entries);
 
 
-		}catch(InvoiceException $e){
-			return response(['message' => $e->getMessage(), 'valdity' => $e->getValidity()], $e->getCode());
-		}catch(Exception $e){
-			return General::wentWrong($e);
-		}
+		// }catch(InvoiceException $e){
+		// 	return response(['message' => $e->getMessage(), 'valdity' => $e->getValidity()], $e->getCode());
+		// }catch(Exception $e){
+		// 	return General::wentWrong($e);
+		// }
 
 
 	}

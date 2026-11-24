@@ -14,6 +14,8 @@ enum StripeEvents : string {
 
 	case INVOICE_PAID = 'invoice.paid';
 
+	case REFUND_CREATED = 'refund.created';
+
 	/**
 	 * getAll function
 	 *

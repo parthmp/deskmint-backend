@@ -404,6 +404,34 @@ class Stripe implements PaymentInterface {
 	}
 
 	/**
+	 * handleRefunds function
+	 *
+	 * @param array $request_data
+	 * @param array $transaction
+	 * @return void
+	 */
+	private function handleRefunds(array $request_data, array $transaction) : void {
+
+		$obj = $request_data['data']['object'];
+
+		$status = $obj['status'] ?? null;
+
+		if(strtolower($status) === 'succeeded'){
+
+			$cents = $obj['amount'];
+			$refunded_amount = BigDecimal::of($cents)->withPointMovedLeft(2);
+
+			$payment = $this->db->fetchPaymentByTransactionId((int) $transaction['company_id'], (int) $transaction['id']);
+
+			if($payment !== null){
+				
+			}
+
+		}
+
+	}
+
+	/**
 	 * handleWebhook function
 	 *
 	 * @param Request $request
@@ -425,6 +453,10 @@ class Stripe implements PaymentInterface {
 		if(!in_array((string) $event_type, StripeEvents::getAll())){
 			logger("event type ".$event_type." is not added in the application");
 			return false;
+		}
+
+		if((string) $event_type === StripeEvents::REFUND_CREATED->value){
+			$this->handleRefunds($request_data, $settings_data);
 		}
 
 		if((string) $event_type === StripeEvents::INVOICE_PAID->value){
@@ -737,6 +769,45 @@ class Stripe implements PaymentInterface {
 			'prorate' => false,
 			'invoice_now' => false,
 		]);
+	}
+
+	/**
+	 * refund function
+	 *
+	 * @param string $refund_token
+	 * @param string $amount
+	 * @param integer $ledger_id
+	 * @return array
+	 */
+	public function refund(string $refund_token, string $amount, int $ledger_id) : array {
+		
+		$cents = (int) General::toCents($amount);
+
+		try{
+
+			$refund = $this->provider->refunds->create([
+				'payment_intent' => $refund_token,
+				'amount' => $cents,
+				'reason' => 'requested_by_customer'
+			]);
+
+			return [
+				'success'	=>	true,
+				'refund_id'	=>	$refund->id,
+				'error'		=>	'Refund issued successfully for #'.$ledger_id.' for amount '.$amount
+			];
+
+		}catch(\Stripe\Exception\ApiErrorException $e){
+
+			return [
+				'success'	=>	false,
+				'refund_id'	=>	null,
+				'error'		=>	'Error for #'.$ledger_id.' '.$e->getMessage()
+			];
+
+		}
+		
+
 	}
 
 }

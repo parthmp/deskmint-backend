@@ -5,6 +5,7 @@ namespace App\Modules\Payment;
 use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
 use App\Models\PayPalPlan;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\PaymentUrl;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceUrl;
@@ -881,6 +882,45 @@ class DatabaseOperations{
 			'subscription_id'			=>	null
 		];
 
+	}
+
+	/**
+	 * fetchTransactionByRefundToken function
+	 *
+	 * @param string $refund_token
+	 * @return Transaction|null
+	 */
+	public function fetchTransactionByRefundToken(string $refund_token) : ?Transaction {
+		return Transaction::where('refund_token', '=', $refund_token)->first();
+	}
+
+	/**
+	 * getSettingsDataForStripeRefund function
+	 *
+	 * @param array $request_data
+	 * @return array|null
+	 */
+	public function getSettingsDataForStripeRefund(array $request_data) : ?array {
+
+		$payment_intent = $request_data['data']['object']['payment_intent'] ?? null;
+
+		if(!$payment_intent){
+			return null;
+		}
+
+		return $this->fetchTransactionByRefundToken($payment_intent)->toArray();
+
+	}
+
+	/**
+	 * fetchPaymentByTransactionId function
+	 *
+	 * @param integer $company_id
+	 * @param integer $transaction_id
+	 * @return Payment|null
+	 */
+	public function fetchPaymentByTransactionId(int $company_id, int $transaction_id) : ?Payment {
+		return Payment::where([['company_id', '=', $company_id], ['transaction_id', '=', $transaction_id]])->first();
 	}
 
 }
