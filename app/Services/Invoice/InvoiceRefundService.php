@@ -3,7 +3,6 @@
 namespace App\Services\Invoice;
 
 use App\Enums\Credits\CreditStatus;
-use App\Enums\RefundLogs\RefundLogStatus;
 use App\Jobs\GenerateInvoiceJob;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Enums\PaymentGateway;
@@ -482,10 +481,8 @@ class InvoiceRefundService {
 			];
 
 			if($payment['payment_gateway']){
-				$element['status']	= RefundLogStatus::PENDING->value;
 				$entries['payments_online'][] = $element;
 			}else{
-				$element['status']	= RefundLogStatus::COMPLETED->value;
 				$entries['payments_offline'][] = $element;
 			}
 
@@ -502,7 +499,6 @@ class InvoiceRefundService {
 				'credit_id'			=>	$credit['credit_id'],
 				'currency_id'		=>	$credit['currency_id'],
 				'amount'			=>	$to_be_refunded,
-				'status'			=>	RefundLogStatus::COMPLETED->value,
 				'original_amount'	=>	$user_applied ?? $credit['total_applied']
 			];
 		}
@@ -530,7 +526,6 @@ class InvoiceRefundService {
 			$logs[] = [
 				'uuid'				=>	$uuid,
 				'gateway_refund_id'	=>	$row['gateway_refund_id'] ?? null,
-				'status'			=>	$row['status'],
 				'company_id'		=>	$company_id,
 				'invoice_id'		=>	$invoice_id,
 				'payment_id'		=>	$row['payment_id'] ?? null,
@@ -538,6 +533,7 @@ class InvoiceRefundService {
 				'amount'			=>	$row['original_amount'],
 				'transaction_id'	=>	$row['transaction_id'] ?? null,
 				'currency_id'		=>	$row['currency_id'],
+				'ARN'				=>	$row['arn'] ?? '',
 				'created_at'		=>	Carbon::now()->format('Y-m-d H:i:s'),
 				'updated_at'		=>	Carbon::now()->format('Y-m-d H:i:s')
 			];
@@ -697,11 +693,12 @@ class InvoiceRefundService {
 		 */
 
 		$data = $this->normalizeRefundEntries($company_id, $invoice_id, $full_refund, $refund_entries);
-		
+		logger($data);
 		
 		$temp_online_payments = $data['payments_online'];
 
 		$online_payments = [];
+		$errors = [];
 
 		if($webhook_data === null){
 
@@ -716,6 +713,8 @@ class InvoiceRefundService {
 					if($response['refund_data'] !== null){
 						$temp_online_payment['gateway_refund_id'] = $response['refund_data']->id;
 						$online_payments[] = $temp_online_payment;
+					}else{
+						$errors[] = $response['error'];
 					}
 
 				}
@@ -774,7 +773,7 @@ class InvoiceRefundService {
 			GenerateInvoiceJob::dispatch($company_id, $invoice_id, false);
 		}
 
-
+		logger($errors);
 
 	}
 

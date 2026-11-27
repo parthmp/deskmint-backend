@@ -501,6 +501,69 @@ class Stripe implements PaymentInterface {
 	}
 
 	/**
+	 * getARNString function
+	 *
+	 * @param array $request_data
+	 * @return string|null
+	 */
+	private function getARNString(array $request_data) : ?string {
+
+		$refund = $request_data['data']['object'];
+
+		$destination_details = $refund['destination_details'] ?? [];
+
+		$method_type = $destination_details['type'] ?? null;
+
+		$arn = null;
+
+		if ($method_type && isset($destination_details[$method_type])){
+
+			$details = $destination_details[$method_type];
+
+			if(($details['reference_type'] ?? null) === 'acquirer_reference_number' && ($details['reference_status'] ?? null) === 'available'){
+				$arn = $details['reference'] ?? null;
+			}
+
+		}
+
+		return $arn;
+
+	}
+
+	/**
+	 * updateARNForRefunds function
+	 *
+	 * @param array $request_data
+	 * @param array $settings_data
+	 * @return void
+	 */
+	private function updateARNForRefunds(array $request_data, array $settings_data) : void {
+
+		$obj = $request_data['data']['object'];
+
+		$transaction = $settings_data['transaction'];
+		
+		if($transaction === null){
+			return ;
+		}
+		
+		$arn = $this->getARNString($request_data);
+		
+		if(!$arn){
+			return ;
+		}
+
+		$refund_id = $obj['id'] ?? null;
+
+		if($refund_id === null){
+			return ;
+		}
+		
+		$this->db->updateARNForRefundLog($refund_id, $arn);
+
+	}
+
+	/**
 	 * handleWebhook function
 	 *
 	 * @param Request $request
@@ -526,6 +589,10 @@ class Stripe implements PaymentInterface {
 
 		if((string) $event_type === StripeEvents::REFUND_CREATED->value){
 			$this->handleRefunds($request_data, $settings_data);
+		}
+
+		if((string) $event_type === StripeEvents::REFUND_UPDATED->value){
+			$this->updateARNForRefunds($request_data, $settings_data);
 		}
 
 		if((string) $event_type === StripeEvents::INVOICE_PAID->value){

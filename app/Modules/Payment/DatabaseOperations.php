@@ -958,4 +958,23 @@ class DatabaseOperations{
 		return InvoiceLedger::where('payment_id', '=', $payment_id)->get();
 	}
 
+	/**
+	 * updateARNForRefundLog function
+	 *
+	 * @param string $gateway_refund_id
+	 * @param string $arn
+	 * @return void
+	 */
+	public function updateARNForRefundLog(string $gateway_refund_id, string $arn) : void {
+		$affectedRows = RefundLog::where('gateway_refund_id', '=', $gateway_refund_id)->update([
+			'ARN'	=>	$arn
+		]);
+		logger()->debug('RefundLog update debug', [
+	'gateway_refund_id' => $gateway_refund_id,
+	'arn' => $arn,
+	'affected_rows' => $affectedRows,
+	'queries' => DB::getQueryLog(),
+]);
+	}
+
 }
