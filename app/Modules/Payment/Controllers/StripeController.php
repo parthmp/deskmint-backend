@@ -88,6 +88,7 @@ class StripeController extends Controller{
 		}
 
 		if((string) $event_type === StripeEvents::REFUND_CREATED->value){
+			logger($data);
 			$transaction = $this->database_operations->getSettingsDataForStripeRefund($data);
 			if($transaction !== null){
 				$settings_data['webhook_data']['company_id'] = $transaction['company_id'];

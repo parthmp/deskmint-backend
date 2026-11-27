@@ -21,6 +21,7 @@ use App\Modules\Payment\Gateways\Stripe\Implementation\ProductResolver;
 use App\Modules\Payment\Jobs\FetchStripeBalanceTransactionJob;
 use App\Modules\Payment\Traits\Shared;
 use App\Modules\RecurringInvoice\RecurringInvoice;
+use App\Services\Invoice\InvoiceRefundService;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Carbon\Carbon;
@@ -52,6 +53,15 @@ class Stripe implements PaymentInterface {
 	 */
 	private function getDB() : DatabaseOperations {
 		return app(DatabaseOperations::class);
+	}
+
+	/**
+	 * getInvoiceRefundService function
+	 *
+	 * @return InvoiceRefundService
+	 */
+	private function getInvoiceRefundService() : InvoiceRefundService {
+		return app(InvoiceRefundService::class);
 	}
 
 	/**
@@ -407,27 +417,86 @@ class Stripe implements PaymentInterface {
 	 * handleRefunds function
 	 *
 	 * @param array $request_data
-	 * @param array $transaction
+	 * @param array $settings_data
 	 * @return void
 	 */
-	private function handleRefunds(array $request_data, array $transaction) : void {
+	private function handleRefunds(array $request_data, array $settings_data) : void {
 
+		/**
+		 * check if metadata is present with ledger_id, if so do not process refund because it is already processed by dashboard
+		 * only lookup if payment intent exists in transaction and one transaction maps to one payment and same payment only applies to single invoice. if not do nothing.
+		 * make sure to check refund log first.
+		 */
+		
+		$transaction = $settings_data['transaction'];
+
+		if($transaction === null){
+			return ;
+		}
+		
 		$obj = $request_data['data']['object'];
+
+		$ledger_id = $obj['metadata']['ledger_id'] ?? null;
 
 		$status = $obj['status'] ?? null;
 
-		// if(strtolower($status) === 'succeeded'){
+		if($ledger_id !== null){
+			return ;
+		}
+		
+		$refund_id = $obj['id'] ?? null;
 
-		// 	$cents = $obj['amount'];
-		// 	$refunded_amount = BigDecimal::of($cents)->withPointMovedLeft(2);
+		if($refund_id === null){
+			return ;
+		}
+		
+		$refund_log = $this->db->fetchRefundLogByGatewayId($refund_id, ['id']);
+		if($refund_log !== null){
+			return ;
+		}
+		
+		
+		$payment = $this->db->fetchPaymentByTransactionId((int) $transaction['company_id'], (int) $transaction['id']);
 
-		// 	$payment = $this->db->fetchPaymentByTransactionId((int) $transaction['company_id'], (int) $transaction['id']);
+		if($payment === null){
+			return ;
+		}
+		
+		$ledger_entries = $this->db->getInvoiceLedgerEntriesForPayment((int) $payment->id);
+		
+		if((int) $ledger_entries->count() === 0 || (int) $ledger_entries->count() > 1){
+			/**
+			 * > 1 means user tried to refund from stripe dashbord and system does not know which invoice to log refund to.
+			 */
+			return ;
+		}	
+		
+		if(strtolower($status) === 'succeeded'){
+			
+			$ledger_entry = $ledger_entries[0];
 
-		// 	if($payment !== null){
-				
-		// 	}
+			$cents = $obj['amount'];
+			$refunded_amount = BigDecimal::of($cents)->withPointMovedLeft(2);
 
-		// }
+			$invoice_refund_service = $this->getInvoiceRefundService();
+
+			$ledger_rows = $invoice_refund_service->assembleLedgerRows((int) $transaction['company_id'], $ledger_entries, 'payment');
+
+			$online_payments[] = [
+				'text' 			=> '-',
+				'value' 		=> $ledger_entry['id'],
+				'meta'			=>	[
+					'id'				=>	$ledger_entry['id'],
+					'amount'			=>	$ledger_rows[0]['amount'],
+					'filled_amount'		=>	$refunded_amount,
+					'type'				=>	'Payment',
+					'payment_gateway'	=>	'Stripe',
+				]
+			];
+			
+			$invoice_refund_service->issueRefunds((int) $transaction['company_id'], (int) $ledger_entry['invoice_id'], false, $online_payments, ['gateway_refund_id' => $refund_id]);
+
+		}
 
 	}
 

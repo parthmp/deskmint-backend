@@ -5,10 +5,12 @@ namespace App\Modules\Payment;
 use App\Enums\RecurringInvoices\RecurringInvoiceStatus;
 use App\Models\PayPalPlan;
 use App\Models\Invoice;
+use App\Models\InvoiceLedger;
 use App\Models\Payment;
 use App\Models\PaymentUrl;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceUrl;
+use App\Models\RefundLog;
 use App\Models\SubscriptionPlan;
 use App\Models\Transaction;
 use App\Models\TransactionGatewayDetail;
@@ -23,6 +25,7 @@ use Illuminate\Support\Facades\Log;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -921,6 +924,38 @@ class DatabaseOperations{
 	 */
 	public function fetchPaymentByTransactionId(int $company_id, int $transaction_id) : ?Payment {
 		return Payment::where([['company_id', '=', $company_id], ['transaction_id', '=', $transaction_id]])->first();
+	}
+
+	/**
+	 * fetchRefundLogByGatewayId function
+	 *
+	 * @param string $gateway_refund_id
+	 * @param array $columns
+	 * @return RefundLog|null
+	 */
+	public function fetchRefundLogByGatewayId(string $gateway_refund_id, array $columns = ['*']) : ?RefundLog {
+		return RefundLog::select(...$columns)->where('gateway_refund_id', '=', $gateway_refund_id)->first();
+	}
+
+	/**
+	 * fetchInvoiceLedgerById function
+	 *
+	 * @param integer $id
+	 * @param array $columns
+	 * @return InvoiceLedger|null
+	 */
+	public function fetchInvoiceLedgerById(int $id, array $columns = ['*']) : ?InvoiceLedger {
+		return InvoiceLedger::select(...$columns)->where('id', '=', $id)->first();
+	}
+
+	/**
+	 * getInvoiceLedgerEntriesForPayment function
+	 *
+	 * @param integer $payment_id
+	 * @return Collection
+	 */
+	public function getInvoiceLedgerEntriesForPayment(int $payment_id) : Collection {
+		return InvoiceLedger::where('payment_id', '=', $payment_id)->get();
 	}
 
 }

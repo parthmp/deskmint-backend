@@ -188,14 +188,14 @@ class InvoiceRefundService {
 
 	}
 
-		/**
+	/**
 	 * assembleLedgerRows function
 	 *
 	 * @param Collection $ledger_entries
 	 * @param string $type
 	 * @return array
 	 */
-	private function assembleLedgerRows(int $company_id, Collection $ledger_entries, string $type) : array {
+	public function assembleLedgerRows(int $company_id, Collection $ledger_entries, string $type) : array {
 
 		$pc_rows = [];
 
@@ -678,12 +678,14 @@ class InvoiceRefundService {
 	 * issueRefunds function
 	 *
 	 * @param integer $company_id
+	 * @param integer $invoice_id
 	 * @param boolean $full_refund
 	 * @param array $refund_entries
+	 * @param array|null $webhook_data
 	 * @return void
 	 */
-	public function issueRefunds(int $company_id, int $invoice_id, bool $full_refund, array $refund_entries) : void {
-
+	public function issueRefunds(int $company_id, int $invoice_id, bool $full_refund, array $refund_entries, ?array $webhook_data = null) : void {
+		
 		/**
 		 * amount
 		 * gateway
@@ -701,28 +703,36 @@ class InvoiceRefundService {
 
 		$online_payments = [];
 
-		//call apis
-		foreach($temp_online_payments as $temp_online_payment){
+		if($webhook_data === null){
 
-			if((int) $temp_online_payment['payment_gateway'] === PaymentGateway::STRIPE->value){
-				
-				$payment = new Payment((int) $company_id);
-				$response = $payment->stripe()->refund((string) $temp_online_payment['refund_token'], (string) $temp_online_payment['original_amount'], (int) $temp_online_payment['ledger_id']);
-				
-				if($response['refund_data'] !== null){
-					$temp_online_payment['gateway_refund_id'] = $response['refund_data']->id;
-					$online_payments[] = $temp_online_payment;
+			//call apis
+			foreach($temp_online_payments as $temp_online_payment){
+
+				if((int) $temp_online_payment['payment_gateway'] === PaymentGateway::STRIPE->value){
+					
+					$payment = new Payment((int) $company_id);
+					$response = $payment->stripe()->refund((string) $temp_online_payment['refund_token'], (string) $temp_online_payment['original_amount'], (int) $temp_online_payment['ledger_id']);
+					
+					if($response['refund_data'] !== null){
+						$temp_online_payment['gateway_refund_id'] = $response['refund_data']->id;
+						$online_payments[] = $temp_online_payment;
+					}
+
 				}
 
 			}
-
+		}else{
+			$online_payments = $temp_online_payments;
+			$online_payments[0]['gateway_refund_id'] = $webhook_data['gateway_refund_id'];
 		}
+
+		$temp_online_payments = null;
 		
 		$committed = [
 			'online' => false,
 			'offline' => false,
 		];
-
+		
 		//for online payments.
 		DB::transaction(function() use ($company_id, $invoice_id, $online_payments, &$committed) {
 			
