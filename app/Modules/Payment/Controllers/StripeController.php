@@ -18,12 +18,12 @@ class StripeController extends Controller{
 
 		$data = $request->all();
 
-		logger("\n\n\n");
-		logger("FROM STRIPE");
-		logger("===========");
-		logger($data);
-		logger("===========");
-		logger("\n\n\n");
+		// logger("\n\n\n");
+		// logger("FROM STRIPE");
+		// logger("===========");
+		// logger($data);
+		// logger("===========");
+		// logger("\n\n\n");
 		
 		$event_type = $data['type'] ?? null;
 		
@@ -90,7 +90,7 @@ class StripeController extends Controller{
 		if((string) $event_type === StripeEvents::REFUND_CREATED->value){
 			$transaction = $this->database_operations->getSettingsDataForStripeRefund($data);
 			if($transaction !== null){
-				$settings_data['webhook_data']['company_id'] = $settings_data['transaction']['company_id'];
+				$settings_data['webhook_data']['company_id'] = $transaction['company_id'];
 				$settings_data['transaction'] = $transaction;
 			}
 			

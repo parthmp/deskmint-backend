@@ -416,18 +416,18 @@ class Stripe implements PaymentInterface {
 
 		$status = $obj['status'] ?? null;
 
-		if(strtolower($status) === 'succeeded'){
+		// if(strtolower($status) === 'succeeded'){
 
-			$cents = $obj['amount'];
-			$refunded_amount = BigDecimal::of($cents)->withPointMovedLeft(2);
+		// 	$cents = $obj['amount'];
+		// 	$refunded_amount = BigDecimal::of($cents)->withPointMovedLeft(2);
 
-			$payment = $this->db->fetchPaymentByTransactionId((int) $transaction['company_id'], (int) $transaction['id']);
+		// 	$payment = $this->db->fetchPaymentByTransactionId((int) $transaction['company_id'], (int) $transaction['id']);
 
-			if($payment !== null){
+		// 	if($payment !== null){
 				
-			}
+		// 	}
 
-		}
+		// }
 
 	}
 
@@ -786,23 +786,34 @@ class Stripe implements PaymentInterface {
 		try{
 
 			$refund = $this->provider->refunds->create([
-				'payment_intent' => $refund_token,
-				'amount' => $cents,
-				'reason' => 'requested_by_customer'
+				'payment_intent'	=> $refund_token,
+				'amount' 			=> $cents,
+				'reason' 			=> 'requested_by_customer',
+				'metadata'			=>	[
+					'ledger_id'		=>	$ledger_id
+				]
 			]);
 
+			if($refund->status !== 'succeeded'){
+				return [
+					'success'		=>	false,
+					'refund_data'	=>	null,
+					'error'			=>	'Error for #'.$ledger_id.' something went wrong.'
+				];
+			}
+
 			return [
-				'success'	=>	true,
-				'refund_id'	=>	$refund->id,
-				'error'		=>	'Refund issued successfully for #'.$ledger_id.' for amount '.$amount
+				'success'		=>	true,
+				'refund_data'	=>	$refund,
+				'error'			=>	'Refund issued successfully for #'.$ledger_id.' for amount '.$amount
 			];
 
 		}catch(\Stripe\Exception\ApiErrorException $e){
 
 			return [
-				'success'	=>	false,
-				'refund_id'	=>	null,
-				'error'		=>	'Error for #'.$ledger_id.' '.$e->getMessage()
+				'success'		=>	false,
+				'refund_data'	=>	null,
+				'error'			=>	'Error for #'.$ledger_id.' '.$e->getMessage()
 			];
 
 		}

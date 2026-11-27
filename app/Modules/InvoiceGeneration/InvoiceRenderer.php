@@ -189,10 +189,10 @@ class InvoiceRenderer extends InvoiceGenerator{
 			$total_fields .= '</p>';
 
 		}
-
-		if((float) $this->data['meta']['refunded_amount'] > 0){
+		logger($this->live_data);
+		if(BigDecimal::of($this->live_data['refunded_amount'])->isGreaterThan(BigDecimal::of(0))){
 			$total_fields .= '<p>';
-			$total_fields .= 'Refunded amount: '.$this->data['meta']['refunded_amount'].' '.$this->data['meta']['currency'];
+			$total_fields .= 'Refunded amount: '.$this->live_data['refunded_amount'].' '.$this->data['meta']['currency'];
 			$total_fields .= '</p>';
 		}
 

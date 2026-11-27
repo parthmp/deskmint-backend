@@ -145,7 +145,7 @@ class InvoiceGenerator {
 
 		$paid_to_date = $total->minus($balance_due)->toScale(2, RoundingMode::HalfUp)->__toString();
 
-		$renderer = new InvoiceRenderer($this->contents, $this->data, ['balance_due' => $this->live_invoice_data->balance_due, 'paid_to_date' => $paid_to_date, 'status' => $this->live_invoice_data->status]);
+		$renderer = new InvoiceRenderer($this->contents, $this->data, ['balance_due' => $this->live_invoice_data->balance_due, 'paid_to_date' => $paid_to_date, 'status' => $this->live_invoice_data->status, 'refunded_amount' => $this->live_invoice_data->refunded_amount]);
 		$this->contents = $renderer->render();
 		return $this;
 		
