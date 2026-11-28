@@ -25,9 +25,9 @@ class PayPalController extends Controller{
 
 		$data = $request->all();
 		
-		logger("\n\n\n");
-		logger($data);
-		logger("\n\n\n");
+		// logger("\n\n\n");
+		// logger($data);
+		// logger("\n\n\n");
 		$this->database_operations->getSettingsDataForPaymentRefund($data, PaymentGateway::PAYPAL->value);
 		$event_type = $data['event_type'] ?? null;
 

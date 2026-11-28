@@ -857,5 +857,15 @@ class PayPal implements PaymentInterface {
 		
 	}
 
+	/**
+	 * getRefundDetails function
+	 *
+	 * @param string $refund_id
+	 * @return array
+	 */
+	public function getRefundDetails(string $refund_id) : array {
+		return $this->provider->showRefundDetails($refund_id);
+	}
+
 
 }

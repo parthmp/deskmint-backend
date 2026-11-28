@@ -9,6 +9,7 @@ use App\Jobs\GenerateInvoiceJob;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Gateways\Payment;
+use App\Modules\Payment\Jobs\FetchPayPalRefundArn;
 use App\Repositories\Invoice\InvoiceRepository;
 use App\Services\Invoice\Exceptions\InvoiceException;
 use Brick\Math\BigDecimal;
@@ -553,7 +554,7 @@ class InvoiceRefundService {
 	 * @return void
 	 */
 	private function insertRefundLogs(int $company_id, int $invoice_id, array $data) : void {
-
+		
 		$logs = [];
 
 		foreach($data as $row){
@@ -561,7 +562,7 @@ class InvoiceRefundService {
 			$uuid = Str::uuid()->toString();
 
 			$logs[] = [
-				'uuid'				=>	$uuid,
+				'uuid'				=>	$row['uuid'] ?? $uuid,
 				'gateway_refund_id'	=>	$row['gateway_refund_id'] ?? null,
 				'company_id'		=>	$company_id,
 				'invoice_id'		=>	$invoice_id,
@@ -721,6 +722,7 @@ class InvoiceRefundService {
 
 		$online_payments = [];
 		$errors = [];
+		$paypal_refund_logs_uuids = [];
 
 		if($webhook_data === null){
 
@@ -743,12 +745,19 @@ class InvoiceRefundService {
 					$response = $payment->paypal((string) $temp_online_payment['currency_code'])->refund((string) $temp_online_payment['refund_token'], (string) $temp_online_payment['original_amount'], (int) $temp_online_payment['ledger_id']);
 					
 					$temp_online_payment['gateway_refund_id'] = $response['refund_data']['id'] ?? null;
+
 						
 				}
 
 				if($response['refund_data'] !== null && $response['success']){
+					
 					$temp_online_payment['gateway_refund_id'] = $response['refund_data']['id'];
 					$online_payments[] = $temp_online_payment;
+
+					if((int) $temp_online_payment['payment_gateway'] === PaymentGateway::PAYPAL->value){
+						$paypal_refund_logs_uuids[] = $temp_online_payment['uuid'];
+					}
+
 				}else{
 					$errors[] = $response['error'];
 				}
@@ -806,6 +815,11 @@ class InvoiceRefundService {
 
 		if(($committed['online'] && !empty($online_payments)) || ($committed['offline'] && (!empty($data['payments_offline']) || !empty($data['credits'])))){
 			GenerateInvoiceJob::dispatch($company_id, $invoice_id, false);
+		}
+
+		//queue paypal job for arn.
+		foreach($paypal_refund_logs_uuids as $temp_uuid){
+			FetchPayPalRefundArn::dispatch($temp_uuid)->delay(now()->addHours(48));
 		}
 
 		logger($errors);

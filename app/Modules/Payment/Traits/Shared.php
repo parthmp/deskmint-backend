@@ -61,18 +61,14 @@ trait Shared {
 		}
 		
 		if($payment_gateway === PaymentGateway::PAYPAL->value){
-			logger('in 1');
+			
 			$obj = $request_data['resource'];
 
 			$ignore_invoice_id = $obj['invoice_id'] ?? '';
 
-			
-			logger('in 2');
 			if(str_contains($ignore_invoice_id, config('global.ignore_paypal_refund_webhook'))){
 				return ;
 			}
-
-			logger('in 3');
 
 		}else if($payment_gateway === PaymentGateway::STRIPE->value){
 
@@ -88,7 +84,7 @@ trait Shared {
 		
 		
 		$refund_id = $obj['id'] ?? null;
-		logger('in 4 . -- '.$refund_id);
+		
 		if($refund_id === null){
 			return ;
 		}
@@ -136,7 +132,7 @@ trait Shared {
 		}
 
 		if($comp_status){
-			logger('inside comp');
+			
 			$ledger_entry = $ledger_entries[0];
 
 			$invoice_refund_service = $this->getInvoiceRefundService();
@@ -151,7 +147,7 @@ trait Shared {
 					'amount'			=>	$ledger_rows[0]['amount'],
 					'filled_amount'		=>	$refunded_amount,
 					'type'				=>	'Payment',
-					'payment_gateway'	=>	'Stripe',
+					'payment_gateway'	=>	PaymentGateway::getLabelByValue($payment_gateway),
 				]
 			];
 			

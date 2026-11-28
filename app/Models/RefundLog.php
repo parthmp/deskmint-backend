@@ -11,4 +11,9 @@ class RefundLog extends Model
 	use SoftDeletes;
 
     protected $table = 'refund_logs';
+
+	public function currency(){
+		return $this->belongsTo(Currency::class, 'currency_id');
+	}
+
 }
