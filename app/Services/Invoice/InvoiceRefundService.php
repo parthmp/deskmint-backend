@@ -396,7 +396,8 @@ class InvoiceRefundService {
 		if($user_applied){
 			$to_be_refunded = $to_be_refunded->plus(BigDecimal::of($user_applied));
 		}else{
-			$to_be_refunded = $applied;
+			//this means it is full refund.
+			$to_be_refunded = $applied->minus($to_be_refunded);
 		}
 
 		if($to_be_refunded->isGreaterThan($applied)){
@@ -404,6 +405,34 @@ class InvoiceRefundService {
 		}
 		
 		return $to_be_refunded->toScale(2, RoundingMode::HalfUp)->__toString();
+
+	}
+
+	/**
+	 * getAmounts function
+	 *
+	 * @param array $payment_or_credit
+	 * @param boolean $full_refund
+	 * @return array
+	 */
+	private function getAmounts(array $payment_or_credit, bool $full_refund) : array {
+
+		$user_applied = $payment_or_credit['user_applied'] ?? null;
+
+		$to_be_refunded = $this->calculateToBeRefunded($payment_or_credit['total_applied'], $payment_or_credit['total_applied_refund'], $user_applied);
+
+		if($full_refund){
+			$amount = $user_applied ?? $payment_or_credit['total_applied'];
+			$original_amount = $to_be_refunded;
+		}else{
+			$amount = $to_be_refunded;
+			$original_amount = $user_applied ?? $payment_or_credit['total_applied'];
+		}
+
+		return [
+			$amount,
+			$original_amount
+		];
 
 	}
 
@@ -428,7 +457,9 @@ class InvoiceRefundService {
 			$data = $this->invoice_repository->fetchDataForDropdownOptions($company_id, $invoice_id);
 			$payments = $data['payments'];
 			$credits = $data['credits'];
-
+			logger('for full refunds');
+			logger($payments);
+			logger("\n\n\n\n---");
 		}else{
 
 			$ledger_ids = [];
@@ -461,19 +492,19 @@ class InvoiceRefundService {
 			$payments = $this->addUserAppliedAmount($refund_entries, $payments->toArray());
 
 		}
-
+		// logger('for partial refunds');
+		// 	logger($payments);
+		// 	logger("\n\n\n\n---");
 		foreach($payments as $payment){
 
-			$user_applied = $payment['user_applied'] ?? null;
-
-			$to_be_refunded = $this->calculateToBeRefunded($payment['total_applied'], $payment['total_applied_refund'], $user_applied);
+			[$amount, $original_amount] = $this->getAmounts($payment, $full_refund);
 
 			$element =  [
 				'uuid'					=>	Str::uuid()->toString(),
 				'ledger_id'				=>	$payment['id'],
 				'payment_id'			=>	$payment['payment_id'],
-				'amount'				=>	$to_be_refunded,
-				'original_amount'		=>	$user_applied ?? $payment['total_applied'],
+				'amount'				=>	$amount,
+				'original_amount'		=>	$original_amount,
 				'payment_gateway'		=>	$payment['payment_gateway'],
 				'transaction_id'		=>	$payment['transaction_id'],
 				'currency_id'			=>	$payment['currency_id'],
@@ -491,15 +522,14 @@ class InvoiceRefundService {
 
 		foreach($credits as $credit){
 
-			$user_applied = $credit['user_applied'] ?? null;
-			$to_be_refunded = $this->calculateToBeRefunded($credit['total_applied'], $credit['total_applied_refund'], $user_applied);
+			[$amount, $original_amount] = $this->getAmounts($credit, $full_refund);
 
 			$entries['credits'][] = [
 				'ledger_id'			=>	$credit['id'],
 				'credit_id'			=>	$credit['credit_id'],
 				'currency_id'		=>	$credit['currency_id'],
-				'amount'			=>	$to_be_refunded,
-				'original_amount'	=>	$user_applied ?? $credit['total_applied']
+				'amount'			=>	$amount,
+				'original_amount'	=>	$original_amount,
 			];
 		}
 
@@ -732,7 +762,7 @@ class InvoiceRefundService {
 			'offline' => false,
 		];
 		
-		//for online payments.
+		
 		DB::transaction(function() use ($company_id, $invoice_id, $online_payments, &$committed) {
 			
 			$this->processRefunds($company_id, $online_payments, 'payment');
@@ -773,7 +803,7 @@ class InvoiceRefundService {
 			GenerateInvoiceJob::dispatch($company_id, $invoice_id, false);
 		}
 
-		logger($errors);
+		// logger($errors);
 
 	}
 
