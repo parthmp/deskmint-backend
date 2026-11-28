@@ -5,6 +5,7 @@ namespace App\Modules\Payment\Controllers;
 use App\Helpers\General;
 use App\Http\Controllers\Controller;
 use App\Modules\Payment\DatabaseOperations;
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Enums\PayPalEvents;
 use App\Modules\Payment\Exceptions\PaymentException;
 use App\Modules\Payment\Gateways\Payment;
@@ -24,16 +25,18 @@ class PayPalController extends Controller{
 
 		$data = $request->all();
 		
-		// logger("\n\n\n");
-		// logger($data);
-		// logger("\n\n\n");
-
+		logger("\n\n\n");
+		logger($data);
+		logger("\n\n\n");
+		$this->database_operations->getSettingsDataForPaymentRefund($data, PaymentGateway::PAYPAL->value);
 		$event_type = $data['event_type'] ?? null;
 
 		if(!in_array((string) $event_type, PayPalEvents::getAll())){
 			logger("event type ".$event_type." is not added in the application");
 			return response('ok', 200);
 		}
+
+		$settings_data = [];
 
 		$sub_events = [
 			PayPalEvents::SALE_COMPLETED->value,
@@ -56,7 +59,27 @@ class PayPalController extends Controller{
 			$settings_data['settings'] = $data['settings'];
 			
 		}else{
-			$settings_data = $this->database_operations->fetchPayPalSettings($data);
+
+			if((string) $event_type === PayPalEvents::PAYMENT_REFUNDED->value){
+
+				$transaction = $this->database_operations->getSettingsDataForPaymentRefund($data, PaymentGateway::PAYPAL->value);
+				
+				if($transaction !== null){
+					$settings_data['webhook_data']['company_id'] = $transaction['company_id'];
+					$settings_data['webhook_data']['currency_code'] = $transaction['currency']['code'];
+					$settings_data['transaction'] = $transaction;
+				}
+
+			 }else{
+				$settings_data = $this->database_operations->fetchPayPalSettings($data);
+			
+			}
+
+			
+		}
+
+		if(empty($settings_data)){
+			return response('ok', 200);
 		}
 		
 		$payment = new Payment((int) $settings_data['webhook_data']['company_id']);

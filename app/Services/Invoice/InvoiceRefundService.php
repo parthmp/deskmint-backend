@@ -482,6 +482,7 @@ class InvoiceRefundService {
 				'transactions.payment_gateway',
 				'transactions.refund_token',
 				'payments.currency_id',
+				'currencies.code',
 				'transactions.id as transaction_id',
 				'invoice_ledger.total_applied_refund',
 				'invoice_ledger.total_applied'
@@ -508,6 +509,7 @@ class InvoiceRefundService {
 					'payment_gateway'		=>	$payment['payment_gateway'],
 					'transaction_id'		=>	$payment['transaction_id'],
 					'currency_id'			=>	$payment['currency_id'],
+					'currency_code'			=>	$payment['code'],
 					'refund_token'			=>	$payment['refund_token']
 				];
 
@@ -714,7 +716,7 @@ class InvoiceRefundService {
 		 */
 
 		$data = $this->normalizeRefundEntries($company_id, $invoice_id, $full_refund, $refund_entries);
-		logger($data);
+		
 		$temp_online_payments = $data['payments_online'];
 
 		$online_payments = [];
@@ -722,24 +724,37 @@ class InvoiceRefundService {
 
 		if($webhook_data === null){
 
+			$payment = new Payment((int) $company_id);
+
 			//call apis
 			foreach($temp_online_payments as $temp_online_payment){
 
+				$response['refund_data'] = null;
+
 				if((int) $temp_online_payment['payment_gateway'] === PaymentGateway::STRIPE->value){
 					
-					$payment = new Payment((int) $company_id);
 					$response = $payment->stripe()->refund((string) $temp_online_payment['refund_token'], (string) $temp_online_payment['original_amount'], (int) $temp_online_payment['ledger_id']);
 					
-					if($response['refund_data'] !== null){
-						$temp_online_payment['gateway_refund_id'] = $response['refund_data']->id;
-						$online_payments[] = $temp_online_payment;
-					}else{
-						$errors[] = $response['error'];
-					}
+					$temp_online_payment['gateway_refund_id'] = $response['refund_data']->id ?? null;
+						
 
+				}else if((int) $temp_online_payment['payment_gateway'] === PaymentGateway::PAYPAL->value){
+					
+					$response = $payment->paypal((string) $temp_online_payment['currency_code'])->refund((string) $temp_online_payment['refund_token'], (string) $temp_online_payment['original_amount'], (int) $temp_online_payment['ledger_id']);
+					
+					$temp_online_payment['gateway_refund_id'] = $response['refund_data']['id'] ?? null;
+						
+				}
+
+				if($response['refund_data'] !== null && $response['success']){
+					$temp_online_payment['gateway_refund_id'] = $response['refund_data']['id'];
+					$online_payments[] = $temp_online_payment;
+				}else{
+					$errors[] = $response['error'];
 				}
 
 			}
+			
 		}else{
 			$online_payments = $temp_online_payments;
 			$online_payments[0]['gateway_refund_id'] = $webhook_data['gateway_refund_id'];
@@ -793,7 +808,7 @@ class InvoiceRefundService {
 			GenerateInvoiceJob::dispatch($company_id, $invoice_id, false);
 		}
 
-		// logger($errors);
+		logger($errors);
 
 	}
 

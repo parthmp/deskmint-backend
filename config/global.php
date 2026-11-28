@@ -28,5 +28,6 @@
 		'stripe_product_id'						=>	env('STRIPE_PRODUCT_ID', 'deskmint_product'),
 		'recurring_invoice_batch_number'		=>	env('RECURRING_INVOICE_BATCH_NUMBER', 50),
 		'recurring_invoice_interval_minutes'	=>	env('RECURRING_INVOICE_INTERVAL_MINUTES', 10),
+		'ignore_paypal_refund_webhook'			=>	'ez4sqmiqtmgqdpakr36u57x6j08uyd50v2fhfqmj8skxt5p0vx',
 
 	];

@@ -894,7 +894,39 @@ class DatabaseOperations{
 	 * @return Transaction|null
 	 */
 	public function fetchTransactionByRefundToken(string $refund_token) : ?Transaction {
-		return Transaction::where('refund_token', '=', $refund_token)->first();
+		return Transaction::where('refund_token', '=', $refund_token)->with('currency')->first();
+	}
+
+	/**
+	 * extractPayPalCaptureIdFromRefundWebhook function
+	 *
+	 * @param array $payload
+	 * @return string|null
+	 */
+	private function extractPayPalCaptureIdFromRefundWebhook(array $payload): ?string {
+
+		foreach($payload['resource']['links'] ?? [] as $link){
+
+			if(($link['rel'] ?? null) !== 'up' || empty($link['href'])){
+				continue;
+			}
+
+			$path = parse_url($link['href'], PHP_URL_PATH);
+
+			if(!is_string($path)){
+				continue;
+			}
+
+			$segments = explode('/', trim($path, '/'));
+
+			$captures_index = array_search('captures', $segments, true);
+
+			if($captures_index !== false && isset($segments[$captures_index + 1])){
+				return $segments[$captures_index + 1];
+			}
+		}
+
+		return null;
 	}
 
 	/**
@@ -903,15 +935,27 @@ class DatabaseOperations{
 	 * @param array $request_data
 	 * @return array|null
 	 */
-	public function getSettingsDataForStripeRefund(array $request_data) : ?array {
+	public function getSettingsDataForPaymentRefund(array $request_data, int $payment_gateway) : ?array {
 
-		$payment_intent = $request_data['data']['object']['payment_intent'] ?? null;
+		$gateway_refund_id = null;
 
-		if(!$payment_intent){
+		if($payment_gateway === PaymentGateway::STRIPE->value){
+			$gateway_refund_id = $request_data['data']['object']['payment_intent'] ?? null;
+		}else if($payment_gateway === PaymentGateway::PAYPAL->value){
+			$gateway_refund_id = $this->extractPayPalCaptureIdFromRefundWebhook($request_data);
+		}
+
+		if(!$gateway_refund_id){
 			return null;
 		}
 
-		return $this->fetchTransactionByRefundToken($payment_intent)->toArray();
+		$transaction = $this->fetchTransactionByRefundToken($gateway_refund_id);
+
+		if(!$transaction){
+			return null;
+		}
+
+		return $transaction->toArray();
 
 	}
 

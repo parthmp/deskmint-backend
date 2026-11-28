@@ -4,6 +4,7 @@ namespace App\Modules\Payment\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Payment\DatabaseOperations;
+use App\Modules\Payment\Enums\PaymentGateway;
 use App\Modules\Payment\Enums\StripeEvents;
 use App\Modules\Payment\Exceptions\PaymentException;
 use App\Modules\Payment\Gateways\Payment;
@@ -18,12 +19,12 @@ class StripeController extends Controller{
 
 		$data = $request->all();
 
-		logger("\n\n\n");
-		logger("FROM STRIPE");
-		logger("===========");
-		logger($data);
-		logger("===========");
-		logger("\n\n\n");
+		// logger("\n\n\n");
+		// logger("FROM STRIPE");
+		// logger("===========");
+		// logger($data);
+		// logger("===========");
+		// logger("\n\n\n");
 		
 		$event_type = $data['type'] ?? null;
 		
@@ -89,7 +90,7 @@ class StripeController extends Controller{
 
 		if((string) $event_type === StripeEvents::REFUND_CREATED->value || (string) $event_type === StripeEvents::REFUND_UPDATED->value){
 			
-			$transaction = $this->database_operations->getSettingsDataForStripeRefund($data);
+			$transaction = $this->database_operations->getSettingsDataForPaymentRefund($data, PaymentGateway::STRIPE->value);
 			if($transaction !== null){
 				$settings_data['webhook_data']['company_id'] = $transaction['company_id'];
 				$settings_data['transaction'] = $transaction;

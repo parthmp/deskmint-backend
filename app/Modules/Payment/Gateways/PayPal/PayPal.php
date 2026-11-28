@@ -19,12 +19,14 @@ use App\Modules\Payment\Gateways\PayPal\Implementation\Credentials;
 use App\Modules\Payment\Gateways\PayPal\Implementation\Order;
 use App\Modules\Payment\Traits\Shared;
 use App\Modules\RecurringInvoice\RecurringInvoice;
+use App\Services\Invoice\InvoiceRefundService;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Srmklive\PayPal\Services\PayPal as Provider;
 
 class PayPal implements PaymentInterface {
@@ -55,6 +57,7 @@ class PayPal implements PaymentInterface {
 		$this->webhook_id = $credentials->getWebhookId();
 		return $this;
 	}
+
 
 	/**
 	 * setContext function
@@ -677,6 +680,7 @@ class PayPal implements PaymentInterface {
 
 	}
 
+
 	/**
 	 * handleWebhook function
 	 *
@@ -703,6 +707,10 @@ class PayPal implements PaymentInterface {
 		if((string) $event_type === PayPalEvents::SALE_COMPLETED->value){
 			
 			return $this->subscriptionSaleMade($request_data, $settings_data);
+
+		}else if((string) $event_type === PayPalEvents::PAYMENT_REFUNDED->value){
+			
+			$this->handleRefunds($request_data, $settings_data, PaymentGateway::PAYPAL->value);
 
 		}else if((string) $event_type === PayPalEvents::SUBSCRIPTION_ACTIVATED->value || (string) $event_type === PayPalEvents::SUBSCRIPTION_SUSPENDED->value){
 
@@ -795,6 +803,58 @@ class PayPal implements PaymentInterface {
 	 */
 	public function cancelSubscription(string $subscription_id) : void {
 		$this->provider->cancelSubscription($subscription_id, 'Cancelled');
+	}
+	
+	/**
+	 * refund function
+	 *
+	 * @param string $refund_token
+	 * @param string $amount
+	 * @param integer $ledger_id
+	 * @return array
+	 */
+	public function refund(string $refund_token, string $amount, int $ledger_id) : array {
+		
+		$uuid = Str::uuid()->toString();
+
+		$ignore_invoice_id = $uuid.'-'.config('global.ignore_paypal_refund_webhook');
+
+		$response = $this->provider->refundCapturedPayment($refund_token, $ignore_invoice_id, $amount, 'Refund');
+		
+		$error = $response['error']['details'][0]['description'] ?? null;
+
+		if(!$error){
+			$error = $response['error']['message'] ?? null;
+		}
+
+		if($error){
+			return [
+				'success'		=>	false,
+				'refund_data'	=>	null,
+				'error'			=>	'PayPal Error for #'.$ledger_id.' '.$error
+			];
+		}
+
+		$response_status = $response['status'] ?? null;
+
+		if($response_status !== 'COMPLETED'){
+
+			$error = $error ?? 'Something went wrong on PayPal\'s side';
+
+			return [
+				'success'		=>	false,
+				'refund_data'	=>	null,
+				'error'			=>	'PayPal Error for #'.$ledger_id.' '.$error
+			];
+		}
+
+		return 	[
+					'success'		=>	true,
+					'refund_data'	=>	$response,
+					'error'			=>	'Refund issued successfully for #'.$ledger_id.' for amount '.$amount
+				];
+			
+		
 	}
 
 
