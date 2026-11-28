@@ -3,6 +3,8 @@
 namespace App\Services\Invoice;
 
 use App\Enums\Credits\CreditStatus;
+use App\Enums\Refunds\RefundStatus;
+use App\Helpers\General;
 use App\Jobs\GenerateInvoiceJob;
 use App\Modules\Payment\Enums\InvoiceStatus;
 use App\Modules\Payment\Enums\PaymentGateway;
@@ -418,7 +420,7 @@ class InvoiceRefundService {
 	private function getAmounts(array $payment_or_credit, bool $full_refund) : array {
 
 		$user_applied = $payment_or_credit['user_applied'] ?? null;
-
+		
 		$to_be_refunded = $this->calculateToBeRefunded($payment_or_credit['total_applied'], $payment_or_credit['total_applied_refund'], $user_applied);
 
 		if($full_refund){
@@ -457,9 +459,7 @@ class InvoiceRefundService {
 			$data = $this->invoice_repository->fetchDataForDropdownOptions($company_id, $invoice_id);
 			$payments = $data['payments'];
 			$credits = $data['credits'];
-			logger('for full refunds');
-			logger($payments);
-			logger("\n\n\n\n---");
+
 		}else{
 
 			$ledger_ids = [];
@@ -492,45 +492,50 @@ class InvoiceRefundService {
 			$payments = $this->addUserAppliedAmount($refund_entries, $payments->toArray());
 
 		}
-		// logger('for partial refunds');
-		// 	logger($payments);
-		// 	logger("\n\n\n\n---");
+
 		foreach($payments as $payment){
 
 			[$amount, $original_amount] = $this->getAmounts($payment, $full_refund);
 
-			$element =  [
-				'uuid'					=>	Str::uuid()->toString(),
-				'ledger_id'				=>	$payment['id'],
-				'payment_id'			=>	$payment['payment_id'],
-				'amount'				=>	$amount,
-				'original_amount'		=>	$original_amount,
-				'payment_gateway'		=>	$payment['payment_gateway'],
-				'transaction_id'		=>	$payment['transaction_id'],
-				'currency_id'			=>	$payment['currency_id'],
-				'refund_token'			=>	$payment['refund_token']
-			];
+			if(BigDecimal::of($original_amount)->isGreaterThan(BigDecimal::of(0))){
 
-			if($payment['payment_gateway']){
-				$entries['payments_online'][] = $element;
-			}else{
-				$entries['payments_offline'][] = $element;
+				$element =  [
+					'uuid'					=>	Str::uuid()->toString(),
+					'ledger_id'				=>	$payment['id'],
+					'payment_id'			=>	$payment['payment_id'],
+					'amount'				=>	$amount,
+					'original_amount'		=>	$original_amount,
+					'payment_gateway'		=>	$payment['payment_gateway'],
+					'transaction_id'		=>	$payment['transaction_id'],
+					'currency_id'			=>	$payment['currency_id'],
+					'refund_token'			=>	$payment['refund_token']
+				];
+
+				if($payment['payment_gateway']){
+					$entries['payments_online'][] = $element;
+				}else{
+					$entries['payments_offline'][] = $element;
+				}
+
 			}
 
-			
 		}
 
 		foreach($credits as $credit){
 
 			[$amount, $original_amount] = $this->getAmounts($credit, $full_refund);
 
-			$entries['credits'][] = [
-				'ledger_id'			=>	$credit['id'],
-				'credit_id'			=>	$credit['credit_id'],
-				'currency_id'		=>	$credit['currency_id'],
-				'amount'			=>	$amount,
-				'original_amount'	=>	$original_amount,
-			];
+			if(BigDecimal::of($original_amount)->isGreaterThan(BigDecimal::of(0))){
+
+				$entries['credits'][] = [
+					'ledger_id'			=>	$credit['id'],
+					'credit_id'			=>	$credit['credit_id'],
+					'currency_id'		=>	$credit['currency_id'],
+					'amount'			=>	$amount,
+					'original_amount'	=>	$original_amount,
+				];
+
+			}
 		}
 
 		return $entries;
@@ -606,34 +611,20 @@ class InvoiceRefundService {
 
 		$invoices = $this->invoice_repository->fetchInvoiceByIds($company_id, $invoice_ids, ['id', 'total', 'status', 'balance_due']);
 
-		$zero = BigDecimal::of(0);
-
 		foreach($raw_invoices_data as $element){
 
 			foreach($invoices as $invoice){
 
 				if((int) $invoice->id === $element['id']){
 
-					$status = $invoice->status;
-
 					$total = BigDecimal::of($invoice->total);
 					$balance_due = BigDecimal::of($invoice->balance_due);
-					
 
-					if($total->isEqualTo($element['refunded_amount'])){
-						$status = InvoiceStatus::REFUNDED->value;
-					}else if($total->isGreaterThan($element['refunded_amount'])){
-						$status = InvoiceStatus::PARTIALLY_REFUNDED->value;
-					}else if($total->isGreaterThan($element['refunded_amount']) && $element['refunded_amount']->isEqualTo($zero) && $balance_due->isEqualTo($zero)){
-						$status = InvoiceStatus::PAID->value;
-					}else if($total->isGreaterThan($element['refunded_amount']) && $element['refunded_amount']->isEqualTo($zero) && $balance_due->isGreaterThan($zero) && $balance_due->isLessThan($total)){
-						$status = InvoiceStatus::PARTIALLY_PAID->value;
-					}
-
+					$refund_status = General::getRefundStatusForInvoice($total, $balance_due, $element['refunded_amount']);
 
 					$invoice_data[] = [
 						'id'				=>	$element['id'],
-						'status'			=>	$status,
+						'refund_status'		=>	$refund_status,
 						'refunded_amount'	=>	$element['refunded_amount']->toScale(2, RoundingMode::HalfUp)->__toString(),
 					];
 
@@ -724,7 +715,6 @@ class InvoiceRefundService {
 
 		$data = $this->normalizeRefundEntries($company_id, $invoice_id, $full_refund, $refund_entries);
 		logger($data);
-		
 		$temp_online_payments = $data['payments_online'];
 
 		$online_payments = [];

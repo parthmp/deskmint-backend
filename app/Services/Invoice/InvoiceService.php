@@ -2,6 +2,8 @@
 
 namespace App\Services\Invoice;
 
+use App\Enums\Refunds\RefundStatus;
+use App\Helpers\General;
 use App\Jobs\GenerateInvoiceSnapshotJob;
 use App\Models\Invoice;
 use App\Modules\ApplyUnapply\Common\Traits\ApplyUnapplyCommon;
@@ -414,10 +416,15 @@ class InvoiceService{
 		}
 
 		
+		
 		$balance_due = $total->minus($so_far_applied_to_invoice);
+
+		$refund_status = General::getRefundStatusForInvoice($total, $balance_due, BigDecimal::of($invoice->refunded_amount));
+		
 		$balance_due = $balance_due->toScale(2, RoundingMode::HalfUp)->__toString();
 
-		$this->invoice_repository->updateInvoiceStatusAndAmount($invoice, $status, $balance_due);
+
+		$this->invoice_repository->updateInvoiceStatusAndAmount($invoice, $status, $refund_status, $balance_due);
 
 		$highlight = 'info';
 
@@ -425,11 +432,20 @@ class InvoiceService{
 			$highlight = 'success';
 		}
 
+		$refund_highlight = 'info';
+
+		if((int) $refund_status !== RefundStatus::NONE->value){
+			$refund_highlight = 'error';
+		}
+
 		return [
-			'highlight'		=>	$highlight,
-			'status'		=>	$status,
-			'balance_due'	=>	$balance_due,
-			'status_text'	=>	InvoiceStatus::getInvoiceStatusLabel($status)
+			'highlight'				=>	$highlight,
+			'refund_highlight'		=>	$refund_highlight,
+			'status'				=>	$status,
+			'refund_status'			=>	$refund_status,
+			'balance_due'			=>	$balance_due,
+			'status_text'			=>	InvoiceStatus::getInvoiceStatusLabel($status),
+			'refund_status_text'	=>	RefundStatus::getRefundStatusLabel($refund_status)
 		];
 
 	}

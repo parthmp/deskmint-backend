@@ -1137,6 +1137,7 @@ class RecurringInvoiceService {
 
 			if($payment_gateway === PaymentGateway::NONE->value && $type === 'start'){
 				//TODO:calculate for none.
+				//TODO: BUG FIX FOR RECURRING INVOICES FOR NEXT INVOICE ON WITH "NONE" PAYMENT GATEWAY.
 				$next_invoice_on = $this->update_next_invoice_on->nextInvoiceOn(Carbon::parse($recurring_invoice->next_invoice_on, 'UTC'), (int) $recurring_invoice->frequency, (int) $recurring_invoice->custom_frequency_days);
 			}
 

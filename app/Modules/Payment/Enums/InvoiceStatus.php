@@ -9,8 +9,6 @@ enum InvoiceStatus : int {
     case CANCELLED = 3;
     case PARTIALLY_PAID = 4;
     case PAID = 5;
-    case PARTIALLY_REFUNDED = 6;
-    case REFUNDED = 7;
 
     public function label() : string {
         return match($this) {
@@ -18,9 +16,7 @@ enum InvoiceStatus : int {
             self::SENT 					=> 'Sent',
             self::CANCELLED 			=> 'Cancelled',
             self::PARTIALLY_PAID 		=> 'Partially Paid',
-            self::PAID 					=> 'Paid',
-            self::PARTIALLY_REFUNDED 	=> 'Partially Refunded',
-            self::REFUNDED 				=> 'Refunded'
+            self::PAID 					=> 'Paid'
         };
     }
 

@@ -580,16 +580,18 @@ class InvoiceRepository{
 	}
 
 	/**
-	 * Undocumented function
+	 * updateInvoiceStatusAndAmount function
 	 *
 	 * @param Invoice $invoice
 	 * @param integer $status
+	 * @param integer $refund_status
 	 * @param string $balance_due
 	 * @return boolean
 	 */
-	public function updateInvoiceStatusAndAmount(Invoice $invoice, int $status, string $balance_due) : bool {
+	public function updateInvoiceStatusAndAmount(Invoice $invoice, int $status, int $refund_status, string $balance_due) : bool {
 
 		$invoice->status = $status;
+		$invoice->refund_status = $refund_status;
 		$invoice->balance_due = $balance_due;
 		return $invoice->save();
 
@@ -972,7 +974,7 @@ class InvoiceRepository{
 
 				$status_cases[] = 'WHEN ? THEN ?';
 				$status_bindings[] = (int) $row['id'];
-				$status_bindings[] = $row['status'];
+				$status_bindings[] = $row['refund_status'];
 
 				$ids[] = (int) $row['id'];
 			}
@@ -987,7 +989,7 @@ class InvoiceRepository{
 			DB::update(
 				"UPDATE invoices
 				SET refunded_amount = CASE id {$refund_case_sql} END,
-				status = CASE id {$status_case_sql} END,
+				refund_status = CASE id {$status_case_sql} END,
 				updated_at = ?
 				WHERE company_id = ?
 				AND id IN ({$placeholders})",

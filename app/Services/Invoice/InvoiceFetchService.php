@@ -3,6 +3,7 @@
 namespace App\Services\Invoice;
 
 use App\Enums\Invoices\ArchivedStatus;
+use App\Enums\Refunds\RefundStatus;
 use App\Helpers\General;
 use App\Helpers\Sanitize;
 use App\Models\Invoice;
@@ -183,9 +184,12 @@ class InvoiceFetchService{
 						InvoiceStatus::SENT->value					=>	InvoiceStatus::SENT->label(),
 						InvoiceStatus::CANCELLED->value				=>	InvoiceStatus::CANCELLED->label(),
 						InvoiceStatus::PARTIALLY_PAID->value		=>	InvoiceStatus::PARTIALLY_PAID->label(),
-						InvoiceStatus::PAID->value					=>	InvoiceStatus::PAID->label(),
-						InvoiceStatus::PARTIALLY_REFUNDED->value	=>	InvoiceStatus::PARTIALLY_REFUNDED->label(),
-						InvoiceStatus::REFUNDED->value				=>	InvoiceStatus::REFUNDED->label(),
+						InvoiceStatus::PAID->value					=>	InvoiceStatus::PAID->label()
+					],
+					'invoices.refund_status' => [
+						RefundStatus::NONE->value					=>	RefundStatus::NONE->label(),
+						RefundStatus::PARTIALLY_REFUNDED->value		=>	RefundStatus::PARTIALLY_REFUNDED->label(),
+						RefundStatus::REFUNDED->value				=>	RefundStatus::REFUNDED->label(),
 					],
 					'invoices.payment_gateway' => $gateways
 				],
@@ -202,6 +206,26 @@ class InvoiceFetchService{
 							'highlight'		=>	'success',
 							'text'			=>	'Amount',
 							'value'			=>	2,
+						]
+					],
+					'refund_status'	=>	[
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'info',
+							'text'		=>	RefundStatus::NONE->label(),
+							'value'		=>	RefundStatus::NONE->value
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'error',
+							'text'		=>	RefundStatus::PARTIALLY_REFUNDED->label(),
+							'value'		=>	RefundStatus::PARTIALLY_REFUNDED->value
+						],
+						[
+							'type'		=>	'label',
+							'highlight'	=>	'error',
+							'text'		=>	RefundStatus::REFUNDED->label(),
+							'value'		=>	RefundStatus::REFUNDED->value
 						]
 					],
 					'status'	=>	[
@@ -234,18 +258,6 @@ class InvoiceFetchService{
 							'highlight'	=>	'success',
 							'text'		=>	InvoiceStatus::PAID->label(),
 							'value'		=>	InvoiceStatus::PAID->value
-						],
-						[
-							'type'		=>	'label',
-							'highlight'	=>	'error',
-							'text'		=>	InvoiceStatus::PARTIALLY_REFUNDED->label(),
-							'value'		=>	InvoiceStatus::PARTIALLY_REFUNDED->value
-						],
-						[
-							'type'		=>	'label',
-							'highlight'	=>	'error',
-							'text'		=>	InvoiceStatus::REFUNDED->label(),
-							'value'		=>	InvoiceStatus::REFUNDED->value
 						]
 					],
 					'payment_gateway'	=>	[

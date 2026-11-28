@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use App\Enums\Refunds\RefundStatus;
 use App\Models\Company;
 use App\Models\Country;
 use Brick\Math\BigDecimal;
@@ -468,6 +469,32 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 		 */
 		public static function toCents(string $amount) : int {
 			return BigDecimal::of($amount)->multipliedBy(100)->toScale(2, RoundingMode::HalfUp)->toInt();
+		}
+
+		/**
+		 * getRefundStatusForInvoice function
+		 *
+		 * @param BigDecimal $total
+		 * @param BigDecimal $balance_due
+		 * @param BigDecimal $refunded_amount
+		 * @return integer
+		 */
+		public static function getRefundStatusForInvoice(BigDecimal $total, BigDecimal $balance_due, BigDecimal $refunded_amount) : int {
+
+			$paid_amount = $total->minus($balance_due);
+
+			$zero = BigDecimal::of(0);
+
+			$refund_status = RefundStatus::NONE->value;
+
+			if($refunded_amount->isLessThan($paid_amount) && $refunded_amount->isGreaterThan($zero)){
+				$refund_status = RefundStatus::PARTIALLY_REFUNDED->value;
+			}else if($refunded_amount->isEqualTo($paid_amount) && $refunded_amount->isGreaterThan($zero)){
+				$refund_status = RefundStatus::REFUNDED->value;
+			}
+
+			return $refund_status;
+
 		}
 
 	}
